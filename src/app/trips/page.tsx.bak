@@ -1,0 +1,219 @@
+'use client';
+
+import { useState, useEffect, useRef } from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Drive } from '@/types/trip';
+import { Badge } from 'lucide-react';
+import { parseBlock1, ParsedUberTrip } from '@/utils/parsers/block1Parser';
+
+export default function TripsPage() {
+    const [drives, setDrives] = useState<Drive[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const fetchDrives = async () => {
+        setLoading(true);
+        setError('');
+        try {
+            const res = await fetch('/api/tessie/drives');
+            const data = await res.json();
+
+            if (data.success) {
+                setDrives(data.drives);
+            } else {
+                setError(data.error || 'Failed to fetch drives');
+            }
+        } catch (err) {
+            setError('Network error connecting to Tessie');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchDrives();
+    }, []);
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files?.[0]) return;
+
+        const file = e.target.files[0];
+        try {
+            const buffer = await file.arrayBuffer();
+            const { trips: excelTrips, detectedDate } = await parseBlock1(buffer);
+
+            console.log("Parsed Excel:", excelTrips.length, "trips. Date:", detectedDate);
+            alert(`Parsed ${excelTrips.length} trips from Excel. Date detected: ${detectedDate}`);
+
+            // MATCHING LOGIC
+            // We need to map the "2:15 PM" to a real timestamp on "detectedDate"
+            const matchedDrives = drives.map(drive => {
+                const driveStart = new Date(drive.startTime);
+                // Simple matching: Check if drive is on the same day as detectedDate
+                // And if the time aligns reasonably well.
+
+                // For V1, let's just assume the user uploaded the relevant block.
+                // We'll try to find an excelTrip that "fits" inside this drive or matches start time.
+
+                // This is tricky without strict timezone handling, but let's try strict string matching?
+                // Drive Time: "14:15" -> Excel "2:15 PM"
+
+                const matchedTrip = excelTrips.find(t => {
+                    // Convert Excel time to 24h for comparison? 
+                    // Or just check if Date(detectedDate + t.startTime) is close to drive.startTime
+                    if (!detectedDate) return false;
+
+                    const excelDateTimeStr = `${detectedDate} ${t.startTime}`;
+                    const excelTime = new Date(excelDateTimeStr).getTime();
+
+                    // Allow 15 minute buffer (Uber pick up vs Drive start)
+                    const diff = Math.abs(excelTime - drive.startTime);
+                    return diff < 15 * 60 * 1000;
+                });
+
+                if (matchedTrip) {
+                    return {
+                        ...drive,
+                        category: 'Business',
+                        uberData: {
+                            tripNumber: matchedTrip.tripNumber.toString(),
+                            passenger: matchedTrip.rider,
+                            earnings: matchedTrip.earnings,
+                            uberMiles: matchedTrip.distance,
+                            fees: matchedTrip.fees,
+                            tips: matchedTrip.tip
+                        },
+                        // Audit
+                        audit: {
+                            mileageMismatch: Math.abs(drive.distanceMiles - matchedTrip.distance) > 1, // > 1 mile diff
+                            durationMismatch: false // TODO
+                        }
+                    } as Drive;
+                }
+
+                return drive;
+            });
+
+            setDrives(matchedDrives);
+
+        } catch (err) {
+            console.error(err);
+            setError("Failed to parse Excel file. Ensure it is the correct format.");
+        }
+    };
+
+    return (
+        <div className="p-8 min-h-screen bg-neutral-900 text-white font-sans">
+            <header className="mb-8 flex justify-between items-center">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight text-white mb-2">My Trips</h1>
+                    <p className="text-neutral-400">Universal Trip Tracker (Tessie + Uber)</p>
+                </div>
+                <div className="flex gap-4">
+                    <button
+                        onClick={fetchDrives}
+                        disabled={loading}
+                        className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
+                    >
+                        {loading ? 'Syncing...' : 'Sync Tessie'}
+                    </button>
+
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        accept=".xlsx,.csv"
+                        onChange={handleFileUpload}
+                    />
+                    <button
+                        className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                        onClick={() => fileInputRef.current?.click()}
+                    >
+                        Import Schedule
+                    </button>
+                </div>
+            </header>
+
+            {error && (
+                <div className="bg-red-900/50 border border-red-800 text-red-200 p-4 rounded-lg mb-6">
+                    {error}
+                </div>
+            )}
+
+            <div className="bg-neutral-800 rounded-xl border border-neutral-700 overflow-hidden shadow-2xl">
+                <table className="w-full text-left border-collapse">
+                    <thead>
+                        <tr className="bg-neutral-950 text-neutral-400 text-sm uppercase">
+                            <th className="p-4 font-semibold">Date & Time</th>
+                            <th className="p-4 font-semibold">Route</th>
+                            <th className="p-4 font-semibold text-right">Distance (mi)</th>
+                            <th className="p-4 font-semibold text-right">Duration (min)</th>
+                            <th className="p-4 font-semibold text-center">Category</th>
+                            <th className="p-4 font-semibold text-right">Earnings</th>
+                            <th className="p-4 font-semibold text-center">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-700">
+                        {drives.map((drive) => (
+                            <tr key={drive.id} className="hover:bg-neutral-700/30 transition-colors group">
+                                <td className="p-4 align-top">
+                                    <div className="font-medium text-white">{new Date(drive.startTime).toLocaleDateString()}</div>
+                                    <div className="text-sm text-neutral-500">{new Date(drive.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                                </td>
+                                <td className="p-4 align-top max-w-xs truncate">
+                                    <div className="flex flex-col gap-1">
+                                        <div className="flex items-center gap-2 text-sm text-neutral-300">
+                                            <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                                            {drive.startAddress}
+                                        </div>
+                                        <div className="flex items-center gap-2 text-sm text-neutral-300">
+                                            <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                                            {drive.endAddress}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td className="p-4 align-top text-right text-emerald-400 font-mono">
+                                    {drive.distanceMiles.toFixed(1)}
+                                    {drive.uberData?.uberMiles && (
+                                        <div className={`text-xs ${drive.audit?.mileageMismatch ? 'text-red-400' : 'text-neutral-500'}`}>
+                                            Uber: {drive.uberData.uberMiles}
+                                        </div>
+                                    )}
+                                </td>
+                                <td className="p-4 align-top text-right text-neutral-300 font-mono">
+                                    {drive.durationMinutes}
+                                </td>
+                                <td className="p-4 align-top text-center">
+                                    <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${drive.category === 'Business' ? 'bg-blue-900/50 text-blue-300 border border-blue-800' :
+                                            'bg-neutral-700 text-neutral-400'
+                                        }`}>
+                                        {drive.category || 'Uncategorized'}
+                                    </span>
+                                </td>
+                                <td className="p-4 align-top text-right font-mono text-neutral-400">
+                                    {drive.uberData?.earnings ? `$${drive.uberData.earnings.toFixed(2)}` : '-'}
+                                    {drive.uberData?.passenger && (
+                                        <div className="text-xs text-neutral-500">{drive.uberData.passenger}</div>
+                                    )}
+                                </td>
+                                <td className="p-4 align-top text-center">
+                                    {drive.audit?.mileageMismatch && (
+                                        <Badge className="bg-red-900 hover:bg-red-900 text-red-200 border-red-700">Mismatch</Badge>
+                                    )}
+                                </td>
+                            </tr>
+                        ))}
+                        {drives.length === 0 && !loading && (
+                            <tr>
+                                <td colSpan={7} className="p-12 text-center text-neutral-500">
+                                    No trips found. Click "Sync Tessie" to fetch data.
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+}

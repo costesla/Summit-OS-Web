@@ -1,0 +1,46 @@
+{
+  "name": "sonic-einstein",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@fireworks-js/react": "^2.10.8",
+    "@googlemaps/google-maps-services-js": "^3.4.2",
+    "@react-google-maps/api": "^2.20.8",
+    "@types/canvas-confetti": "^1.9.0",
+    "@types/leaflet": "^1.9.21",
+    "canvas-confetti": "^1.9.4",
+    "dotenv": "^17.2.3",
+    "fireworks-js": "^2.10.8",
+    "ics": "^3.8.1",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.561.0",
+    "next": "16.0.10",
+    "nodemailer": "^7.0.11",
+    "react": "19.2.1",
+    "react-dom": "19.2.1",
+    "react-leaflet": "^5.0.0",
+    "resend": "^6.6.0",
+    "styled-jsx": "^5.1.7",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/nodemailer": "^7.0.4",
+    "@types/google.maps": "^3.55.2",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/xlsx": "^0.0.35",
+    "autoprefixer": "^10.4.23",
+    "eslint": "^9",
+    "eslint-config-next": "16.0.10",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5"
+  }
+}
