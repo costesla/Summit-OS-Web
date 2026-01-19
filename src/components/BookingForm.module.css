@@ -1,0 +1,97 @@
+.container {
+    max-width: 800px;
+    margin: 4rem auto;
+    padding: 2rem;
+}
+
+.title {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+    text-align: center;
+    color: var(--color-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+    .row {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .row.three-col {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+}
+
+.group {
+    display: flex;
+    flex-direction: column;
+}
+
+.submitBtn {
+    width: 100%;
+    margin-top: 1rem;
+}
+
+.message {
+    text-align: center;
+    margin-top: 1rem;
+    font-weight: 500;
+}
+
+.success {
+    color: #4ade80;
+}
+
+.error {
+    color: #f87171;
+}
+
+/* New Input Styles */
+.group label {
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.group input, 
+.group select {
+    background: rgba(255, 255, 255, 0.05); /* Glass effect */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.group input:focus,
+.group select:focus {
+    outline: none;
+    border-color: var(--color-primary); /* Tesla Red */
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 0 2px rgba(209, 38, 48, 0.2);
+}
+
+.group input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.group input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
