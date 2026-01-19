@@ -1,5 +1,6 @@
 
 import { NextResponse } from 'next/server';
+import { TessieClient } from '@/lib/tessie';
 
 /**
  * CRON: Monitor Outlook Calendar & Correlate with Tessie
@@ -69,13 +70,55 @@ export async function GET(request: Request) {
         });
         const tessieData = await tessieRes.json();
 
-        // 5. Logic Placeholder
-        // Iterate events and compare with Tessie State
+        // 5. Logic: Iterate events and compare with Tessie State
+        const tessie = new TessieClient();
+        const vehicleState = await tessie.getState();
+
+        let logicLog: string[] = [];
+
+        if (eventsData.value && vehicleState) {
+            // const lat = vehicleState.drive_state.latitude;
+            // const lng = vehicleState.drive_state.longitude;
+
+            for (const event of eventsData.value) {
+                // Check if event is "Now" (Active Trip)
+                // const now = new Date(); // Use real time in prod
+                // For MVP testing, we might want to log everything.
+                const now = new Date();
+                const start = new Date(event.start.dateTime);
+                const end = new Date(event.end.dateTime);
+
+                // If we are within the event window
+                if (now >= start && now <= end) {
+                    if (vehicleState.drive_state.speed > 0) {
+                        // TRIP ACTIVE
+                        logicLog.push(`Trip Active: ${event.subject}`);
+                        // Optional: Ensure session exists or heat seats
+                    }
+                }
+
+                // Check Logic: Did trip JUST finish? (End time < 15 mins ago)
+                const timeDiff = (now.getTime() - end.getTime()) / (1000 * 60); // minutes since end
+
+                if (timeDiff > 0 && timeDiff < 15) {
+                    // TRIP JUST ENDED -> RESET PROTOCOL
+                    logicLog.push(`Trip Finished: ${event.subject}. Executing Reset Protocol.`);
+
+                    // 1. Reset Seats
+                    await tessie.setSeatHeater('rear_left', 0);
+                    await tessie.setSeatHeater('rear_right', 0);
+
+                    // 2. Reset Windows
+                    await tessie.setVentWindows('close');
+                }
+            }
+        }
 
         return NextResponse.json({
             success: true,
             monitoredEvents: eventsData.value?.length || 0,
-            tessieConnected: !!tessieData
+            tessieConnected: !!vehicleState,
+            logicLog
         });
 
     } catch (error: any) {
