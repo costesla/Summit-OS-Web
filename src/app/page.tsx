@@ -67,12 +67,12 @@ export default function Home() {
           </div>
 
           {/* Right: Car Image (Floating) */}
-          <div className="lg:col-span-6 relative h-[500px] lg:h-[700px] w-full animate-in fade-in scale-in duration-1000 delay-300">
+          <div className="lg:col-span-6 relative h-[500px] lg:h-[700px] w-full animate-in fade-in scale-in duration-1000 delay-300 translate-x-12 lg:translate-x-20">
             <Image
               src="/hero-car.png"
               alt="2024 Tesla Model Y Stealth Grey"
               fill
-              className="object-contain drop-shadow-2xl"
+              className="object-contain drop-shadow-2xl scale-110"
               priority
             />
           </div>
