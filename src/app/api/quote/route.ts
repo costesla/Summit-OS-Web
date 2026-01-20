@@ -167,8 +167,14 @@ export async function POST(request: Request) {
       quote
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Pricing Error:", error);
-    return NextResponse.json({ success: false, error: "Failed to calculate quote. Please verify address." }, { status: 500 });
+    const errorMessage = error?.response?.data?.error_message || error?.message || "Unknown error";
+    const errorStatus = error?.response?.data?.status || "UNKNOWN_STATUS";
+
+    return NextResponse.json({
+      success: false,
+      error: `Pricing Failed: ${errorMessage} (${errorStatus})`
+    }, { status: 500 });
   }
 }

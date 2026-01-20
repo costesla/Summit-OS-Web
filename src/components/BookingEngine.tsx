@@ -87,9 +87,14 @@ export default function BookingEngine() {
                 const data = await res.json();
                 if (data.success) {
                     setQuote(data.quote);
+                } else {
+                    console.error("Quote API Error:", data.error);
+                    setToastMessage(data.error || "Failed to calculate pricing");
+                    setQuote(null);
                 }
-            } catch (e) {
-                console.error(e);
+            } catch (e: any) {
+                console.error("Fetch Error:", e);
+                setToastMessage(`Connection Error: ${e.message}`);
             } finally {
                 setLoading(false);
             }
