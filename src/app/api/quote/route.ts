@@ -172,9 +172,14 @@ export async function POST(request: Request) {
     const errorMessage = error?.response?.data?.error_message || error?.message || "Unknown error";
     const errorStatus = error?.response?.data?.status || "UNKNOWN_STATUS";
 
+    // DEBUG: Identify which key is being used
+    const keyUsed = GOOGLE_MAPS_API_KEY;
+    const keyPrefix = keyUsed ? keyUsed.substring(0, 10) + "..." : "NONE";
+    const keyGeneric = process.env.GOOGLE_MAPS_API_KEY ? "SERVER_ENV" : "FALLBACK_PUBLIC";
+
     return NextResponse.json({
       success: false,
-      error: `Pricing Failed: ${errorMessage} (${errorStatus})`
+      error: `Pricing Failed: ${errorMessage} (${errorStatus}) | Key: ${keyGeneric} (${keyPrefix})`
     }, { status: 500 });
   }
 }
