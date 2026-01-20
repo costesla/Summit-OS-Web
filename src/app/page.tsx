@@ -72,7 +72,7 @@ export default function Home() {
               src="/hero-car.png"
               alt="2024 Tesla Model Y Stealth Grey"
               fill
-              className="object-contain drop-shadow-2xl scale-110"
+              className="object-contain drop-shadow-2xl scale-110 mix-blend-screen"
               priority
             />
           </div>
