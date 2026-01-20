@@ -81,9 +81,13 @@ export default function RouteMap({
     // Explicitly grab the key
     const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
+    // Libraries must match parent to prevent reload errors
+    const [libraries] = useState<("places" | "geometry" | "drawing" | "visualization")[]>(["places"]);
+
     const { isLoaded, loadError } = useJsApiLoader({
         id: 'google-map-script',
-        googleMapsApiKey: googleMapsApiKey
+        googleMapsApiKey: googleMapsApiKey,
+        libraries
     });
 
     const origin = pickupAddress || (pickup ? { lat: pickup.lat, lng: pickup.lon } : null);
