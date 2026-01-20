@@ -3,23 +3,6 @@
 @tailwind utilities;
 
 :root {
-  /* Colors - HSL for easy opacity manipulation */
-  --background-hsl: 210 14% 7%;
-  /* Deep Void Black/Dark Graphite */
-  --surface-hsl: 210 14% 11%;
-  /* Valentine's Red Theme */
-  --primary-hsl: 345 100% 50%;
-  /* Deep Crimson */
-  --primary-dark-hsl: 345 100% 30%;
-  --secondary-hsl: 210 10% 80%;
-  /* Silver/Steel */
-  --accent-hsl: 340 100% 60%;
-  /* Bright Rose highlight */
-
-  --color-background: hsl(var(--background-hsl));
-  --color-surface: hsl(var(--surface-hsl));
-  --color-primary: hsl(var(--primary-hsl));
-  --color-secondary: hsl(var(--secondary-hsl));
   --color-text-main: #ffffff;
   --color-text-muted: #a0a0a0;
 

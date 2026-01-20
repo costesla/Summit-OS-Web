@@ -131,7 +131,8 @@ export default function BookingEngine() {
     };
 
     return (
-        <div className="glass-panel w-full max-w-4xl mx-auto p-8 rounded-3xl border border-white/10 relative overflow-hidden shadow-2xl backdrop-blur-xl bg-black/60">
+        <div className="w-full text-left font-sans">
+            {/* Engine Logic */}
 
             {/* 1. Header */}
             <div className="flex justify-between items-center mb-8 border-b border-white/10 pb-6">
