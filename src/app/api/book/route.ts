@@ -1,8 +1,5 @@
 import { NextResponse } from 'next/server';
-import { Resend } from 'resend';
-
-// Initialize Resend
-const resend = new Resend(process.env.RESEND_API_KEY);
+import { sendReceiptEmail, sendAdminNotification } from '@/lib/email';
 
 export async function POST(request: Request) {
   try {
@@ -10,63 +7,75 @@ export async function POST(request: Request) {
 
     console.log("📨 Processing Booking for:", data.email);
 
-    if (!process.env.RESEND_API_KEY) {
-      console.error("❌ MISSING RESEND_API_KEY");
-      return NextResponse.json({ success: true, message: "Booking logged (Email skipped)" });
+    // Prepare Receipt Data
+    // Note: 'data.tripDetails' comes from frontend as { dist: '12.5', time: '25 min' }
+    // We assume 'price' is a string like "$45.00"
+
+    // Parse Price Breakdown (Simplified for now, as frontend sends total string)
+    // Ideally frontend should send breakdown, but we can just put total in all fields or parse it if needed.
+    // For now, we put total in 'total' and "-" in others to look clean, or just duplicate.
+    // Actually, let's just use the Total for now.
+
+    const receiptData = {
+      customerName: data.name,
+      customerEmail: data.email,
+      pickup: data.pickup,
+      dropoff: data.dropoff,
+      date: new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+      distance: data.tripDetails?.dist ? `${data.tripDetails.dist} mi` : "N/A",
+      duration: data.tripDetails?.time ? `${data.tripDetails.time} min` : "N/A",
+      priceCheckdown: {
+        base: "-", // Frontend doesn't send breakdown yet
+        mileage: "-",
+        wait: "-",
+        total: data.price
+      },
+      bookingId: Math.random().toString(36).substr(2, 9).toUpperCase()
+    };
+
+    // 1. Send Customer Receipt
+    const customerResult = await sendReceiptEmail(receiptData);
+
+    // 2. Send Admin Notification to Yourself
+    const adminResult = await sendAdminNotification(receiptData);
+
+    if (!customerResult.success && !adminResult.success) {
+      console.error("❌ Both emails failed:", customerResult.error, adminResult.error);
+      return NextResponse.json({ success: false, message: "Failed to send emails" }, { status: 500 });
     }
 
-    // Format HTML Email
-    const htmlContent = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-top: 5px solid #D12630;">
-        <div style="padding: 20px;">
-          <h2 style="color: #D12630; margin-top: 0;">🚗 New Trip Request</h2>
-          <p><strong>Passenger:</strong> ${data.name} (<a href="tel:${data.phone}">${data.phone}</a>)</p>
-          <p><strong>Email:</strong> ${data.email}</p>
-          <p><strong>Passengers:</strong> ${data.passengers}</p>
-          
-          <div style="background: #f9f9f9; padding: 15px; border-radius: 5px; margin: 15px 0;">
-            <p style="margin: 5px 0;"><strong>📍 Pickup:</strong> ${data.pickup}</p>
-            <p style="margin: 5px 0;"><strong>🏁 Dropoff:</strong> ${data.dropoff}</p>
-          </div>
+    console.log("✅ Emails Processed. Customer:", customerResult.success, "Admin:", adminResult.success);
 
-          <div style="display: flex; gap: 20px; font-weight: bold; color: #555;">
-            <span>💰 Quote: ${data.price}</span>
-            <span>🛣️ Distance: ~${data.tripDetails?.dist} mi</span>
-            <span>⏱️ Time: ~${data.tripDetails?.time} min</span>
-          </div>
-          
-          <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-          <p style="font-size: 12px; color: #999;">This request originated from www.costesla.com</p>
-        </div>
-      </div>
-    `;
+    // 3. Sync to Summit OS Database (Azure Function)
+    try {
+      const functionUrl = process.env.AZURE_FUNCTION_URL + "/api/log-private-trip";
+      const functionKey = process.env.AZURE_FUNCTION_KEY;
 
-    // Send via Resend
-    // NOTE: 'from' must be a verified domain or the generic testing one 'onboarding@resend.dev'
-    // Since the user has a custom domain 'costesla.com', they likely verified it.
-    // If not, we fall back to 'onboarding@resend.dev' but delivers to the registered email.
+      const syncResponse = await fetch(functionUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-functions-key": functionKey || ""
+        },
+        body: JSON.stringify({
+          ...data,
+          bookingId: receiptData.bookingId
+        })
+      });
 
-    // Attempt 1: Try sending from their domain (Ideal)
-    // Attempt 2: If that fails, the user might need to verify the domain in Resend dashboard.
-    // We will assume "PrivateTrips@costesla.com" is intended.
-
-    const { data: emailData, error } = await resend.emails.send({
-      from: 'COS Tesla <onboarding@resend.dev>', // Use Testing Domain (Authorized for everyone)
-      to: ['peter.teehan@costesla.com'], // Verified Owner Email (Required for Resend Free Tier)
-      subject: `🚗 New Trip: ${data.name} - ${data.price}`,
-      html: htmlContent,
-    });
-
-    if (error) {
-      console.error("Resend Error:", error);
-      return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+      if (!syncResponse.ok) {
+        console.warn("⚠️ Failed to sync booking to central server:", await syncResponse.text());
+      } else {
+        console.log("🚀 Booking synced to Summit Command Center.");
+      }
+    } catch (syncError) {
+      console.warn("⚠️ Error syncing booking (non-fatal):", syncError);
     }
 
-    console.log("✅ Email Sent Successfully via Resend:", emailData);
+    return NextResponse.json({ success: true, message: "Booking confirmed & Receipt Sent" });
 
-    return NextResponse.json({ success: true, message: "Booking confirmed" });
   } catch (error) {
     console.error("❌ Server Error:", error);
-    return NextResponse.json({ success: false, message: "Failed to send email" }, { status: 500 });
+    return NextResponse.json({ success: false, message: "Internal Server Error" }, { status: 500 });
   }
 }

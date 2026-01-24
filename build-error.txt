@@ -1,0 +1,845 @@
+
+> sonic-einstein@0.1.0 build
+> next build
+
+ ΓÜá Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\package-lock.json
+
+   Γû▓ Next.js 16.0.10 (Turbopack)
+   - Environments: .env.local
+
+ ΓÜá The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+   Creating an optimized production build ...
+
+> Build error occurred
+Error: Turbopack build failed with 20 errors:
+./Summit-OS-Web-master/node_modules/leaflet/dist/leaflet.css
+Error evaluating Node.js code
+Error: Cannot find module 'picocolors'
+    at Summit-OS-Web-master/node_modules/postcss/lib/css-syntax-error.js:3:5 [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\37c50_648dd42d._.js:336:15]
+    at module evaluation (Summit-OS-Web-master/node_modules/postcss/lib/css-syntax-error.js:3:5) [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\37c50_648dd42d._.js:339:3]
+    at instantiateModule (turbopack:///[turbopack]/nodejs/runtime.ts:228:5) [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\[turbopack]_runtime.js:715:9]
+    at getOrInstantiateModuleFromParent (turbopack:///[turbopack]/nodejs/runtime.ts:261:10) [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\[turbopack]_runtime.js:738:12]
+    at Context.commonJsRequire [as r] (turbopack:///[turbopack]/shared/runtime-utils.ts:389:10) [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\[turbopack]_runtime.js:249:12]
+    at module evaluation (Summit-OS-Web-master/node_modules/postcss/lib/node.js:3:5) [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\37c50_648dd42d._.js:751:44]
+    at instantiateModule (turbopack:///[turbopack]/nodejs/runtime.ts:228:5) [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\[turbopack]_runtime.js:715:9]
+    at getOrInstantiateModuleFromParent (turbopack:///[turbopack]/nodejs/runtime.ts:261:10) [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\[turbopack]_runtime.js:738:12]
+    at Context.commonJsRequire [as r] (turbopack:///[turbopack]/shared/runtime-utils.ts:389:10) [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\[turbopack]_runtime.js:249:12]
+    at module evaluation (Summit-OS-Web-master/node_modules/postcss/lib/comment.js:3:5) [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\37c50_648dd42d._.js:1124:34]
+
+Import trace:
+  Client Component Browser:
+    ./Summit-OS-Web-master/node_modules/leaflet/dist/leaflet.css [Client Component Browser]
+    ./Summit-OS-Web-master/src/components/LiveMap.tsx [Client Component Browser]
+    ./Summit-OS-Web-master/src/app/page.tsx [Client Component Browser]
+    ./Summit-OS-Web-master/src/app/page.tsx [Server Component]
+
+
+./Summit-OS-Web-master/src/app/globals.css
+Error evaluating Node.js code
+Error: Cannot find module 'picocolors'
+    at Summit-OS-Web-master/node_modules/postcss/lib/css-syntax-error.js:3:5 [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\37c50_648dd42d._.js:336:15]
+    at module evaluation (Summit-OS-Web-master/node_modules/postcss/lib/css-syntax-error.js:3:5) [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\37c50_648dd42d._.js:339:3]
+    at instantiateModule (turbopack:///[turbopack]/nodejs/runtime.ts:228:5) [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\[turbopack]_runtime.js:715:9]
+    at getOrInstantiateModuleFromParent (turbopack:///[turbopack]/nodejs/runtime.ts:261:10) [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\[turbopack]_runtime.js:738:12]
+    at Context.commonJsRequire [as r] (turbopack:///[turbopack]/shared/runtime-utils.ts:389:10) [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\[turbopack]_runtime.js:249:12]
+    at module evaluation (Summit-OS-Web-master/node_modules/postcss/lib/node.js:3:5) [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\37c50_648dd42d._.js:751:44]
+    at instantiateModule (turbopack:///[turbopack]/nodejs/runtime.ts:228:5) [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\[turbopack]_runtime.js:715:9]
+    at getOrInstantiateModuleFromParent (turbopack:///[turbopack]/nodejs/runtime.ts:261:10) [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\[turbopack]_runtime.js:738:12]
+    at Context.commonJsRequire [as r] (turbopack:///[turbopack]/shared/runtime-utils.ts:389:10) [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\[turbopack]_runtime.js:249:12]
+    at module evaluation (Summit-OS-Web-master/node_modules/postcss/lib/comment.js:3:5) [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\37c50_648dd42d._.js:1124:34]
+
+Import trace:
+  Client Component Browser:
+    ./Summit-OS-Web-master/src/app/globals.css [Client Component Browser]
+    ./Summit-OS-Web-master/src/app/layout.tsx [Server Component]
+
+
+./Summit-OS-Web-master/src/components/BookingForm.module.css
+Error evaluating Node.js code
+Error: Cannot find module 'picocolors'
+    at Summit-OS-Web-master/node_modules/postcss/lib/css-syntax-error.js:3:5 [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\37c50_648dd42d._.js:336:15]
+    at module evaluation (Summit-OS-Web-master/node_modules/postcss/lib/css-syntax-error.js:3:5) [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\37c50_648dd42d._.js:339:3]
+    at instantiateModule (turbopack:///[turbopack]/nodejs/runtime.ts:228:5) [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\[turbopack]_runtime.js:715:9]
+    at getOrInstantiateModuleFromParent (turbopack:///[turbopack]/nodejs/runtime.ts:261:10) [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\[turbopack]_runtime.js:738:12]
+    at Context.commonJsRequire [as r] (turbopack:///[turbopack]/shared/runtime-utils.ts:389:10) [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\[turbopack]_runtime.js:249:12]
+    at module evaluation (Summit-OS-Web-master/node_modules/postcss/lib/node.js:3:5) [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\37c50_648dd42d._.js:751:44]
+    at instantiateModule (turbopack:///[turbopack]/nodejs/runtime.ts:228:5) [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\[turbopack]_runtime.js:715:9]
+    at getOrInstantiateModuleFromParent (turbopack:///[turbopack]/nodejs/runtime.ts:261:10) [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\[turbopack]_runtime.js:738:12]
+    at Context.commonJsRequire [as r] (turbopack:///[turbopack]/shared/runtime-utils.ts:389:10) [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\[turbopack]_runtime.js:249:12]
+    at module evaluation (Summit-OS-Web-master/node_modules/postcss/lib/comment.js:3:5) [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\37c50_648dd42d._.js:1124:34]
+
+Import traces:
+  Client Component Browser:
+    ./Summit-OS-Web-master/src/components/BookingForm.module.css [Client Component Browser]
+    ./Summit-OS-Web-master/src/app/receipt/page.tsx [Client Component Browser]
+    ./Summit-OS-Web-master/src/app/receipt/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Summit-OS-Web-master/src/components/BookingForm.module.css [Client Component SSR]
+    ./Summit-OS-Web-master/src/app/receipt/page.tsx [Client Component SSR]
+    ./Summit-OS-Web-master/src/app/receipt/page.tsx [Server Component]
+
+
+./Summit-OS-Web-master/node_modules/postcss/lib/input.js:3:18
+Module not found: Can't resolve 'nanoid/non-secure'
+  1 | 'use strict'
+  2 |
+> 3 | let { nanoid } = require('nanoid/non-secure')
+    |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  4 | let { isAbsolute, resolve } = require('path')
+  5 | let { SourceMapConsumer, SourceMapGenerator } = require('source-map-js')
+  6 | let { fileURLToPath, pathToFileURL } = require('url')
+
+reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\nanoid\package.json
+
+Caused by:
+- Access to the cloud file is denied. (os error 395)
+
+Debug info:
+- Execution of <ModuleAssetContext as AssetContext>::resolve_asset failed
+- Execution of resolve failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::alternatives failed
+- Execution of *ResolveResult::with_replaced_request_key failed
+- Execution of resolve_into_package failed
+- Execution of exports_field failed
+- Execution of read_package_json failed
+- Execution of *AssetContent::parse_json failed
+- Execution of <FileSource as Asset>::content failed
+- Execution of <DiskFileSystem as FileSystem>::read failed
+- reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\nanoid\package.json
+- Access to the cloud file is denied. (os error 395)
+
+
+Import trace:
+  postcss:
+    ./Summit-OS-Web-master/node_modules/postcss/lib/input.js
+    ./Summit-OS-Web-master/node_modules/postcss/lib/postcss.js
+    ./Summit-OS-Web-master/node_modules/postcss/lib/postcss.mjs
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./Summit-OS-Web-master/node_modules/next/dist/esm/server/app-render/create-error-handler.js:1:1
+Module not found: Can't resolve 'next/dist/compiled/string-hash'
+reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\next\dist\compiled\string-hash\package.json
+
+Caused by:
+- Access to the cloud file is denied. (os error 395)
+
+Debug info:
+- Execution of <ModuleAssetContext as AssetContext>::resolve_asset failed
+- Execution of resolve failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::with_replaced_request_key_pattern failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::alternatives failed
+- Execution of *ResolveResult::with_replaced_request_key failed
+- Execution of resolve_into_package failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::with_request failed
+- Execution of resolve_into_folder failed
+- Execution of read_package_json failed
+- Execution of *AssetContent::parse_json failed
+- Execution of <FileSource as Asset>::content failed
+- Execution of <DiskFileSystem as FileSystem>::read failed
+- reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\next\dist\compiled\string-hash\package.json
+- Access to the cloud file is denied. (os error 395)
+Import map: aliased to module 'next' with subpath '/dist/compiled/string-hash' inside of [project]/Summit-OS-Web-master
+
+
+Import trace:
+  Server Component:
+    ./Summit-OS-Web-master/node_modules/next/dist/esm/server/app-render/create-error-handler.js
+    ./Summit-OS-Web-master/node_modules/next/dist/esm/server/app-render/collect-segment-data.js
+    ./Summit-OS-Web-master/node_modules/next/dist/esm/server/app-render/entry-base.js
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./Summit-OS-Web-master/node_modules/next/dist/esm/server/web/spec-extension/user-agent.js:1:1
+Module not found: Can't resolve 'next/dist/compiled/ua-parser-js'
+reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\next\dist\compiled\ua-parser-js\package.json
+
+Caused by:
+- Access to the cloud file is denied. (os error 395)
+
+Debug info:
+- Execution of <ModuleAssetContext as AssetContext>::resolve_asset failed
+- Execution of resolve failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::with_replaced_request_key_pattern failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::alternatives failed
+- Execution of *ResolveResult::with_replaced_request_key failed
+- Execution of resolve_into_package failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::with_request failed
+- Execution of resolve_into_folder failed
+- Execution of read_package_json failed
+- Execution of *AssetContent::parse_json failed
+- Execution of <FileSource as Asset>::content failed
+- Execution of <DiskFileSystem as FileSystem>::read failed
+- reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\next\dist\compiled\ua-parser-js\package.json
+- Access to the cloud file is denied. (os error 395)
+Import map: aliased to module 'next' with subpath '/dist/compiled/ua-parser-js' inside of [project]/Summit-OS-Web-master
+
+
+Import trace:
+  Edge Middleware:
+    ./Summit-OS-Web-master/node_modules/next/dist/esm/server/web/spec-extension/user-agent.js
+    ./Summit-OS-Web-master/node_modules/next/dist/esm/server/web/exports/index.js
+    ./Summit-OS-Web-master/src/middleware.ts
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./Summit-OS-Web-master/node_modules/next/dist/server/web/spec-extension/user-agent.js:27:60
+Module not found: Can't resolve 'next/dist/compiled/ua-parser-js'
+reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\next\dist\compiled\ua-parser-js\package.json
+
+Caused by:
+- Access to the cloud file is denied. (os error 395)
+
+Debug info:
+- Execution of <ModuleAssetContext as AssetContext>::resolve_asset failed
+- Execution of resolve failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::with_replaced_request_key_pattern failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::alternatives failed
+- Execution of *ResolveResult::with_replaced_request_key failed
+- Execution of resolve_into_package failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::with_request failed
+- Execution of resolve_into_folder failed
+- Execution of read_package_json failed
+- Execution of *AssetContent::parse_json failed
+- Execution of <FileSource as Asset>::content failed
+- Execution of <DiskFileSystem as FileSystem>::read failed
+- reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\next\dist\compiled\ua-parser-js\package.json
+- Access to the cloud file is denied. (os error 395)
+Import map: aliased to module 'next' with subpath '/dist/compiled/ua-parser-js' inside of [project]/Summit-OS-Web-master
+
+
+Import trace:
+  App Route:
+    ./Summit-OS-Web-master/node_modules/next/dist/server/web/spec-extension/user-agent.js
+    ./Summit-OS-Web-master/node_modules/next/server.js
+    ./Summit-OS-Web-master/src/app/favicon--route-entry.js
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./Summit-OS-Web-master/node_modules/postcss/lib/css-syntax-error.js:3:12
+Module not found: Can't resolve 'picocolors'
+  1 | 'use strict'
+  2 |
+> 3 | let pico = require('picocolors')
+    |            ^^^^^^^^^^^^^^^^^^^^^
+  4 |
+  5 | let terminalHighlight = require('./terminal-highlight')
+  6 |
+
+reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\picocolors\package.json
+
+Caused by:
+- Access to the cloud file is denied. (os error 395)
+
+Debug info:
+- Execution of <ModuleAssetContext as AssetContext>::resolve_asset failed
+- Execution of resolve failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::alternatives failed
+- Execution of *ResolveResult::with_replaced_request_key failed
+- Execution of resolve_into_package failed
+- Execution of exports_field failed
+- Execution of read_package_json failed
+- Execution of *AssetContent::parse_json failed
+- Execution of <FileSource as Asset>::content failed
+- Execution of <DiskFileSystem as FileSystem>::read failed
+- reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\picocolors\package.json
+- Access to the cloud file is denied. (os error 395)
+
+
+Import trace:
+  postcss:
+    ./Summit-OS-Web-master/node_modules/postcss/lib/css-syntax-error.js
+    ./Summit-OS-Web-master/node_modules/postcss/lib/postcss.js
+    ./Summit-OS-Web-master/node_modules/postcss/lib/postcss.mjs
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./Summit-OS-Web-master/node_modules/postcss/lib/terminal-highlight.js:3:12
+Module not found: Can't resolve 'picocolors'
+  1 | 'use strict'
+  2 |
+> 3 | let pico = require('picocolors')
+    |            ^^^^^^^^^^^^^^^^^^^^^
+  4 |
+  5 | let tokenizer = require('./tokenize')
+  6 |
+
+reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\picocolors\package.json
+
+Caused by:
+- Access to the cloud file is denied. (os error 395)
+
+Debug info:
+- Execution of <ModuleAssetContext as AssetContext>::resolve_asset failed
+- Execution of resolve failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::alternatives failed
+- Execution of *ResolveResult::with_replaced_request_key failed
+- Execution of resolve_into_package failed
+- Execution of exports_field failed
+- Execution of read_package_json failed
+- Execution of *AssetContent::parse_json failed
+- Execution of <FileSource as Asset>::content failed
+- Execution of <DiskFileSystem as FileSystem>::read failed
+- reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\picocolors\package.json
+- Access to the cloud file is denied. (os error 395)
+
+
+Import trace:
+  postcss:
+    ./Summit-OS-Web-master/node_modules/postcss/lib/terminal-highlight.js
+    ./Summit-OS-Web-master/node_modules/postcss/lib/input.js
+    ./Summit-OS-Web-master/node_modules/postcss/lib/postcss.js
+    ./Summit-OS-Web-master/node_modules/postcss/lib/postcss.mjs
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./Summit-OS-Web-master/node_modules/@react-google-maps/api/dist/esm.js:3:1
+Module not found: Can't resolve 'react-dom'
+  1 | import { jsx, jsxs, Fragment } from 'react/jsx-runtime';
+  2 | import { createContext, useContext, memo, useState, useRef, useEffect, PureComponent, useMemo, Children, isValidElement, cloneElement, createRef } from 'react';
+> 3 | import * as ReactDOM from 'react-dom';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  4 | import { createPortal } from 'react-dom';
+  5 |
+  6 | function _typeof(o) {
+
+reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\next\dist\compiled\react-dom\package.json
+
+Caused by:
+- Access to the cloud file is denied. (os error 395)
+
+Debug info:
+- Execution of <ModuleAssetContext as AssetContext>::resolve_asset failed
+- Execution of resolve failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::with_replaced_request_key_pattern failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::with_replaced_request_key_pattern failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::alternatives failed
+- Execution of *ResolveResult::with_replaced_request_key failed
+- Execution of resolve_into_package failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::with_request failed
+- Execution of resolve_into_folder failed
+- Execution of read_package_json failed
+- Execution of *AssetContent::parse_json failed
+- Execution of <FileSource as Asset>::content failed
+- Execution of <DiskFileSystem as FileSystem>::read failed
+- reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\next\dist\compiled\react-dom\package.json
+- Access to the cloud file is denied. (os error 395)
+Import map: aliased to module 'next' with subpath '/dist/compiled/react-dom' inside of [project]/Summit-OS-Web-master/src/app
+
+
+Import traces:
+  Client Component Browser:
+    ./Summit-OS-Web-master/node_modules/@react-google-maps/api/dist/esm.js [Client Component Browser]
+    ./Summit-OS-Web-master/src/components/BookingEngine.tsx [Client Component Browser]
+    ./Summit-OS-Web-master/src/app/page.tsx [Client Component Browser]
+    ./Summit-OS-Web-master/src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Summit-OS-Web-master/node_modules/@react-google-maps/api/dist/esm.js [Client Component SSR]
+    ./Summit-OS-Web-master/src/components/BookingEngine.tsx [Client Component SSR]
+    ./Summit-OS-Web-master/src/app/page.tsx [Client Component SSR]
+    ./Summit-OS-Web-master/src/app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./Summit-OS-Web-master/node_modules/@react-google-maps/api/dist/esm.js:4:1
+Module not found: Can't resolve 'react-dom'
+  2 | import { createContext, useContext, memo, useState, useRef, useEffect, PureComponent, useMemo, Children, isValidElement, cloneElement, createRef } from 'react';
+  3 | import * as ReactDOM from 'react-dom';
+> 4 | import { createPortal } from 'react-dom';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 |
+  6 | function _typeof(o) {
+  7 |   "@babel/helpers - typeof";
+
+reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\next\dist\compiled\react-dom\package.json
+
+Caused by:
+- Access to the cloud file is denied. (os error 395)
+
+Debug info:
+- Execution of <ModuleAssetContext as AssetContext>::resolve_asset failed
+- Execution of resolve failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::with_replaced_request_key_pattern failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::with_replaced_request_key_pattern failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::alternatives failed
+- Execution of *ResolveResult::with_replaced_request_key failed
+- Execution of resolve_into_package failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::with_request failed
+- Execution of resolve_into_folder failed
+- Execution of read_package_json failed
+- Execution of *AssetContent::parse_json failed
+- Execution of <FileSource as Asset>::content failed
+- Execution of <DiskFileSystem as FileSystem>::read failed
+- reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\next\dist\compiled\react-dom\package.json
+- Access to the cloud file is denied. (os error 395)
+Import map: aliased to module 'next' with subpath '/dist/compiled/react-dom' inside of [project]/Summit-OS-Web-master/src/app
+
+
+Import traces:
+  Client Component Browser:
+    ./Summit-OS-Web-master/node_modules/@react-google-maps/api/dist/esm.js [Client Component Browser]
+    ./Summit-OS-Web-master/src/components/BookingEngine.tsx [Client Component Browser]
+    ./Summit-OS-Web-master/src/app/page.tsx [Client Component Browser]
+    ./Summit-OS-Web-master/src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Summit-OS-Web-master/node_modules/@react-google-maps/api/dist/esm.js [Client Component SSR]
+    ./Summit-OS-Web-master/src/components/BookingEngine.tsx [Client Component SSR]
+    ./Summit-OS-Web-master/src/app/page.tsx [Client Component SSR]
+    ./Summit-OS-Web-master/src/app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./Summit-OS-Web-master/node_modules/@react-leaflet/core/lib/component.js:2:1
+Module not found: Can't resolve 'react-dom'
+  1 | import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
+> 2 | import { createPortal } from 'react-dom';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  3 | import { LeafletContext } from './context.js';
+  4 | export function createContainerComponent(useElement) {
+  5 |     function ContainerComponent(props, forwardedRef) {
+
+reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\next\dist\compiled\react-dom\package.json
+
+Caused by:
+- Access to the cloud file is denied. (os error 395)
+
+Debug info:
+- Execution of <ModuleAssetContext as AssetContext>::resolve_asset failed
+- Execution of resolve failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::with_replaced_request_key_pattern failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::with_replaced_request_key_pattern failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::alternatives failed
+- Execution of *ResolveResult::with_replaced_request_key failed
+- Execution of resolve_into_package failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::with_request failed
+- Execution of resolve_into_folder failed
+- Execution of read_package_json failed
+- Execution of *AssetContent::parse_json failed
+- Execution of <FileSource as Asset>::content failed
+- Execution of <DiskFileSystem as FileSystem>::read failed
+- reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\next\dist\compiled\react-dom\package.json
+- Access to the cloud file is denied. (os error 395)
+Import map: aliased to module 'next' with subpath '/dist/compiled/react-dom' inside of [project]/Summit-OS-Web-master/src/app
+
+
+Import trace:
+  Client Component Browser:
+    ./Summit-OS-Web-master/node_modules/@react-leaflet/core/lib/component.js [Client Component Browser]
+    ./Summit-OS-Web-master/node_modules/@react-leaflet/core/lib/generic.js [Client Component Browser]
+    ./Summit-OS-Web-master/node_modules/react-leaflet/lib/Popup.js [Client Component Browser]
+    ./Summit-OS-Web-master/src/components/LiveMap.tsx [Client Component Browser]
+    ./Summit-OS-Web-master/src/app/page.tsx [Client Component Browser]
+    ./Summit-OS-Web-master/src/app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./Summit-OS-Web-master/node_modules/next/dist/client/components/app-router-announcer.js:12:19
+Module not found: Can't resolve 'react-dom'
+reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\next\dist\compiled\react-dom\package.json
+
+Caused by:
+- Access to the cloud file is denied. (os error 395)
+
+Debug info:
+- Execution of <ModuleAssetContext as AssetContext>::resolve_asset failed
+- Execution of resolve failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::with_replaced_request_key_pattern failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::with_replaced_request_key_pattern failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::alternatives failed
+- Execution of *ResolveResult::with_replaced_request_key failed
+- Execution of resolve_into_package failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::with_request failed
+- Execution of resolve_into_folder failed
+- Execution of read_package_json failed
+- Execution of *AssetContent::parse_json failed
+- Execution of <FileSource as Asset>::content failed
+- Execution of <DiskFileSystem as FileSystem>::read failed
+- reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\next\dist\compiled\react-dom\package.json
+- Access to the cloud file is denied. (os error 395)
+Import map: aliased to module 'next' with subpath '/dist/compiled/react-dom' inside of [project]/Summit-OS-Web-master/src/app
+
+
+Import trace:
+  Client Component Browser:
+    ./Summit-OS-Web-master/node_modules/next/dist/client/components/app-router-announcer.js
+    ./Summit-OS-Web-master/node_modules/next/dist/client/components/app-router.js
+    ./Summit-OS-Web-master/node_modules/next/dist/client/app-index.js
+    ./Summit-OS-Web-master/node_modules/next/dist/client/app-next-turbopack.js
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./Summit-OS-Web-master/node_modules/next/dist/client/components/layout-router.js:20:60
+Module not found: Can't resolve 'react-dom'
+reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\next\dist\compiled\react-dom\package.json
+
+Caused by:
+- Access to the cloud file is denied. (os error 395)
+
+Debug info:
+- Execution of <ModuleAssetContext as AssetContext>::resolve_asset failed
+- Execution of resolve failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::with_replaced_request_key_pattern failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::with_replaced_request_key_pattern failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::alternatives failed
+- Execution of *ResolveResult::with_replaced_request_key failed
+- Execution of resolve_into_package failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::with_request failed
+- Execution of resolve_into_folder failed
+- Execution of read_package_json failed
+- Execution of *AssetContent::parse_json failed
+- Execution of <FileSource as Asset>::content failed
+- Execution of <DiskFileSystem as FileSystem>::read failed
+- reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\next\dist\compiled\react-dom\package.json
+- Access to the cloud file is denied. (os error 395)
+Import map: aliased to module 'next' with subpath '/dist/compiled/react-dom' inside of [project]/Summit-OS-Web-master/src/app
+
+
+Import trace:
+  Client Component Browser:
+    ./Summit-OS-Web-master/node_modules/next/dist/client/components/layout-router.js [Client Component Browser]
+    ./Summit-OS-Web-master/node_modules/next/dist/esm/client/components/layout-router.js [Server Component]
+    ./Summit-OS-Web-master/node_modules/next/dist/esm/server/app-render/entry-base.js [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./Summit-OS-Web-master/node_modules/next/dist/client/image-component.js:16:60
+Module not found: Can't resolve 'react-dom'
+reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\next\dist\compiled\react-dom\package.json
+
+Caused by:
+- Access to the cloud file is denied. (os error 395)
+
+Debug info:
+- Execution of <ModuleAssetContext as AssetContext>::resolve_asset failed
+- Execution of resolve failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::with_replaced_request_key_pattern failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::with_replaced_request_key_pattern failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::alternatives failed
+- Execution of *ResolveResult::with_replaced_request_key failed
+- Execution of resolve_into_package failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::with_request failed
+- Execution of resolve_into_folder failed
+- Execution of read_package_json failed
+- Execution of *AssetContent::parse_json failed
+- Execution of <FileSource as Asset>::content failed
+- Execution of <DiskFileSystem as FileSystem>::read failed
+- reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\next\dist\compiled\react-dom\package.json
+- Access to the cloud file is denied. (os error 395)
+Import map: aliased to module 'next' with subpath '/dist/compiled/react-dom' inside of [project]/Summit-OS-Web-master/src/app
+
+
+Import traces:
+  Client Component Browser:
+    ./Summit-OS-Web-master/node_modules/next/dist/client/image-component.js [Client Component Browser]
+    ./Summit-OS-Web-master/node_modules/next/dist/shared/lib/image-external.js [Client Component Browser]
+    ./Summit-OS-Web-master/node_modules/next/image.js [Client Component Browser]
+    ./Summit-OS-Web-master/src/app/page.tsx [Client Component Browser]
+    ./Summit-OS-Web-master/src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Summit-OS-Web-master/node_modules/next/dist/client/image-component.js [Client Component SSR]
+    ./Summit-OS-Web-master/node_modules/next/dist/shared/lib/image-external.js [Client Component SSR]
+    ./Summit-OS-Web-master/node_modules/next/image.js [Client Component SSR]
+    ./Summit-OS-Web-master/src/app/page.tsx [Client Component SSR]
+    ./Summit-OS-Web-master/src/app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./Summit-OS-Web-master/node_modules/next/dist/compiled/react-server-dom-turbopack/cjs/react-server-dom-turbopack-client.browser.production.js:12:16
+Module not found: Can't resolve 'react-dom'
+reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\next\dist\compiled\react-dom\package.json
+
+Caused by:
+- Access to the cloud file is denied. (os error 395)
+
+Debug info:
+- Execution of <ModuleAssetContext as AssetContext>::resolve_asset failed
+- Execution of resolve failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::with_replaced_request_key_pattern failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::with_replaced_request_key_pattern failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::alternatives failed
+- Execution of *ResolveResult::with_replaced_request_key failed
+- Execution of resolve_into_package failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::with_request failed
+- Execution of resolve_into_folder failed
+- Execution of read_package_json failed
+- Execution of *AssetContent::parse_json failed
+- Execution of <FileSource as Asset>::content failed
+- Execution of <DiskFileSystem as FileSystem>::read failed
+- reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\next\dist\compiled\react-dom\package.json
+- Access to the cloud file is denied. (os error 395)
+Import map: aliased to module 'next' with subpath '/dist/compiled/react-dom' inside of [project]/Summit-OS-Web-master/src/app
+
+
+Import trace:
+  Client Component Browser:
+    ./Summit-OS-Web-master/node_modules/next/dist/compiled/react-server-dom-turbopack/cjs/react-server-dom-turbopack-client.browser.production.js
+    ./Summit-OS-Web-master/node_modules/next/dist/compiled/react-server-dom-turbopack/client.browser.js
+    ./Summit-OS-Web-master/node_modules/next/dist/compiled/react-server-dom-turbopack/client.js
+    ./Summit-OS-Web-master/node_modules/next/dist/client/app-index.js
+    ./Summit-OS-Web-master/node_modules/next/dist/client/app-next-turbopack.js
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./Summit-OS-Web-master/node_modules/next/dist/shared/lib/lazy-dynamic/preload-chunks.js:13:19
+Module not found: Can't resolve 'react-dom'
+reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\next\dist\compiled\react-dom\package.json
+
+Caused by:
+- Access to the cloud file is denied. (os error 395)
+
+Debug info:
+- Execution of <ModuleAssetContext as AssetContext>::resolve_asset failed
+- Execution of resolve failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::with_replaced_request_key_pattern failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::with_replaced_request_key_pattern failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::alternatives failed
+- Execution of *ResolveResult::with_replaced_request_key failed
+- Execution of resolve_into_package failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::with_request failed
+- Execution of resolve_into_folder failed
+- Execution of read_package_json failed
+- Execution of *AssetContent::parse_json failed
+- Execution of <FileSource as Asset>::content failed
+- Execution of <DiskFileSystem as FileSystem>::read failed
+- reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\next\dist\compiled\react-dom\package.json
+- Access to the cloud file is denied. (os error 395)
+Import map: aliased to module 'next' with subpath '/dist/compiled/react-dom' inside of [project]/Summit-OS-Web-master/src/app
+
+
+Import traces:
+  Client Component Browser:
+    ./Summit-OS-Web-master/node_modules/next/dist/shared/lib/lazy-dynamic/preload-chunks.js [Client Component Browser]
+    ./Summit-OS-Web-master/node_modules/next/dist/shared/lib/lazy-dynamic/loadable.js [Client Component Browser]
+    ./Summit-OS-Web-master/node_modules/next/dist/shared/lib/app-dynamic.js [Client Component Browser]
+    ./Summit-OS-Web-master/src/app/track/page.tsx [Client Component Browser]
+    ./Summit-OS-Web-master/src/app/track/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Summit-OS-Web-master/node_modules/next/dist/shared/lib/lazy-dynamic/preload-chunks.js [Client Component SSR]
+    ./Summit-OS-Web-master/node_modules/next/dist/shared/lib/lazy-dynamic/loadable.js [Client Component SSR]
+    ./Summit-OS-Web-master/node_modules/next/dist/shared/lib/app-dynamic.js [Client Component SSR]
+    ./Summit-OS-Web-master/src/app/track/page.tsx [Client Component SSR]
+    ./Summit-OS-Web-master/src/app/track/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./Summit-OS-Web-master/node_modules/next/dist/client/app-index.js:14:58
+Module not found: Can't resolve 'react-dom/client'
+reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\next\dist\compiled\react-dom\package.json
+
+Caused by:
+- Access to the cloud file is denied. (os error 395)
+
+Debug info:
+- Execution of <ModuleAssetContext as AssetContext>::resolve_asset failed
+- Execution of resolve failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::with_replaced_request_key_pattern failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::with_replaced_request_key_pattern failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::alternatives failed
+- Execution of *ResolveResult::with_replaced_request_key failed
+- Execution of resolve_into_package failed
+- Execution of read_package_json failed
+- Execution of *AssetContent::parse_json failed
+- Execution of <FileSource as Asset>::content failed
+- Execution of <DiskFileSystem as FileSystem>::read failed
+- reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\next\dist\compiled\react-dom\package.json
+- Access to the cloud file is denied. (os error 395)
+Import map: aliased to module 'next' with subpath '/dist/compiled/react-dom/client' inside of [project]/Summit-OS-Web-master/src/app
+
+
+Import trace:
+  Client Component Browser:
+    ./Summit-OS-Web-master/node_modules/next/dist/client/app-index.js
+    ./Summit-OS-Web-master/node_modules/next/dist/client/app-next-turbopack.js
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./Summit-OS-Web-master/node_modules/react-dom/cjs/react-dom-client.production.js:15:17
+Module not found: Can't resolve 'scheduler'
+reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\scheduler\package.json
+
+Caused by:
+- Access to the cloud file is denied. (os error 395)
+
+Debug info:
+- Execution of <ModuleAssetContext as AssetContext>::resolve_asset failed
+- Execution of resolve failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::alternatives failed
+- Execution of *ResolveResult::with_replaced_request_key failed
+- Execution of resolve_into_package failed
+- Execution of exports_field failed
+- Execution of read_package_json failed
+- Execution of *AssetContent::parse_json failed
+- Execution of <FileSource as Asset>::content failed
+- Execution of <DiskFileSystem as FileSystem>::read failed
+- reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\scheduler\package.json
+- Access to the cloud file is denied. (os error 395)
+
+
+Import trace:
+  Browser:
+    ./Summit-OS-Web-master/node_modules/react-dom/cjs/react-dom-client.production.js
+    ./Summit-OS-Web-master/node_modules/react-dom/client.js
+    ./Summit-OS-Web-master/node_modules/next/dist/client/index.js
+    ./Summit-OS-Web-master/node_modules/next/dist/client/next-turbopack.js
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./Summit-OS-Web-master/node_modules/resend/dist/index.mjs:1:1
+Module not found: Can't resolve 'svix'
+> 1 | import { Webhook } from "svix";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  2 |
+  3 | //#region package.json
+  4 | var version = "6.7.0";
+
+reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\svix\package.json
+
+Caused by:
+- Access to the cloud file is denied. (os error 395)
+
+Debug info:
+- Execution of <ModuleAssetContext as AssetContext>::resolve_asset failed
+- Execution of resolve failed
+- Execution of resolve_internal failed
+- Execution of *ResolveResult::is_unresolvable failed
+- Execution of *ResolveResult::alternatives failed
+- Execution of *ResolveResult::with_replaced_request_key failed
+- Execution of resolve_into_package failed
+- Execution of exports_field failed
+- Execution of read_package_json failed
+- Execution of *AssetContent::parse_json failed
+- Execution of <FileSource as Asset>::content failed
+- Execution of <DiskFileSystem as FileSystem>::read failed
+- reading file C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\node_modules\svix\package.json
+- Access to the cloud file is denied. (os error 395)
+
+
+Import trace:
+  App Route:
+    ./Summit-OS-Web-master/node_modules/resend/dist/index.mjs
+    ./Summit-OS-Web-master/src/app/api/receipt/route.ts
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+    at instantiateModule (turbopack:///[turbopack]/nodejs/runtime.ts:228:5) [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\[turbopack]_runtime.js:715:9])
+    at getOrInstantiateModuleFromParent (turbopack:///[turbopack]/nodejs/runtime.ts:261:10) [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\[turbopack]_runtime.js:738:12])
+    at Context.commonJsRequire [as r] (turbopack:///[turbopack]/shared/runtime-utils.ts:389:10) [C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.next\build\chunks\[turbopack]_runtime.js:249:12])
+    ... collapsed 15 duplicate lines matching above 3 lines 5 times...
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    ... collapsed 5 duplicate lines matching above 1 lines 5 times...
+    at ./Summit-OS-Web-master/node_modules/ (react-google-maps/api/dist/esm.js:3:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at ./Summit-OS-Web-master/node_modules/ (react-google-maps/api/dist/esm.js:4:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at ./Summit-OS-Web-master/node_modules/ (react-leaflet/core/lib/component.js:2:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    ... collapsed 8 duplicate lines matching above 1 lines 8 times...

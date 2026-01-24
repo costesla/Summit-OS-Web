@@ -1,0 +1,178 @@
+{
+  "accessEndpoint": "https://prod-17.centralus.logic.azure.com:443/workflows/c51b31526e494101b8eabf3d4af4317c",
+  "changedTime": "2026-01-22T20:36:05.9285348Z",
+  "createdTime": "2026-01-22T18:42:40.4386579Z",
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "actions": {
+      "HTTP": {
+        "inputs": {
+          "body": {
+            "blob_url": "@{triggerBody()?['url']}"
+          },
+          "headers": {
+            "Content-Type": "application/json"
+          },
+          "method": "POST",
+          "uri": "https://summitsyncfuncus23436.azurewebsites.net/api/process-blob?code=SzXq7UABWUjIYoH_GKYPFeZW_xweN8rddY9kbGaQueBLAzFuzM5_hQ=="
+        },
+        "runAfter": {},
+        "runtimeConfiguration": {
+          "contentTransfer": {
+            "transferMode": "Chunked"
+          }
+        },
+        "type": "Http"
+      }
+    },
+    "contentVersion": "1.0.0.0",
+    "outputs": {},
+    "parameters": {
+      "$connections": {
+        "defaultValue": {},
+        "type": "Object"
+      }
+    },
+    "triggers": {
+      "When_a_blob_is_added_or_modified_(properties_only)_(V2)": {
+        "evaluatedRecurrence": {
+          "frequency": "Minute",
+          "interval": 3
+        },
+        "inputs": {
+          "host": {
+            "connection": {
+              "name": "@parameters('$connections')['azureblob-1']['connectionId']"
+            }
+          },
+          "method": "get",
+          "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('summitstoreus23436'))}/triggers/batch/onupdatedfile",
+          "queries": {
+            "checkBothCreatedAndModifiedDateTime": false,
+            "folderId": "/function-releases",
+            "maxFileCount": 10
+          }
+        },
+        "recurrence": {
+          "frequency": "Minute",
+          "interval": 3
+        },
+        "splitOn": "@triggerBody()",
+        "type": "ApiConnection"
+      }
+    }
+  },
+  "endpointsConfiguration": {
+    "connector": {
+      "outgoingIpAddresses": [
+        {
+          "address": "52.173.241.27"
+        },
+        {
+          "address": "52.173.245.164"
+        },
+        {
+          "address": "13.89.171.80/28"
+        },
+        {
+          "address": "13.89.178.64/27"
+        },
+        {
+          "address": "40.77.68.110"
+        },
+        {
+          "address": "20.98.144.224/27"
+        },
+        {
+          "address": "20.98.145.0/28"
+        },
+        {
+          "address": "20.80.123.134"
+        },
+        {
+          "address": "20.80.123.57"
+        }
+      ]
+    },
+    "workflow": {
+      "accessEndpointIpAddresses": [
+        {
+          "address": "172.212.239.224"
+        },
+        {
+          "address": "172.212.239.225"
+        },
+        {
+          "address": "172.212.239.226"
+        },
+        {
+          "address": "172.212.239.227"
+        },
+        {
+          "address": "172.212.239.228"
+        },
+        {
+          "address": "172.212.239.229"
+        },
+        {
+          "address": "172.212.239.230"
+        },
+        {
+          "address": "172.212.239.231"
+        }
+      ],
+      "outgoingIpAddresses": [
+        {
+          "address": "52.141.218.55"
+        },
+        {
+          "address": "20.109.202.29"
+        },
+        {
+          "address": "20.118.195.232"
+        },
+        {
+          "address": "20.118.195.233"
+        },
+        {
+          "address": "20.118.195.234"
+        },
+        {
+          "address": "20.118.195.235"
+        },
+        {
+          "address": "20.118.195.236"
+        },
+        {
+          "address": "20.118.195.237"
+        },
+        {
+          "address": "20.118.195.238"
+        },
+        {
+          "address": "20.118.195.239"
+        }
+      ]
+    }
+  },
+  "id": "/subscriptions/78c94919-e706-4356-9644-b00b4ecb43ad/resourceGroups/summit-sync-blob-processor_group/providers/Microsoft.Logic/workflows/summit-sync-blob-processor",
+  "location": "centralus",
+  "name": "summit-sync-blob-processor",
+  "parameters": {
+    "$connections": {
+      "value": {
+        "azureblob-1": {
+          "connectionId": "/subscriptions/78c94919-e706-4356-9644-b00b4ecb43ad/resourceGroups/summit-sync-blob-processor_group/providers/Microsoft.Web/connections/azureblob-1",
+          "connectionName": "azureblob-1",
+          "connectionProperties": {},
+          "id": "/subscriptions/78c94919-e706-4356-9644-b00b4ecb43ad/providers/Microsoft.Web/locations/centralus/managedApis/azureblob"
+        }
+      }
+    }
+  },
+  "provisioningState": "Succeeded",
+  "resourceGroup": "summit-sync-blob-processor_group",
+  "state": "Enabled",
+  "type": "Microsoft.Logic/workflows",
+  "version": "08584324927195510489"
+}

@@ -1,0 +1,64 @@
+{
+    "PowerShellVersion": "5.1.22621.4391 (Windows PowerShell) - PowerShell 7.4.0 installed but requires PATH refresh",
+    "InstalledModules": [
+        "Az.Accounts (5.3.2)",
+        "Microsoft.Graph (full rollup)",
+        "Microsoft.PowerShell.SecretManagement",
+        "Microsoft.PowerShell.SecretStore",
+        "oh-my-posh",
+        "PackageManagement",
+        "Pester (5.7.1)",
+        "PnP.PowerShell",
+        "posh-git",
+        "PowerShellGet",
+        "PSFzf",
+        "PSReadLine",
+        "PSScriptAnalyzer",
+        "ThreadJob"
+    ],
+    "MissingModules": [],
+    "RepositoryStatus": "PSGallery - Trusted (InstallationPolicy: Trusted)",
+    "SecuritySettings": {
+        "ExecutionPolicy": "RemoteSigned (CurrentUser scope)",
+        "SSHStatus": "Requires elevation to check - not verified",
+        "SecretManagement": "Modules installed, vault configuration pending",
+        "JEAStatus": "Requires elevation to verify"
+    },
+    "ValidationReport": {
+        "CoreModulesReady": true,
+        "CloudModulesReady": true,
+        "QoLModulesReady": true,
+        "PowerShell7Installed": true,
+        "PowerShell7Active": false,
+        "NuGetProviderInstalled": true,
+        "PSGalleryTrusted": true,
+        "ExecutionPolicySet": true,
+        "OverallStatus": "Success",
+        "Notes": [
+            "PowerShell 7.4.0 successfully installed via winget",
+            "All core modules installed successfully for CurrentUser scope",
+            "All cloud/M365/Graph modules installed (Microsoft.Graph, PnP.PowerShell, Az.Accounts)",
+            "All QoL modules installed (posh-git, PSFzf, oh-my-posh)",
+            "PSGallery repository trusted",
+            "ExecutionPolicy set to RemoteSigned for CurrentUser",
+            "NuGet provider version 2.8.5.208 installed",
+            "PowerShell 7.4.0 requires terminal restart or PATH refresh to become active",
+            "OpenSSH and JEA verification require administrator elevation",
+            "SecretStore vault configuration can be completed with: Register-SecretVault",
+            "AllUsers scope installations require administrator rights - used CurrentUser scope instead"
+        ],
+        "Limitations": [
+            "Non-administrator session - used CurrentUser scope instead of AllUsers",
+            "PowerShell 7.4.0 not yet active in current session (requires PATH refresh/terminal restart)",
+            "OpenSSH client/server status not verified (requires elevation)",
+            "JEA capability not verified (requires elevation)"
+        ]
+    },
+    "NextSteps": [
+        "Restart terminal or refresh PATH to activate PowerShell 7.4.0 (pwsh command)",
+        "Configure SecretStore vault: Register-SecretVault -Name 'DefaultVault' -ModuleName Microsoft.PowerShell.SecretStore -DefaultVault",
+        "Test Microsoft.Graph connection: Connect-MgGraph -Scopes 'User.Read'",
+        "For AllUsers installations, re-run commands with administrator privileges",
+        "To verify OpenSSH: Get-WindowsCapability -Online | Where-Object Name -like 'OpenSSH*' (requires admin)"
+    ]
+}

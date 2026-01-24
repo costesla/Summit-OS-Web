@@ -25,6 +25,7 @@ export interface PriceBreakdown {
         deadheadMiles: string;
         leg1Miles: string;
         duration: string;
+        keySource?: string;
     };
 }
 
