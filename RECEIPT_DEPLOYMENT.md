@@ -19,10 +19,10 @@
 ### 3. Environment Variables ✅
 All credentials configured in `.env.local`:
 ```bash
-GOOGLE_PLACES_API_KEY="AIzaSyC6NYRyfJodRv_-f-ZKA2CcMHwiwLBqPSE"
-OAUTH_TENANT_ID="1cd94367-e5ad-4827-90a9-cc4c6124a340"
-OAUTH_CLIENT_ID="a7d212ac-dd2b-4910-a62a-b623a8ac250c"
-OAUTH_CLIENT_SECRET="Plm8Q~3LDUO4WYabCjPsiBLud-vNQB3EszJGQad1"
+GOOGLE_PLACES_API_KEY="your_google_places_api_key_here"
+OAUTH_TENANT_ID="your_tenant_id_here"
+OAUTH_CLIENT_ID="your_client_id_here"
+OAUTH_CLIENT_SECRET="your_client_secret_here"
 ```
 
 ## ⚠️ Local Testing Issues

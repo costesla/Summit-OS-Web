@@ -12,7 +12,7 @@
   {
     "name": "AzureWebJobsStorage",
     "slotSetting": false,
-    "value": "DefaultEndpointsProtocol=https;EndpointSuffix=core.windows.net;AccountName=summitstoreus23436;AccountKey=VIcvbi1rt0vh1jx1zOx4ehQRzADu32JQliaEnceJwkNWmlRBd/DzdLRjD1dEbpGgkCd3fB/BhHig+AStPEwVvg=="
+    "value": "DefaultEndpointsProtocol=https;EndpointSuffix=core.windows.net;AccountName=summitstoreus23436;AccountKey=YOUR_STORAGE_ACCOUNT_KEY_HERE"
   },
   {
     "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
@@ -27,7 +27,7 @@
   {
     "name": "SQL_CONNECTION_STRING",
     "slotSetting": false,
-    "value": "Driver={ODBC Driver 17 for SQL Server};Server=tcp:summitsqlus23436.database.windows.net,1433;Database=SummitMediaDB;Uid=summitadmin;Pwd=Summ1tSync2026!Azure;Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;"
+    "value": "Driver={ODBC Driver 17 for SQL Server};Server=tcp:summitsqlus23436.database.windows.net,1433;Database=SummitMediaDB;Uid=summitadmin;Pwd=YOUR_SQL_PASSWORD_HERE;Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;"
   },
   {
     "name": "PYTHON_ENABLE_WORKER_EXTENSIONS",
