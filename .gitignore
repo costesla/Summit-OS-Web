@@ -22,8 +22,19 @@ npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
 
-# Local Env Files
-.env*.local
+# Local Env Files - NEVER commit secrets
+.env
+.env.*
+!.env.example
+!.env.template
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.template
+*.env.local
+*.env.production
+*.env.development
+local.settings.json
 .vercel
 
 .vercel
