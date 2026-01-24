@@ -21,7 +21,7 @@ def backfill():
     local_path = r"C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla Camera Roll\2026-01-16"
     container_name = "function-releases"
     function_url = "https://summitsyncfuncus23436.azurewebsites.net/api/process-blob"
-    function_key = "SzXq7UABWUjIYoH_GKYPFeZW_xweN8rddY9kbGaQueBLAzFuzM5_hQ=="
+    function_key = os.environ.get("AZURE_FUNCTION_KEY", "YOUR_FUNCTION_KEY_HERE")
     
     if not storage_conn_str:
         print("Error: AzureWebJobsStorage connection string not found")

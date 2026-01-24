@@ -1,1 +1,60 @@
-{"$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#", "actions": {"HTTP": {"inputs": {"body": {"blob_url": "@{triggerBody()?['url']}"}, "headers": {"Content-Type": "application/json"}, "method": "POST", "uri": "https://summitsyncfuncus23436.azurewebsites.net/api/process-blob?code=SzXq7UABWUjIYoH_GKYPFeZW_xweN8rddY9kbGaQueBLAzFuzM5_hQ=="}, "runAfter": {}, "runtimeConfiguration": {"contentTransfer": {"transferMode": "Chunked"}}, "type": "Http"}}, "contentVersion": "1.0.0.0", "outputs": {}, "parameters": {"$connections": {"defaultValue": {}, "type": "Object"}}, "triggers": {"When_a_blob_is_added_or_modified_(properties_only)_(V2)": {"evaluatedRecurrence": {"frequency": "Minute", "interval": 3}, "inputs": {"host": {"connection": {"name": "@parameters('$connections')['azureblob-1']['connectionId']"}}, "method": "get", "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('summitstoreus23436'))}/triggers/batch/onupdatedfile", "queries": {"checkBothCreatedAndModifiedDateTime": false, "folderId": "/function-releases", "maxFileCount": 10}}, "recurrence": {"frequency": "Minute", "interval": 3}, "splitOn": "@triggerBody()", "type": "ApiConnection"}}}
+{
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "actions": {
+        "HTTP": {
+            "inputs": {
+                "body": {
+                    "blob_url": "@{triggerBody()?['url']}"
+                },
+                "headers": {
+                    "Content-Type": "application/json"
+                },
+                "method": "POST",
+                "uri": "https://summitsyncfuncus23436.azurewebsites.net/api/process-blob?code=YOUR_FUNCTION_KEY_HERE"
+            },
+            "runAfter": {},
+            "runtimeConfiguration": {
+                "contentTransfer": {
+                    "transferMode": "Chunked"
+                }
+            },
+            "type": "Http"
+        }
+    },
+    "contentVersion": "1.0.0.0",
+    "outputs": {},
+    "parameters": {
+        "$connections": {
+            "defaultValue": {},
+            "type": "Object"
+        }
+    },
+    "triggers": {
+        "When_a_blob_is_added_or_modified_(properties_only)_(V2)": {
+            "evaluatedRecurrence": {
+                "frequency": "Minute",
+                "interval": 3
+            },
+            "inputs": {
+                "host": {
+                    "connection": {
+                        "name": "@parameters('$connections')['azureblob-1']['connectionId']"
+                    }
+                },
+                "method": "get",
+                "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('summitstoreus23436'))}/triggers/batch/onupdatedfile",
+                "queries": {
+                    "checkBothCreatedAndModifiedDateTime": false,
+                    "folderId": "/function-releases",
+                    "maxFileCount": 10
+                }
+            },
+            "recurrence": {
+                "frequency": "Minute",
+                "interval": 3
+            },
+            "splitOn": "@triggerBody()",
+            "type": "ApiConnection"
+        }
+    }
+}

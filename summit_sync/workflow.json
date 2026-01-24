@@ -14,7 +14,7 @@
             "Content-Type": "application/json"
           },
           "method": "POST",
-          "uri": "https://summitsyncfuncus23436.azurewebsites.net/api/process-blob?code=SzXq7UABWUjIYoH_GKYPFeZW_xweN8rddY9kbGaQueBLAzFuzM5_hQ=="
+          "uri": "https://summitsyncfuncus23436.azurewebsites.net/api/process-blob?code=YOUR_FUNCTION_KEY_HERE"
         },
         "runAfter": {},
         "runtimeConfiguration": {

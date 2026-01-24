@@ -1,5 +1,5 @@
 # Test process-blob endpoint with sample blob URL
-$key = "SzXq7UABWUjIYoH_GKYPFeZW_xweN8rddY9kbGaQueBLAzFuzM5_hQ=="
+$key = "YOUR_FUNCTION_KEY_HERE"
 $url = "https://summitsyncfuncus23436.azurewebsites.net/api/process-blob?code=$key"
 
 # Get a sample blob URL from storage
