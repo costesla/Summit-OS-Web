@@ -8,6 +8,7 @@ import styles from "./BookingForm.module.css"; // Reuse existing clean styles
 import { PriceBreakdown } from "../utils/pricing";
 import dynamic from "next/dynamic";
 import { useJsApiLoader, Autocomplete } from "@react-google-maps/api";
+import CalendarBooking from "./CalendarBooking";
 
 const RouteMap = dynamic(() => import("./RouteMap"), {
     ssr: false,
@@ -56,6 +57,8 @@ export default function BookingEngine() {
     const [phone, setPhone] = useState("");
     const [passengers, setPassengers] = useState(1);
     const [submitting, setSubmitting] = useState(false);
+    const [showCalendar, setShowCalendar] = useState(false);
+    const [bookingComplete, setBookingComplete] = useState(false);
 
     // Auto-Calculate Quote when inputs change
     useEffect(() => {
@@ -465,48 +468,44 @@ export default function BookingEngine() {
                                 </div>
                             )}
 
-                            <button
-                                onClick={async () => {
-                                    if (!quote || !name || !email || !phone) {
-                                        alert('Please fill in all contact information');
-                                        return;
-                                    }
-
-                                    setSubmitting(true);
-                                    try {
-                                        // Send Email Notification
-                                        await fetch('/api/book', {
-                                            method: 'POST',
-                                            headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({
-                                                name,
-                                                email,
-                                                phone,
-                                                passengers,
-                                                pickup: quote?.debug?.origin || pickup,
-                                                dropoff: quote?.debug?.destination || dropoff,
-                                                price: `$${quote.total.toFixed(2)}`,
-                                                tripDetails: {
-                                                    dist: quote.distance?.toFixed(1) || 'N/A',
-                                                    time: quote.time || 'N/A'
-                                                }
-                                            })
-                                        });
-
-                                        // Redirect to MS Bookings
-                                        window.open('https://outlook.office.com/book/PrivateTrips@costesla.com/?ismsaljsauthenabled', '_blank');
-                                    } catch (e) {
-                                        console.error(e);
-                                        alert('Failed to send notification. Please try again.');
-                                    } finally {
-                                        setSubmitting(false);
-                                    }
-                                }}
-                                disabled={!quote || !name || !email || !phone || submitting}
-                                className={`w-full bg-[#D12630] text-white font-bold py-4 rounded-xl hover:bg-[#b01e26] shadow-lg shadow-red-500/20 flex justify-center items-center gap-2 text-lg transition-all ${(!quote || !name || !email || !phone) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            >
-                                {submitting ? 'Sending...' : 'Proceed to Checkout'} <ChevronRight />
-                            </button>
+                            {/* Calendar Booking or Checkout Button */}
+                            {showCalendar ? (
+                                <CalendarBooking
+                                    customerName={name}
+                                    customerEmail={email}
+                                    customerPhone={phone}
+                                    passengers={passengers}
+                                    pickup={quote?.debug?.origin || pickup}
+                                    dropoff={quote?.debug?.destination || dropoff}
+                                    price={quote ? `$${quote.total.toFixed(2)}` : '$0.00'}
+                                    tripDistance={quote?.distance?.toFixed(1) || undefined}
+                                    tripDuration={quote?.time?.toString() || undefined}
+                                    onBookingComplete={(eventId) => {
+                                        console.log('✅ Booking complete:', eventId);
+                                        setBookingComplete(true);
+                                    }}
+                                />
+                            ) : bookingComplete ? (
+                                <div className="text-center py-8 bg-green-500/10 rounded-xl border border-green-500/30">
+                                    <div className="text-4xl mb-2">✅</div>
+                                    <h4 className="text-xl font-bold text-white mb-2">Booking Confirmed!</h4>
+                                    <p className="text-sm text-gray-300">You'll receive a confirmation email shortly.</p>
+                                </div>
+                            ) : (
+                                <button
+                                    onClick={() => {
+                                        if (!quote || !name || !email || !phone) {
+                                            alert('Please fill in all contact information');
+                                            return;
+                                        }
+                                        setShowCalendar(true);
+                                    }}
+                                    disabled={!quote || !name || !email || !phone}
+                                    className={`w-full bg-[#D12630] text-white font-bold py-4 rounded-xl hover:bg-[#b01e26] shadow-lg shadow-red-500/20 flex justify-center items-center gap-2 text-lg transition-all ${(!quote || !name || !email || !phone) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                >
+                                    Continue to Calendar <ChevronRight />
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>

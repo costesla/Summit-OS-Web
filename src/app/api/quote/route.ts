@@ -4,7 +4,6 @@ import { Client, UnitSystem } from "@googlemaps/google-maps-services-js";
 
 // Initialize Google Maps Client
 const client = new Client({});
-const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
 // Admin Hub (The "Base")
 const ADMIN_BASE_LOCATION = "North Carefree Circle, Colorado Springs, CO";
@@ -21,111 +20,98 @@ export async function POST(request: Request) {
       simpleWaitTime
     } = await request.json();
 
-    if (!GOOGLE_MAPS_API_KEY) {
-      return NextResponse.json({ success: false, error: "Missing Google Maps API Key" }, { status: 500 });
-    }
+    // Key Attempt Logic
+    const PRIMARY_KEY = process.env.GOOGLE_MAPS_API_KEY;
+    const FALLBACK_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
-    // --- ADDRESS VALIDATION LOGIC ---
-    const validate = async (addr: string) => {
-      if (!addr || addr.trim() === "") return "";
-
-      // AUTO-CONTEXT: Default to Colorado Springs if no city/state looks present
-      // This allows users to type "1194 Magnolia" and get "1194 Magnolia St, Colorado Springs, CO"
-      let searchAddr = addr;
-      const lower = addr.toLowerCase();
-
-      // If it doesn't have "CO" or "colorado", append context
-      if (!lower.includes(" co") && !lower.includes("colorado")) {
-        // If it looks like just a street address (starts with number), assume Colorado Springs
-        if (/^\d+/.test(addr) && !lower.includes("springs") && !lower.includes("denver") && !lower.includes("pueblo")) {
-          searchAddr = `${addr}, Colorado Springs, CO`;
-        } else {
-          searchAddr = `${addr}, CO`;
+    // Helper to run Matrix Call with specific Key
+    const runMatrix = async (origins: string[], destinations: string[], useKey: string | undefined, debugName: string) => {
+      if (!useKey) throw new Error(`${debugName} Key Missing`);
+      return await client.distancematrix({
+        params: {
+          origins,
+          destinations,
+          key: useKey,
+          units: UnitSystem.imperial
         }
-      }
-
-      try {
-        const response = await fetch(`https://addressvalidation.googleapis.com/v1:validateAddress?key=${GOOGLE_MAPS_API_KEY}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            address: {
-              regionCode: 'US',
-              addressLines: [searchAddr]
-            },
-            enableUspsCass: true
-          })
-        });
-
-        if (!response.ok) {
-          console.warn(`Validation API Error: ${response.status} ${response.statusText}`);
-          return searchAddr; // Fallback to our enhanced search address
-        }
-
-        const data = await response.json();
-        return data.result?.address?.formattedAddress || searchAddr;
-      } catch (error) {
-        console.warn(`Address Validation Failed for '${addr}':`, error);
-        return searchAddr; // Fallback to our enhanced search address
-      }
+      });
     };
 
-    // Parallel Validation
-    const [validPickup, validDropoff] = await Promise.all([
-      validate(pickup),
-      validate(dropoff)
-    ]);
+    // --- ADDRESS VALIDATION LOGIC (Local) ---
+    const validate = async (addr: string) => {
+      if (!addr || addr.trim() === "") return "";
+      if (addr.includes(",")) return addr;
+      const lower = addr.toLowerCase();
+      if (!lower.includes(" co") && !lower.includes("colorado")) {
+        if (/^\d+/.test(addr) && !lower.includes("springs")) {
+          return `${addr}, Colorado Springs, CO`;
+        }
+        return `${addr}, CO`;
+      }
+      return addr;
+    };
 
+    const validPickup = await validate(pickup);
+    const validDropoff = await validate(dropoff);
     const validStops = await Promise.all((stops || []).map((s: string) => validate(s)));
 
-    // --- REAL DISTANCE CALCULATION ---
+    // --- DISTANCE MATRIX CALLS (SMART RETRY) ---
+    let leg1Res;
+    let effectiveKey = "NONE";
+    let keySource = "NONE";
 
-    // 1. Calculate Leg 1 Distance (Pickup -> Dropoff)
-    const leg1Res = await client.distancematrix({
-      params: {
-        origins: [validPickup],
-        destinations: [validDropoff],
-        key: GOOGLE_MAPS_API_KEY,
-        units: UnitSystem.imperial
+    try {
+      // Attempt 1: Primary Key
+      if (!PRIMARY_KEY) throw new Error("Primary Key Config Missing");
+      leg1Res = await runMatrix([validPickup], [validDropoff], PRIMARY_KEY, "Primary");
+      effectiveKey = PRIMARY_KEY;
+      keySource = "SERVER_PRIMARY";
+    } catch (primaryError: any) {
+      console.warn(`Primary Key Failed (${primaryError.message}). Attempting Fallback...`);
+      // Attempt 2: Fallback Key (Client Key)
+      if (!FALLBACK_KEY) throw new Error(`Primary Failed: ${primaryError.message} | Fallback Missing`);
+      try {
+        leg1Res = await runMatrix([validPickup], [validDropoff], FALLBACK_KEY, "Fallback");
+        effectiveKey = FALLBACK_KEY;
+        keySource = "FALLBACK_CLIENT";
+      } catch (fallbackError: any) {
+        const fbMsg = fallbackError?.response?.data?.error_message || fallbackError.message;
+        const pMsg = primaryError?.response?.data?.error_message || primaryError.message;
+        throw new Error(`All Keys Failed. Primary: ${pMsg} | Fallback: ${fbMsg}`);
       }
-    });
+    }
 
-    if (leg1Res.data.status !== 'OK' || !leg1Res.data.rows[0].elements[0].distance) {
-      throw new Error("Failed to calculate route distance");
+    if (!leg1Res || leg1Res.data.status !== 'OK' || !leg1Res.data.rows[0].elements[0].distance) {
+      console.error("Distance Matrix Invalid Response:", JSON.stringify(leg1Res?.data));
+      throw new Error(`Route Invalid: ${leg1Res?.data?.status ?? 'UNKNOWN'}`);
     }
 
     const leg1DistanceMeters = leg1Res.data.rows[0].elements[0].distance.value;
     const leg1DistanceMiles = leg1DistanceMeters * 0.000621371;
     const leg1DurationText = leg1Res.data.rows[0].elements[0].duration.text;
 
-    // 2. Calculate Deadhead Distance (Admin Base -> Pickup)
-    const deadheadRes = await client.distancematrix({
-      params: {
-        origins: [ADMIN_BASE_LOCATION],
-        destinations: [pickup],
-        key: GOOGLE_MAPS_API_KEY,
-        units: UnitSystem.imperial // CORRECTED: lowercase 'imperial'
-      }
-    });
-
+    // Deadhead (Uses same effective key)
     let deadheadMiles = 0;
-    if (deadheadRes.data.status === 'OK' && deadheadRes.data.rows[0].elements[0].distance) {
-      deadheadMiles = deadheadRes.data.rows[0].elements[0].distance.value * 0.000621371;
+    try {
+      const deadheadRes = await runMatrix([ADMIN_BASE_LOCATION], [pickup], effectiveKey, "Deadhead");
+      if (deadheadRes.data.status === 'OK' && deadheadRes.data.rows[0].elements[0].distance) {
+        deadheadMiles = deadheadRes.data.rows[0].elements[0].distance.value * 0.000621371;
+      }
+    } catch (dhError) {
+      console.warn("Deadhead Calculation Failed (Non-Fatal):", dhError);
+      // Continue with 0 deadhead
     }
 
-    // 3. Teller County & Airport Detection
+    // ... (rest of logic same) ...
     const combinedText = (pickup + dropoff).toLowerCase();
     const isTellerCounty = combinedText.match(/woodland|divide|floroyant|cripple creek|teller/i) !== null;
     const isAirport = combinedText.includes("airport") || combinedText.includes("cos");
 
-    // 4. Calculate Total Distance & Stops
     let totalDistance = leg1DistanceMiles;
     let totalStops = parseInt(stops) || 0;
 
-    // Add Leg 2 if Round Trip
     if (tripType === 'round-trip') {
-      totalDistance += leg1DistanceMiles; // Approximate return
-
+      totalDistance += leg1DistanceMiles;
       const returnStopCount = parseInt(returnStops) || 0;
       totalStops += returnStopCount;
       totalDistance += (totalStops * 3);
@@ -133,7 +119,6 @@ export async function POST(request: Request) {
       totalDistance += (totalStops * 3);
     }
 
-    // 5. Determine Wait Time
     const finalWaitTime = tripType === 'round-trip' ? (parseFloat(layoverHours) || 0) : (simpleWaitTime ? 1 : 0);
 
     const priceParams: TripParams = {
@@ -141,13 +126,12 @@ export async function POST(request: Request) {
       deadheadMiles,
       stops: totalStops,
       isTellerCounty,
-      isAirport, // Pass the flag
+      isAirport,
       waitTimeHours: finalWaitTime
     };
 
     const quote = calculateTripPrice(priceParams);
 
-    // Attach validated address info for Frontend Map
     quote.debug = {
       origin: validPickup,
       destination: validDropoff,
@@ -155,12 +139,12 @@ export async function POST(request: Request) {
       deadheadMiles: deadheadMiles.toFixed(1),
       duration: leg1DurationText,
       isTellerCounty,
-      validated: true
+      validated: true,
+      keySource // Debug info to verify which key worked
     };
 
-    // Populate distance and time for email
     quote.distance = totalDistance;
-    quote.time = parseInt(leg1DurationText) || 0; // Extract minutes from duration text
+    quote.time = parseInt(leg1DurationText) || 0;
 
     return NextResponse.json({
       success: true,
@@ -169,17 +153,23 @@ export async function POST(request: Request) {
 
   } catch (error: any) {
     console.error("Pricing Error:", error);
+
+    // DEBUG: Key Metadata
+    // We try to reconstruct what might have happened
+    const pKey = process.env.GOOGLE_MAPS_API_KEY;
+    const fKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    const pPrefix = pKey ? pKey.substring(0, 5) + "..." : "MISSING";
+    const fPrefix = fKey ? fKey.substring(0, 5) + "..." : "MISSING";
+
     const errorMessage = error?.response?.data?.error_message || error?.message || "Unknown error";
     const errorStatus = error?.response?.data?.status || "UNKNOWN_STATUS";
 
-    // DEBUG: Identify which key is being used
-    const keyUsed = GOOGLE_MAPS_API_KEY;
-    const keyPrefix = keyUsed ? keyUsed.substring(0, 10) + "..." : "NONE";
-    const keyGeneric = process.env.GOOGLE_MAPS_API_KEY ? "SERVER_ENV" : "FALLBACK_PUBLIC";
-
     return NextResponse.json({
       success: false,
-      error: `Pricing Failed: ${errorMessage} (${errorStatus}) | Key: ${keyGeneric} (${keyPrefix})`
+      error: `Pricing Failed: ${errorMessage} (${errorStatus}) | P:${pPrefix} / F:${fPrefix}`,
+      debug: {
+        details: error?.response?.data || "No API response data"
+      }
     }, { status: 500 });
   }
 }

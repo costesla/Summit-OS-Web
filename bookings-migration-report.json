@@ -1,0 +1,81 @@
+{
+    "newBookingsUrl": "PENDING_USER_CREATION",
+    "instructions": "Follow BOOKINGS-SETUP-GUIDE.md to create the booking page, then update the URL in BookingEngine.tsx line ~472",
+    "serviceConfiguration": {
+        "businessName": "COS Tesla Private Trips",
+        "businessEmail": "PrivateTrips@costesla.com",
+        "defaultService": "Private Trip Scheduling",
+        "serviceDuration": "30 minutes",
+        "bufferTime": "15 minutes before/after",
+        "hoursOfOperation": {
+            "Monday": "4:00 AM - 10:00 PM",
+            "Tuesday": "4:00 AM - 10:00 PM",
+            "Wednesday": "4:00 AM - 10:00 PM",
+            "Thursday": "4:00 AM - 10:00 PM",
+            "Friday": "4:00 AM - 12:00 AM (midnight)",
+            "Saturday": "8:00 AM - 11:00 AM",
+            "Sunday": "8:00 AM - 6:00 PM"
+        },
+        "timeZone": "America/Denver (Mountain Time)",
+        "calendarId": "PENDING_USER_CREATION",
+        "backingMailbox": "PrivateTrips@costesla.com"
+    },
+    "codebaseReferences": [
+        {
+            "file": "src/components/BookingEngine.tsx",
+            "line": 472,
+            "currentUrl": "https://outlook.office.com/book/PrivateTrips@costesla.com/?ismsaljsauthenabled",
+            "context": "Direct link in red 'Proceed to Checkout' button (converted from button to <a> tag)",
+            "status": "ACTIVE - This is the ONLY reference that needs updating"
+        },
+        {
+            "file": "src/components/BookingForm.tsx",
+            "line": 200,
+            "currentUrl": "https://outlook.office.com/book/PrivateTrips@costesla.com/?ismsaljsauthenabled",
+            "context": "Old booking form component - NO LONGER USED",
+            "status": "DEPRECATED - Can be removed or left as-is"
+        },
+        {
+            "file": "src/app/page.tsx",
+            "line": "REMOVED",
+            "context": "White 'Book Your Ride' button - REMOVED from homepage",
+            "status": "REMOVED - Streamlined to single red button in BookingEngine"
+        }
+    ],
+    "receiptEngineIntegration": {
+        "status": "ACTIVE",
+        "triggerPoint": "src/app/api/book/route.ts",
+        "emailSender": "PrivateTrips@costesla.com",
+        "functions": [
+            "sendReceiptEmail() - sends customer receipt",
+            "sendAdminNotification() - sends admin notification"
+        ],
+        "notes": "Receipt engine automatically triggers when red button is clicked. No changes needed for receipt integration."
+    },
+    "uiChanges": {
+        "homepage": {
+            "before": "Two buttons: White 'Book Your Ride' + Transparent 'Passenger Cabin'",
+            "after": "Single button: Transparent 'Passenger Cabin'",
+            "rationale": "Removed redundant white button, users book via pricing engine"
+        },
+        "bookingEngine": {
+            "before": "Red button with onClick handler using window.open()",
+            "after": "Red <a> link with direct href to Bookings page",
+            "benefits": [
+                "Better UX - direct link instead of popup",
+                "More accessible - semantic HTML",
+                "Browser-friendly - no popup blockers",
+                "Maintains Tesla red branding"
+            ]
+        }
+    },
+    "status": "READY_FOR_BOOKINGS_URL_UPDATE",
+    "nextSteps": [
+        "1. User creates Microsoft Bookings page following BOOKINGS-SETUP-GUIDE.md",
+        "2. User provides new public booking URL",
+        "3. Update BookingEngine.tsx line ~472 with new URL (ONLY location needed)",
+        "4. Test booking flow end-to-end",
+        "5. Verify receipt engine triggers correctly",
+        "6. Deploy to production"
+    ]
+}

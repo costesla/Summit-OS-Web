@@ -55,10 +55,6 @@ export default function Home() {
             </p>
 
             <div className="flex flex-wrap gap-6 pt-4">
-              <Link href="/book" className="group px-8 py-4 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition-all flex items-center gap-3">
-                Book Your Ride
-                <span className="group-hover:translate-x-1 transition-transform">&rarr;</span>
-              </Link>
               <Link href="/cabin" className="group px-8 py-4 border border-white/20 text-white font-medium rounded-full hover:bg-white/10 transition-all backdrop-blur-md flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-[var(--tesla-red)] animate-pulse"></span>
                 Passenger Cabin
