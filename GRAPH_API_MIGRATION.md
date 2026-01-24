@@ -74,7 +74,7 @@ Add to `.env.local`:
 
 ```bash
 # Google Maps/Places API (existing Vercel variable)
-GOOGLE_MAPS_API_KEY=AIzaSyA5xhbpf14ajrT1axR8iaMw9m2u_jpMGpE
+GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
 
 # Microsoft Graph API OAuth
 OAUTH_TENANT_ID=your_tenant_id_here
