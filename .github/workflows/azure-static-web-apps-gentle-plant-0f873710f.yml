@@ -20,7 +20,7 @@ jobs:
           submodules: true
           lfs: false
 
-      - name: Enterprise Hardening: Neutralize Conflicts
+      - name: "Enterprise Hardening: Neutralize Conflicts"
         run: |
           # Remove all host.json and function.json files found in subdirectories
           # these trigger SWA's "Managed Functions" mode which breaks Next.js Hybrid deployments.
@@ -54,3 +54,4 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_GENTLE_PLANT_0F873710F }}
           action: "close"
+          app_location: "/"
