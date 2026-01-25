@@ -21,7 +21,17 @@ jobs:
           lfs: false
 
       - name: Neutralize any embedded Functions folders
-        run: rm -rf swa-db-connections api functions summit_sync
+        run: |
+          # Remove only top-level folders that confuse SWA's auto-detection
+          rm -rf swa-db-connections functions summit_sync
+          # DO NOT remove src/app/api as that contains Next.js route handlers
+          echo "Checked for conflicting folders."
+
+      - name: Debug Environment
+        run: |
+          node --version
+          npm --version
+          ls -R . | grep -E "host.json|function.json" || echo "No conflicting config files found in root."
 
       - name: Build And Deploy
         id: builddeploy
@@ -31,9 +41,8 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
           app_location: "/" # App source code path
-          output_location: "" # Built app content directory - optional
-          skip_api_build: true
           api_location: "" # Api source code path - optional
+          output_location: "" # Built app content directory - optional
           data_api_location: ""
 
   close_pull_request_job:
