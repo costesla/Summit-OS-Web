@@ -20,15 +20,11 @@ jobs:
           submodules: true
           lfs: false
 
-      - name: "Enterprise Hardening: Neutralize Conflicts"
+      - name: "Surgical Workspace Cleanup"
         run: |
-          # Remove all host.json and function.json files found in subdirectories
-          # these trigger SWA's "Managed Functions" mode which breaks Next.js Hybrid deployments.
-          find . -mindepth 2 -name "host.json" -delete
-          find . -mindepth 2 -name "function.json" -delete
-          # Explicitly remove known conflicting directories
-          rm -rf summit_sync swa-db-connections functions
-          echo "Cleanup complete. Workspace hardened."
+          # Remove only specific folders that confuse SWA's auto-detection
+          rm -rf summit_sync swa-db-connections
+          echo "Cleanup complete. Workspace surgically hardened."
 
       - name: Build And Deploy
         id: builddeploy
