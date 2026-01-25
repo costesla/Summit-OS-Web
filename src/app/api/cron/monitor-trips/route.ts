@@ -2,6 +2,8 @@
 import { NextResponse } from 'next/server';
 import { TessieClient } from '@/lib/tessie';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * CRON: Monitor Outlook Calendar & Correlate with Tessie
  * Run Frequency: Every 15 minutes (defined in vercel.json)

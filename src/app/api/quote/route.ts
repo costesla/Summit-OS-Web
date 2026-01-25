@@ -8,6 +8,8 @@ const client = new Client({});
 // Admin Hub (The "Base")
 const ADMIN_BASE_LOCATION = "North Carefree Circle, Colorado Springs, CO";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   try {
     const {
