@@ -3,6 +3,7 @@ import handler from '@/lib/receipt-combined-handler';
 
 // Force Node.js runtime (not Edge)
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 /**
  * POST /api/receipt-graph
