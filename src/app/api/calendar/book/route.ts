@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+
+export const dynamic = 'force-dynamic';
 import { calculateBuffers, isWithinHours } from '@/lib/calendar';
 
 /**
