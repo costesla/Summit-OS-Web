@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+
+export const dynamic = 'force-dynamic';
 import { calculateDistance } from '@/utils/distance';
 
 export async function GET() {

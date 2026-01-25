@@ -8,6 +8,8 @@ import { generatePrivateTripReceipt } from '@/lib/receipt-engine';
 import { sendReceiptEmailGraph } from '@/lib/receipt-graph';
 import { ReceiptInput } from '@/types/receipt-types';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
     try {
         // Parse request body
