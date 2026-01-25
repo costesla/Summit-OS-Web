@@ -21,7 +21,7 @@ jobs:
           lfs: false
 
       - name: Neutralize any embedded Functions folders
-        run: rm -rf swa-db-connections api functions
+        run: rm -rf swa-db-connections api functions summit_sync
 
       - name: Build And Deploy
         id: builddeploy
