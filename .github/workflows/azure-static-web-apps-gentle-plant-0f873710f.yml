@@ -20,11 +20,12 @@ jobs:
           submodules: true
           lfs: false
 
-      - name: "Surgical Workspace Cleanup"
+      - name: "Aggressive Workspace Sanitization (Nuclear)"
         run: |
-          # Remove only specific folders that confuse SWA's auto-detection
-          rm -rf summit_sync swa-db-connections
-          echo "Cleanup complete. Workspace surgically hardened."
+          # Deep clean: Remove any folder or file that might trigger legacy Function detection
+          rm -rf summit_sync swa-db-connections functions
+          find . -name "host.json" -o -name "local.settings.json" -o -name ".funcignore" | xargs rm -rf
+          echo "Cleanup complete. Workspace is pure Next.js."
 
       - name: Build And Deploy
         id: builddeploy
@@ -36,8 +37,10 @@ jobs:
           app_location: "/" 
           api_location: ""
           output_location: "" 
-          # skip_api_build is FALSE by default to allow Next.js SSR to deploy as the backend
-          data_api_location: ""
+          # Ensure Node version parity
+          app_build_command: "npm run build"
+        env:
+          NODE_VERSION: "20"
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
