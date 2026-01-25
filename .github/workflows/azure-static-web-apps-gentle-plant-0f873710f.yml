@@ -23,9 +23,10 @@ jobs:
       - name: "Aggressive Workspace Sanitization (Nuclear)"
         run: |
           # Deep clean: Remove any folder or file that might trigger legacy Function detection
-          rm -rf summit_sync swa-db-connections functions
+          rm -rf summit_sync swa-db-connections functions swa-cli.config.json
           find . -name "host.json" -o -name "local.settings.json" -o -name ".funcignore" | xargs rm -rf
           echo "Cleanup complete. Workspace is pure Next.js."
+          ls -R
 
       - name: Build And Deploy
         id: builddeploy
