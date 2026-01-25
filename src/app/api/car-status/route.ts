@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // Handle self-signed certs if needed locally
 
