@@ -1,7 +1,9 @@
+const path = require('path');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     output: 'standalone',
-    serverExternalPackages: ["@googlemaps/google-maps-services-js"],
+    outputFileTracingRoot: path.join(__dirname),
 };
 
 module.exports = nextConfig;
