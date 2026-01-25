@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    output: "standalone",
+    output: 'standalone',
+    serverExternalPackages: ["@googlemaps/google-maps-services-js"],
 };
 
 module.exports = nextConfig;
