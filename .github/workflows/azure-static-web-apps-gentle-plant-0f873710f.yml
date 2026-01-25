@@ -33,8 +33,8 @@ jobs:
           app_location: "." # App source code path
           output_location: ".next" # Built app content directory - optional
           skip_api_build: true
-          api_location: "__none__"
-          data_api_location: "__none__"
+          api_location: ""
+          data_api_location: ""
           ###### End of Repository/Build Configurations ######
 
   close_pull_request_job:
