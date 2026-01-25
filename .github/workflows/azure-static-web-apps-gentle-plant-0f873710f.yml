@@ -31,7 +31,9 @@ jobs:
           # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
           app_location: "." # App source code path
           output_location: ".next" # Built app content directory - optional
-          skip_api_build: true # Skip API build to rely on Next.js standalone backend
+          skip_api_build: true
+          api_location: "__none__"
+          data_api_location: "__none__"
           ###### End of Repository/Build Configurations ######
 
   close_pull_request_job:
