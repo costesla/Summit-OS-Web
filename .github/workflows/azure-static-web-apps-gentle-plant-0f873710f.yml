@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - 'fix/swa-nextjs-no-functions'
+      - 'fix/swa-nextjs-no-functions-v2'
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches:
