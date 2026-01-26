@@ -110,6 +110,28 @@ export default function CalendarBooking({
                 throw new Error(bookingData.error || "Failed to create booking");
             }
 
+            // Log to SQL database for unified analytics
+            try {
+                await fetch("https://summitos-api.azurewebsites.net/api/log-private-trip", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        customerName,
+                        customerEmail,
+                        customerPhone,
+                        pickup,
+                        dropoff,
+                        fare: parseFloat(price.replace('$', '')),
+                        appointmentTime: selectedTime,
+                        calendarEventId: bookingData.eventId,
+                        passengers,
+                    }),
+                });
+            } catch (dbError) {
+                // Don't fail the booking if SQL logging fails
+                console.warn("Failed to log to database:", dbError);
+            }
+
             // Send receipt email
             await fetch("/api/book", {
                 method: "POST",
