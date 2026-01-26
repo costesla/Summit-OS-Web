@@ -9,6 +9,9 @@ import azure.functions as func
 
 app = func.FunctionApp()
 
+# Constants
+ADMIN_BASE_LOCATION = "North Carefree Circle, Colorado Springs, CO"
+
 def _env_snapshot():
     try:
         import platform
@@ -585,3 +588,134 @@ def vehicle_location(req: func.HttpRequest) -> func.HttpResponse:
         )
 
 
+@app.route(route="quote", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
+def quote(req: func.HttpRequest) -> func.HttpResponse:
+    """
+    Python Pricing Engine endpoint.
+    Replaces the legacy Next.js /api/quote route.
+    """
+    logging.info("Pricing quote requested")
+    try:
+        req_body = req.get_json()
+        trip_type = req_body.get('tripType', 'one-way')
+        pickup = req_body.get('pickup', '')
+        dropoff = req_body.get('dropoff', '')
+        stops = req_body.get('stops', [])
+        return_stops = req_body.get('returnStops', [])
+        layover_hours = float(req_body.get('layoverHours', 0))
+        simple_wait_time = req_body.get('simpleWaitTime', False)
+
+        # 1. Address Validation (Simple port of TS logic)
+        def validate_addr(addr: str) -> str:
+            if not addr or not addr.strip():
+                return ""
+            if "," in addr:
+                return addr
+            lower = addr.lower()
+            if " co" not in lower and "colorado" not in lower:
+                # If starts with digit and no 'springs', assume CS
+                import re
+                if re.match(r"^\d+", addr) and "springs" not in lower:
+                    return f"{addr}, Colorado Springs, CO"
+                return f"{addr}, CO"
+            return addr
+
+        valid_pickup = validate_addr(pickup)
+        valid_dropoff = validate_addr(dropoff)
+
+        # 2. Distance Matrix Calculation
+        import googlemaps
+        gmaps_key = os.environ.get("GOOGLE_MAPS_API_KEY") or os.environ.get("NEXT_PUBLIC_GOOGLE_MAPS_API_KEY")
+        if not gmaps_key:
+            raise Exception("Google Maps API Key missing from environment")
+
+        gmaps = googlemaps.Client(key=gmaps_key)
+        
+        # Leg 1 Matrix
+        matrix_res = gmaps.distance_matrix(
+            origins=[valid_pickup],
+            destinations=[valid_dropoff],
+            mode="driving",
+            units="imperial"
+        )
+
+        if matrix_res['status'] != 'OK' or not matrix_res['rows'][0]['elements'][0].get('distance'):
+            raise Exception(f"Route Invalid: {matrix_res['status']}")
+
+        leg1_distance_miles = matrix_res['rows[0]']['elements'][0]['distance']['value'] * 0.000621371
+        leg1_duration_text = matrix_res['rows[0]']['elements'][0]['duration']['text']
+
+        # Deadhead Calculation
+        deadhead_miles = 0.0
+        try:
+            dh_res = gmaps.distance_matrix(
+                origins=[ADMIN_BASE_LOCATION],
+                destinations=[valid_pickup],
+                mode="driving",
+                units="imperial"
+            )
+            if dh_res['status'] == 'OK' and dh_res['rows'][0]['elements'][0].get('distance'):
+                deadhead_miles = dh_res['rows'][0]['elements'][0]['distance']['value'] * 0.000621371
+        except Exception as dh_err:
+            logging.warning(f"Deadhead calc failed: {dh_err}")
+
+        # 3. Pricing Parameters
+        import re
+        combined_text = (pickup + dropoff).lower()
+        is_teller_county = bool(re.search(r"woodland|divide|floroyant|cripple creek|teller", combined_text))
+        is_airport = "airport" in combined_text or "cos" in combined_text
+
+        total_distance = leg1_distance_miles
+        total_stops = len(stops)
+
+        if trip_type == 'round-trip':
+            total_distance += leg1_distance_miles
+            total_stops += len(return_stops)
+            # Add small buffer for stop detours if any (matching TS logic)
+            total_distance += (total_stops * 3)
+        else:
+            total_distance += (total_stops * 3)
+
+        wait_time_total = layover_hours if trip_type == 'round-trip' else (1.0 if simple_wait_time else 0.0)
+
+        # 4. Calculate Final Quote
+        from lib.pricing import PricingEngine
+        pricing = PricingEngine()
+        quote_data = pricing.calculate_trip_price(
+            distance_miles=total_distance,
+            stops_count=total_stops,
+            is_teller_county=is_teller_county,
+            wait_time_hours=wait_time_total
+        )
+
+        # 5. Enrich with Debug Info for UI parity
+        quote_data["debug"] = {
+            "origin": valid_pickup,
+            "destination": valid_dropoff,
+            "leg1Miles": f"{leg1_distance_miles:.1f}",
+            "deadheadMiles": f"{deadhead_miles:.1f}",
+            "duration": leg1_duration_text,
+            "isTellerCounty": is_teller_county,
+            "validated": True
+        }
+        quote_data["distance"] = total_distance
+        # Extract numeric minutes from duration text if possible
+        try:
+            minutes = int(re.search(r"(\d+)\s*min", leg1_duration_text).group(1))
+            quote_data["time"] = minutes
+        except:
+            quote_data["time"] = 0
+
+        return func.HttpResponse(
+            json.dumps({"success": True, "quote": quote_data}),
+            status_code=200,
+            mimetype="application/json"
+        )
+
+    except Exception as e:
+        logging.error(f"Pricing Error: {traceback.format_exc()}")
+        return func.HttpResponse(
+            json.dumps({"success": False, "error": str(e)}),
+            status_code=500,
+            mimetype="application/json"
+        )

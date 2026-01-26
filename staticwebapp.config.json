@@ -10,6 +10,10 @@
         {
             "route": "/api/vehicle-location",
             "rewrite": "https://summitos-api.azurewebsites.net/api/vehicle-location"
+        },
+        {
+            "route": "/api/quote",
+            "rewrite": "https://summitos-api.azurewebsites.net/api/quote"
         }
     ]
 }
