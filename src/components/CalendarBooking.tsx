@@ -88,7 +88,7 @@ export default function CalendarBooking({
 
         try {
             // Create calendar booking
-            const bookingResponse = await fetch("/api/calendar/book", {
+            const bookingResponse = await fetch("https://summitos-api.azurewebsites.net/api/calendar-book", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
