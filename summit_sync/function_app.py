@@ -642,8 +642,8 @@ def quote(req: func.HttpRequest) -> func.HttpResponse:
         if matrix_res['status'] != 'OK' or not matrix_res['rows'][0]['elements'][0].get('distance'):
             raise Exception(f"Route Invalid: {matrix_res['status']}")
 
-        leg1_distance_miles = matrix_res['rows[0]']['elements'][0]['distance']['value'] * 0.000621371
-        leg1_duration_text = matrix_res['rows[0]']['elements'][0]['duration']['text']
+        leg1_distance_miles = matrix_res['rows'][0]['elements'][0]['distance']['value'] * 0.000621371
+        leg1_duration_text = matrix_res['rows'][0]['elements'][0]['duration']['text']
 
         # Deadhead Calculation
         deadhead_miles = 0.0
