@@ -60,7 +60,7 @@ export default function CalendarBooking({
             setError(null);
             try {
                 const response = await fetch(
-                    `/api/calendar/availability?date=${selectedDate.toISOString()}`
+                    `https://summitos-api.azurewebsites.net/api/calendar-availability?date=${selectedDate.toISOString()}`
                 );
                 const data = await response.json();
 
@@ -162,8 +162,8 @@ export default function CalendarBooking({
                                     setSelectedTime(null);
                                 }}
                                 className={`p-3 rounded-lg border transition-all text-center ${isSelected
-                                        ? "bg-red-600 border-red-600 text-white"
-                                        : "bg-white/5 border-white/10 text-gray-300 hover:bg-white/10 hover:border-white/20"
+                                    ? "bg-red-600 border-red-600 text-white"
+                                    : "bg-white/5 border-white/10 text-gray-300 hover:bg-white/10 hover:border-white/20"
                                     }`}
                             >
                                 <div className="text-xs font-bold">
@@ -208,8 +208,8 @@ export default function CalendarBooking({
                                         key={slot.start}
                                         onClick={() => setSelectedTime(slot.start)}
                                         className={`p-3 rounded-lg border transition-all ${isSelected
-                                                ? "bg-red-600 border-red-600 text-white"
-                                                : "bg-white/5 border-white/10 text-gray-300 hover:bg-white/10 hover:border-white/20"
+                                            ? "bg-red-600 border-red-600 text-white"
+                                            : "bg-white/5 border-white/10 text-gray-300 hover:bg-white/10 hover:border-white/20"
                                             }`}
                                     >
                                         <div className="text-sm font-bold">{formatTime(slotStart)}</div>
