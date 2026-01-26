@@ -16,7 +16,7 @@ export default function FlightTracker() {
         setFlightData(null);
 
         try {
-            const res = await fetch("/api/flight", {
+            const res = await fetch("https://summitos-api.azurewebsites.net/api/flight-status", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ flightNumber: flightNum }),
