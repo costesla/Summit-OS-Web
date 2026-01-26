@@ -6,3 +6,4 @@ azure-ai-vision-imageanalysis
 msrest>=0.7.1
 requests>=2.31.0
 pyodbc>=4.0.39
+python-dateutil>=2.8.2

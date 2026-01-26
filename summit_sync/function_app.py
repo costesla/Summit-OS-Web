@@ -314,3 +314,90 @@ def log_private_trip(req: func.HttpRequest) -> func.HttpResponse:
             status_code=500,
             mimetype="application/json"
         )
+@app.route(route="calendar-availability", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+def calendar_availability(req: func.HttpRequest) -> func.HttpResponse:
+    """
+    Returns available time slots for a given date.
+    Integrates with Microsoft Graph to check for conflicts.
+    """
+    logging.info("Calendar availability requested")
+    
+    try:
+        from lib.calendar import generate_time_slots_for_day, calculate_buffers, time_ranges_overlap
+        from lib.graph import GraphClient
+        from dateutil import parser
+        
+        # 1. Parse Date Param
+        date_param = req.params.get('date')
+        if not date_param:
+            return func.HttpResponse(
+                json.dumps({"error": "Date parameter required"}),
+                status_code=400, 
+                mimetype="application/json"
+            )
+            
+        try:
+            target_date = parser.parse(date_param)
+        except Exception:
+            return func.HttpResponse(
+                json.dumps({"error": "Invalid date format"}),
+                status_code=400,
+                mimetype="application/json"
+            )
+
+        # 2. Generate Slots
+        all_slots = generate_time_slots_for_day(target_date)
+        
+        # 3. Fetch Graph Events
+        graph = GraphClient()
+        existing_events = graph.get_calendar_events(target_date)
+        
+        # 4. Filter Availability
+        available_slots = []
+        for slot_start in all_slots:
+            buffers = calculate_buffers(slot_start)
+            buf_start = buffers["buffer_start"]
+            buf_end = buffers["buffer_end"]
+            
+            has_conflict = False
+            for event in existing_events:
+                # Graph API returns ISO strings in event['start']['dateTime']
+                evt_start = parser.parse(event['start']['dateTime'])
+                evt_end = parser.parse(event['end']['dateTime'])
+                
+                # Normalize timezones (naive vs aware comparison fix)
+                # Ideally convert everything to UTC or comparison-compatible
+                if evt_start.tzinfo and buf_start.tzinfo is None:
+                    buf_start = buf_start.replace(tzinfo=evt_start.tzinfo)
+                    buf_end = buf_end.replace(tzinfo=evt_start.tzinfo)
+                elif buf_start.tzinfo and evt_start.tzinfo is None:
+                    evt_start = evt_start.replace(tzinfo=buf_start.tzinfo)
+                    evt_end = evt_end.replace(tzinfo=buf_start.tzinfo)
+
+                if time_ranges_overlap(buf_start, buf_end, evt_start, evt_end):
+                    has_conflict = True
+                    break
+            
+            if not has_conflict:
+                available_slots.append({
+                    "start": slot_start.isoformat(),
+                    "end": buffers["appointment_end"].isoformat()
+                })
+
+        return func.HttpResponse(
+            json.dumps({
+                "success": True, 
+                "date": target_date.isoformat(), 
+                "slots": available_slots
+            }),
+            status_code=200,
+            mimetype="application/json"
+        )
+
+    except Exception as e:
+        logging.error(f"Error in calendar_availability: {traceback.format_exc()}")
+        return func.HttpResponse(
+            json.dumps({"success": False, "error": str(e)}),
+            status_code=500,
+            mimetype="application/json"
+        )
