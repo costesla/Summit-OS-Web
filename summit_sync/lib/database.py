@@ -10,28 +10,35 @@ class DatabaseClient:
         self.connection_string = os.environ.get("SQL_CONNECTION_STRING")
 
     def get_connection(self):
+        server = os.environ.get("SQL_SERVER_NAME")
+        database = os.environ.get("SQL_DATABASE_NAME")
+
+        # 1. Prefer Managed Identity (Passwordless) if server/db configured
+        if server and database:
+            try:
+                logging.info(f"Connecting to {database} on {server} via Managed Identity...")
+                conn_str = (
+                    f"DRIVER={{ODBC Driver 18 for SQL Server}};"
+                    f"SERVER={server};"
+                    f"DATABASE={database};"
+                    "Authentication=ActiveDirectoryMsi;"
+                    "Encrypt=yes;"
+                    "TrustServerCertificate=no;" # Strict for production
+                    "Connection Timeout=30;"
+                )
+                return pyodbc.connect(conn_str)
+            except Exception as e:
+                logging.warning(f"Managed Identity connection failed, checking legacy fallback: {e}")
+
+        # 2. Legacy Fallback (Connection String)
         if not self.connection_string:
-            logging.error("SQL_CONNECTION_STRING not set.")
+            logging.error("No SQL configuration found (Server/DB or ConnectionString).")
             return None
-        try:
-            # Check if we should use Managed Identity (if no password in conn string)
-            # This allows us to transition seamlessly from local (password) to Azure (token)
-            if "Password=" not in self.connection_string and "PWD=" not in self.connection_string:
-                logging.info("Attempting Managed Identity connection to SQL...")
-                credential = DefaultAzureCredential()
-                token = credential.get_token("https://database.windows.net/.default")
-                
-                # SQL Server requires the token to be packed in a specific way for pyodbc
-                token_bytes = token.token.encode("UTF-16-LE")
-                token_struct = struct.pack(f"<I{len(token_bytes)}s", len(token_bytes), token_bytes)
-                
-                # Attribute 1254 in pyodbc is used for the database token
-                SQL_COPT_SS_ACCESS_TOKEN = 1254
-                return pyodbc.connect(self.connection_string, attrs_before={SQL_COPT_SS_ACCESS_TOKEN: token_struct})
             
+        try:
             return pyodbc.connect(self.connection_string)
         except Exception as e:
-            logging.error(f"Failed to connect to SQL: {e}")
+            logging.error(f"Failed to connect to SQL via legacy string: {e}")
             return None
 
     def execute_query_with_results(self, query):
