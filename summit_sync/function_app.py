@@ -189,7 +189,7 @@ def sql_probe(req: func.HttpRequest) -> func.HttpResponse:
             status_code=500,
             mimetype="application/json"
         )
-@app.route(route="dashboard-summary", methods=["GET"], auth_level=func.AuthLevel.FUNCTION)
+@app.route(route="dashboard-summary", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
 def dashboard_summary(req: func.HttpRequest) -> func.HttpResponse:
     """
     Returns a unified summary for the Command Center:
