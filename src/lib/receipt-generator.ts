@@ -6,9 +6,9 @@
 import { ReceiptInput } from '@/types/receipt-types';
 
 interface ReceiptTemplateData {
-    input: ReceiptInput;
-    hasPhoto: boolean;
-    photoAttribution?: string;
+  input: ReceiptInput;
+  hasPhoto: boolean;
+  photoAttribution?: string;
 }
 
 /**
@@ -16,18 +16,18 @@ interface ReceiptTemplateData {
  * Mobile-first, inline CSS, table-based layout for Outlook compatibility
  */
 export function generateReceiptHTML(data: ReceiptTemplateData): string {
-    const { input, hasPhoto, photoAttribution } = data;
-    const { TripData, FareData, PaymentData, PassengerData } = input;
+  const { input, hasPhoto, photoAttribution } = data;
+  const { TripData, FareData, PaymentData, PassengerData } = input;
 
-    const greeting = PassengerData.firstName
-        ? `Hi ${PassengerData.firstName},`
-        : 'Hello,';
+  const greeting = PassengerData.firstName
+    ? `Hi ${PassengerData.firstName},`
+    : 'Hello,';
 
-    const paymentLine = PaymentData.Last4
-        ? `${PaymentData.Method} ending in ${PaymentData.Last4}`
-        : PaymentData.Method;
+  const paymentLine = PaymentData.Last4
+    ? `${PaymentData.Method} ending in ${PaymentData.Last4}`
+    : PaymentData.Method;
 
-    return `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -45,7 +45,7 @@ export function generateReceiptHTML(data: ReceiptTemplateData): string {
           <!-- Header -->
           <tr>
             <td style="background-color:#000000;color:#ffffff;padding:30px 20px;text-align:center;">
-              <h1 style="margin:0;font-size:24px;font-weight:bold;">COS Tesla LLC</h1>
+              <h1 style="margin:0;font-size:24px;font-weight:bold;">SummitOS LLC</h1>
               <p style="margin:5px 0 0;color:#aaaaaa;font-size:14px;text-transform:uppercase;letter-spacing:1px;">Private Trip Receipt</p>
             </td>
           </tr>
@@ -179,8 +179,8 @@ export function generateReceiptHTML(data: ReceiptTemplateData): string {
           <!-- Footer -->
           <tr>
             <td style="background-color:#f5f5f5;padding:25px 20px;text-align:center;">
-              <p style="margin:0 0 5px;font-size:14px;font-weight:bold;color:#333333;">COS Tesla LLC</p>
-              <p style="margin:0 0 15px;font-size:12px;color:#888888;">Support: <a href="mailto:peter.teehan@costesla.com" style="color:#D12630;text-decoration:none;">peter.teehan@costesla.com</a></p>
+              <p style="margin:0 0 5px;font-size:14px;font-weight:bold;color:#333333;">SummitOS LLC</p>
+              <p style="margin:0 0 15px;font-size:12px;color:#888888;">Support: <a href="mailto:peter.teehan@costesla.com" style="color:#06b6d4;text-decoration:none;">peter.teehan@costesla.com</a></p>
               <p style="margin:0;font-size:11px;color:#999999;line-height:1.5;">Addresses included because this is an official passenger receipt.</p>
             </td>
           </tr>
@@ -198,18 +198,18 @@ export function generateReceiptHTML(data: ReceiptTemplateData): string {
  * Generate plain text email body for receipt
  */
 export function generateReceiptText(data: ReceiptTemplateData): string {
-    const { input, hasPhoto, photoAttribution } = data;
-    const { TripData, FareData, PaymentData, PassengerData } = input;
+  const { input, hasPhoto, photoAttribution } = data;
+  const { TripData, FareData, PaymentData, PassengerData } = input;
 
-    const greeting = PassengerData.firstName
-        ? `Hi ${PassengerData.firstName},`
-        : 'Hello,';
+  const greeting = PassengerData.firstName
+    ? `Hi ${PassengerData.firstName},`
+    : 'Hello,';
 
-    const paymentLine = PaymentData.Last4
-        ? `${PaymentData.Method} ending in ${PaymentData.Last4}`
-        : PaymentData.Method;
+  const paymentLine = PaymentData.Last4
+    ? `${PaymentData.Method} ending in ${PaymentData.Last4}`
+    : PaymentData.Method;
 
-    let text = `COS TESLA LLC — PRIVATE TRIP RECEIPT
+  let text = `SUMMITOS LLC — PRIVATE TRIP RECEIPT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ${greeting}
@@ -243,11 +243,11 @@ Base Fare:                          $${FareData.Base}
 Time & Distance:                    $${FareData.TimeDistance}
 Extras (Tolls/Parking):             $${FareData.Extras}`;
 
-    if (FareData.Discount !== '0.00') {
-        text += `\nDiscount:                          -$${FareData.Discount}`;
-    }
+  if (FareData.Discount !== '0.00') {
+    text += `\nDiscount:                          -$${FareData.Discount}`;
+  }
 
-    text += `
+  text += `
 Subtotal:                           $${FareData.Subtotal}
 Tax:                                $${FareData.Tax}
 Tip:                                $${FareData.Tip}
@@ -262,17 +262,17 @@ Payment Method:    ${paymentLine}
 Authorization:     ${PaymentData.AuthCode}
 `;
 
-    if (TripData.Notes) {
-        text += `
+  if (TripData.Notes) {
+    text += `
 
 NOTES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ${TripData.Notes}
 `;
-    }
+  }
 
-    text += `
+  text += `
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 COS Tesla LLC
@@ -281,5 +281,5 @@ Support: peter.teehan@costesla.com
 Addresses included because this is an official passenger receipt.
 `;
 
-    return text;
+  return text;
 }

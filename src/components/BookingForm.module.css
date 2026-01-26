@@ -68,9 +68,10 @@
     letter-spacing: 0.05em;
 }
 
-.group input, 
+.group input,
 .group select {
-    background: rgba(255, 255, 255, 0.05); /* Glass effect */
+    background: rgba(255, 255, 255, 0.05);
+    /* Glass effect */
     border: 1px solid rgba(255, 255, 255, 0.1);
     color: white;
     padding: 0.75rem 1rem;
@@ -82,9 +83,10 @@
 .group input:focus,
 .group select:focus {
     outline: none;
-    border-color: var(--color-primary); /* Tesla Red */
+    border-color: #06b6d4;
+    /* Cyber Teal */
     background: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 0 0 2px rgba(209, 38, 48, 0.2);
+    box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2);
 }
 
 .group input::placeholder {

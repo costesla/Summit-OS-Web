@@ -118,15 +118,15 @@ export default function BookingForm() {
                     {/* Pricing Display */}
                     <div style={{
                         padding: '1rem',
-                        background: 'rgba(255, 0, 50, 0.1)',
+                        background: 'rgba(6, 182, 212, 0.1)',
                         borderRadius: '8px',
                         textAlign: 'center',
-                        border: '1px solid #ff3333',
+                        border: '1px solid rgba(6, 182, 212, 0.3)',
                         marginTop: '1rem',
                         transition: 'all 0.3s ease'
                     }}>
-                        <small style={{ textTransform: 'uppercase', letterSpacing: '1px', color: '#ff3333' }}>Estimated Price</small>
-                        <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#ff3333' }}>
+                        <small style={{ textTransform: 'uppercase', letterSpacing: '1px', color: '#06b6d4' }}>Estimated Price</small>
+                        <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#06b6d4' }}>
                             {isCalculating ? "Calculating..." : (priceQuote || "Enter locations")}
                         </div>
                         {tripDetails && !isCalculating && priceQuote && (
@@ -182,7 +182,7 @@ export default function BookingForm() {
                         <button type="button" onClick={() => setBookingStep('quote')} className="flex-1 bg-transparent border border-white/30 text-white py-3 rounded-lg hover:bg-white/10">
                             ← Back
                         </button>
-                        <button type="submit" disabled={isSubmitting} className="flex-[2] bg-[#D12630] text-white font-bold py-3 rounded-lg hover:bg-[#b01e26] shadow-lg shadow-red-500/20">
+                        <button type="submit" disabled={isSubmitting} className="flex-[2] bg-cyan-600 text-white font-bold py-3 rounded-lg hover:bg-cyan-700 shadow-lg shadow-cyan-500/20">
                             {isSubmitting ? "Saving..." : "Confirm & Select Time"}
                         </button>
                     </div>
@@ -197,10 +197,10 @@ export default function BookingForm() {
                     <p className="text-sm text-gray-300 mb-6">We have your trip info. Now simply choose your time slot.</p>
 
                     <a
-                        href="https://outlook.office.com/book/PrivateTrips@costesla.com/?ismsaljsauthenabled"
+                        href="https://outlook.office.com/book/SummitOS@costesla.com/?ismsaljsauthenabled"
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center justify-center gap-2 bg-[#D12630] text-white px-6 py-4 rounded-lg font-bold hover:bg-[#b01e26] transition-colors w-full text-lg shadow-lg hover:shadow-red-500/20"
+                        className="flex items-center justify-center gap-2 bg-cyan-600 text-white px-6 py-4 rounded-lg font-bold hover:bg-cyan-700 transition-colors w-full text-lg shadow-lg hover:shadow-cyan-500/20"
                     >
                         📅 Select Time Slot
                     </a>

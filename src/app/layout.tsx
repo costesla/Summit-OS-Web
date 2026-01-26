@@ -11,8 +11,8 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: 'Costesla | Premium Private Transport',
-  description: 'Executive black car service in Colorado Springs.',
+  title: 'SummitOS | Premium Private Transport',
+  description: 'The executive standard for private transport in Colorado Springs.',
 }
 
 export default function RootLayout({

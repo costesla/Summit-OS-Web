@@ -141,7 +141,7 @@ export default function CalendarBooking({
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
             <div className="flex items-center gap-3 mb-4">
-                <Calendar className="text-red-500" size={24} />
+                <Calendar className="text-cyan-500" size={24} />
                 <h3 className="text-xl font-bold text-white">Select Your Appointment Time</h3>
             </div>
 
@@ -162,7 +162,7 @@ export default function CalendarBooking({
                                     setSelectedTime(null);
                                 }}
                                 className={`p-3 rounded-lg border transition-all text-center ${isSelected
-                                    ? "bg-red-600 border-red-600 text-white"
+                                    ? "bg-cyan-600 border-cyan-600 text-white shadow-lg shadow-cyan-500/20"
                                     : "bg-white/5 border-white/10 text-gray-300 hover:bg-white/10 hover:border-white/20"
                                     }`}
                             >
@@ -208,7 +208,7 @@ export default function CalendarBooking({
                                         key={slot.start}
                                         onClick={() => setSelectedTime(slot.start)}
                                         className={`p-3 rounded-lg border transition-all ${isSelected
-                                            ? "bg-red-600 border-red-600 text-white"
+                                            ? "bg-cyan-600 border-cyan-600 text-white shadow-lg shadow-cyan-500/20"
                                             : "bg-white/5 border-white/10 text-gray-300 hover:bg-white/10 hover:border-white/20"
                                             }`}
                                     >
@@ -240,7 +240,7 @@ export default function CalendarBooking({
 
             {/* Error Message */}
             {error && (
-                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-sm text-red-100">
+                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-sm text-red-200">
                     {error}
                 </div>
             )}
@@ -249,7 +249,7 @@ export default function CalendarBooking({
             <button
                 onClick={handleBooking}
                 disabled={!selectedTime || booking}
-                className={`w-full bg-[#D12630] text-white font-bold py-4 rounded-xl hover:bg-[#b01e26] shadow-lg shadow-red-500/20 flex justify-center items-center gap-2 text-lg transition-all ${!selectedTime || booking ? "opacity-50 cursor-not-allowed" : ""
+                className={`w-full bg-cyan-600 text-white font-bold py-4 rounded-xl hover:bg-cyan-700 shadow-lg shadow-cyan-500/20 flex justify-center items-center gap-2 text-lg transition-all ${!selectedTime || booking ? "opacity-50 cursor-not-allowed" : ""
                     }`}
             >
                 {booking ? "Confirming Booking..." : "Confirm Appointment"}

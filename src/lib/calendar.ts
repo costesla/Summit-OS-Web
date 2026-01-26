@@ -44,12 +44,12 @@ export function getHoursForDay(date: Date): HoursOfOperation | null {
     const day = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
 
     const hours: Record<number, HoursOfOperation> = {
-        1: { start: "04:00", end: "22:00" }, // Monday
-        2: { start: "04:00", end: "22:00" }, // Tuesday
-        3: { start: "04:00", end: "22:00" }, // Wednesday
-        4: { start: "04:00", end: "22:00" }, // Thursday
-        5: { start: "04:00", end: "00:00" }, // Friday (midnight)
-        6: { start: "08:00", end: "11:00" }, // Saturday
+        1: { start: "04:30", end: "22:00" }, // Monday
+        2: { start: "04:30", end: "22:00" }, // Tuesday
+        3: { start: "04:30", end: "22:00" }, // Wednesday
+        4: { start: "04:30", end: "22:00" }, // Thursday
+        5: { start: "04:30", end: "00:00" }, // Friday (Midnight)
+        6: { start: "08:00", end: "23:00" }, // Saturday
         0: { start: "08:00", end: "18:00" }, // Sunday
     };
 

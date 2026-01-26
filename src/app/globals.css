@@ -5,20 +5,28 @@
 :root {
   --color-text-main: #ffffff;
   --color-text-muted: #a0a0a0;
+  --color-background: #05080a;
 
-  /* Gradients */
-  /* Gradients */
-  --gradient-metallic: linear-gradient(135deg, hsl(345, 50%, 40%) 0%, hsl(345, 100%, 50%) 50%, hsl(345, 50%, 40%) 100%);
+  /* HSL Base for Glows (Cyan/Teal) */
+  --primary-hsl: 185, 90%, 55%;
+  --secondary-hsl: 195, 80%, 40%;
+
+  /* Gradients - Shifted from Red to metallic Teal/Cyan */
+  --gradient-metallic: linear-gradient(135deg, hsl(185, 70%, 40%) 0%, hsl(190, 100%, 60%) 50%, hsl(185, 70%, 40%) 100%);
   --gradient-dark: linear-gradient(to bottom, var(--color-background), #000000);
 
   /* Shadows & Glows */
-  --glow-primary: 0 0 20px hsla(var(--primary-hsl), 0.5);
-  --shadow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --glow-primary: 0 0 30px hsla(185, 100%, 50%, 0.4);
+  --shadow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
 
   /* Border Radius */
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 20px;
+
+  /* Legacy Red mappings (for components still using them) */
+  --tesla-red: #00f2ff;
+  /* Now Cyan */
 }
 
 * {
@@ -138,8 +146,8 @@ input:focus,
 select:focus,
 textarea:focus {
   outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 10px hsla(var(--primary-hsl), 0.2);
+  border-color: hsla(185, 100%, 50%, 0.5);
+  box-shadow: 0 0 15px hsla(185, 100%, 50%, 0.2);
 }
 
 label {

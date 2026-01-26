@@ -54,8 +54,8 @@ export default function DashboardStatus() {
 
     return (
         <div className="bg-[#111] border border-white/10 rounded-3xl p-6 space-y-6">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--tesla-red)] flex items-center gap-2">
-                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-cyan-400 flex items-center gap-2">
+                <span className="w-2 h-2 bg-cyan-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(6,182,212,0.5)]"></span>
                 System Status
             </h3>
 

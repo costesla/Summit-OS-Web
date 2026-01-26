@@ -15,7 +15,7 @@ const LiveMap = dynamic(() => import("../components/LiveMap"), {
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-[var(--background)] text-white overflow-x-hidden selection:bg-[var(--tesla-red)] selection:text-white">
+    <main className="min-h-screen bg-[var(--background)] text-white overflow-x-hidden selection:bg-cyan-500 selection:text-white">
 
       {/* 1. HERO SECTION: PIKES PEAK PARALLAX */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -39,8 +39,8 @@ export default function Home() {
           {/* Left: Copy */}
           <div className="lg:col-span-6 space-y-10 animate-in fade-in slide-in-from-left duration-1000">
             <div>
-              <h2 className="flex items-center gap-3 text-xs font-bold tracking-[0.4em] text-[var(--tesla-red)] mb-6 uppercase">
-                <span className="w-8 h-[1px] bg-[var(--tesla-red)]"></span>
+              <h2 className="flex items-center gap-3 text-xs font-bold tracking-[0.4em] text-cyan-400 mb-6 uppercase">
+                <span className="w-8 h-[1px] bg-cyan-400"></span>
                 El Paso County • Colorado
               </h2>
               <h1 className="text-6xl lg:text-8xl font-bold leading-tight tracking-tighter">
@@ -57,7 +57,7 @@ export default function Home() {
 
             <div className="flex flex-wrap gap-6 pt-4">
               <Link href="/cabin" className="group px-8 py-4 border border-white/20 text-white font-medium rounded-full hover:bg-white/10 transition-all backdrop-blur-md flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[var(--tesla-red)] animate-pulse"></span>
+                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
                 Passenger Cabin
               </Link>
             </div>
@@ -67,7 +67,7 @@ export default function Home() {
           <div className="lg:col-span-6 relative h-[500px] lg:h-[700px] w-full animate-in fade-in scale-in duration-1000 delay-300 translate-x-12 lg:translate-x-20">
             <Image
               src="/hero-car.png"
-              alt="2024 Tesla Model Y Stealth Grey"
+              alt="SummitOS Luxury Fleet"
               fill
               className="object-contain drop-shadow-2xl scale-110 mix-blend-screen"
               priority
@@ -88,7 +88,7 @@ export default function Home() {
             <div className="bg-[#111]/50 rounded-[2.8rem] p-8 lg:p-12 border border-white/5">
               <div className="flex flex-col lg:flex-row items-center justify-between mb-8 gap-4">
                 <h3 className="text-xl font-light tracking-wide text-white">
-                  <span className="font-bold text-[var(--tesla-red)]">01.</span> Instant Quote
+                  <span className="font-bold text-cyan-400">01.</span> Instant Quote
                 </h3>
                 <div className="h-[1px] flex-1 bg-white/10 mx-6 hidden lg:block"></div>
                 <span className="text-xs font-mono text-gray-500 uppercase tracking-widest">Powered by Google Distance Matrix</span>
@@ -123,8 +123,8 @@ export default function Home() {
               <div className="absolute bottom-0 left-0 w-full p-8 bg-gradient-to-t from-black via-black/80 to-transparent">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-xs font-mono text-[var(--tesla-red)] mb-1">LIVE TELEMETRY</div>
-                    <div className="text-2xl font-bold">"Thor" Location</div>
+                    <div className="text-xs font-mono text-cyan-400 mb-1">LIVE TELEMETRY</div>
+                    <div className="text-2xl font-bold">SummitOS Fleet Location</div>
                   </div>
                   <div className="w-12 h-12 rounded-full border border-white/20 flex items-center justify-center bg-white/5 backdrop-blur-md">
                     <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]"></span>
@@ -143,7 +143,7 @@ export default function Home() {
                 <p className="text-lg text-gray-400 font-light leading-relaxed">
                   Driving El Paso County isn't just about GPS; it's about knowing the terrain.
                   From the icy switchbacks of <strong>Broadmoor Bluffs</strong> to the unpaved expanses of <strong>Black Forest</strong>,
-                  we combine 20 years of local IT expertise with Tesla's advanced AWD and FSD suite.
+                  we combine 20 years of local IT expertise with our advanced AWD fleet.
                 </p>
               </div>
 
@@ -166,7 +166,7 @@ export default function Home() {
       <section className="py-32 bg-[#050505] relative">
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto text-center mb-20">
-            <h2 className="text-4xl lg:text-5xl font-bold mb-6">Your Private <span className="text-[var(--tesla-red)]">Command Center</span>.</h2>
+            <h2 className="text-4xl lg:text-5xl font-bold mb-6">Your Private <span className="text-cyan-400">Command Center</span>.</h2>
             <p className="text-xl text-gray-400 font-light">
               Control your environment from your phone. No apps to install. Just a secure link.
             </p>
@@ -174,8 +174,8 @@ export default function Home() {
 
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Card 1 */}
-            <div className="bg-[#111] p-8 rounded-3xl border border-white/5 hover:border-white/20 transition-all group">
-              <div className="w-12 h-12 rounded-2xl bg-[var(--tesla-red)]/10 flex items-center justify-center mb-6 text-[var(--tesla-red)] group-hover:scale-110 transition-transform">
+            <div className="bg-[#111] p-8 rounded-3xl border border-white/5 hover:border-cyan-500/30 transition-all group">
+              <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 flex items-center justify-center mb-6 text-cyan-400 group-hover:scale-110 transition-transform">
                 <span className="text-2xl">🌡️</span>
               </div>
               <h3 className="text-xl font-bold mb-3">Climate Control</h3>
@@ -209,7 +209,7 @@ export default function Home() {
           </div>
 
           <div className="mt-16 text-center">
-            <Link href="/cabin" className="inline-flex items-center gap-3 text-lg font-medium border-b border-[var(--tesla-red)] pb-1 hover:text-[var(--tesla-red)] transition-colors">
+            <Link href="/cabin" className="inline-flex items-center gap-3 text-lg font-medium border-b border-cyan-500 pb-1 hover:text-cyan-400 transition-colors">
               Access Cabin Dashboard <span className="text-xl">&rarr;</span>
             </Link>
           </div>
@@ -222,7 +222,7 @@ export default function Home() {
 
           {/* Pricing Logic */}
           <div className="bg-[#0f0f0f] rounded-[3rem] p-12 border border-white/10 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--tesla-red)]/5 blur-[100px] rounded-full pointer-events-none" />
+            <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 blur-[100px] rounded-full pointer-events-none" />
 
             <h3 className="text-3xl font-bold mb-8">Fairness Engine v2.0</h3>
             <div className="space-y-8">
@@ -291,10 +291,10 @@ export default function Home() {
 
           <div className="border-t border-white/10 pt-10 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-xs text-gray-600">
-              &copy; {new Date().getFullYear()} COS Tesla LLC.
+              &copy; {new Date().getFullYear()} SummitOS LLC.
             </p>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10">
-              <div className="w-1.5 h-1.5 rounded-full bg-[var(--tesla-red)]"></div>
+              <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.5)]"></div>
               <span className="text-[10px] text-gray-400 font-bold tracking-widest uppercase">Powered by SummitOS</span>
             </div>
           </div>

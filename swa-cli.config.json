@@ -1,0 +1,10 @@
+{
+    "configurations": {
+        "summitos-prod": {
+            "appLocation": ".",
+            "outputLocation": ".next",
+            "apiLocation": "",
+            "dataApiLocation": ""
+        }
+    }
+}

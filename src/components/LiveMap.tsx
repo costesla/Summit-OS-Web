@@ -49,7 +49,7 @@ export default function LiveMap({ className = "h-[600px]", overridePos }: { clas
         if (overridePos) return; // Don't fetch if controlled
 
         try {
-            const res = await fetch('/api/track');
+            const res = await fetch('https://summitos-api.azurewebsites.net/api/vehicle-location');
             if (res.ok) {
                 const data = await res.json();
                 setPos(data);
@@ -88,7 +88,7 @@ export default function LiveMap({ className = "h-[600px]", overridePos }: { clas
     }, []);
 
     if (error && !pos) return <div className="text-red-400 text-center p-10">Tracker Offline</div>;
-    if (!pos) return <div className="text-blue-400 text-center p-10 animate-pulse">Connecting to Tesla GPS...</div>;
+    if (!pos) return <div className="text-cyan-400 text-center p-10 animate-pulse">Connecting to SummitOS Fleet GPS...</div>;
 
     // Privacy Shield Mode
     if (pos.privacy) {
