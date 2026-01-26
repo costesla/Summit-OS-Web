@@ -401,3 +401,96 @@ def calendar_availability(req: func.HttpRequest) -> func.HttpResponse:
             status_code=500,
             mimetype="application/json"
         )
+
+@app.route(route="calendar-book", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
+def calendar_book(req: func.HttpRequest) -> func.HttpResponse:
+    """
+    Creates a calendar appointment with buffers.
+    """
+    logging.info("Calendar booking requested")
+    
+    try:
+        from lib.calendar import calculate_buffers, get_hours_for_day
+        from lib.graph import GraphClient
+        from dateutil import parser
+        
+        req_body = req.get_json()
+        
+        # Extract fields
+        customer_name = req_body.get('customerName')
+        customer_email = req_body.get('customerEmail')
+        customer_phone = req_body.get('customerPhone')
+        pickup = req_body.get('pickup')
+        dropoff = req_body.get('dropoff')
+        appointment_start_str = req_body.get('appointmentStart')
+        duration = int(req_body.get('duration', 60))
+        price = req_body.get('price')
+        passengers = req_body.get('passengers')
+
+        # Validation
+        if not all([customer_name, customer_email, appointment_start_str, pickup, dropoff]):
+             return func.HttpResponse(
+                json.dumps({"success": False, "error": "Missing required fields"}),
+                status_code=400,
+                mimetype="application/json"
+            )
+
+        start_time = parser.parse(appointment_start_str)
+
+        # Calculate Buffers
+        # calculate_buffers returns dict with datetime objects
+        buffers = calculate_buffers(start_time, duration)
+        
+        buffer_start = buffers['buffer_start']
+        appointment_end = buffers['appointment_end']
+        buffer_end = buffers['buffer_end']
+        
+        # Create Calendar Event
+        graph = GraphClient()
+        subject = f"Private Trip: {pickup} -> {dropoff}"
+        body = f"""
+        <h2>Private Trip Booking</h2>
+        <p><strong>Customer:</strong> {customer_name}</p>
+        <p><strong>Email:</strong> {customer_email}</p>
+        <p><strong>Phone:</strong> {customer_phone}</p>
+        <p><strong>Passengers:</strong> {passengers}</p>
+        <p><strong>Pickup:</strong> {pickup}</p>
+        <p><strong>Dropoff:</strong> {dropoff}</p>
+        <p><strong>Price:</strong> {price}</p>
+        <hr>
+        <p><strong>Appointment Time:</strong> {start_time.isoformat()}</p>
+        <p><strong>Buffer Start (Arrival):</strong> {buffer_start.isoformat()}</p>
+        <p><strong>Buffer End (Break):</strong> {buffer_end.isoformat()}</p>
+        """
+        
+        # We book the FULL buffer duration in Outlook to block the time
+        event = graph.create_calendar_event(
+            subject=subject,
+            body=body,
+            start_dt=buffer_start,
+            end_dt=buffer_end,
+            location=pickup,
+            attendee_email=customer_email
+        )
+        
+        logging.info(f"Calendar event created: {event.get('id')}")
+
+        return func.HttpResponse(
+            json.dumps({
+                "success": True, 
+                "eventId": event.get('id'),
+                "appointmentStart": start_time.isoformat(),
+                "bufferStart": buffer_start.isoformat(),
+                "bufferEnd": buffer_end.isoformat()
+            }),
+            status_code=200,
+            mimetype="application/json"
+        )
+
+    except Exception as e:
+        logging.error(f"Error in calendar_book: {traceback.format_exc()}")
+        return func.HttpResponse(
+            json.dumps({"success": False, "error": str(e)}),
+            status_code=500,
+            mimetype="application/json"
+        )
