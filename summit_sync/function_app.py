@@ -610,9 +610,10 @@ def sql_identity_check(req: func.HttpRequest) -> func.HttpResponse:
         token_bytes = token_obj.token.encode("utf-16-le")
         token_struct = struct.pack(f"<I{len(token_bytes)}s", len(token_bytes), token_bytes)
         
-        # Using ODBC Driver 18 as recommended in mission text
-        conn_str = f"DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={server};DATABASE={database};"
-        SQL_COPT_SS_ACCESS_TOKEN = 1256
+        # Using Driver 18 with explicit security settings
+        conn_str = f"DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={server};DATABASE={database};Encrypt=yes;TrustServerCertificate=yes;Connection Timeout=30;"
+        # Changed from 1256 to 1254 to match existing project logic in database.py
+        SQL_COPT_SS_ACCESS_TOKEN = 1254
         
         with pyodbc.connect(conn_str, attrs_before={SQL_COPT_SS_ACCESS_TOKEN: token_struct}) as conn:
             cursor = conn.cursor()
