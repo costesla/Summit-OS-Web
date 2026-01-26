@@ -58,3 +58,54 @@ class GraphClient:
             
         data = resp.json()
         return data.get("value", [])
+
+    def create_calendar_event(self, subject, body, start_dt, end_dt, location, attendee_email):
+        token = self._get_token()
+        url = f"https://graph.microsoft.com/v1.0/users/{self.user_email}/calendar/events"
+        
+        # Ensure UTC/ISO format
+        # Graph expects: "2026-01-26T12:00:00" and specifying TimeZone, or full ISO with Z
+        # We will use the specific structure required by Graph
+        
+        payload = {
+            "subject": subject,
+            "body": {
+                "contentType": "HTML",
+                "content": body
+            },
+            "start": {
+                "dateTime": start_dt.isoformat(),
+                "timeZone": "America/Denver" # Enforce local time for clarity in Outlook
+            },
+            "end": {
+                "dateTime": end_dt.isoformat(),
+                "timeZone": "America/Denver"
+            },
+            "location": {
+                "displayName": location
+            },
+            "attendees": [
+                {
+                    "emailAddress": {
+                        "address": attendee_email
+                    },
+                    "type": "required"
+                }
+            ],
+            "categories": ["Private Trip", "SummitOS"],
+            "showAs": "busy",
+            "isReminderOn": True,
+            "reminderMinutesBeforeStart": 30
+        }
+        
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
+        
+        resp = requests.post(url, headers=headers, json=payload)
+        if not resp.ok:
+            logging.error(f"Graph Create Error: {resp.text}")
+            resp.raise_for_status()
+            
+        return resp.json()
