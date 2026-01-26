@@ -30,6 +30,8 @@ jobs:
           api_location: "" # No integrated functions
           output_location: "out" # Next.js static export directory
           is_static_export: true # Force pure static deployment to avoid function conflicts
+        env:
+          NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event_name == 'closed'
     runs-on: ubuntu-latest
