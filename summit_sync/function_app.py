@@ -405,6 +405,83 @@ def calendar_availability(req: func.HttpRequest) -> func.HttpResponse:
             mimetype="application/json"
         )
 
+@app.route(route="log-private-trip", methods=["POST"], auth_level=func.AuthLevel.FUNCTION)
+def log_private_trip(req: func.HttpRequest) -> func.HttpResponse:
+    """
+    Logs a private booking from the website to SQL database.
+    Called when a customer books via costesla.com
+    """
+    logging.info("Private trip logging requested from website")
+    try:
+        req_body = req.get_json()
+        
+        # Extract booking data
+        pickup = req_body.get('pickup')
+        dropoff = req_body.get('dropoff')
+        fare = req_body.get('fare', 0)
+        customer_name = req_body.get('customerName')
+        customer_email = req_body.get('customerEmail')
+        customer_phone = req_body.get('customerPhone')
+        appointment_time = req_body.get('appointmentTime')
+        calendar_event_id = req_body.get('calendarEventId')
+        passengers = req_body.get('passengers', 1)
+        
+        # Generate trip ID
+        from datetime import datetime
+        trip_id = f"Private-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+        
+        # Parse appointment time
+        if appointment_time:
+            try:
+                from dateutil.parser import parse
+                appt_dt = parse(appointment_time)
+                timestamp_epoch = appt_dt.timestamp()
+            except:
+                timestamp_epoch = time.time()
+        else:
+            timestamp_epoch = time.time()
+        
+        # Prepare trip data for database
+        trip_data = {
+            "trip_id": trip_id,
+            "classification": "Private_Website",
+            "start_location": pickup,
+            "end_location": dropoff,
+            "fare": fare,
+            "timestamp_epoch": timestamp_epoch,
+            "payment_method": "Website_Booking",
+            "raw_text": f"Customer: {customer_name} | Email: {customer_email} | Phone: {customer_phone} | Passengers: {passengers} | Calendar Event: {calendar_event_id}"
+        }
+        
+        # Save to database
+        from lib.database import DatabaseClient
+        db = DatabaseClient()
+        db.save_trip(trip_data)
+        
+        logging.info(f"Successfully logged private trip: {trip_id}")
+        
+        return func.HttpResponse(
+            json.dumps({
+                "success": True,
+                "trip_id": trip_id,
+                "message": "Private booking logged to database"
+            }),
+            status_code=200,
+            mimetype="application/json"
+        )
+        
+    except Exception as e:
+        logging.error(f"Error logging private trip: {traceback.format_exc()}")
+        return func.HttpResponse(
+            json.dumps({
+                "success": False,
+                "error": str(e)
+            }),
+            status_code=500,
+            mimetype="application/json"
+        )
+
+
 @app.route(route="calendar-book", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
 def calendar_book(req: func.HttpRequest) -> func.HttpResponse:
     """
