@@ -538,3 +538,95 @@ def flight_status(req: func.HttpRequest) -> func.HttpResponse:
             status_code=500,
             mimetype="application/json"
         )
+
+@app.route(route="vehicle-location", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+def vehicle_location(req: func.HttpRequest) -> func.HttpResponse:
+    """
+    Returns public vehicle telemetry (sanitized).
+    """
+    logging.info("Vehicle location requested")
+    
+    try:
+        from lib.tessie import TessieClient
+        
+        tessie = TessieClient()
+        vin = os.environ.get("TESSIE_VIN")
+        
+        if not vin:
+             return func.HttpResponse(
+                json.dumps({"error": "TESSIE_VIN not configured"}),
+                status_code=500,
+                mimetype="application/json"
+            )
+
+        data = tessie.get_public_state(vin)
+        
+        # Determine status code based on data availability
+        # Note: Frontend handles null/privacy gracefully
+        if not data:
+             return func.HttpResponse(
+                json.dumps({"error": "Vehicle not reachable"}),
+                status_code=404,
+                mimetype="application/json"
+            )
+
+        return func.HttpResponse(
+            json.dumps(data), # Helper returns dict directly
+            status_code=200,
+            mimetype="application/json"
+        )
+
+    except Exception as e:
+        logging.error(f"Error in vehicle_location: {traceback.format_exc()}")
+        return func.HttpResponse(
+            json.dumps({"error": str(e)}),
+            status_code=500,
+            mimetype="application/json"
+        )
+
+@app.route(route="sql-identity-check", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+def sql_identity_check(req: func.HttpRequest) -> func.HttpResponse:
+    """
+    Temporary probe to validate Managed Identity SQL connection (Passwordless).
+    """
+    import pyodbc
+    import struct
+    
+    server = os.environ.get("SQL_SERVER_NAME")
+    database = os.environ.get("SQL_DATABASE_NAME")
+    
+    if not server or not database:
+        return func.HttpResponse(
+            json.dumps({"status": "Failed", "error": "Missing SQL_SERVER_NAME or SQL_DATABASE_NAME"}),
+            status_code=400,
+            mimetype="application/json"
+        )
+
+    try:
+        from azure.identity import DefaultAzureCredential
+        credential = DefaultAzureCredential()
+        # Note: Added .token property access and utf-16-le encoding as per requested logic
+        token_obj = credential.get_token("https://database.windows.net/.default")
+        token_bytes = token_obj.token.encode("utf-16-le")
+        token_struct = struct.pack(f"<I{len(token_bytes)}s", len(token_bytes), token_bytes)
+        
+        # Using ODBC Driver 18 as recommended in mission text
+        conn_str = f"DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={server};DATABASE={database};"
+        SQL_COPT_SS_ACCESS_TOKEN = 1256
+        
+        with pyodbc.connect(conn_str, attrs_before={SQL_COPT_SS_ACCESS_TOKEN: token_struct}) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT @@VERSION")
+            version = cursor.fetchone()[0]
+            return func.HttpResponse(
+                json.dumps({"status": "Connected", "version": version}),
+                status_code=200,
+                mimetype="application/json"
+            )
+    except Exception as e:
+        logging.error(f"Identity Probe Failed: {traceback.format_exc()}")
+        return func.HttpResponse(
+            json.dumps({"status": "Failed", "error": str(e)}),
+            status_code=500,
+            mimetype="application/json"
+        )
