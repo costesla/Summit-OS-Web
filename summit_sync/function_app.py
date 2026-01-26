@@ -605,17 +605,19 @@ def sql_identity_check(req: func.HttpRequest) -> func.HttpResponse:
     try:
         from azure.identity import DefaultAzureCredential
         credential = DefaultAzureCredential()
-        # Note: Added .token property access and utf-16-le encoding as per requested logic
-        token_obj = credential.get_token("https://database.windows.net/.default")
-        token_bytes = token_obj.token.encode("utf-16-le")
-        token_struct = struct.pack(f"<I{len(token_bytes)}s", len(token_bytes), token_bytes)
+        # Using Driver 18 native MSI authentication
+        # This removes the need for manual token packing and struct.pack
+        conn_str = (
+            f"DRIVER={{ODBC Driver 18 for SQL Server}};"
+            f"SERVER={server};"
+            f"DATABASE={database};"
+            "Authentication=ActiveDirectoryMsi;" # Native Driver Handshake
+            "Encrypt=yes;"
+            "TrustServerCertificate=yes;"
+            "Connection Timeout=30;"
+        )
         
-        # Using Driver 18 with explicit security settings
-        conn_str = f"DRIVER={{ODBC Driver 18 for SQL Server}};SERVER={server};DATABASE={database};Encrypt=yes;TrustServerCertificate=yes;Connection Timeout=30;"
-        # Changed from 1256 to 1254 to match existing project logic in database.py
-        SQL_COPT_SS_ACCESS_TOKEN = 1254
-        
-        with pyodbc.connect(conn_str, attrs_before={SQL_COPT_SS_ACCESS_TOKEN: token_struct}) as conn:
+        with pyodbc.connect(conn_str) as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT @@VERSION")
             version = cursor.fetchone()[0]
