@@ -1,5 +1,5 @@
 /**
- * TypeScript types for COS Tesla LLC Private Trip Receipt System
+ * TypeScript types for SummitOS LLC Private Trip Receipt System
  * These types match the ReceiptInput JSON contract for generating
  * business-grade passenger receipts with full addresses.
  */

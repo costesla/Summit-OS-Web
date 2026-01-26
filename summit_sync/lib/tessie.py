@@ -208,3 +208,56 @@ class TessieClient:
         except Exception as e:
             logging.error(f"Error fetching Tessie charges: {str(e)}")
             return []
+    def get_public_state(self, vin):
+        """
+        Fetches vehicle state with strict Privacy Geofencing.
+        Returns 'privacy=True' if at Home/HQ.
+        """
+        state = self.get_vehicle_state(vin)
+        if not state:
+            return None
+            
+        drive_state = state.get('drive_state')
+        if not drive_state:
+            # Car likely asleep -> Assume parked at home for safety
+            return {
+                "privacy": True,
+                "status": "Vehicle is engaging Start-up Systems..."
+            }
+            
+        lat = drive_state.get('latitude')
+        lon = drive_state.get('longitude')
+        
+        # Hardcoded Geofence (HQ)
+        HOME_LAT = 38.886637
+        HOME_LONG = -104.804107
+        
+        # Haversine Distance
+        from math import radians, cos, sin, asin, sqrt
+        def haversine(lat1, lon1, lat2, lon2):
+             R = 3959.87433 # Miles
+             dLat = radians(lat2 - lat1)
+             dLon = radians(lon2 - lon1)
+             lat1 = radians(lat1)
+             lat2 = radians(lat2)
+             a = sin(dLat/2)**2 + cos(lat1)*cos(lat2) * sin(dLon/2)**2
+             c = 2 * asin(sqrt(a))
+             return R * c
+             
+        dist = haversine(HOME_LAT, HOME_LONG, lat, lon)
+        
+        if dist < 0.25:
+             return {
+                "privacy": True,
+                "status": "Vehicle is currently docked."
+            }
+            
+        # Return Public Data
+        return {
+            "lat": lat,
+            "long": lon,
+            "speed": drive_state.get('speed') or 0,
+            "heading": drive_state.get('heading'),
+            "ignition": drive_state.get('shift_state') is not None,
+            "updatedAt": datetime.now().isoformat()
+        }

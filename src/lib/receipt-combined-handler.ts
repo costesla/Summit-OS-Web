@@ -228,7 +228,7 @@ export default async function handler(input: ReceiptInput): Promise<ReceiptOutpu
 <html>
   <body style="font-family:Segoe UI, Arial, sans-serif; background:#f6f8fb; padding:24px;">
     <div style="max-width:600px; margin:0 auto; background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:20px;">
-      <h2 style="margin-top:0;">COS Tesla LLC — Private Trip Receipt</h2>
+      <h2 style="margin-top:0;">SummitOS LLC — Private Trip Receipt</h2>
       <p>${firstName}</p>
       ${placeFigure}
       <h3>Trip Summary</h3>
@@ -272,7 +272,7 @@ export default async function handler(input: ReceiptInput): Promise<ReceiptOutpu
     // 5.3 TEXT RECEIPT
     ///////////////////////////////////////////////
 
-    const text = `COS Tesla LLC — Private Trip Receipt
+    const text = `SummitOS LLC — Private Trip Receipt
 
 ${firstName}
 
@@ -324,7 +324,7 @@ Questions? Contact peter.teehan@costesla.com`;
             },
             { name: "List-Unsubscribe-Post", value: "List-Unsubscribe=One-Click" },
             { name: "X-Mailer", value: "SummitOS Receipt Engine" },
-            { name: "X-Sent-By", value: "COS Tesla LLC" }
+            { name: "X-Sent-By", value: "SummitOS LLC" }
         ],
         body: { contentType: "HTML", content: html }
     };

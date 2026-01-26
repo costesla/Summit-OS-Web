@@ -159,7 +159,7 @@ export default function BookingEngine() {
                     </button>
                     <button
                         onClick={() => setTripType('round-trip')}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${tripType === 'round-trip' ? 'bg-red-600 text-white shadow-lg shadow-red-500/20' : 'text-gray-400 hover:text-white'}`}
+                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${tripType === 'round-trip' ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-500/20' : 'text-gray-400 hover:text-white'}`}
                     >
                         Round Trip
                     </button>
@@ -192,7 +192,7 @@ export default function BookingEngine() {
                                     value={pickup}
                                     onChange={e => setPickup(e.target.value)}
                                     placeholder="e.g., 1 Lake Ave, Colorado Springs"
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-red-500 transition-colors text-lg"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-cyan-500 transition-colors text-lg"
                                 />
                             </Autocomplete>
                         ) : (
@@ -201,7 +201,7 @@ export default function BookingEngine() {
                                 value={pickup}
                                 onChange={e => setPickup(e.target.value)}
                                 placeholder="e.g., 1194 Magnolia St"
-                                className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-red-500 transition-colors text-lg"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-cyan-500 transition-colors text-lg"
                             />
                         )}
                     </div>
@@ -209,16 +209,16 @@ export default function BookingEngine() {
                     {stops.map((stop, idx) => (
                         <div key={idx} className="relative flex gap-2 items-end animate-in slide-in-from-left-4 fade-in duration-300">
                             <div className="flex-1">
-                                <label className="text-[10px] font-bold text-red-400 tracking-widest uppercase mb-1 block">Stop #{idx + 1} (+ $5.00)</label>
+                                <label className="text-[10px] font-bold text-cyan-400 tracking-widest uppercase mb-1 block">Stop #{idx + 1} (+ $5.00)</label>
                                 <input
                                     type="text"
                                     value={stop}
                                     onChange={e => updateStop(idx, e.target.value)}
                                     placeholder="Add Stop..."
-                                    className="w-full bg-white/5 border border-red-500/30 rounded-xl p-3 text-white focus:outline-none focus:border-red-500 transition-colors"
+                                    className="w-full bg-white/5 border border-cyan-500/30 rounded-xl p-3 text-white focus:outline-none focus:border-cyan-500 transition-colors"
                                 />
                             </div>
-                            <button onClick={() => removeStop(idx)} className="p-4 bg-white/5 hover:bg-red-500/20 rounded-xl border border-white/10 transition-colors text-gray-400 hover:text-red-400">
+                            <button onClick={() => removeStop(idx)} className="p-4 bg-white/5 hover:bg-cyan-500/20 rounded-xl border border-white/10 transition-colors text-gray-400 hover:text-cyan-400">
                                 <X size={20} />
                             </button>
                         </div>
@@ -250,7 +250,7 @@ export default function BookingEngine() {
                                     value={dropoff}
                                     onChange={e => setDropoff(e.target.value)}
                                     placeholder="e.g., 1 Lake Ave, Colorado Springs"
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-red-500 transition-colors text-lg"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-cyan-500 transition-colors text-lg"
                                 />
                             </Autocomplete>
                         ) : (
@@ -259,7 +259,7 @@ export default function BookingEngine() {
                                 value={dropoff}
                                 onChange={e => setDropoff(e.target.value)}
                                 placeholder="e.g., 1194 Magnolia St"
-                                className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-red-500 transition-colors text-lg"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-cyan-500 transition-colors text-lg"
                             />
                         )}
                     </div>
@@ -287,7 +287,7 @@ export default function BookingEngine() {
                             </div>
                         ) : (
                             <label className="flex items-center gap-4 cursor-pointer group">
-                                <div className={`w-6 h-6 rounded border ${waitTime ? 'bg-red-600 border-red-600' : 'border-gray-500 group-hover:border-white'} flex items-center justify-center transition-colors`}>
+                                <div className={`w-6 h-6 rounded border ${waitTime ? 'bg-cyan-600 border-cyan-600' : 'border-gray-500 group-hover:border-white'} flex items-center justify-center transition-colors`}>
                                     {waitTime && <Clock size={16} className="text-white" />}
                                 </div>
                                 <input type="checkbox" className="hidden" checked={waitTime} onChange={e => setWaitTime(e.target.checked)} />
@@ -303,7 +303,7 @@ export default function BookingEngine() {
                     {tripType === 'round-trip' && (
                         <div className="pt-6 border-t border-white/10 animate-in fade-in slide-in-from-top-10 duration-500">
                             <div className="flex items-center gap-2 mb-4">
-                                <div className="h-6 w-1 bg-red-600 rounded-full"></div>
+                                <div className="h-6 w-1 bg-cyan-600 rounded-full"></div>
                                 <h4 className="text-lg font-bold text-white uppercase tracking-tight">Return Journey</h4>
                             </div>
 
@@ -316,10 +316,10 @@ export default function BookingEngine() {
                                 {returnStops.map((stop, idx) => (
                                     <div key={idx} className="relative flex gap-2 items-end animate-in slide-in-from-left-4 fade-in duration-300">
                                         <div className="flex-1">
-                                            <label className="text-[10px] font-bold text-red-400 tracking-widest uppercase mb-1 block">Return Stop #{idx + 1}</label>
-                                            <input type="text" value={stop} onChange={e => updateReturnStop(idx, e.target.value)} placeholder="Add Stop on way back..." className="w-full bg-white/5 border border-red-500/30 rounded-xl p-3 text-white focus:outline-none focus:border-red-500 transition-colors" list="locations" />
+                                            <label className="text-[10px] font-bold text-cyan-400 tracking-widest uppercase mb-1 block">Return Stop #{idx + 1}</label>
+                                            <input type="text" value={stop} onChange={e => updateReturnStop(idx, e.target.value)} placeholder="Add Stop on way back..." className="w-full bg-white/5 border border-cyan-500/30 rounded-xl p-3 text-white focus:outline-none focus:border-cyan-500 transition-colors" list="locations" />
                                         </div>
-                                        <button onClick={() => removeReturnStop(idx)} className="p-4 bg-white/5 hover:bg-red-500/20 rounded-xl border border-white/10 transition-colors text-gray-400 hover:text-red-400"><X size={20} /></button>
+                                        <button onClick={() => removeReturnStop(idx)} className="p-4 bg-white/5 hover:bg-cyan-500/20 rounded-xl border border-white/10 transition-colors text-gray-400 hover:text-cyan-400"><X size={20} /></button>
                                     </div>
                                 ))}
 
@@ -355,7 +355,7 @@ export default function BookingEngine() {
 
                         {/* Round Trip Badge Overlay */}
                         {tripType === 'round-trip' && (
-                            <div className="absolute bottom-2 right-2 bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg uppercase tracking-widest z-10">
+                            <div className="absolute bottom-2 right-2 bg-cyan-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg uppercase tracking-widest z-10">
                                 Round Trip Active
                             </div>
                         )}
@@ -392,7 +392,7 @@ export default function BookingEngine() {
                                         </div>
                                     )}
                                     {quote.deadheadFee > 0 && (
-                                        <div className="flex justify-between text-sm text-red-300">
+                                        <div className="flex justify-between text-sm text-cyan-300">
                                             <span>Dispatch Fee (Deadhead)</span>
                                             <span>${quote.deadheadFee.toFixed(2)}</span>
                                         </div>
@@ -440,21 +440,21 @@ export default function BookingEngine() {
                                         placeholder="Full Name"
                                         value={name}
                                         onChange={e => setName(e.target.value)}
-                                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-red-500 transition-colors"
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-cyan-500 transition-colors"
                                     />
                                     <input
                                         type="email"
                                         placeholder="Email Address"
                                         value={email}
                                         onChange={e => setEmail(e.target.value)}
-                                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-red-500 transition-colors"
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-cyan-500 transition-colors"
                                     />
                                     <input
                                         type="tel"
                                         placeholder="Phone Number"
                                         value={phone}
                                         onChange={e => setPhone(e.target.value)}
-                                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-red-500 transition-colors"
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-cyan-500 transition-colors"
                                     />
                                     <input
                                         type="number"
@@ -463,7 +463,7 @@ export default function BookingEngine() {
                                         placeholder="# of Passengers"
                                         value={passengers}
                                         onChange={e => setPassengers(parseInt(e.target.value) || 1)}
-                                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-red-500 transition-colors"
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-cyan-500 transition-colors"
                                     />
                                 </div>
                             )}
@@ -501,7 +501,7 @@ export default function BookingEngine() {
                                         setShowCalendar(true);
                                     }}
                                     disabled={!quote || !name || !email || !phone}
-                                    className={`w-full bg-[#D12630] text-white font-bold py-4 rounded-xl hover:bg-[#b01e26] shadow-lg shadow-red-500/20 flex justify-center items-center gap-2 text-lg transition-all ${(!quote || !name || !email || !phone) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    className={`w-full bg-cyan-600 text-white font-bold py-4 rounded-xl hover:bg-cyan-700 shadow-lg shadow-cyan-500/20 flex justify-center items-center gap-2 text-lg transition-all ${(!quote || !name || !email || !phone) ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 >
                                     Continue to Calendar <ChevronRight />
                                 </button>

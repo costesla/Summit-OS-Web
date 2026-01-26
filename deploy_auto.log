@@ -1,0 +1,177 @@
+
+Welcome to Azure Static Web Apps CLI (2.0.7)
+
+Getting config file options from "swa-cli.config.json"...
+Config file does not exist at "swa-cli.config.json"
+Resolving outputLocation=. full path...
+Deploying front-end files from folder:
+  C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master
+
+Consider providing api-language and version using --api-language and --api-version flags,
+    otherwise default values apiLanguage: node and apiVersion: 16 will apply
+Deployment token found in Environment Variables:
+ - SWA_CLI_DEPLOYMENT_TOKEN: <hidden>
+
+Deploying to environment: production
+
+Trying to read workflow config with values:
+ - appLocation: C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master
+ - outputLocation: C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master
+ - apiLocation: <undefined>
+ - dataApiLocation: <undefined>
+Found a SWA workflow file: C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.github\workflows\azure-static-web-apps-gentle-plant-0f873710f.yml
+ - app_build_command: <undefined>
+ - api_build_command: <undefined>
+ - app_location: .
+ - output_location: .next
+ - api_location: 
+ - data_api_location: 
+Validating user workflow config (BEFORE):
+ - appLocation: C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master
+ - outputLocation: C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master
+ - apiLocation: <undefined>
+ - dataApiLocation: <undefined>
+Validating user workflow config (AFTER):
+ - appLocation: C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master
+ - apiLocation: <undefined>
+ - outputLocation: C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master
+ - dataApiLocation: <undefined>
+Workflow configuration:
+- config:
+  - appBuildCommand: <undefined>
+  - apiBuildCommand: <undefined>
+  - appLocation: C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master
+  - apiLocation: <undefined>
+  - outputLocation: C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master
+  - dataApiLocation: <undefined>
+ - files:
+   - 0: C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.github\workflows\azure-static-web-apps-gentle-plant-0f873710f.yml
+Reading content from staticwebapp.config.json...
+Parsing C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\staticwebapp.config.json...
+Content parsed successfully
+
+Found configuration file:
+  C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\staticwebapp.config.json
+
+Deploying project to Azure Static Web Apps...
+Fetching release metadata for version: stable. Please wait...
+GET https://aka.ms/swalocaldeploy
+Decode JSON: [
+  {
+    "version": "latest",
+    "buildId": "08e29138cd3dcda4ffda6d587aa580028110c1c7",
+    "publishDate": "2026-01-13T08:02:39.9810538Z",
+    "files": {
+      "linux-x64": {
+        "url": "https://swalocaldeployv2-bndtgugjgqc3dhdx.b01.azurefd.net/downloads/08e29138cd3dcda4ffda6d587aa580028110c1c7/linux/StaticSitesClient",
+        "sha": "33677d6ea03fe2ff8b158e134efa8d1e67615b96bdc3b0677f48aa6afde65b22"
+      },
+      "win-x64": {
+        "url": "https://swalocaldeployv2-bndtgugjgqc3dhdx.b01.azurefd.net/downloads/08e29138cd3dcda4ffda6d587aa580028110c1c7/windows/StaticSitesClient.exe",
+        "sha": "4f59cb1d7588fd58aa924c3da0380b631d759973ab23f3dc1da5242c7bb405fc"
+      },
+      "osx-x64": {
+        "url": "https://swalocaldeployv2-bndtgugjgqc3dhdx.b01.azurefd.net/downloads/08e29138cd3dcda4ffda6d587aa580028110c1c7/macOS/StaticSitesClient",
+        "sha": "e0c7d27b1058d2aa25473bcbc72cd531bd1289c9fdc382aec88a7c4fdb4c5955"
+      }
+    }
+  },
+  {
+    "version": "stable",
+    "buildId": "694f9b1be52be00b1b4cde5deb5bb4994154f9b6",
+    "publishDate": "2025-07-21T07:21:52.0658686Z",
+    "files": {
+      "linux-x64": {
+        "url": "https://swalocaldeployv2-bndtgugjgqc3dhdx.b01.azurefd.net/downloads/694f9b1be52be00b1b4cde5deb5bb4994154f9b6/linux/StaticSitesClient",
+        "sha": "3fdeaa74fff3e8136fa95f994761559b48900f094214dc81c98f825de506a398"
+      },
+      "win-x64": {
+        "url": "https://swalocaldeployv2-bndtgugjgqc3dhdx.b01.azurefd.net/downloads/694f9b1be52be00b1b4cde5deb5bb4994154f9b6/windows/StaticSitesClient.exe",
+        "sha": "f55f0efd65b1b401b4ee0197143da4e16c87ff7f541b2bf5b094fcc8e3443dfe"
+      },
+      "osx-x64": {
+        "url": "https://swalocaldeployv2-bndtgugjgqc3dhdx.b01.azurefd.net/downloads/694f9b1be52be00b1b4cde5deb5bb4994154f9b6/macOS/StaticSitesClient",
+        "sha": "0412544daa8522aafeaa495e03fad3a6530b5e121959624de4c115f76018cae9"
+      }
+    }
+  },
+  {
+    "version": "backup",
+    "buildId": "53b7d0e07fe5c34bf68929fab92f87ce910288dc",
+    "publishDate": "2024-10-24T20:43:23.5850191Z",
+    "files": {
+      "linux-x64": {
+        "url": "https://swalocaldeployv2-bndtgugjgqc3dhdx.b01.azurefd.net/downloads/53b7d0e07fe5c34bf68929fab92f87ce910288dc/linux/StaticSitesClient",
+        "sha": "66fca4b42cbc64d451097931ca4ed75649233bd818f97f0c3f6d1d75cff61413"
+      },
+      "win-x64": {
+        "url": "https://swalocaldeployv2-bndtgugjgqc3dhdx.b01.azurefd.net/downloads/53b7d0e07fe5c34bf68929fab92f87ce910288dc/windows/StaticSitesClient.exe",
+        "sha": "fc949fb19d29cce1e8b74cf1e2c31706426d46b3e03d830d601524cee63faa0b"
+      },
+      "osx-x64": {
+        "url": "https://swalocaldeployv2-bndtgugjgqc3dhdx.b01.azurefd.net/downloads/53b7d0e07fe5c34bf68929fab92f87ce910288dc/macOS/StaticSitesClient",
+        "sha": "89ec4fe61217325e89ed849a564ffe4cc51b61c325abdca82e8e441a4959ec92"
+      }
+    }
+  }
+]
+Release Metadata for stable: {
+  "version": "stable",
+  "buildId": "694f9b1be52be00b1b4cde5deb5bb4994154f9b6",
+  "publishDate": "2025-07-21T07:21:52.0658686Z",
+  "files": {
+    "linux-x64": {
+      "url": "https://swalocaldeployv2-bndtgugjgqc3dhdx.b01.azurefd.net/downloads/694f9b1be52be00b1b4cde5deb5bb4994154f9b6/linux/StaticSitesClient",
+      "sha": "3fdeaa74fff3e8136fa95f994761559b48900f094214dc81c98f825de506a398"
+    },
+    "win-x64": {
+      "url": "https://swalocaldeployv2-bndtgugjgqc3dhdx.b01.azurefd.net/downloads/694f9b1be52be00b1b4cde5deb5bb4994154f9b6/windows/StaticSitesClient.exe",
+      "sha": "f55f0efd65b1b401b4ee0197143da4e16c87ff7f541b2bf5b094fcc8e3443dfe"
+    },
+    "osx-x64": {
+      "url": "https://swalocaldeployv2-bndtgugjgqc3dhdx.b01.azurefd.net/downloads/694f9b1be52be00b1b4cde5deb5bb4994154f9b6/macOS/StaticSitesClient",
+      "sha": "0412544daa8522aafeaa495e03fad3a6530b5e121959624de4c115f76018cae9"
+    }
+  }
+}
+Local client binary is up to date. Skipping download.
+Deploying using C:\Users\PeterTeehan\.swa\deploy\694f9b1be52be00b1b4cde5deb5bb4994154f9b6\StaticSitesClient.exe@694f9b1be52be00b1b4cde5deb5bb4994154f9b6
+Deploying using the following options:
+- env:
+  - SWA_CLI_DEBUG: silly
+  - SWA_RUNTIME_WORKFLOW_LOCATION: C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\.github\workflows\azure-static-web-apps-gentle-plant-0f873710f.yml
+  - SWA_RUNTIME_CONFIG_LOCATION: C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master
+  - SWA_RUNTIME_CONFIG: C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\staticwebapp.config.json
+  - SWA_CLI_VERSION: 2.0.7
+  - SWA_CLI_DEPLOY_DRY_RUN: false
+  - SWA_CLI_DEPLOY_BINARY: C:\Users\PeterTeehan\.swa\deploy\694f9b1be52be00b1b4cde5deb5bb4994154f9b6\StaticSitesClient.exe@694f9b1be52be00b1b4cde5deb5bb4994154f9b6
+  - DEPLOYMENT_ACTION: upload
+  - DEPLOYMENT_PROVIDER: SwaCli
+  - REPOSITORY_BASE: C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master
+  - SKIP_APP_BUILD: true
+  - SKIP_API_BUILD: true
+  - DEPLOYMENT_TOKEN: <hidden>
+  - APP_LOCATION: C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master
+  - API_LOCATION: <undefined>
+  - DATA_API_LOCATION: <undefined>
+  - CONFIG_FILE_LOCATION: C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master
+  - VERBOSE: true
+  - FUNCTION_LANGUAGE: node
+  - FUNCTION_LANGUAGE_VERSION: 16
+- Preparing deployment. Please wait...
+Γä╣ DeploymentId: ce25a5a7-7ec0-48cc-b6d8-20eaf822e4fd
+Γä╣ Preparing deployment. Please wait...
+Γä╣ Verbose logging enabled
+Γä╣ Try to validate location at: 'C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master'.
+Γä╣ Build timeout not specified, defaulting to 15 minutes
+Γä╣ App Directory Location: 'C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master' was found.
+Γä╣ Try to validate location at: 'C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\swa-db-connections'.
+Γä╣ Try to validate location at: 'C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\staticwebapp.config.json'.
+Γä╣ config_file_location: config file 'C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\staticwebapp.config.json' was found.
+Γä╣ Looking for event info
+Γä╣ Could not get event info. Proceeding
+Γä╣ Skipping step to build C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master with Oryx
+Γä╣ An unknown exception has occurred
+Γä╣ Preparing deployment. Please wait...
+Γä╣ For further information, please visit the Azure Static Web Apps documentation at https://docs.microsoft.com/en-us/azure/static-web-apps/
+Γä╣ If you believe this behavior is unexpected, please raise a GitHub issue at https://github.com/azure/static-web-apps/issues/
