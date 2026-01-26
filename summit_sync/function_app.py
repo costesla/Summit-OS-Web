@@ -494,3 +494,47 @@ def calendar_book(req: func.HttpRequest) -> func.HttpResponse:
             status_code=500,
             mimetype="application/json"
         )
+
+@app.route(route="flight-status", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
+def flight_status(req: func.HttpRequest) -> func.HttpResponse:
+    """
+    Returns flight status from AviationStack (or demo data).
+    """
+    logging.info("Flight status requested")
+    
+    try:
+        from lib.flight import AviationStackClient
+        
+        req_body = req.get_json()
+        flight_number = req_body.get('flightNumber')
+        
+        if not flight_number:
+             return func.HttpResponse(
+                json.dumps({"success": False, "error": "Missing flight number"}),
+                status_code=400,
+                mimetype="application/json"
+            )
+
+        client = AviationStackClient()
+        data = client.get_flight_status(flight_number)
+        
+        if data:
+             return func.HttpResponse(
+                json.dumps({"success": True, "data": data}),
+                status_code=200,
+                mimetype="application/json"
+            )
+        else:
+             return func.HttpResponse(
+                json.dumps({"success": False, "error": "Flight not found"}),
+                status_code=404,
+                mimetype="application/json"
+            )
+
+    except Exception as e:
+        logging.error(f"Error in flight_status: {traceback.format_exc()}")
+        return func.HttpResponse(
+            json.dumps({"success": False, "error": str(e)}),
+            status_code=500,
+            mimetype="application/json"
+        )
