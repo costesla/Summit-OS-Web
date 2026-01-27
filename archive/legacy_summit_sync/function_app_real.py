@@ -12,6 +12,11 @@ app = func.FunctionApp()
 # Constants
 ADMIN_BASE_LOCATION = "North Carefree Circle, Colorado Springs, CO"
 
+@app.route(route="health", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+def health_check(req: func.HttpRequest) -> func.HttpResponse:
+    return func.HttpResponse("OK", status_code=200)
+
+
 def _cors_headers():
     return {
         "Access-Control-Allow-Origin": "*",

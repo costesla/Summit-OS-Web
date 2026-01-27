@@ -54,7 +54,7 @@ function App() {
     try {
       setLoading(true);
       // Replace with your actual Function URL once deployed to production
-      const url = "https://summitsyncfuncus23436.azurewebsites.net/api/dashboard-summary";
+      const url = "/api/dashboard-summary";
       const resp = await fetch(url);
       if (!resp.ok) throw new Error("Failed to fetch dashboard data");
       const json = await resp.json();
