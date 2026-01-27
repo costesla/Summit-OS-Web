@@ -55,6 +55,7 @@ export default function CalendarBooking({
             return;
         }
 
+
         const fetchSlots = async () => {
             setLoadingSlots(true);
             setError(null);
@@ -65,7 +66,11 @@ export default function CalendarBooking({
                 const data = await response.json();
 
                 if (data.success) {
-                    setAvailableSlots(data.slots);
+                    // Sort slots chronologically
+                    const sortedSlots = data.slots.sort((a: TimeSlot, b: TimeSlot) =>
+                        new Date(a.start).getTime() - new Date(b.start).getTime()
+                    );
+                    setAvailableSlots(sortedSlots);
                 } else {
                     setError(data.error || "Failed to load available times");
                 }

@@ -84,10 +84,10 @@ export default function DashboardStatus() {
                 <div className="bg-white/5 p-4 rounded-2xl">
                     <div className="flex items-center gap-2 text-gray-400 mb-2">
                         <TrendingUp size={16} />
-                        <span className="text-xs uppercase">Revenue</span>
+                        <span className="text-xs uppercase">Activity</span>
                     </div>
-                    <div className="text-2xl font-bold">${data.stats.TotalEarnings}</div>
-                    <div className="text-xs text-gray-500">{data.stats.TripCount} Trips</div>
+                    <div className="text-2xl font-bold">{data.stats.TripCount}</div>
+                    <div className="text-xs text-gray-500">Trips Completed</div>
                 </div>
 
                 {/* Location */}
