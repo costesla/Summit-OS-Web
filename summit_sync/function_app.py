@@ -12,6 +12,13 @@ app = func.FunctionApp()
 # Constants
 ADMIN_BASE_LOCATION = "North Carefree Circle, Colorado Springs, CO"
 
+# Register Copilot API Blueprint
+try:
+    from copilot_api import bp as copilot_bp
+    app.register_functions(copilot_bp)
+except Exception as e:
+    logging.warning(f"Failed to register Copilot API: {e}")
+
 def _env_snapshot():
     try:
         import platform
@@ -33,6 +40,13 @@ def _versions():
         except Exception as e:
             versions[name] = f"IMPORT FAIL: {e.__class__.__name__}: {e}"
     return versions
+
+def _cors_headers():
+    return {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type"
+    }
 
 @app.route(route="process-blob", methods=["POST"], auth_level=func.AuthLevel.FUNCTION)
 def process_blob_http(req: func.HttpRequest) -> func.HttpResponse:
@@ -192,7 +206,7 @@ def sql_probe(req: func.HttpRequest) -> func.HttpResponse:
             status_code=500,
             mimetype="application/json"
         )
-@app.route(route="dashboard-summary", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+@app.route(route="dashboard-summary", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def dashboard_summary(req: func.HttpRequest) -> func.HttpResponse:
     """
     Returns a unified summary for the Command Center:
@@ -202,6 +216,9 @@ def dashboard_summary(req: func.HttpRequest) -> func.HttpResponse:
     """
     logging.info("Dashboard summary requested")
     
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=_cors_headers())
+
     try:
         from lib.database import DatabaseClient
         from lib.tessie import TessieClient
@@ -248,7 +265,8 @@ def dashboard_summary(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(
             json.dumps(response_data, default=str),
             status_code=200,
-            mimetype="application/json"
+            mimetype="application/json",
+            headers=_cors_headers()
         )
         
     except Exception as e:
@@ -619,12 +637,15 @@ def flight_status(req: func.HttpRequest) -> func.HttpResponse:
             mimetype="application/json"
         )
 
-@app.route(route="vehicle-location", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+@app.route(route="vehicle-location", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def vehicle_location(req: func.HttpRequest) -> func.HttpResponse:
     """
     Returns public vehicle telemetry (sanitized).
     """
     logging.info("Vehicle location requested")
+
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=_cors_headers())
     
     try:
         from lib.tessie import TessieClient
@@ -653,7 +674,8 @@ def vehicle_location(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(
             json.dumps(data), # Helper returns dict directly
             status_code=200,
-            mimetype="application/json"
+            mimetype="application/json",
+            headers=_cors_headers()
         )
 
     except Exception as e:
@@ -665,13 +687,16 @@ def vehicle_location(req: func.HttpRequest) -> func.HttpResponse:
         )
 
 
-@app.route(route="quote", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
+@app.route(route="quote", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def quote(req: func.HttpRequest) -> func.HttpResponse:
     """
     Python Pricing Engine endpoint.
     Replaces the legacy Next.js /api/quote route.
     """
     logging.info("Pricing quote requested")
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=_cors_headers())
+
     try:
         req_body = req.get_json()
         trip_type = req_body.get('tripType', 'one-way')
@@ -786,7 +811,8 @@ def quote(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(
             json.dumps({"success": True, "quote": quote_data}),
             status_code=200,
-            mimetype="application/json"
+            mimetype="application/json",
+            headers=_cors_headers()
         )
 
     except Exception as e:
