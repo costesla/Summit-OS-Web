@@ -137,12 +137,39 @@ class DatabaseClient:
         if t_offer:
             t_offer = datetime.datetime.fromtimestamp(t_offer)
 
+        # Logic:
+        # 1. Private Trip (Source of Truth = Tessie)
+        #    - Distance_mi = Tessie
+        #    - Uber_Distance = NULL (To avoid confusion)
+        
+        # 2. Uber Trip (Source of Truth = Uber, but we compare)
+        #    - Distance_mi = Uber ( What we got paid for )
+        #    - Uber_Distance = Uber
+        #    - Tessie_Distance = Tessie (Actual driven)
+        
+        tessie_dist = trip_data.get('tessie_distance', 0)
+        tessie_dur = trip_data.get('tessie_duration', 0)
+        
+        uber_dist = trip_data.get('distance_miles', 0)
+        uber_dur = trip_data.get('duration_minutes', 0)
+        
+        if not is_uber:
+            # PRIVATE TRIP: Enforce Tessie as Source of Truth
+            final_dist = tessie_dist
+            final_dur = tessie_dur
+            # Wipe Uber stats to prevent dashboard confusion
+            uber_dist = None
+            uber_dur = None
+        else:
+            # UBER TRIP: Enforce Uber as Source of Truth (for financials)
+            final_dist = uber_dist
+            final_dur = uber_dur
+            
         core_params = (
             trip_data.get('block_name'), trip_type, t_offer, trip_data.get('start_location'), trip_data.get('end_location'),
-            trip_data.get('tessie_distance', 0) or trip_data.get('distance_miles', 0), 
-            trip_data.get('tessie_duration', 0) or trip_data.get('duration_minutes', 0),
-            trip_data.get('distance_miles', 0), trip_data.get('duration_minutes', 0),
-            trip_data.get('tessie_distance', 0), trip_data.get('tessie_duration', 0),
+            final_dist, final_dur,      # Primary Columns
+            uber_dist, uber_dur,        # Uber Columns
+            tessie_dist, tessie_dur,    # Tessie Columns
             trip_data.get('tessie_drive_id'),
             rider_payment, uber_cut, platform_cut, platform_emoji,
             driver_earnings, trip_data.get('fare', 0), trip_data.get('tip', 0),
@@ -213,5 +240,140 @@ class DatabaseClient:
             logging.info("Successfully saved weather record.")
         except Exception as e:
             logging.error(f"Error saving weather record: {e}")
+        finally:
+            conn.close()
+
+    # =========================================================================
+    # Copilot API Read-Only Methods
+    # =========================================================================
+
+    def get_recent_trips(self, days=7, trip_type=None):
+        """Returns trips from the last N days for Copilot."""
+        query = """
+        SELECT TOP 50 
+            TripID, TripType, Pickup_Place, Dropoff_Place, 
+            Fare, Tip, Distance_mi, Duration_min, 
+            Payment_Method, Format(Timestamp_Offer, 'yyyy-MM-dd HH:mm:ss') as Timestamp
+        FROM Trips 
+        WHERE Timestamp_Offer >= DATEADD(day, -?, GETDATE())
+        """
+        params = [days]
+        
+        if trip_type:
+            query += " AND TripType = ?"
+            params.append(trip_type)
+            
+        query += " ORDER BY Timestamp_Offer DESC"
+        
+        # Use execute_query_with_results which returns list of dicts
+        conn = self.get_connection()
+        if not conn: return []
+        
+        cursor = conn.cursor()
+        try:
+            cursor.execute(query, params)
+            if cursor.description:
+                columns = [column[0] for column in cursor.description]
+                results = []
+                for row in cursor.fetchall():
+                    results.append(dict(zip(columns, row)))
+                return results
+            return []
+        except Exception as e:
+            logging.error(f"Error fetching recent trips: {e}")
+            return []
+        finally:
+            conn.close()
+
+    def get_trip_by_id(self, trip_id):
+        """Returns detailed trip information by ID."""
+        query = """
+        SELECT 
+            TripID, TripType, Pickup_Place, Dropoff_Place, 
+            Fare, Tip, Earnings_Driver, Distance_mi, Duration_min, 
+            Payment_Method, Notes, Classification,
+            Format(Timestamp_Offer, 'yyyy-MM-dd HH:mm:ss') as Timestamp
+        FROM Trips 
+        WHERE TripID = ?
+        """
+        results = self.execute_query_with_results_params(query, (trip_id,))
+        return results[0] if results else None
+
+    def get_daily_metrics(self, start_date, end_date):
+        """Returns daily KPIs for date range."""
+        query = """
+        SELECT 
+            Format([Date], 'yyyy-MM-dd') as DateStr,
+            TotalEarnings, TotalTips, TripCount, 
+            DriveTime_Hours, TotalMiles
+        FROM v_DailyKPIs
+        WHERE [Date] >= CAST(? AS DATE) AND [Date] <= CAST(? AS DATE)
+        ORDER BY [Date] DESC
+        """
+        return self.execute_query_with_results_params(query, (start_date, end_date))
+
+    def get_block_stats(self, block_name):
+        """Returns stats for a specific block."""
+        query = """
+        SELECT 
+            BlockID, 
+            Count(*) as TripCount,
+            Sum(Earnings_Driver) as TotalEarnings,
+            Sum(Distance_mi) as TotalDistance
+        FROM Trips
+        WHERE BlockID = ?
+        GROUP BY BlockID
+        """
+        return self.execute_query_with_results_params(query, (block_name,))
+
+    def get_summary_metrics(self, days=30):
+        """Returns aggregated statistics for last N days."""
+        query = """
+        SELECT 
+            Count(*) as TotalTrips,
+            Sum(Earnings_Driver) as TotalEarnings,
+            Sum(Tip) as TotalTips,
+            Sum(Distance_mi) as TotalDistance,
+            Avg(Fare) as AvgFare
+        FROM Trips
+        WHERE Timestamp_Offer >= DATEADD(day, -?, GETDATE())
+        """
+        # Execute manually to support param
+        conn = self.get_connection()
+        if not conn: return None
+        
+        cursor = conn.cursor()
+        try:
+            cursor.execute(query, (days,))
+            if cursor.description:
+                columns = [column[0] for column in cursor.description]
+                row = cursor.fetchone()
+                if row:
+                    return dict(zip(columns, row))
+            return None
+        except Exception as e:
+            logging.error(f"Error fetching summary metrics: {e}")
+            return None
+        finally:
+            conn.close()
+
+    def execute_query_with_results_params(self, query, params):
+        """Helper for parametrized queries returning dicts."""
+        conn = self.get_connection()
+        if not conn: return []
+        
+        cursor = conn.cursor()
+        try:
+            cursor.execute(query, params)
+            if cursor.description:
+                columns = [column[0] for column in cursor.description]
+                results = []
+                for row in cursor.fetchall():
+                    results.append(dict(zip(columns, row)))
+                return results
+            return []
+        except Exception as e:
+            logging.error(f"Error fetching query results: {e}")
+            return []
         finally:
             conn.close()
