@@ -87,11 +87,21 @@ export default function BookingEngine() {
                         simpleWaitTime: waitTime // For one-way
                     })
                 });
+                if (!res.ok) {
+                    console.error("Quote API Error:", res.status, res.statusText);
+                    // Don't show toast for 404s (API deploying) to avoid spamming user while typing
+                    if (res.status !== 404) {
+                        setToastMessage(`Pricing Engine Unavailable (${res.status})`);
+                    }
+                    setQuote(null);
+                    return;
+                }
+
                 const data = await res.json();
                 if (data.success) {
                     setQuote(data.quote);
                 } else {
-                    console.error("Quote API Error:", data.error);
+                    console.error("Quote Logic Error:", data.error);
                     setToastMessage(data.error || "Failed to calculate pricing");
                     setQuote(null);
                 }
