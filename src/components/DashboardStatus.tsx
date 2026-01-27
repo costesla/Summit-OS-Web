@@ -30,8 +30,8 @@ export default function DashboardStatus() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Direct fetch to Azure Function Backend (CORS Enabled)
-                const res = await fetch('https://summitos-api.azurewebsites.net/api/dashboard-summary');
+                // Direct fetch to Azure Function Backend (via Next.js Rewrite)
+                const res = await fetch('/api/dashboard-summary');
                 if (res.ok) {
                     const json = await res.json();
                     setData(json);
