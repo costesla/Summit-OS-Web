@@ -1,0 +1,275 @@
+openapi: 3.0.0
+info:
+  title: Summit Sync Copilot API
+  description: >-
+    Read-only API for Microsoft Copilot Agent to access Summit Sync trip data,
+    revenue metrics, and vehicle telemetry.
+  version: 1.0.0
+servers:
+  - url: https://func-summit-sync-prod.azurewebsites.net/api
+    description: Production API
+security:
+  - oauth2: []
+
+paths:
+  /copilot/trips/latest:
+    get:
+      summary: Get recent trips
+      description: Returns a list of recent trips from the last N days.
+      operationId: getRecentTrips
+      parameters:
+        - name: days
+          in: query
+          description: Number of days to look back (default 7)
+          schema:
+            type: integer
+            default: 7
+        - name: type
+          in: query
+          description: Filter by trip type
+          schema:
+            type: string
+            enum: [Uber, Private]
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripListResponse'
+        '429':
+          description: Rate limit exceeded
+
+  /copilot/trips/{trip_id}:
+    get:
+      summary: Get trip details
+      description: Returns detailed information for a specific trip ID.
+      operationId: getTripById
+      parameters:
+        - name: trip_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripDetailResponse'
+        '404':
+          description: Trip not found
+
+  /copilot/metrics/daily:
+    get:
+      summary: Get daily metrics
+      description: Returns daily revenue and trip counts for a date range.
+      operationId: getDailyMetrics
+      parameters:
+        - name: start_date
+          in: query
+          in: query
+          required: false
+          description: Start date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          in: query
+          required: false
+          description: End date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DailyMetricsResponse'
+
+  /copilot/metrics/summary:
+    get:
+      summary: Get summary metrics
+      description: Returns aggregated statistics for the last N days.
+      operationId: getSummaryMetrics
+      parameters:
+        - name: days
+          in: query
+          description: Number of days to summarize (default 30)
+          schema:
+            type: integer
+            default: 30
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SummaryMetricsResponse'
+
+  /copilot/vehicle/status:
+    get:
+      summary: Get vehicle status
+      description: Returns current vehicle telemetry (battery, charging, location).
+      operationId: getVehicleStatus
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehicleStatusResponse'
+
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://login.microsoftonline.com/common/oauth2/v2.0/authorize
+          tokenUrl: https://login.microsoftonline.com/common/oauth2/v2.0/token
+          scopes:
+            api://summit-sync-copilot-api/.default: "Access API"
+
+  schemas:
+    Currency:
+      type: object
+      properties:
+        amount:
+          type: number
+          format: float
+        display:
+          type: string
+          example: "$123.45"
+      additionalProperties: false
+
+    TripListResponse:
+      type: object
+      required: [success, count, trips]
+      additionalProperties: false
+      properties:
+        success:
+          type: boolean
+        count:
+          type: integer
+        trips:
+          type: array
+          items:
+            type: object
+            properties:
+              trip_id:
+                type: string
+              type:
+                type: string
+                enum: [Uber, Private]
+              timestamp:
+                type: string
+                format: date-time
+              pickup:
+                type: string
+              dropoff:
+                type: string
+              fare:
+                $ref: '#/components/schemas/Currency'
+              distance_miles:
+                type: number
+
+    TripDetailResponse:
+      type: object
+      required: [success, trip]
+      additionalProperties: false
+      properties:
+        success:
+          type: boolean
+        trip:
+          type: object
+          properties:
+            trip_id:
+              type: string
+            type:
+              type: string
+            timestamp:
+              type: string
+            pickup:
+              type: string
+            dropoff:
+              type: string
+            fare:
+              $ref: '#/components/schemas/Currency'
+            tip:
+              $ref: '#/components/schemas/Currency'
+            driver_earnings:
+              $ref: '#/components/schemas/Currency'
+            distance_miles:
+              type: number
+            payment_method:
+              type: string
+            notes:
+              type: string
+
+    DailyMetricsResponse:
+      type: object
+      required: [success, metrics]
+      additionalProperties: false
+      properties:
+        success:
+          type: boolean
+        metrics:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              earnings:
+                $ref: '#/components/schemas/Currency'
+              tips:
+                $ref: '#/components/schemas/Currency'
+              trip_count:
+                type: integer
+              miles:
+                type: number
+
+    SummaryMetricsResponse:
+      type: object
+      required: [success, summary]
+      additionalProperties: false
+      properties:
+        success:
+          type: boolean
+        summary:
+          type: object
+          properties:
+            total_trips:
+              type: integer
+            total_earnings:
+              $ref: '#/components/schemas/Currency'
+            total_distance:
+              type: number
+            average_fare:
+              $ref: '#/components/schemas/Currency'
+
+    VehicleStatusResponse:
+      type: object
+      required: [success, vehicle]
+      additionalProperties: false
+      properties:
+        success:
+          type: boolean
+        vehicle:
+          type: object
+          properties:
+            battery_level:
+              type: integer
+            range_miles:
+              type: integer
+            charging_state:
+              type: string
+            location:
+              type: string
+              description: City-level location only
