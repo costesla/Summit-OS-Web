@@ -12,12 +12,12 @@ app = func.FunctionApp()
 # Constants
 ADMIN_BASE_LOCATION = "North Carefree Circle, Colorado Springs, CO"
 
-# Register Copilot API Blueprint (TEMPORARY DISABLE TO FIX 404)
-# try:
-#     from copilot_api import bp as copilot_bp
-#     app.register_functions(copilot_bp)
-# except Exception as e:
-#     logging.warning(f"Failed to register Copilot API: {e}")
+def _cors_headers():
+    return {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type"
+    }
 
 def _env_snapshot():
     try:
@@ -40,13 +40,6 @@ def _versions():
         except Exception as e:
             versions[name] = f"IMPORT FAIL: {e.__class__.__name__}: {e}"
     return versions
-
-def _cors_headers():
-    return {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type"
-    }
 
 @app.route(route="process-blob", methods=["POST"], auth_level=func.AuthLevel.FUNCTION)
 def process_blob_http(req: func.HttpRequest) -> func.HttpResponse:
@@ -210,9 +203,6 @@ def sql_probe(req: func.HttpRequest) -> func.HttpResponse:
 def dashboard_summary(req: func.HttpRequest) -> func.HttpResponse:
     """
     Returns a unified summary for the Command Center:
-    - Daily Revenue & Trip KPIs
-    - Recent Weather Context
-    - Live Tessie Telematics
     """
     logging.info("Dashboard summary requested")
     
@@ -691,7 +681,6 @@ def vehicle_location(req: func.HttpRequest) -> func.HttpResponse:
 def quote(req: func.HttpRequest) -> func.HttpResponse:
     """
     Python Pricing Engine endpoint.
-    Replaces the legacy Next.js /api/quote route.
     """
     logging.info("Pricing quote requested")
     if req.method == "OPTIONS":
