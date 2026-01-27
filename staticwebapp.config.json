@@ -2,5 +2,18 @@
     "navigationFallback": {
         "rewrite": "/index.html"
     },
-    "rewrites": []
+    "rewrites": [
+        {
+            "route": "/api/dashboard-summary",
+            "rewrite": "https://summitos-api.azurewebsites.net/api/dashboard-summary"
+        },
+        {
+            "route": "/api/vehicle-location",
+            "rewrite": "https://summitos-api.azurewebsites.net/api/vehicle-location"
+        },
+        {
+            "route": "/api/quote",
+            "rewrite": "https://summitos-api.azurewebsites.net/api/quote"
+        }
+    ]
 }
