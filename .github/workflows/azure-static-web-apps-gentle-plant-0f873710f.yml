@@ -28,8 +28,8 @@ jobs:
           action: "upload"
           app_location: "/" # Location of your front-end code
           api_location: "" # No integrated functions
-          output_location: "out" # Next.js static export directory
-          is_static_export: true # Force pure static deployment to avoid function conflicts
+          output_location: "" # Leave empty for SWA to auto-detect Next.js hybrid output
+          # is_static_export: false # Allow hybrid deployment (API Compatibility)
         env:
           NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
   close_pull_request_job:
