@@ -5,7 +5,7 @@ on:
     branches:
       - master
     paths:
-      - 'summit_sync/**'
+      - 'backend/**'
   workflow_dispatch:
 
 env:
