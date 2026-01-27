@@ -1,7 +1,7 @@
 
 import { NextResponse } from 'next/server';
 
-export const runtime = 'edge'; // Use Edge for speed
+// export const runtime = 'edge'; // Use Node.js for broad compatibility
 
 export async function GET() {
     try {

@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { calculateTripPrice } from '@/utils/pricing';
 
-export const runtime = 'edge'; // Use Edge for speed
+// export const runtime = 'edge'; // Use Node.js for broad compatibility
 
 export async function POST(req: Request) {
     try {
