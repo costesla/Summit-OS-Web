@@ -49,7 +49,7 @@ export default function LiveMap({ className = "h-[600px]", overridePos }: { clas
         if (overridePos) return; // Don't fetch if controlled
 
         try {
-            const res = await fetch('https://summitos-api.azurewebsites.net/api/vehicle-location');
+            const res = await fetch('/api/vehicle-location');
             if (res.ok) {
                 const data = await res.json();
                 setPos(data);
