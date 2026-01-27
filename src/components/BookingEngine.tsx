@@ -74,16 +74,19 @@ export default function BookingEngine() {
 
 
 
-                const res = await fetch('/api/quote', {
+                // Direct fetch to Azure Function Backend
+                const res = await fetch('https://summitos-api.azurewebsites.net/api/quote', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify({
                         tripType,
-                        pickup: pickup, // Send Raw
-                        dropoff: dropoff, // Send Raw
-                        stops: stops, // Send Raw
-                        returnStops: returnStops, // Send Raw
-                        layoverHours,
+                        pickup,
+                        dropoff,
+                        stops: stops.filter(s => s.trim()),
+                        returnStops: returnStops.filter(s => s.trim()),
+                        layoverHours: parseFloat(layoverHours.toString()) || 0,
                         simpleWaitTime: waitTime // For one-way
                     })
                 });
