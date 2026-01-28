@@ -1,0 +1,628 @@
+Build and Deploy Job	Set up job	﻿2026-01-27T19:26:51.2458951Z Current runner version: '2.331.0'
+Build and Deploy Job	Set up job	2026-01-27T19:26:51.2483754Z ##[group]Runner Image Provisioner
+Build and Deploy Job	Set up job	2026-01-27T19:26:51.2484747Z Hosted Compute Agent
+Build and Deploy Job	Set up job	2026-01-27T19:26:51.2485311Z Version: 20260115.477
+Build and Deploy Job	Set up job	2026-01-27T19:26:51.2485848Z Commit: 4b342d620503cbe250a3154040964899ea7c9b00
+Build and Deploy Job	Set up job	2026-01-27T19:26:51.2486603Z Build Date: 2026-01-15T22:32:41Z
+Build and Deploy Job	Set up job	2026-01-27T19:26:51.2487265Z Worker ID: {8a42d1f3-d4cc-475c-8889-4a2c8c57a072}
+Build and Deploy Job	Set up job	2026-01-27T19:26:51.2487924Z Azure Region: westus
+Build and Deploy Job	Set up job	2026-01-27T19:26:51.2488512Z ##[endgroup]
+Build and Deploy Job	Set up job	2026-01-27T19:26:51.2489857Z ##[group]Operating System
+Build and Deploy Job	Set up job	2026-01-27T19:26:51.2490415Z Ubuntu
+Build and Deploy Job	Set up job	2026-01-27T19:26:51.2490971Z 24.04.3
+Build and Deploy Job	Set up job	2026-01-27T19:26:51.2491460Z LTS
+Build and Deploy Job	Set up job	2026-01-27T19:26:51.2491865Z ##[endgroup]
+Build and Deploy Job	Set up job	2026-01-27T19:26:51.2492584Z ##[group]Runner Image
+Build and Deploy Job	Set up job	2026-01-27T19:26:51.2493139Z Image: ubuntu-24.04
+Build and Deploy Job	Set up job	2026-01-27T19:26:51.2493596Z Version: 20260119.4.1
+Build and Deploy Job	Set up job	2026-01-27T19:26:51.2494657Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260119.4/images/ubuntu/Ubuntu2404-Readme.md
+Build and Deploy Job	Set up job	2026-01-27T19:26:51.2496354Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260119.4
+Build and Deploy Job	Set up job	2026-01-27T19:26:51.2497278Z ##[endgroup]
+Build and Deploy Job	Set up job	2026-01-27T19:26:51.2498315Z ##[group]GITHUB_TOKEN Permissions
+Build and Deploy Job	Set up job	2026-01-27T19:26:51.2500142Z Contents: read
+Build and Deploy Job	Set up job	2026-01-27T19:26:51.2500750Z Metadata: read
+Build and Deploy Job	Set up job	2026-01-27T19:26:51.2501332Z Packages: read
+Build and Deploy Job	Set up job	2026-01-27T19:26:51.2501823Z ##[endgroup]
+Build and Deploy Job	Set up job	2026-01-27T19:26:51.2504089Z Secret source: Actions
+Build and Deploy Job	Set up job	2026-01-27T19:26:51.2504896Z Prepare workflow directory
+Build and Deploy Job	Set up job	2026-01-27T19:26:51.2828290Z Prepare all required actions
+Build and Deploy Job	Set up job	2026-01-27T19:26:51.2883577Z Getting action download info
+Build and Deploy Job	Set up job	2026-01-27T19:26:51.8110969Z Download action repository 'actions/checkout@v3' (SHA:f43a0e5ff2bd294095638e18286ca9a3d1956744)
+Build and Deploy Job	Set up job	2026-01-27T19:26:51.9490900Z Download action repository 'actions/setup-node@v3' (SHA:3235b876344d2a9aa001b8d1453c930bba69e610)
+Build and Deploy Job	Set up job	2026-01-27T19:26:52.1603438Z Download action repository 'Azure/static-web-apps-deploy@v1' (SHA:4d27395796ac319302594769cfe812bd207490b1)
+Build and Deploy Job	Set up job	2026-01-27T19:26:52.7074327Z Complete job name: Build and Deploy Job
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	﻿2026-01-27T19:26:52.7556516Z ##[group]Build container for action use: '/home/runner/work/_actions/Azure/static-web-apps-deploy/v1/Dockerfile'.
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:52.7610331Z ##[command]/usr/bin/docker build -t 7c3952:c50321a01047464b9f4ea42ff56715ea -f "/home/runner/work/_actions/Azure/static-web-apps-deploy/v1/Dockerfile" "/home/runner/work/_actions/Azure/static-web-apps-deploy/v1"
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.4220935Z #0 building with "default" instance using docker driver
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.4222702Z 
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.4223029Z #1 [internal] load build definition from Dockerfile
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.4223562Z #1 transferring dockerfile: 160B done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.4223864Z #1 DONE 0.0s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.4224003Z 
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.4224343Z #2 [internal] load metadata for mcr.microsoft.com/appsvc/staticappsclient:stable
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.4224786Z #2 DONE 0.1s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.5415583Z 
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.5418243Z #3 [internal] load .dockerignore
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.5419537Z #3 transferring context: 2B done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.5427067Z #3 DONE 0.0s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.5427372Z 
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.5427895Z #4 [internal] load build context
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.5428496Z #4 transferring context: 107B done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.5429172Z #4 DONE 0.0s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.5429512Z 
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.5431763Z #5 [1/2] FROM mcr.microsoft.com/appsvc/staticappsclient:stable@sha256:3178a283e885dc45a0c7b4c6e9f728f0331ae7fb93de75db4181fa38651170f2
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.5433506Z #5 resolve mcr.microsoft.com/appsvc/staticappsclient:stable@sha256:3178a283e885dc45a0c7b4c6e9f728f0331ae7fb93de75db4181fa38651170f2 done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.5436866Z #5 sha256:5d6e107a26c2ffb6e234f04132358dea70a691a64c1152f984d2f2ba0e218c58 18.02MB / 53.74MB 0.1s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.5438179Z #5 sha256:3178a283e885dc45a0c7b4c6e9f728f0331ae7fb93de75db4181fa38651170f2 2.88kB / 2.88kB done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.5439383Z #5 sha256:1df8e0748f30e89b0c0477edfc706fc39242e1d6008433c0494113de267e7ca8 15.34kB / 15.34kB done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.5443113Z #5 sha256:2377065f3b700cf1b5e391d26c572c8b91892dd44acd75deebdab5e403b23175 11.53MB / 15.56MB 0.1s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.5443831Z #5 sha256:5ee26b7a209f9a26720207792b237af3e19c0efeed8695e1e630fcd0feef9230 13.63MB / 54.75MB 0.1s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.7166381Z #5 sha256:5d6e107a26c2ffb6e234f04132358dea70a691a64c1152f984d2f2ba0e218c58 44.04MB / 53.74MB 0.2s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.7167865Z #5 sha256:2377065f3b700cf1b5e391d26c572c8b91892dd44acd75deebdab5e403b23175 15.56MB / 15.56MB 0.1s done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.7169064Z #5 sha256:5ee26b7a209f9a26720207792b237af3e19c0efeed8695e1e630fcd0feef9230 44.04MB / 54.75MB 0.2s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.7170329Z #5 sha256:41c7cd6fb37363fd1ec16dad3463ecc5820eda12c418a82b4849604252d29b88 13.63MB / 197.07MB 0.2s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.7171449Z #5 extracting sha256:5d6e107a26c2ffb6e234f04132358dea70a691a64c1152f984d2f2ba0e218c58
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.8374518Z #5 sha256:5d6e107a26c2ffb6e234f04132358dea70a691a64c1152f984d2f2ba0e218c58 53.74MB / 53.74MB 0.3s done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.8376501Z #5 sha256:5ee26b7a209f9a26720207792b237af3e19c0efeed8695e1e630fcd0feef9230 54.75MB / 54.75MB 0.3s done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.8379197Z #5 sha256:41c7cd6fb37363fd1ec16dad3463ecc5820eda12c418a82b4849604252d29b88 44.04MB / 197.07MB 0.3s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.8380511Z #5 sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1 32B / 32B 0.3s done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.8381808Z #5 sha256:aede74d79976f9d1be608a1286cdb2ca61aad25185440263691db6a0880adadd 3.15MB / 24.46MB 0.3s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.8383256Z #5 sha256:c279a6399750ee20e802fb2c47da034ccee5eb4f3b89087f32618f10e8af074a 0B / 1.56MB 0.3s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.9418406Z #5 sha256:41c7cd6fb37363fd1ec16dad3463ecc5820eda12c418a82b4849604252d29b88 104.86MB / 197.07MB 0.5s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.9420404Z #5 sha256:aede74d79976f9d1be608a1286cdb2ca61aad25185440263691db6a0880adadd 24.46MB / 24.46MB 0.4s done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.9421782Z #5 sha256:c279a6399750ee20e802fb2c47da034ccee5eb4f3b89087f32618f10e8af074a 1.56MB / 1.56MB 0.3s done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.9433259Z #5 sha256:ec0af1da0a0576de654092a28624c0565c6d854216944f18159460338af43293 42.99MB / 72.99MB 0.5s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.9434342Z #5 sha256:351447e6e3829fac25a761f87d07dc5bfc289f38908901d05fa53aaab54dbdcd 115.52kB / 115.52kB 0.4s done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:55.9435088Z #5 sha256:cddc70a1cccef26d55fcf9242759c41404c305acea0b4c3a30961c99846a0a55 637.94kB / 637.94kB 0.5s done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:56.0419312Z #5 sha256:36312d7930e0666f8cfc7940823ac101235e873b7cbb8b20d9481fd404095767 2.10MB / 35.20MB 0.5s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:56.0420684Z #5 sha256:eec8099d3f58ba87e25216a07db18b5a0de40b6921ee61ea8ab9b4c29b53a12f 1.16MB / 1.16MB 0.4s done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:56.0421975Z #5 sha256:41c7cd6fb37363fd1ec16dad3463ecc5820eda12c418a82b4849604252d29b88 137.36MB / 197.07MB 0.6s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:56.0429257Z #5 sha256:ec0af1da0a0576de654092a28624c0565c6d854216944f18159460338af43293 68.16MB / 72.99MB 0.6s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:56.0434858Z #5 sha256:36312d7930e0666f8cfc7940823ac101235e873b7cbb8b20d9481fd404095767 31.46MB / 35.20MB 0.6s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:56.1646076Z #5 sha256:41c7cd6fb37363fd1ec16dad3463ecc5820eda12c418a82b4849604252d29b88 174.07MB / 197.07MB 0.7s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:56.1650168Z #5 sha256:ec0af1da0a0576de654092a28624c0565c6d854216944f18159460338af43293 72.99MB / 72.99MB 0.6s done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:56.1651457Z #5 sha256:36312d7930e0666f8cfc7940823ac101235e873b7cbb8b20d9481fd404095767 35.20MB / 35.20MB 0.7s done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:56.1652748Z #5 sha256:4a1fde1690fe113870084a3224c66554fc9cbd2310abb9593b0244ec21f4b76d 168B / 168B 0.7s done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:56.1655284Z #5 sha256:8023cb51985fccd3faa4be6340cdc75b72240277850569aa974767dda5176159 168B / 168B 0.7s done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:56.1656275Z #5 sha256:4836a863d60df9ca0cedad0eb5e729c4a7f755449fbfbd6d4ea6443e64c990e0 1.05MB / 118.65MB 0.7s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:56.2651061Z #5 sha256:41c7cd6fb37363fd1ec16dad3463ecc5820eda12c418a82b4849604252d29b88 197.07MB / 197.07MB 0.8s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:56.2653385Z #5 sha256:4836a863d60df9ca0cedad0eb5e729c4a7f755449fbfbd6d4ea6443e64c990e0 27.26MB / 118.65MB 0.8s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:56.3688963Z #5 sha256:4836a863d60df9ca0cedad0eb5e729c4a7f755449fbfbd6d4ea6443e64c990e0 55.31MB / 118.65MB 0.9s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:56.5413623Z #5 sha256:4836a863d60df9ca0cedad0eb5e729c4a7f755449fbfbd6d4ea6443e64c990e0 100.66MB / 118.65MB 1.1s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:56.6517486Z #5 sha256:41c7cd6fb37363fd1ec16dad3463ecc5820eda12c418a82b4849604252d29b88 197.07MB / 197.07MB 1.1s done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:56.6518714Z #5 sha256:4836a863d60df9ca0cedad0eb5e729c4a7f755449fbfbd6d4ea6443e64c990e0 118.65MB / 118.65MB 1.2s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:56.8679706Z #5 sha256:4836a863d60df9ca0cedad0eb5e729c4a7f755449fbfbd6d4ea6443e64c990e0 118.65MB / 118.65MB 1.4s done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:57.7628587Z #5 extracting sha256:5d6e107a26c2ffb6e234f04132358dea70a691a64c1152f984d2f2ba0e218c58 2.0s done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:57.8899386Z #5 extracting sha256:2377065f3b700cf1b5e391d26c572c8b91892dd44acd75deebdab5e403b23175 0.1s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:58.3085088Z #5 extracting sha256:2377065f3b700cf1b5e391d26c572c8b91892dd44acd75deebdab5e403b23175 0.4s done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:26:58.4420692Z #5 extracting sha256:5ee26b7a209f9a26720207792b237af3e19c0efeed8695e1e630fcd0feef9230
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:00.4351464Z #5 extracting sha256:5ee26b7a209f9a26720207792b237af3e19c0efeed8695e1e630fcd0feef9230 1.8s done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:00.5333883Z #5 extracting sha256:41c7cd6fb37363fd1ec16dad3463ecc5820eda12c418a82b4849604252d29b88
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:05.1606539Z #5 extracting sha256:41c7cd6fb37363fd1ec16dad3463ecc5820eda12c418a82b4849604252d29b88 4.6s done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:06.3047408Z #5 extracting sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:06.4355611Z #5 extracting sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1 done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:06.4356874Z #5 extracting sha256:aede74d79976f9d1be608a1286cdb2ca61aad25185440263691db6a0880adadd 0.1s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:07.1682963Z #5 extracting sha256:aede74d79976f9d1be608a1286cdb2ca61aad25185440263691db6a0880adadd 0.7s done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:07.1684021Z #5 extracting sha256:c279a6399750ee20e802fb2c47da034ccee5eb4f3b89087f32618f10e8af074a 0.1s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:07.3062483Z #5 extracting sha256:c279a6399750ee20e802fb2c47da034ccee5eb4f3b89087f32618f10e8af074a 0.1s done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:07.3063267Z #5 extracting sha256:ec0af1da0a0576de654092a28624c0565c6d854216944f18159460338af43293 0.1s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:08.2661553Z #5 extracting sha256:ec0af1da0a0576de654092a28624c0565c6d854216944f18159460338af43293 0.9s done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:08.3221201Z #5 extracting sha256:351447e6e3829fac25a761f87d07dc5bfc289f38908901d05fa53aaab54dbdcd
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:08.4523376Z #5 extracting sha256:351447e6e3829fac25a761f87d07dc5bfc289f38908901d05fa53aaab54dbdcd done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:08.4524527Z #5 extracting sha256:eec8099d3f58ba87e25216a07db18b5a0de40b6921ee61ea8ab9b4c29b53a12f 0.0s done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:08.4525634Z #5 extracting sha256:cddc70a1cccef26d55fcf9242759c41404c305acea0b4c3a30961c99846a0a55 0.0s done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:08.5714643Z #5 extracting sha256:36312d7930e0666f8cfc7940823ac101235e873b7cbb8b20d9481fd404095767 0.1s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:08.8891440Z #5 extracting sha256:36312d7930e0666f8cfc7940823ac101235e873b7cbb8b20d9481fd404095767 0.4s done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:08.8892991Z #5 extracting sha256:4a1fde1690fe113870084a3224c66554fc9cbd2310abb9593b0244ec21f4b76d
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:09.0248883Z #5 extracting sha256:4a1fde1690fe113870084a3224c66554fc9cbd2310abb9593b0244ec21f4b76d done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:09.0251593Z #5 extracting sha256:8023cb51985fccd3faa4be6340cdc75b72240277850569aa974767dda5176159 done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:09.0252842Z #5 extracting sha256:4836a863d60df9ca0cedad0eb5e729c4a7f755449fbfbd6d4ea6443e64c990e0 0.1s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:12.2271748Z #5 extracting sha256:4836a863d60df9ca0cedad0eb5e729c4a7f755449fbfbd6d4ea6443e64c990e0 3.2s done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:12.6669481Z #5 DONE 17.2s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:12.8295329Z 
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:12.8295860Z #6 [2/2] COPY entrypoint.sh /entrypoint.sh
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:12.8297354Z #6 DONE 0.0s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:12.8297618Z 
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:12.8297765Z #7 exporting to image
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:12.8298530Z #7 exporting layers
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:13.8723063Z #7 exporting layers 1.2s done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:13.8902025Z #7 writing image sha256:947dafb5510fed756c3685a2834e526fc4e031c1142b77c29abc16be5157bb4a done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:13.8903147Z #7 naming to docker.io/library/7c3952:c50321a01047464b9f4ea42ff56715ea done
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:13.8903713Z #7 DONE 1.2s
+Build and Deploy Job	Build Azure/static-web-apps-deploy@v1	2026-01-27T19:27:13.8954177Z ##[endgroup]
+Build and Deploy Job	Run actions/checkout@v3	﻿2026-01-27T19:27:13.9225636Z ##[group]Run actions/checkout@v3
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:13.9226181Z with:
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:13.9226365Z   submodules: true
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:13.9226558Z   lfs: false
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:13.9226751Z   repository: costesla/Summit-OS-Web
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:13.9227124Z   token: ***
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:13.9227298Z   ssh-strict: true
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:13.9227495Z   persist-credentials: true
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:13.9227706Z   clean: true
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:13.9227890Z   sparse-checkout-cone-mode: true
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:13.9228121Z   fetch-depth: 1
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:13.9228292Z   fetch-tags: false
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:13.9228494Z   set-safe-directory: true
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:13.9228886Z ##[endgroup]
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0066806Z Syncing repository: costesla/Summit-OS-Web
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0068489Z ##[group]Getting Git version info
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0068912Z Working directory is '/home/runner/work/Summit-OS-Web/Summit-OS-Web'
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0069482Z [command]/usr/bin/git version
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0069732Z git version 2.52.0
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0092607Z ##[endgroup]
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0106073Z Temporarily overriding HOME='/home/runner/work/_temp/9732e141-b4ed-48e5-aa31-acfceeafecee' before making global git config changes
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0107003Z Adding repository directory to the temporary git global config as a safe directory
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0109600Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/Summit-OS-Web/Summit-OS-Web
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0146901Z Deleting the contents of '/home/runner/work/Summit-OS-Web/Summit-OS-Web'
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0150248Z ##[group]Initializing the repository
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0153311Z [command]/usr/bin/git init /home/runner/work/Summit-OS-Web/Summit-OS-Web
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0264793Z hint: Using 'master' as the name for the initial branch. This default branch name
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0265636Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0266285Z hint: to use in all of your new repositories, which will suppress this warning,
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0266834Z hint: call:
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0267023Z hint:
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0267288Z hint: 	git config --global init.defaultBranch <name>
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0267609Z hint:
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0267914Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0268473Z hint: 'development'. The just-created branch can be renamed via this command:
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0269051Z hint:
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0269384Z hint: 	git branch -m <name>
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0269797Z hint:
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0270346Z hint: Disable this message with "git config set advice.defaultBranchName false"
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0271322Z Initialized empty Git repository in /home/runner/work/Summit-OS-Web/Summit-OS-Web/.git/
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0281354Z [command]/usr/bin/git remote add origin https://github.com/costesla/Summit-OS-Web
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0312819Z ##[endgroup]
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0313580Z ##[group]Disabling automatic garbage collection
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0316492Z [command]/usr/bin/git config --local gc.auto 0
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0341697Z ##[endgroup]
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0342502Z ##[group]Setting up auth
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0347781Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0373880Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0712644Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0738444Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0949856Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0980098Z ##[endgroup]
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0981051Z ##[group]Fetching the repository
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.0989365Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --progress --no-recurse-submodules --depth=1 origin +edf5f35cfef26714c44214560eabd38e5bbb070c:refs/remotes/origin/master
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4336426Z remote: Enumerating objects: 315, done.        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4337414Z remote: Counting objects:   0% (1/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4338084Z remote: Counting objects:   1% (4/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4338726Z remote: Counting objects:   2% (7/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4339129Z remote: Counting objects:   3% (10/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4339496Z remote: Counting objects:   4% (13/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4339842Z remote: Counting objects:   5% (16/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4340178Z remote: Counting objects:   6% (19/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4340517Z remote: Counting objects:   7% (23/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4340893Z remote: Counting objects:   8% (26/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4341224Z remote: Counting objects:   9% (29/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4341526Z remote: Counting objects:  10% (32/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4341823Z remote: Counting objects:  11% (35/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4342126Z remote: Counting objects:  12% (38/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4342744Z remote: Counting objects:  13% (41/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4343044Z remote: Counting objects:  14% (45/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4343345Z remote: Counting objects:  15% (48/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4343651Z remote: Counting objects:  16% (51/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4343952Z remote: Counting objects:  17% (54/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4344254Z remote: Counting objects:  18% (57/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4344593Z remote: Counting objects:  19% (60/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4344896Z remote: Counting objects:  20% (63/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4345194Z remote: Counting objects:  21% (67/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4345506Z remote: Counting objects:  22% (70/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4345809Z remote: Counting objects:  23% (73/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4346105Z remote: Counting objects:  24% (76/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4346407Z remote: Counting objects:  25% (79/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4346709Z remote: Counting objects:  26% (82/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4347011Z remote: Counting objects:  27% (86/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4347346Z remote: Counting objects:  28% (89/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4347656Z remote: Counting objects:  29% (92/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4347964Z remote: Counting objects:  30% (95/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4348264Z remote: Counting objects:  31% (98/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4348572Z remote: Counting objects:  32% (101/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4348889Z remote: Counting objects:  33% (104/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4349193Z remote: Counting objects:  34% (108/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4349512Z remote: Counting objects:  35% (111/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4349821Z remote: Counting objects:  36% (114/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4350123Z remote: Counting objects:  37% (117/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4350429Z remote: Counting objects:  38% (120/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4350736Z remote: Counting objects:  39% (123/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4351042Z remote: Counting objects:  40% (126/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4351349Z remote: Counting objects:  41% (130/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4351660Z remote: Counting objects:  42% (133/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4352144Z remote: Counting objects:  43% (136/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4352609Z remote: Counting objects:  44% (139/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4352879Z remote: Counting objects:  45% (142/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4353148Z remote: Counting objects:  46% (145/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4353406Z remote: Counting objects:  47% (149/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4353672Z remote: Counting objects:  48% (152/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4354091Z remote: Counting objects:  49% (155/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4354354Z remote: Counting objects:  50% (158/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4354618Z remote: Counting objects:  51% (161/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4354883Z remote: Counting objects:  52% (164/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4355142Z remote: Counting objects:  53% (167/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4355409Z remote: Counting objects:  54% (171/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4355676Z remote: Counting objects:  55% (174/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4355953Z remote: Counting objects:  56% (177/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4356218Z remote: Counting objects:  57% (180/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4356515Z remote: Counting objects:  58% (183/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4356782Z remote: Counting objects:  59% (186/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4357043Z remote: Counting objects:  60% (189/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4357307Z remote: Counting objects:  61% (193/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4357579Z remote: Counting objects:  62% (196/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4357840Z remote: Counting objects:  63% (199/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4358120Z remote: Counting objects:  64% (202/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4358390Z remote: Counting objects:  65% (205/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4358658Z remote: Counting objects:  66% (208/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4358918Z remote: Counting objects:  67% (212/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4359186Z remote: Counting objects:  68% (215/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4359456Z remote: Counting objects:  69% (218/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4359715Z remote: Counting objects:  70% (221/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4359983Z remote: Counting objects:  71% (224/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4360252Z remote: Counting objects:  72% (227/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4360514Z remote: Counting objects:  73% (230/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4360782Z remote: Counting objects:  74% (234/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4361059Z remote: Counting objects:  75% (237/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4361329Z remote: Counting objects:  76% (240/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4361604Z remote: Counting objects:  77% (243/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4361874Z remote: Counting objects:  78% (246/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4362144Z remote: Counting objects:  79% (249/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4362578Z remote: Counting objects:  80% (252/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4362852Z remote: Counting objects:  81% (256/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4363124Z remote: Counting objects:  82% (259/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4363386Z remote: Counting objects:  83% (262/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4363654Z remote: Counting objects:  84% (265/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4363917Z remote: Counting objects:  85% (268/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4364180Z remote: Counting objects:  86% (271/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4364448Z remote: Counting objects:  87% (275/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4364724Z remote: Counting objects:  88% (278/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4364988Z remote: Counting objects:  89% (281/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4380140Z remote: Counting objects:  90% (284/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4380670Z remote: Counting objects:  91% (287/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4381139Z remote: Counting objects:  92% (290/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4381548Z remote: Counting objects:  93% (293/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4381827Z remote: Counting objects:  94% (297/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4382099Z remote: Counting objects:  95% (300/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4382834Z remote: Counting objects:  96% (303/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4383115Z remote: Counting objects:  97% (306/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4383394Z remote: Counting objects:  98% (309/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4383658Z remote: Counting objects:  99% (312/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4383922Z remote: Counting objects: 100% (315/315)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4384331Z remote: Counting objects: 100% (315/315), done.        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4384649Z remote: Compressing objects:   0% (1/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4384930Z remote: Compressing objects:   1% (3/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4385204Z remote: Compressing objects:   2% (6/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4385471Z remote: Compressing objects:   3% (8/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4385755Z remote: Compressing objects:   4% (11/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4386043Z remote: Compressing objects:   5% (14/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4386323Z remote: Compressing objects:   6% (16/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4386602Z remote: Compressing objects:   7% (19/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4386879Z remote: Compressing objects:   8% (22/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4387156Z remote: Compressing objects:   9% (24/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4387427Z remote: Compressing objects:  10% (27/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4387704Z remote: Compressing objects:  11% (30/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4387988Z remote: Compressing objects:  12% (32/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4388262Z remote: Compressing objects:  13% (35/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4388543Z remote: Compressing objects:  14% (38/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4429512Z remote: Compressing objects:  15% (40/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4430185Z remote: Compressing objects:  16% (43/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4430782Z remote: Compressing objects:  17% (46/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4431244Z remote: Compressing objects:  18% (48/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4431570Z remote: Compressing objects:  19% (51/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4431865Z remote: Compressing objects:  20% (53/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4432153Z remote: Compressing objects:  21% (56/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4432671Z remote: Compressing objects:  22% (59/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4432959Z remote: Compressing objects:  23% (61/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4433242Z remote: Compressing objects:  24% (64/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4433528Z remote: Compressing objects:  25% (67/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4433806Z remote: Compressing objects:  26% (69/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4434089Z remote: Compressing objects:  27% (72/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4434373Z remote: Compressing objects:  28% (75/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4434653Z remote: Compressing objects:  29% (77/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4434926Z remote: Compressing objects:  30% (80/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4435204Z remote: Compressing objects:  31% (83/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4435494Z remote: Compressing objects:  32% (85/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4435769Z remote: Compressing objects:  33% (88/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4436048Z remote: Compressing objects:  34% (91/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4436327Z remote: Compressing objects:  35% (93/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4436598Z remote: Compressing objects:  36% (96/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4525305Z remote: Compressing objects:  37% (99/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4588995Z remote: Compressing objects:  38% (101/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4589541Z remote: Compressing objects:  39% (104/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4590008Z remote: Compressing objects:  40% (106/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4590364Z remote: Compressing objects:  41% (109/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4590716Z remote: Compressing objects:  42% (112/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4591056Z remote: Compressing objects:  43% (114/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4591389Z remote: Compressing objects:  44% (117/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4591896Z remote: Compressing objects:  45% (120/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4592220Z remote: Compressing objects:  46% (122/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4592752Z remote: Compressing objects:  47% (125/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4593042Z remote: Compressing objects:  48% (128/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4593323Z remote: Compressing objects:  49% (130/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4593740Z remote: Compressing objects:  50% (133/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4594049Z remote: Compressing objects:  51% (136/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4594334Z remote: Compressing objects:  52% (138/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4594611Z remote: Compressing objects:  53% (141/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4594911Z remote: Compressing objects:  54% (144/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4595198Z remote: Compressing objects:  55% (146/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4595475Z remote: Compressing objects:  56% (149/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4595757Z remote: Compressing objects:  57% (152/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4596044Z remote: Compressing objects:  58% (154/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4741257Z remote: Compressing objects:  59% (157/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4741816Z remote: Compressing objects:  60% (159/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4742500Z remote: Compressing objects:  61% (162/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4742958Z remote: Compressing objects:  62% (165/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4743298Z remote: Compressing objects:  63% (167/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4743624Z remote: Compressing objects:  64% (170/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4743948Z remote: Compressing objects:  65% (173/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4744267Z remote: Compressing objects:  66% (175/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4744589Z remote: Compressing objects:  67% (178/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4744918Z remote: Compressing objects:  68% (181/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4745254Z remote: Compressing objects:  69% (183/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4745583Z remote: Compressing objects:  70% (186/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4745907Z remote: Compressing objects:  71% (189/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4746225Z remote: Compressing objects:  72% (191/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4746550Z remote: Compressing objects:  73% (194/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4746874Z remote: Compressing objects:  74% (197/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4747204Z remote: Compressing objects:  75% (199/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4747521Z remote: Compressing objects:  76% (202/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4747846Z remote: Compressing objects:  77% (205/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4748167Z remote: Compressing objects:  78% (207/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4748483Z remote: Compressing objects:  79% (210/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4748804Z remote: Compressing objects:  80% (212/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4749127Z remote: Compressing objects:  81% (215/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4749442Z remote: Compressing objects:  82% (218/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4766846Z remote: Compressing objects:  83% (220/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4767368Z remote: Compressing objects:  84% (223/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4767845Z remote: Compressing objects:  85% (226/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4768316Z remote: Compressing objects:  86% (228/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4768798Z remote: Compressing objects:  87% (231/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4769257Z remote: Compressing objects:  88% (234/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4769560Z remote: Compressing objects:  89% (236/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4769886Z remote: Compressing objects:  90% (239/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4770174Z remote: Compressing objects:  91% (242/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4770456Z remote: Compressing objects:  92% (244/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4770739Z remote: Compressing objects:  93% (247/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4771013Z remote: Compressing objects:  94% (250/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4771493Z remote: Compressing objects:  95% (252/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4771778Z remote: Compressing objects:  96% (255/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4772061Z remote: Compressing objects:  97% (258/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4772590Z remote: Compressing objects:  98% (260/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4772878Z remote: Compressing objects:  99% (263/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4773347Z remote: Compressing objects: 100% (265/265)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4773845Z remote: Compressing objects: 100% (265/265), done.        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4797258Z Receiving objects:   0% (1/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4798800Z Receiving objects:   1% (4/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4799188Z Receiving objects:   2% (7/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4800146Z Receiving objects:   3% (10/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4954466Z Receiving objects:   4% (13/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4956697Z Receiving objects:   5% (16/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4958526Z Receiving objects:   6% (19/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.4958953Z Receiving objects:   7% (23/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5109809Z Receiving objects:   8% (26/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5144641Z Receiving objects:   9% (29/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5146277Z Receiving objects:  10% (32/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5146703Z Receiving objects:  11% (35/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5148220Z Receiving objects:  12% (38/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5151018Z Receiving objects:  13% (41/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5151440Z Receiving objects:  14% (45/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5153179Z Receiving objects:  15% (48/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5153731Z Receiving objects:  16% (51/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5155229Z Receiving objects:  17% (54/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5295005Z Receiving objects:  18% (57/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5295560Z Receiving objects:  19% (60/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5297429Z Receiving objects:  20% (63/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5298156Z Receiving objects:  21% (67/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5298774Z Receiving objects:  22% (70/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5299242Z Receiving objects:  23% (73/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5299595Z Receiving objects:  24% (76/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5322995Z Receiving objects:  25% (79/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5330799Z Receiving objects:  26% (82/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5332998Z Receiving objects:  27% (86/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5333402Z Receiving objects:  28% (89/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5335003Z Receiving objects:  29% (92/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5335422Z Receiving objects:  30% (95/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5336232Z Receiving objects:  31% (98/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5337373Z Receiving objects:  32% (101/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5339452Z Receiving objects:  33% (104/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5340893Z Receiving objects:  34% (108/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5341298Z Receiving objects:  35% (111/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5342501Z Receiving objects:  36% (114/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5342877Z Receiving objects:  37% (117/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5344112Z Receiving objects:  38% (120/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5345849Z Receiving objects:  39% (123/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5346450Z Receiving objects:  40% (126/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5347379Z Receiving objects:  41% (130/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5348326Z Receiving objects:  42% (133/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5349911Z Receiving objects:  43% (136/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5352015Z Receiving objects:  44% (139/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5352605Z Receiving objects:  45% (142/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5353662Z Receiving objects:  46% (145/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5354641Z Receiving objects:  47% (149/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5356083Z Receiving objects:  48% (152/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5356686Z Receiving objects:  49% (155/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5357744Z Receiving objects:  50% (158/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5359221Z Receiving objects:  51% (161/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5359914Z Receiving objects:  52% (164/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5361783Z Receiving objects:  53% (167/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5362900Z Receiving objects:  54% (171/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5363602Z Receiving objects:  55% (174/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5364398Z Receiving objects:  56% (177/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5368543Z Receiving objects:  57% (180/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5482537Z Receiving objects:  58% (183/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5485267Z Receiving objects:  59% (186/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5487762Z Receiving objects:  60% (189/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5507308Z Receiving objects:  61% (193/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5508250Z Receiving objects:  62% (196/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5508691Z Receiving objects:  63% (199/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5510817Z Receiving objects:  64% (202/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5533769Z Receiving objects:  65% (205/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5534540Z Receiving objects:  66% (208/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5536077Z Receiving objects:  67% (212/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5537033Z Receiving objects:  68% (215/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5537443Z Receiving objects:  69% (218/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5538294Z Receiving objects:  70% (221/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5538690Z Receiving objects:  71% (224/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5929031Z Receiving objects:  72% (227/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.5993281Z Receiving objects:  73% (230/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6150474Z Receiving objects:  74% (234/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6151598Z Receiving objects:  75% (237/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6152093Z Receiving objects:  76% (240/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6152663Z Receiving objects:  77% (243/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6153775Z Receiving objects:  78% (246/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6157327Z Receiving objects:  79% (249/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6160888Z Receiving objects:  80% (252/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6161527Z Receiving objects:  81% (256/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6162700Z Receiving objects:  82% (259/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6163333Z Receiving objects:  83% (262/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6163694Z Receiving objects:  84% (265/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6165556Z Receiving objects:  85% (268/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6167842Z Receiving objects:  86% (271/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6169535Z Receiving objects:  87% (275/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6171501Z Receiving objects:  88% (278/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6173618Z Receiving objects:  89% (281/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6176627Z Receiving objects:  90% (284/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6178495Z Receiving objects:  91% (287/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6179672Z Receiving objects:  92% (290/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6180506Z Receiving objects:  93% (293/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6181954Z Receiving objects:  94% (297/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6183523Z Receiving objects:  95% (300/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6184216Z Receiving objects:  96% (303/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6185351Z Receiving objects:  97% (306/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6188487Z Receiving objects:  98% (309/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6189198Z remote: Total 315 (delta 22), reused 249 (delta 14), pack-reused 0 (from 0)        
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6206274Z Receiving objects:  99% (312/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6206656Z Receiving objects: 100% (315/315)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6207187Z Receiving objects: 100% (315/315), 2.53 MiB | 17.87 MiB/s, done.
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6210040Z Resolving deltas:   0% (0/22)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6210948Z Resolving deltas:   4% (1/22)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6211333Z Resolving deltas:   9% (2/22)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6214888Z Resolving deltas:  13% (3/22)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6215310Z Resolving deltas:  18% (4/22)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6215684Z Resolving deltas:  22% (5/22)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6216047Z Resolving deltas:  27% (6/22)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6216417Z Resolving deltas:  31% (7/22)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6216794Z Resolving deltas:  36% (8/22)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6217165Z Resolving deltas:  40% (9/22)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6217532Z Resolving deltas:  45% (10/22)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6217893Z Resolving deltas:  50% (11/22)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6218316Z Resolving deltas:  59% (13/22)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6218671Z Resolving deltas:  63% (14/22)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6219026Z Resolving deltas:  68% (15/22)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6221940Z Resolving deltas:  72% (16/22)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6222515Z Resolving deltas:  77% (17/22)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6222926Z Resolving deltas:  81% (18/22)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6223525Z Resolving deltas:  86% (19/22)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6225538Z Resolving deltas:  90% (20/22)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6239211Z Resolving deltas:  95% (21/22)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6239672Z Resolving deltas: 100% (22/22)
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6240967Z Resolving deltas: 100% (22/22), done.
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6313082Z From https://github.com/costesla/Summit-OS-Web
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6313712Z  * [new ref]         edf5f35cfef26714c44214560eabd38e5bbb070c -> origin/master
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6346207Z ##[endgroup]
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6346809Z ##[group]Determining the checkout info
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6349291Z ##[endgroup]
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6349867Z ##[group]Checking out the ref
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6354830Z [command]/usr/bin/git checkout --progress --force -B master refs/remotes/origin/master
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6646398Z Reset branch 'master'
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6649222Z branch 'master' set up to track 'origin/master'.
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6657210Z ##[endgroup]
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6657818Z ##[group]Setting up auth for fetching submodules
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6663211Z [command]/usr/bin/git config --global http.https://github.com/.extraheader AUTHORIZATION: basic ***
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6700972Z [command]/usr/bin/git config --global --unset-all url.https://github.com/.insteadOf
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6731252Z [command]/usr/bin/git config --global --add url.https://github.com/.insteadOf git@github.com:
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6761297Z [command]/usr/bin/git config --global --add url.https://github.com/.insteadOf org-251262899@github.com:
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6786954Z ##[endgroup]
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6787404Z ##[group]Fetching submodules
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.6792806Z [command]/usr/bin/git submodule sync
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.7031459Z [command]/usr/bin/git -c protocol.version=2 submodule update --init --force --depth=1
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.7268308Z [command]/usr/bin/git submodule foreach git config --local gc.auto 0
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.7499604Z ##[endgroup]
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.7500265Z ##[group]Persisting credentials for submodules
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.7504420Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'url\.https\:\/\/github\.com\/\.insteadOf' && git config --local --unset-all 'url.https://github.com/.insteadOf' || :"
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.7742214Z [command]/usr/bin/git submodule foreach sh -c "git config --local 'http.https://github.com/.extraheader' 'AUTHORIZATION: basic ***' && git config --local --show-origin --name-only --get-regexp remote.origin.url"
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.7977973Z [command]/usr/bin/git submodule foreach git config --local --add 'url.https://github.com/.insteadOf' 'git@github.com:'
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.8207309Z [command]/usr/bin/git submodule foreach git config --local --add 'url.https://github.com/.insteadOf' 'org-251262899@github.com:'
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.8430002Z ##[endgroup]
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.8465770Z [command]/usr/bin/git log -1 --format='%H'
+Build and Deploy Job	Run actions/checkout@v3	2026-01-27T19:27:14.8493027Z 'edf5f35cfef26714c44214560eabd38e5bbb070c'
+Build and Deploy Job	Setup Node.js	﻿2026-01-27T19:27:14.8691595Z ##[group]Run actions/setup-node@v3
+Build and Deploy Job	Setup Node.js	2026-01-27T19:27:14.8691888Z with:
+Build and Deploy Job	Setup Node.js	2026-01-27T19:27:14.8692068Z   node-version: 20
+Build and Deploy Job	Setup Node.js	2026-01-27T19:27:14.8692403Z   always-auth: false
+Build and Deploy Job	Setup Node.js	2026-01-27T19:27:14.8692604Z   check-latest: false
+Build and Deploy Job	Setup Node.js	2026-01-27T19:27:14.8692913Z   token: ***
+Build and Deploy Job	Setup Node.js	2026-01-27T19:27:14.8693088Z ##[endgroup]
+Build and Deploy Job	Setup Node.js	2026-01-27T19:27:15.0616547Z Found in cache @ /opt/hostedtoolcache/node/20.20.0/x64
+Build and Deploy Job	Setup Node.js	2026-01-27T19:27:15.0623233Z ##[group]Environment details
+Build and Deploy Job	Setup Node.js	2026-01-27T19:27:17.3997415Z node: v20.20.0
+Build and Deploy Job	Setup Node.js	2026-01-27T19:27:17.3997794Z npm: 10.8.2
+Build and Deploy Job	Setup Node.js	2026-01-27T19:27:17.3998020Z yarn: 1.22.22
+Build and Deploy Job	Setup Node.js	2026-01-27T19:27:17.3999342Z ##[endgroup]
+Build and Deploy Job	Install Dependencies	﻿2026-01-27T19:27:17.4102975Z ##[group]Run cd frontend && npm ci
+Build and Deploy Job	Install Dependencies	2026-01-27T19:27:17.4103325Z [36;1mcd frontend && npm ci[0m
+Build and Deploy Job	Install Dependencies	2026-01-27T19:27:17.4185686Z shell: /usr/bin/bash -e {0}
+Build and Deploy Job	Install Dependencies	2026-01-27T19:27:17.4185935Z ##[endgroup]
+Build and Deploy Job	Install Dependencies	2026-01-27T19:27:23.9004713Z npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+Build and Deploy Job	Install Dependencies	2026-01-27T19:27:23.9348316Z npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+Build and Deploy Job	Install Dependencies	2026-01-27T19:27:24.3479169Z npm warn deprecated sudo-prompt@8.2.5: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+Build and Deploy Job	Install Dependencies	2026-01-27T19:27:24.8417651Z npm warn deprecated rimraf@2.7.1: Rimraf versions prior to v4 are no longer supported
+Build and Deploy Job	Install Dependencies	2026-01-27T19:27:41.8805748Z 
+Build and Deploy Job	Install Dependencies	2026-01-27T19:27:41.8806432Z added 827 packages, and audited 828 packages in 24s
+Build and Deploy Job	Install Dependencies	2026-01-27T19:27:41.8806855Z 
+Build and Deploy Job	Install Dependencies	2026-01-27T19:27:41.8807223Z 235 packages are looking for funding
+Build and Deploy Job	Install Dependencies	2026-01-27T19:27:41.8807768Z   run `npm fund` for details
+Build and Deploy Job	Install Dependencies	2026-01-27T19:27:41.8839403Z 
+Build and Deploy Job	Install Dependencies	2026-01-27T19:27:41.8851514Z 5 vulnerabilities (4 low, 1 high)
+Build and Deploy Job	Install Dependencies	2026-01-27T19:27:41.8852105Z 
+Build and Deploy Job	Install Dependencies	2026-01-27T19:27:41.8852809Z Some issues need review, and may require choosing
+Build and Deploy Job	Install Dependencies	2026-01-27T19:27:41.8853549Z a different dependency.
+Build and Deploy Job	Install Dependencies	2026-01-27T19:27:41.8854470Z 
+Build and Deploy Job	Install Dependencies	2026-01-27T19:27:41.8854842Z Run `npm audit` for details.
+Build and Deploy Job	Build Static Site	﻿2026-01-27T19:27:41.9377690Z ##[group]Run cd frontend && npm run build
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:41.9378026Z [36;1mcd frontend && npm run build[0m
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:41.9409956Z shell: /usr/bin/bash -e {0}
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:41.9410188Z env:
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:41.9410583Z   NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ***
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:41.9410839Z ##[endgroup]
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:42.0458481Z 
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:42.0459170Z > sonic-einstein@0.1.0 build
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:42.0460651Z > next build
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:42.0460894Z 
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:42.5853196Z ⚠ No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/docs/messages/no-cache
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:42.5934045Z Attention: Next.js now collects completely anonymous telemetry regarding usage.
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:42.5935165Z This information is used to shape Next.js' roadmap and prioritize features.
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:42.5936685Z You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:42.5937741Z https://nextjs.org/telemetry
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:42.5938940Z 
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:42.6095215Z ▲ Next.js 16.1.4 (Turbopack)
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:42.6096057Z 
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:42.6836558Z   Creating an optimized production build ...
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:47.7270149Z ✓ Compiled successfully in 4.7s
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:47.7356320Z   Running TypeScript ...
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:52.0184352Z   Collecting page data using 3 workers ...
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:52.4441855Z Error: export const dynamic = "force-dynamic" on page "/api/receipt-graph" cannot be used with "output: export". See more info here: https://nextjs.org/docs/advanced-features/static-html-export
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:52.4443849Z     at module evaluation (.next/server/chunks/[root-of-the-server]__5a394b53._.js:78:1775)
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:52.4444789Z     at instantiateModule (.next/server/chunks/[turbopack]_runtime.js:740:9)
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:52.4445692Z     at instantiateRuntimeModule (.next/server/chunks/[turbopack]_runtime.js:768:12)
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:52.4446694Z     at getOrInstantiateRuntimeModule (.next/server/chunks/[turbopack]_runtime.js:781:12)
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:52.4447574Z     at Object.m (.next/server/chunks/[turbopack]_runtime.js:790:18)
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:52.4448379Z     at Object.<anonymous> (.next/server/app/api/receipt-graph/route.js:5:3)
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:52.4957539Z 
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:52.4958458Z > Build error occurred
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:52.4998620Z Error: Failed to collect page data for /api/receipt-graph
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:52.4999084Z     at ignore-listed frames {
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:52.4999380Z   type: 'Error'
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:52.4999603Z }
+Build and Deploy Job	Build Static Site	2026-01-27T19:27:52.5387168Z ##[error]Process completed with exit code 1.
+Build and Deploy Job	Post Run actions/checkout@v3	﻿2026-01-27T19:27:52.5472201Z Post job cleanup.
+Build and Deploy Job	Post Run actions/checkout@v3	2026-01-27T19:27:52.6191590Z [command]/usr/bin/git version
+Build and Deploy Job	Post Run actions/checkout@v3	2026-01-27T19:27:52.6218053Z git version 2.52.0
+Build and Deploy Job	Post Run actions/checkout@v3	2026-01-27T19:27:52.6260682Z Temporarily overriding HOME='/home/runner/work/_temp/f04effe4-ddc7-49b8-ab31-c89968aa3afe' before making global git config changes
+Build and Deploy Job	Post Run actions/checkout@v3	2026-01-27T19:27:52.6262743Z Adding repository directory to the temporary git global config as a safe directory
+Build and Deploy Job	Post Run actions/checkout@v3	2026-01-27T19:27:52.6265855Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/Summit-OS-Web/Summit-OS-Web
+Build and Deploy Job	Post Run actions/checkout@v3	2026-01-27T19:27:52.6296116Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Build and Deploy Job	Post Run actions/checkout@v3	2026-01-27T19:27:52.6324900Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Build and Deploy Job	Post Run actions/checkout@v3	2026-01-27T19:27:52.6541875Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Build and Deploy Job	Post Run actions/checkout@v3	2026-01-27T19:27:52.6561038Z http.https://github.com/.extraheader
+Build and Deploy Job	Post Run actions/checkout@v3	2026-01-27T19:27:52.6572826Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+Build and Deploy Job	Post Run actions/checkout@v3	2026-01-27T19:27:52.6600427Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Build and Deploy Job	Complete job	﻿2026-01-27T19:27:52.6916661Z Cleaning up orphan processes

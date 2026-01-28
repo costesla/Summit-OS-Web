@@ -26,6 +26,18 @@
         {
             "route": "/api/copilot/*",
             "rewrite": "https://summitos-api.azurewebsites.net/api/copilot/*"
+        },
+        {
+            "route": "/api/book",
+            "rewrite": "https://summitos-api.azurewebsites.net/api/book"
+        },
+        {
+            "route": "/api/cabin",
+            "rewrite": "https://summitsyncfuncus23436.azurewebsites.net/api/cabin-api"
+        },
+        {
+            "route": "/api/update-payment",
+            "rewrite": "https://summitsyncfuncus23436.azurewebsites.net/api/update-payment"
         }
     ]
 }

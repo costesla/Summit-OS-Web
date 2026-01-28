@@ -1,0 +1,78 @@
+[
+  {
+    "name": "FUNCTIONS_WORKER_RUNTIME",
+    "value": "python"
+  },
+  {
+    "name": "FUNCTIONS_EXTENSION_VERSION",
+    "value": "~4"
+  },
+  {
+    "name": "AzureWebJobsStorage",
+    "value": "DefaultEndpointsProtocol=https;EndpointSuffix=core.windows.net;AccountName=stsummitosprod;AccountKey=TVjXd4YlIyOrR852pSgwLvcccGV8JzBm8cS5sCqNCm90iRDPBsp+0yB5vZjZ7xshr7GQvNxMfzt7+AStuXbjOQ=="
+  },
+  {
+    "name": "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING",
+    "value": "DefaultEndpointsProtocol=https;EndpointSuffix=core.windows.net;AccountName=stsummitosprod;AccountKey=TVjXd4YlIyOrR852pSgwLvcccGV8JzBm8cS5sCqNCm90iRDPBsp+0yB5vZjZ7xshr7GQvNxMfzt7+AStuXbjOQ=="
+  },
+  {
+    "name": "WEBSITE_CONTENTSHARE",
+    "value": "summitos-apicfefeb5ddb22"
+  },
+  {
+    "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+    "value": "InstrumentationKey=d703f690-1c61-46bd-9348-9223bda4d1f4;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/;ApplicationId=d7f07111-81ec-4e60-8897-1c3029b2ce0e"
+  },
+  {
+    "name": "TESSIE_VIN",
+    "value": "7SAYGDEEXRF075302"
+  },
+  {
+    "name": "AZURE_VISION_ENDPOINT",
+    "value": "https://ai-summitos-prod.cognitiveservices.azure.com/"
+  },
+  {
+    "name": "OAUTH_TENANT_ID",
+    "value": "1cd94367-e5ad-4827-90a9-cc4c6124a340"
+  },
+  {
+    "name": "OAUTH_CLIENT_ID",
+    "value": "a7d212ac-dd2b-4910-a62a-b623a8ac250c"
+  },
+  {
+    "name": "SQL_SERVER_NAME",
+    "value": "summitsqlus23436.database.windows.net"
+  },
+  {
+    "name": "SQL_DATABASE_NAME",
+    "value": "SummitMediaDB"
+  },
+  {
+    "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
+    "value": "true"
+  },
+  {
+    "name": "ENABLE_ORYX_BUILD",
+    "value": "true"
+  },
+  {
+    "name": "GOOGLE_MAPS_API_KEY",
+    "value": "AIzaSyA5xhbpf14ajrT1axR8iaMw9m2u_jpMGpE"
+  },
+  {
+    "name": "TESSIE_API_KEY",
+    "value": "@Microsoft.KeyVault(SecretUri=https://kv-summitos-prod.vault.azure.net/secrets/TessieApiKey/)"
+  },
+  {
+    "name": "AZURE_VISION_KEY",
+    "value": "@Microsoft.KeyVault(SecretUri=https://kv-summitos-prod.vault.azure.net/secrets/AzureVisionKey/)"
+  },
+  {
+    "name": "OAUTH_CLIENT_SECRET",
+    "value": "@Microsoft.KeyVault(SecretUri=https://kv-summitos-prod.vault.azure.net/secrets/OAuthClientSecret/)"
+  },
+  {
+    "name": "AVIATIONSTACK_API_KEY",
+    "value": "@Microsoft.KeyVault(SecretUri=https://kv-summitos-prod.vault.azure.net/secrets/AviationStackApiKey/)"
+  }
+]

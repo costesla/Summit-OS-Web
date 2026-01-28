@@ -5,7 +5,10 @@
  * Run with: npx tsx test-receipt-handler.ts
  */
 
-import handler from './src/lib/receipt-combined-handler';
+import * as dotenv from 'dotenv';
+dotenv.config();
+
+import handler from './frontend/src/lib/receipt-combined-handler';
 import * as fs from 'fs';
 
 // Load sample trip data

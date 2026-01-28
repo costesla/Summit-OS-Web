@@ -129,3 +129,67 @@ def log_private_trip(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(json.dumps({"status": "success"}), status_code=200)
     except Exception as e:
         return func.HttpResponse(str(e), status_code=500)
+@bp.route(route="book", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
+def book(req: func.HttpRequest) -> func.HttpResponse:
+    logging.info("Legacy/Receipt booking bridge hit")
+    try:
+        data = req.get_json()
+        
+        # Extract data
+        name = data.get('name') or data.get('customerName') or "Customer"
+        email = data.get('email') or data.get('customerEmail')
+        pickup = data.get('pickup', "N/A")
+        dropoff = data.get('dropoff', "N/A")
+        price = data.get('price', "$0.00")
+        booking_id = f"R-{int(time.time())}"
+        
+        # Build HTML
+        html = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; padding: 20px; background: #f4f4f4;">
+            <div style="max-width: 600px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; border-top: 5px solid #000;">
+                <h2>SummitOS Receipt</h2>
+                <p>Hello {name},</p>
+                <p>Thank you for choosing SummitOS. Here is your trip summary:</p>
+                <div style="background: #f9f9f9; padding: 15px; border-radius: 5px;">
+                    <p><strong>Pickup:</strong> {pickup}</p>
+                    <p><strong>Dropoff:</strong> {dropoff}</p>
+                    <p><strong>Total:</strong> {price}</p>
+                    <p><strong>Booking ID:</strong> #{booking_id}</p>
+                </div>
+                <p style="font-size: 12px; color: #888; margin-top: 20px;">
+                    Driven by Precision | COS Tesla LLC
+                </p>
+            </div>
+        </body>
+        </html>
+        """
+        
+        # Send mail via Graph
+        graph = GraphClient()
+        # 1. To Customer
+        graph.send_mail(email, f"Trip Receipt: {booking_id}", html)
+        # 2. To Admin
+        graph.send_mail("peter.teehan@costesla.com", f"New Booking: {name} - {price}", html)
+        
+        # Log to Database
+        db = DatabaseClient()
+        try:
+            db.save_trip({
+                "trip_id": booking_id,
+                "classification": "Private_Booking",
+                "fare": float(price.replace('$', '').replace(',', '')) if '$' in price else 0,
+                "timestamp_epoch": time.time(),
+                "raw_text": f"Booking for {name} from {pickup} to {dropoff}"
+            })
+        except:
+            pass
+            
+        return func.HttpResponse(
+            json.dumps({"success": True, "message": "Booking confirmed & Receipt Sent"}),
+            status_code=200,
+            mimetype="application/json"
+        )
+    except Exception as e:
+        logging.error(f"Booking Bridge Error: {e}")
+        return func.HttpResponse(json.dumps({"success": False, "error": str(e)}), status_code=500)

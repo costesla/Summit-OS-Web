@@ -1,0 +1,8 @@
+azure-functions
+azure-storage-blob==12.19.1
+azure-identity==1.17.0
+azure-core>=1.30.0
+azure-ai-vision-imageanalysis
+msrest==0.7.1
+requests==2.31.0
+pyodbc==4.0.39

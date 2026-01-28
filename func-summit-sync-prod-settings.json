@@ -1,0 +1,46 @@
+[
+  {
+    "name": "FUNCTIONS_WORKER_RUNTIME",
+    "value": "python"
+  },
+  {
+    "name": "FUNCTIONS_EXTENSION_VERSION",
+    "value": "~4"
+  },
+  {
+    "name": "AzureWebJobsStorage",
+    "value": "DefaultEndpointsProtocol=https;AccountName=stsummitosprod;AccountKey=...;EndpointSuffix=core.windows.net"
+  },
+  {
+    "name": "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING",
+    "value": "DefaultEndpointsProtocol=https;EndpointSuffix=core.windows.net;AccountName=stsummitosprod;AccountKey=TVjXd4YlIyOrR852pSgwLvcccGV8JzBm8cS5sCqNCm90iRDPBsp+0yB5vZjZ7xshr7GQvNxMfzt7+AStuXbjOQ=="
+  },
+  {
+    "name": "WEBSITE_CONTENTSHARE",
+    "value": "func-summit-sync-prod08b1e7279936"
+  },
+  {
+    "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+    "value": "InstrumentationKey=78016d6f-95ed-4770-b8f0-b1ed63cd36c2;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/;ApplicationId=c4aa9e2f-b0f5-477c-b9c6-970b30e5fbee"
+  },
+  {
+    "name": "WEBSITE_RUN_FROM_PACKAGE",
+    "value": "https://stsummitosprod.blob.core.windows.net/function-releases/20260121225936-59f963c1-f8ed-45d7-8ff3-27a6f2023996.zip?st=2026-01-22T05%3A49%3A36Z&se=2036-01-10T05%3A59%3A36Z&sp=r&sv=2026-02-06&sr=b&sig=Ws%2BAHYHWqP0DEFEMzJacN1Bf0z6WjMUdbC0c6qJIzcI%3D"
+  },
+  {
+    "name": "TESSIE_API_KEY",
+    "value": "uZEcFjEipPP1SVmT6i6sTsMtNI5S7pvd"
+  },
+  {
+    "name": "TESSIE_VIN",
+    "value": "7SAYGDEEXRF075302"
+  },
+  {
+    "name": "AZURE_VISION_KEY",
+    "value": "Ecv9kZNKA7cbNkO8bhxfkjKzq4T95W8wmaG4iEp7drHgRq8u7jokJQQJ99CAACYYeBjFXJ3w3AAAFACOGg6xs"
+  },
+  {
+    "name": "AZURE_VISION_ENDPOINT",
+    "value": "https://eastus.api.cognitive.microsoft.com/"
+  }
+]

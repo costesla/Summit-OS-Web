@@ -1,0 +1,30 @@
+SummitOS LLC — Private Trip Receipt
+
+Hi Alex,
+
+Trip ID: PT-20260120-072315
+Date: Mon, Jan 20, 2026
+Time: 7:23 AM – 7:43 AM
+Pickup: 1234 Voyager Parkway, Colorado Springs, CO 80907
+Drop-off: 9876 Banning Lewis Parkway, Colorado Springs, CO 80920
+Distance: 15.54 mi
+Duration: 20 min
+
+Fare Breakdown:
+  Base: $20.00
+  Time & distance: $5.50
+  Extras: $0.00
+  Discount: -$2.50
+  Subtotal: $23.00
+  Tax: $1.84
+  Tip: $5.00
+TOTAL: $29.84
+
+Payment:
+  Method: Venmo ending in 1234
+  Authorization: PRVT-OK-7A23
+
+
+
+Addresses included because this is an official passenger receipt.
+Questions? Contact peter.teehan@costesla.com

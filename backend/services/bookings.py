@@ -2,7 +2,7 @@ import os
 import requests
 import logging
 from datetime import datetime
-from lib.graph import GraphClient
+from .graph import GraphClient
 
 class BookingsClient:
     """

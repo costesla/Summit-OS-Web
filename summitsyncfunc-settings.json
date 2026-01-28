@@ -1,0 +1,50 @@
+[
+  {
+    "name": "FUNCTIONS_WORKER_RUNTIME",
+    "value": "python"
+  },
+  {
+    "name": "FUNCTIONS_EXTENSION_VERSION",
+    "value": "~4"
+  },
+  {
+    "name": "AzureWebJobsStorage",
+    "value": "DefaultEndpointsProtocol=https;EndpointSuffix=core.windows.net;AccountName=summitstoreus23436;AccountKey=VIcvbi1rt0vh1jx1zOx4ehQRzADu32JQliaEnceJwkNWmlRBd/DzdLRjD1dEbpGgkCd3fB/BhHig+AStPEwVvg=="
+  },
+  {
+    "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+    "value": "InstrumentationKey=a338db62-a1c5-4c25-b64c-b3cc3beb5807;IngestionEndpoint=https://eastus2-3.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus2.livediagnostics.monitor.azure.com/;ApplicationId=bfff1cca-c8da-42bc-b151-a78577267dc7"
+  },
+  {
+    "name": "AZURE_FUNCTION_PROXY_DISABLE_LOCAL_CALL",
+    "value": "true"
+  },
+  {
+    "name": "SQL_CONNECTION_STRING",
+    "value": "Driver={ODBC Driver 17 for SQL Server};Server=tcp:summitsqlus23436.database.windows.net,1433;Database=SummitMediaDB;Uid=summitadmin;Pwd=Summ1tSync2026!Azure;Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;"
+  },
+  {
+    "name": "PYTHON_ENABLE_WORKER_EXTENSIONS",
+    "value": "1"
+  },
+  {
+    "name": "AZURE_VISION_ENDPOINT",
+    "value": "https://eastus.api.cognitive.microsoft.com/"
+  },
+  {
+    "name": "AZURE_VISION_KEY",
+    "value": "Ecv9kZNKA7cbNkO8bhxfkjKzq4T95W8wmaG4iEp7drHgRq8u7jokJQQJ99CAACYYeBjFXJ3w3AAAFACOGg6xs"
+  },
+  {
+    "name": "TESSIE_API_KEY",
+    "value": "uZEcFjEipPP1SVmT6i6sTsMtNI5S7pvd"
+  },
+  {
+    "name": "TESSIE_VIN",
+    "value": "7SAYGDEEXRF075302"
+  },
+  {
+    "name": "WEBSITE_RUN_FROM_PACKAGE",
+    "value": "https://summitstoreus23436.blob.core.windows.net/function-releases/20260123150028-6163a33a-7280-482c-bc9a-f6598ec8c2d8.zip?st=2026-01-23T21%3A50%3A28Z&se=2036-01-11T22%3A00%3A28Z&sp=r&sv=2026-02-06&sr=b&sig=H%2Bd8UbrqaKkQvnBon9GNDzSl%2BymBwPr3jPDqc59Ddmk%3D"
+  }
+]
