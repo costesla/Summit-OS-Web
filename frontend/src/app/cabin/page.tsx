@@ -43,13 +43,21 @@ function CabinContent() {
     }, [token]);
 
     const fetchTelemetry = async () => {
-        // In real app: fetch('/api/cabin/state?token=' + token)
-        // Mocking live data for the UI build
-        setState(prev => ({
-            ...prev,
-            speed: Math.floor(Math.random() * 10) + 60, // 60-70mph
-            elevation: prev.elevation + 20 // Climbing
-        }));
+        try {
+            const res = await fetch(`/api/cabin/state?token=${token}`);
+            const data = await res.json();
+            if (data && !data.error) {
+                setState(prev => ({
+                    ...prev,
+                    speed: data.speed,
+                    elevation: data.elevation,
+                    seats: data.seats,
+                    windows_vented: data.windows_vented
+                }));
+            }
+        } catch (e) {
+            console.error("Telemetry poll failed", e);
+        }
     };
 
     const toggleSeat = async (seat: 'rear_left' | 'rear_right') => {
@@ -67,14 +75,47 @@ function CabinContent() {
         }));
 
         // Call API
-        // await fetch('/api/cabin/control', { ... })
+        try {
+            await fetch('/api/cabin/control', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    token,
+                    command: 'seat_heater',
+                    seat: seat,
+                    level: next
+                })
+            });
+        } catch (e) {
+            console.error("Seat control failed", e);
+        }
+    };
+
+    const toggleWindows = async () => {
+        const nextState = !state.windows_vented;
+
+        // Optimistic
+        setState(prev => ({ ...prev, windows_vented: nextState }));
+
+        try {
+            await fetch('/api/cabin/control', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    token,
+                    command: nextState ? 'vent_windows' : 'close_windows'
+                })
+            });
+        } catch (e) {
+            console.error("Window control failed", e);
+        }
     };
 
     if (authorized === false) {
         return (
             <div className="min-h-screen bg-black text-white flex items-center justify-center p-8 text-center">
                 <div>
-                    <Lock size={48} className="mx-auto mb-4 text-red-500" />
+                    <Lock size={48} className="mx-auto mb-4 text-cyan-500" />
                     <h1 className="text-2xl font-bold">Access Denied</h1>
                     <p className="text-gray-400 mt-2">Invalid or Expired Session Token.</p>
                 </div>
@@ -83,7 +124,7 @@ function CabinContent() {
     }
 
     return (
-        <div className="min-h-screen bg-neutral-900 text-white font-sans selection:bg-red-500/30">
+        <div className="min-h-screen bg-black text-white font-sans selection:bg-cyan-500/30">
             {/* Header */}
             <header className="fixed top-0 w-full bg-black/50 backdrop-blur-md border-b border-white/10 p-6 z-50">
                 <div className="flex justify-between items-center max-w-md mx-auto">
@@ -105,7 +146,7 @@ function CabinContent() {
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col items-center justify-center">
                         <span className="text-gray-400 text-xs uppercase tracking-widest mb-1">Speed</span>
                         <div className="flex items-baseline gap-1">
-                            <span className="text-4xl font-bold font-mono">{state.speed}</span>
+                            <span className="text-4xl font-bold font-mono">{state.speed != null ? Math.round(state.speed) : '--'}</span>
                             <span className="text-sm text-gray-500">mph</span>
                         </div>
                     </div>
@@ -126,7 +167,7 @@ function CabinContent() {
                     <div className="grid grid-cols-2 gap-4">
                         <button
                             onClick={() => toggleSeat('rear_left')}
-                            className={`h-32 rounded-3xl border transition-all flex flex-col items-center justify-center gap-2 ${state.seats.rl > 0 ? 'bg-red-600 border-red-500 shadow-lg shadow-red-900/50' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+                            className={`h-32 rounded-3xl border transition-all flex flex-col items-center justify-center gap-2 ${state.seats.rl > 0 ? 'bg-cyan-600 border-cyan-500 shadow-lg shadow-cyan-900/50' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
                         >
                             <span className="text-sm font-medium opacity-80">Rear Left</span>
                             <div className="flex gap-1 mt-1">
@@ -137,7 +178,7 @@ function CabinContent() {
                         </button>
                         <button
                             onClick={() => toggleSeat('rear_right')}
-                            className={`h-32 rounded-3xl border transition-all flex flex-col items-center justify-center gap-2 ${state.seats.rr > 0 ? 'bg-red-600 border-red-500 shadow-lg shadow-red-900/50' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+                            className={`h-32 rounded-3xl border transition-all flex flex-col items-center justify-center gap-2 ${state.seats.rr > 0 ? 'bg-cyan-600 border-cyan-500 shadow-lg shadow-cyan-900/50' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
                         >
                             <span className="text-sm font-medium opacity-80">Rear Right</span>
                             <div className="flex gap-1 mt-1">
@@ -154,7 +195,9 @@ function CabinContent() {
                     <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
                         <Wind size={16} /> Atmosphere
                     </h2>
-                    <button className="w-full bg-white/5 border border-white/10 rounded-2xl p-6 flex justify-between items-center group active:scale-95 transition-all">
+                    <button
+                        onClick={toggleWindows}
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-6 flex justify-between items-center group active:scale-95 transition-all">
                         <div className="text-left">
                             <span className="block font-bold text-white">Vent Windows</span>
                             <span className="text-xs text-gray-400">Fresh air mode</span>
@@ -166,9 +209,9 @@ function CabinContent() {
                 </section>
 
                 {/* 4. Journey Progress */}
-                <section className="bg-gradient-to-br from-blue-900/40 to-black border border-white/10 rounded-3xl p-6 relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-blue-500/30">
-                        <div className="h-full bg-blue-500 w-[65%]" />
+                <section className="bg-gradient-to-br from-cyan-900/40 to-black border border-white/10 rounded-3xl p-6 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-cyan-500/30">
+                        <div className="h-full bg-cyan-500 w-[65%]" />
                     </div>
                     <div className="flex justify-between items-start mb-2">
                         <div>

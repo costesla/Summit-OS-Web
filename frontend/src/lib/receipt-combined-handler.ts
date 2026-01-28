@@ -316,13 +316,10 @@ Questions? Contact peter.teehan@costesla.com`;
         toRecipients: [
             { emailAddress: { address: PassengerData.email } }
         ],
+        replyTo: [
+            { emailAddress: { address: "peter.teehan@costesla.com" } }
+        ],
         internetMessageHeaders: [
-            { name: "Reply-To", value: "peter.teehan@costesla.com" },
-            {
-                name: "List-Unsubscribe",
-                value: "<mailto:peter.teehan@costesla.com?subject=unsubscribe>"
-            },
-            { name: "List-Unsubscribe-Post", value: "List-Unsubscribe=One-Click" },
             { name: "X-Mailer", value: "SummitOS Receipt Engine" },
             { name: "X-Sent-By", value: "SummitOS LLC" }
         ],

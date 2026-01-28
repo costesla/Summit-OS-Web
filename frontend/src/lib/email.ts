@@ -16,9 +16,16 @@ interface ReceiptData {
     total: string; // "$17.50"
   };
   bookingId: string;
+  paymentMethod?: string;
+  confirmationLink?: string;
 }
 
 export const generateReceiptHtml = (data: ReceiptData) => {
+  const isCash = data.paymentMethod === 'Cash' || data.paymentMethod === 'Cash (Pending)';
+  const mainButton = isCash
+    ? `<a href="${data.confirmationLink}" class="btn" style="background-color: #10b981;">✅ I HAVE PAID THE DRIVER</a>`
+    : `<a href="https://summitos.pro" class="btn">Book Another Trip</a>`;
+
   return `
 <!DOCTYPE html>
 <html>
@@ -36,7 +43,7 @@ export const generateReceiptHtml = (data: ReceiptData) => {
     .value { font-weight: 600; font-size: 14px; text-align: right; }
     .total-row { display: flex; justify-content: space-between; margin-top: 20px; padding-top: 15px; border-top: 2px solid #000000; font-size: 18px; font-weight: bold; }
     .footer { background-color: #eeeeee; padding: 20px; text-align: center; font-size: 12px; color: #888888; }
-    .btn { display: inline-block; background-color: #D12630; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 4px; margin-top: 20px; font-size: 14px; }
+    .btn { display: inline-block; background-color: #06b6d4; color: #ffffff; padding: 15px 30px; text-decoration: none; border-radius: 4px; margin-top: 20px; font-size: 16px; font-weight: bold; text-align: center; }
   </style>
 </head>
 <body>
@@ -83,13 +90,13 @@ export const generateReceiptHtml = (data: ReceiptData) => {
             <span class="value">${data.priceCheckdown.wait}</span>
         </div>
         <div class="total-row">
-            <span>TOTAL</span>
+            <span>TOTAL (${data.paymentMethod || 'Credit'})</span>
             <span>${data.priceCheckdown.total}</span>
         </div>
       </div>
 
       <div style="text-align: center;">
-        <a href="https://costesla.com" class="btn">Book Another Trip</a>
+        ${mainButton}
       </div>
     </div>
     <div class="footer">
@@ -155,9 +162,9 @@ export const sendAdminNotification = async (data: ReceiptData) => {
   });
 
   const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-top: 5px solid #D12630;">
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-top: 5px solid #06b6d4;">
       <div style="padding: 20px;">
-        <h2 style="color: #D12630; margin-top: 0;">🚗 New Trip Request</h2>
+        <h2 style="color: #06b6d4; margin-top: 0;">🚗 New Trip Request</h2>
         <p><strong>Passenger:</strong> ${data.customerName}</p>
         <p><strong>Email:</strong> ${data.customerEmail}</p>
         

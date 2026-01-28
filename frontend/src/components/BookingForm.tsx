@@ -69,13 +69,16 @@ export default function BookingForm() {
         if (priceQuote) setBookingStep('details');
     };
 
+    const [bookingId, setBookingId] = useState<string | null>(null);
+    const [showZelle, setShowZelle] = useState(false);
+
     const handleSubmitDetails = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
 
         try {
             // Send data to our API
-            await fetch('/api/book', {
+            const res = await fetch('/api/book', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -84,11 +87,40 @@ export default function BookingForm() {
                     tripDetails
                 })
             });
+            const data = await res.json();
+            if (data.success && data.bookingId) {
+                setBookingId(data.bookingId);
+            }
             setBookingStep('handoff');
         } catch (err) {
             alert("Something went wrong. Please try again.");
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handlePaymentSelection = async (method: string) => {
+        if (!bookingId) return;
+
+        // Send to backend
+        try {
+            await fetch('/api/book/payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    bookingId,
+                    paymentMethod: method,
+                    email: formData.email,
+                    name: formData.name,
+                    amount: priceQuote
+                })
+            });
+
+            if (method === 'Cash') {
+                alert("Thank you! Please check your email for the confirmation link.");
+            }
+        } catch (e) {
+            console.error("Failed to log payment method", e);
         }
     };
 
@@ -191,7 +223,7 @@ export default function BookingForm() {
 
             {/* Step 3: Handoff to Bookings */}
             {bookingStep === 'handoff' && (
-                <div className="mt-8 mb-2 p-6 bg-green-500/10 rounded-xl border border-green-500/30 text-center animate-in zoom-in-95 duration-300">
+                <div className="mt-8 mb-2 p-6 bg-green-500/10 rounded-xl border border-green-500/30 text-center animate-in zoom-in-95 duration-300 relative">
                     <div className="text-4xl mb-2">✅</div>
                     <h4 className="text-xl font-bold text-white mb-2">Details Received!</h4>
                     <p className="text-sm text-gray-300 mb-6">We have your trip info. Now simply choose your time slot.</p>
@@ -200,10 +232,64 @@ export default function BookingForm() {
                         href="https://outlook.office.com/book/SummitOS@costesla.com/?ismsaljsauthenabled"
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center justify-center gap-2 bg-cyan-600 text-white px-6 py-4 rounded-lg font-bold hover:bg-cyan-700 transition-colors w-full text-lg shadow-lg hover:shadow-cyan-500/20"
+                        className="flex items-center justify-center gap-2 bg-cyan-600 text-white px-6 py-4 rounded-lg font-bold hover:bg-cyan-700 transition-colors w-full text-lg shadow-lg hover:shadow-cyan-500/20 mb-6"
                     >
                         📅 Select Time Slot
                     </a>
+
+                    <div className="border-t border-white/10 pt-4">
+                        <p className="text-sm font-semibold text-gray-400 mb-3 uppercase tracking-wider">Payment Options</p>
+                        <div className="grid grid-cols-3 gap-3">
+                            <a
+                                href="https://www.venmo.com/u/costesla"
+                                target="_blank"
+                                rel="noreferrer"
+                                onClick={() => handlePaymentSelection('Venmo')}
+                                className="bg-[#008CFF] text-white py-3 px-2 rounded-lg font-bold hover:bg-[#0074D4] transition-colors flex items-center justify-center gap-1 text-sm"
+                            >
+                                Venmo
+                            </a>
+                            <button
+                                onClick={() => {
+                                    handlePaymentSelection('Zelle');
+                                    setShowZelle(true);
+                                }}
+                                className="bg-[#6d1ed4] text-white py-3 px-2 rounded-lg font-bold hover:bg-[#5b19b0] transition-colors flex items-center justify-center gap-1 text-sm"
+                            >
+                                Zelle
+                            </button>
+                            <button
+                                onClick={() => handlePaymentSelection('Cash')}
+                                className="bg-emerald-600 text-white py-3 px-2 rounded-lg font-bold hover:bg-emerald-700 transition-colors flex items-center justify-center gap-1 text-sm"
+                            >
+                                Cash
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Zelle Modal */}
+            {showZelle && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 transition-opacity duration-300" onClick={() => setShowZelle(false)}>
+                    <div className="bg-white text-black p-6 rounded-2xl max-w-sm w-full text-center shadow-2xl scale-100 transform transition-transform" onClick={e => e.stopPropagation()}>
+                        <h3 className="text-xl font-bold mb-2 text-[#6d1ed4]">Scan to Pay via Zelle</h3>
+                        <p className="text-sm text-gray-600 mb-4">COS TESLA LLC</p>
+
+                        <div className="bg-gray-100 p-4 rounded-xl mb-4 inline-block">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src="/assets/zelle-qr.png" alt="Zelle QR Code" className="w-56 h-56 object-contain" />
+                        </div>
+
+                        <p className="text-xs text-gray-500 mb-6">Or use: <b>p...n@costesla.com</b></p>
+
+                        <button
+                            onClick={() => setShowZelle(false)}
+                            className="w-full bg-gray-200 text-gray-800 font-bold py-3 rounded-lg hover:bg-gray-300 transition-colors"
+                        >
+                            Close
+                        </button>
+                    </div>
                 </div>
             )}
 
