@@ -146,8 +146,14 @@ class GraphClient:
                         }
                     }
                 ],
+                "replyTo": [
+                    {
+                        "emailAddress": {
+                            "address": "peter.teehan@costesla.com"
+                        }
+                    }
+                ],
                 "internetMessageHeaders": [
-                    { "name": "Reply-To", "value": "peter.teehan@costesla.com" },
                     { "name": "X-Mailer", "value": "SummitOS Receipt Engine" }
                 ]
             },
