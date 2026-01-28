@@ -128,7 +128,7 @@ class GraphClient:
             raise Exception(f"Graph Create Event Error: {resp.status_code} {resp.text}")
             
         return resp.json()
-    def send_mail(self, to_email, subject, body_html, from_email="PrivateTrips@costesla.com"):
+    def send_mail(self, to_email, subject, body_html, from_email="peter.teehan@costesla.com"):
         token = self._get_token()
         url = f"https://graph.microsoft.com/v1.0/users/{from_email}/sendMail"
         
