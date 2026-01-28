@@ -1,0 +1,14 @@
+# .funcignore - files to exclude from deployment
+.git*
+.vscode
+local.settings.json
+test_*.py
+__pycache__
+*.pyc
+.env
+.python_version
+deploy*.ps1
+deploy*.zip
+*_backup.py
+*_simple.py
+scripts/

@@ -44,7 +44,7 @@ function CabinContent() {
 
     const fetchTelemetry = async () => {
         try {
-            const res = await fetch(`/api/cabin/state?token=${token}`);
+            const res = await fetch(`/api/cabin?token=${token}`);
             const data = await res.json();
             if (data && !data.error) {
                 setState(prev => ({
@@ -76,7 +76,7 @@ function CabinContent() {
 
         // Call API
         try {
-            await fetch('/api/cabin/control', {
+            await fetch('/api/cabin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -98,7 +98,7 @@ function CabinContent() {
         setState(prev => ({ ...prev, windows_vented: nextState }));
 
         try {
-            await fetch('/api/cabin/control', {
+            await fetch('/api/cabin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

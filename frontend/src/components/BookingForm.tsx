@@ -104,7 +104,7 @@ export default function BookingForm() {
 
         // Send to backend
         try {
-            await fetch('/api/book/payment', {
+            await fetch('/api/update-payment', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

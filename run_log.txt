@@ -1,0 +1,296 @@
+build-and-deploy	Set up job	﻿2026-01-27T18:43:18.7723003Z Current runner version: '2.331.0'
+build-and-deploy	Set up job	2026-01-27T18:43:18.7750639Z ##[group]Runner Image Provisioner
+build-and-deploy	Set up job	2026-01-27T18:43:18.7751509Z Hosted Compute Agent
+build-and-deploy	Set up job	2026-01-27T18:43:18.7752050Z Version: 20260115.477
+build-and-deploy	Set up job	2026-01-27T18:43:18.7752708Z Commit: 4b342d620503cbe250a3154040964899ea7c9b00
+build-and-deploy	Set up job	2026-01-27T18:43:18.7753367Z Build Date: 2026-01-15T22:32:41Z
+build-and-deploy	Set up job	2026-01-27T18:43:18.7753964Z Worker ID: {5315494d-4ad8-48c1-9e29-2a536c45db92}
+build-and-deploy	Set up job	2026-01-27T18:43:18.7754685Z Azure Region: westcentralus
+build-and-deploy	Set up job	2026-01-27T18:43:18.7755235Z ##[endgroup]
+build-and-deploy	Set up job	2026-01-27T18:43:18.7756650Z ##[group]Operating System
+build-and-deploy	Set up job	2026-01-27T18:43:18.7757286Z Ubuntu
+build-and-deploy	Set up job	2026-01-27T18:43:18.7757765Z 24.04.3
+build-and-deploy	Set up job	2026-01-27T18:43:18.7758183Z LTS
+build-and-deploy	Set up job	2026-01-27T18:43:18.7758693Z ##[endgroup]
+build-and-deploy	Set up job	2026-01-27T18:43:18.7759153Z ##[group]Runner Image
+build-and-deploy	Set up job	2026-01-27T18:43:18.7759681Z Image: ubuntu-24.04
+build-and-deploy	Set up job	2026-01-27T18:43:18.7760205Z Version: 20260119.4.1
+build-and-deploy	Set up job	2026-01-27T18:43:18.7761082Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260119.4/images/ubuntu/Ubuntu2404-Readme.md
+build-and-deploy	Set up job	2026-01-27T18:43:18.7762662Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260119.4
+build-and-deploy	Set up job	2026-01-27T18:43:18.7763445Z ##[endgroup]
+build-and-deploy	Set up job	2026-01-27T18:43:18.7764466Z ##[group]GITHUB_TOKEN Permissions
+build-and-deploy	Set up job	2026-01-27T18:43:18.7766514Z Contents: read
+build-and-deploy	Set up job	2026-01-27T18:43:18.7767090Z Metadata: read
+build-and-deploy	Set up job	2026-01-27T18:43:18.7767660Z Packages: read
+build-and-deploy	Set up job	2026-01-27T18:43:18.7768121Z ##[endgroup]
+build-and-deploy	Set up job	2026-01-27T18:43:18.7770289Z Secret source: Actions
+build-and-deploy	Set up job	2026-01-27T18:43:18.7771034Z Prepare workflow directory
+build-and-deploy	Set up job	2026-01-27T18:43:18.9130743Z Prepare all required actions
+build-and-deploy	Set up job	2026-01-27T18:43:18.9188809Z Getting action download info
+build-and-deploy	Set up job	2026-01-27T18:43:19.2758970Z Download action repository 'actions/checkout@v4' (SHA:34e114876b0b11c390a56381ad16ebd13914f8d5)
+build-and-deploy	Set up job	2026-01-27T18:43:19.3780416Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+build-and-deploy	Set up job	2026-01-27T18:43:19.4753683Z Download action repository 'Azure/functions-action@v1' (SHA:0bd707f87c0b6385742bab336c74e1afc61f6369)
+build-and-deploy	Set up job	2026-01-27T18:43:22.8321338Z Complete job name: build-and-deploy
+build-and-deploy	Checkout repository	﻿2026-01-27T18:43:23.0244735Z ##[group]Run actions/checkout@v4
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.0245409Z with:
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.0245690Z   repository: costesla/Summit-OS-Web
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.0246405Z   token: ***
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.0246642Z   ssh-strict: true
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.0246892Z   ssh-user: git
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.0247136Z   persist-credentials: true
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.0247411Z   clean: true
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.0247679Z   sparse-checkout-cone-mode: true
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.0247956Z   fetch-depth: 1
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.0248188Z   fetch-tags: false
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.0248431Z   show-progress: true
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.0248670Z   lfs: false
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.0248886Z   submodules: false
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.0249155Z   set-safe-directory: true
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.0249608Z env:
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.0249863Z   AZURE_FUNCTIONAPP_NAME: summitos-api
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.0250171Z   AZURE_FUNCTIONAPP_PACKAGE_PATH: backend
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.0250457Z   PYTHON_VERSION: 3.11
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.0250733Z ##[endgroup]
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1336927Z Syncing repository: costesla/Summit-OS-Web
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1338651Z ##[group]Getting Git version info
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1339105Z Working directory is '/home/runner/work/Summit-OS-Web/Summit-OS-Web'
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1339802Z [command]/usr/bin/git version
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1372808Z git version 2.52.0
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1397022Z ##[endgroup]
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1420907Z Temporarily overriding HOME='/home/runner/work/_temp/76a56ea4-89dd-4ba9-8793-c30d5da28f20' before making global git config changes
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1422281Z Adding repository directory to the temporary git global config as a safe directory
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1427482Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/Summit-OS-Web/Summit-OS-Web
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1463860Z Deleting the contents of '/home/runner/work/Summit-OS-Web/Summit-OS-Web'
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1467399Z ##[group]Initializing the repository
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1472000Z [command]/usr/bin/git init /home/runner/work/Summit-OS-Web/Summit-OS-Web
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1554793Z hint: Using 'master' as the name for the initial branch. This default branch name
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1555780Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1556538Z hint: to use in all of your new repositories, which will suppress this warning,
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1557116Z hint: call:
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1557453Z hint:
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1557966Z hint: 	git config --global init.defaultBranch <name>
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1558398Z hint:
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1558916Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1559746Z hint: 'development'. The just-created branch can be renamed via this command:
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1560418Z hint:
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1560792Z hint: 	git branch -m <name>
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1561186Z hint:
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1561741Z hint: Disable this message with "git config set advice.defaultBranchName false"
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1562760Z Initialized empty Git repository in /home/runner/work/Summit-OS-Web/Summit-OS-Web/.git/
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1569825Z [command]/usr/bin/git remote add origin https://github.com/costesla/Summit-OS-Web
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1599080Z ##[endgroup]
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1599858Z ##[group]Disabling automatic garbage collection
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1603989Z [command]/usr/bin/git config --local gc.auto 0
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1628739Z ##[endgroup]
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1629385Z ##[group]Setting up auth
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1634965Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1661235Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1930442Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.1957066Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.2134638Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.2164689Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.2345338Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.2377573Z ##[endgroup]
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.2378124Z ##[group]Fetching the repository
+build-and-deploy	Checkout repository	2026-01-27T18:43:23.2385606Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +76ff1b5b6060458aa5bf7892c69d5364a5f01df8:refs/remotes/origin/master
+build-and-deploy	Checkout repository	2026-01-27T18:43:24.8094032Z From https://github.com/costesla/Summit-OS-Web
+build-and-deploy	Checkout repository	2026-01-27T18:43:24.8095169Z  * [new ref]         76ff1b5b6060458aa5bf7892c69d5364a5f01df8 -> origin/master
+build-and-deploy	Checkout repository	2026-01-27T18:43:24.8130020Z ##[endgroup]
+build-and-deploy	Checkout repository	2026-01-27T18:43:24.8130823Z ##[group]Determining the checkout info
+build-and-deploy	Checkout repository	2026-01-27T18:43:24.8131600Z ##[endgroup]
+build-and-deploy	Checkout repository	2026-01-27T18:43:24.8138325Z [command]/usr/bin/git sparse-checkout disable
+build-and-deploy	Checkout repository	2026-01-27T18:43:24.8176954Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+build-and-deploy	Checkout repository	2026-01-27T18:43:24.8202837Z ##[group]Checking out the ref
+build-and-deploy	Checkout repository	2026-01-27T18:43:24.8207316Z [command]/usr/bin/git checkout --progress --force -B master refs/remotes/origin/master
+build-and-deploy	Checkout repository	2026-01-27T18:43:24.8459899Z Reset branch 'master'
+build-and-deploy	Checkout repository	2026-01-27T18:43:24.8460578Z branch 'master' set up to track 'origin/master'.
+build-and-deploy	Checkout repository	2026-01-27T18:43:24.8469693Z ##[endgroup]
+build-and-deploy	Checkout repository	2026-01-27T18:43:24.8508920Z [command]/usr/bin/git log -1 --format=%H
+build-and-deploy	Checkout repository	2026-01-27T18:43:24.8530405Z 76ff1b5b6060458aa5bf7892c69d5364a5f01df8
+build-and-deploy	Setup Python version	﻿2026-01-27T18:43:24.9852699Z ##[group]Run actions/setup-python@v5
+build-and-deploy	Setup Python version	2026-01-27T18:43:24.9853055Z with:
+build-and-deploy	Setup Python version	2026-01-27T18:43:24.9853473Z   python-version: 3.11
+build-and-deploy	Setup Python version	2026-01-27T18:43:24.9853682Z   check-latest: false
+build-and-deploy	Setup Python version	2026-01-27T18:43:24.9854107Z   token: ***
+build-and-deploy	Setup Python version	2026-01-27T18:43:24.9854319Z   update-environment: true
+build-and-deploy	Setup Python version	2026-01-27T18:43:24.9854544Z   allow-prereleases: false
+build-and-deploy	Setup Python version	2026-01-27T18:43:24.9854779Z   freethreaded: false
+build-and-deploy	Setup Python version	2026-01-27T18:43:24.9854989Z env:
+build-and-deploy	Setup Python version	2026-01-27T18:43:24.9855176Z   AZURE_FUNCTIONAPP_NAME: summitos-api
+build-and-deploy	Setup Python version	2026-01-27T18:43:24.9855455Z   AZURE_FUNCTIONAPP_PACKAGE_PATH: backend
+build-and-deploy	Setup Python version	2026-01-27T18:43:24.9855725Z   PYTHON_VERSION: 3.11
+build-and-deploy	Setup Python version	2026-01-27T18:43:24.9855916Z ##[endgroup]
+build-and-deploy	Setup Python version	2026-01-27T18:43:25.1481511Z ##[group]Installed versions
+build-and-deploy	Setup Python version	2026-01-27T18:43:25.1585179Z Successfully set up CPython (3.11.14)
+build-and-deploy	Setup Python version	2026-01-27T18:43:25.1585957Z ##[endgroup]
+build-and-deploy	Create and start virtual environment	﻿2026-01-27T18:43:25.1937880Z ##[group]Run python -m venv venv
+build-and-deploy	Create and start virtual environment	2026-01-27T18:43:25.1938296Z [36;1mpython -m venv venv[0m
+build-and-deploy	Create and start virtual environment	2026-01-27T18:43:25.1938569Z [36;1msource venv/bin/activate[0m
+build-and-deploy	Create and start virtual environment	2026-01-27T18:43:25.2018542Z shell: /usr/bin/bash -e {0}
+build-and-deploy	Create and start virtual environment	2026-01-27T18:43:25.2018820Z env:
+build-and-deploy	Create and start virtual environment	2026-01-27T18:43:25.2019052Z   AZURE_FUNCTIONAPP_NAME: summitos-api
+build-and-deploy	Create and start virtual environment	2026-01-27T18:43:25.2019323Z   AZURE_FUNCTIONAPP_PACKAGE_PATH: backend
+build-and-deploy	Create and start virtual environment	2026-01-27T18:43:25.2019587Z   PYTHON_VERSION: 3.11
+build-and-deploy	Create and start virtual environment	2026-01-27T18:43:25.2019863Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.14/x64
+build-and-deploy	Create and start virtual environment	2026-01-27T18:43:25.2020255Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.14/x64/lib/pkgconfig
+build-and-deploy	Create and start virtual environment	2026-01-27T18:43:25.2020645Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.14/x64
+build-and-deploy	Create and start virtual environment	2026-01-27T18:43:25.2021001Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.14/x64
+build-and-deploy	Create and start virtual environment	2026-01-27T18:43:25.2021346Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.14/x64
+build-and-deploy	Create and start virtual environment	2026-01-27T18:43:25.2021700Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.14/x64/lib
+build-and-deploy	Create and start virtual environment	2026-01-27T18:43:25.2021996Z ##[endgroup]
+build-and-deploy	Install dependencies	﻿2026-01-27T18:43:29.7046157Z ##[group]Run pip install -r backend/requirements.txt
+build-and-deploy	Install dependencies	2026-01-27T18:43:29.7046823Z [36;1mpip install -r backend/requirements.txt[0m
+build-and-deploy	Install dependencies	2026-01-27T18:43:29.7067971Z shell: /usr/bin/bash -e {0}
+build-and-deploy	Install dependencies	2026-01-27T18:43:29.7068213Z env:
+build-and-deploy	Install dependencies	2026-01-27T18:43:29.7068440Z   AZURE_FUNCTIONAPP_NAME: summitos-api
+build-and-deploy	Install dependencies	2026-01-27T18:43:29.7068701Z   AZURE_FUNCTIONAPP_PACKAGE_PATH: backend
+build-and-deploy	Install dependencies	2026-01-27T18:43:29.7068952Z   PYTHON_VERSION: 3.11
+build-and-deploy	Install dependencies	2026-01-27T18:43:29.7069222Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.14/x64
+build-and-deploy	Install dependencies	2026-01-27T18:43:29.7069606Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.14/x64/lib/pkgconfig
+build-and-deploy	Install dependencies	2026-01-27T18:43:29.7069982Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.14/x64
+build-and-deploy	Install dependencies	2026-01-27T18:43:29.7070327Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.14/x64
+build-and-deploy	Install dependencies	2026-01-27T18:43:29.7070670Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.14/x64
+build-and-deploy	Install dependencies	2026-01-27T18:43:29.7071012Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.14/x64/lib
+build-and-deploy	Install dependencies	2026-01-27T18:43:29.7071306Z ##[endgroup]
+build-and-deploy	Install dependencies	2026-01-27T18:43:30.9067807Z Collecting azure-functions (from -r backend/requirements.txt (line 1))
+build-and-deploy	Install dependencies	2026-01-27T18:43:31.0157776Z   Downloading azure_functions-1.24.0-py3-none-any.whl.metadata (7.4 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:31.0591186Z Collecting azure-storage-blob>=12.19.1 (from -r backend/requirements.txt (line 2))
+build-and-deploy	Install dependencies	2026-01-27T18:43:31.0825386Z   Downloading azure_storage_blob-12.28.0-py3-none-any.whl.metadata (26 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:31.1390260Z Collecting azure-identity>=1.17.0 (from -r backend/requirements.txt (line 3))
+build-and-deploy	Install dependencies	2026-01-27T18:43:31.1587983Z   Downloading azure_identity-1.25.1-py3-none-any.whl.metadata (88 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:31.2194332Z Collecting azure-core>=1.30.0 (from -r backend/requirements.txt (line 4))
+build-and-deploy	Install dependencies	2026-01-27T18:43:31.2392009Z   Downloading azure_core-1.38.0-py3-none-any.whl.metadata (47 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:31.2693720Z Collecting azure-ai-vision-imageanalysis (from -r backend/requirements.txt (line 5))
+build-and-deploy	Install dependencies	2026-01-27T18:43:31.2890252Z   Downloading azure_ai_vision_imageanalysis-1.0.0-py3-none-any.whl.metadata (22 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:31.3254526Z Collecting msrest>=0.7.1 (from -r backend/requirements.txt (line 6))
+build-and-deploy	Install dependencies	2026-01-27T18:43:31.3452826Z   Downloading msrest-0.7.1-py3-none-any.whl.metadata (21 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:31.4021397Z Collecting requests>=2.31.0 (from -r backend/requirements.txt (line 7))
+build-and-deploy	Install dependencies	2026-01-27T18:43:31.4220478Z   Downloading requests-2.32.5-py3-none-any.whl.metadata (4.9 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:31.4987414Z Collecting pyodbc>=4.0.39 (from -r backend/requirements.txt (line 8))
+build-and-deploy	Install dependencies	2026-01-27T18:43:31.6897843Z   Downloading pyodbc-5.3.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.7 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:31.7185385Z Collecting python-dateutil>=2.8.2 (from -r backend/requirements.txt (line 9))
+build-and-deploy	Install dependencies	2026-01-27T18:43:31.7377929Z   Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:31.7672333Z Collecting googlemaps>=4.10.0 (from -r backend/requirements.txt (line 10))
+build-and-deploy	Install dependencies	2026-01-27T18:43:31.7864152Z   Downloading googlemaps-4.10.0.tar.gz (33 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:31.7966617Z   Installing build dependencies: started
+build-and-deploy	Install dependencies	2026-01-27T18:43:32.7007674Z   Installing build dependencies: finished with status 'done'
+build-and-deploy	Install dependencies	2026-01-27T18:43:32.7014799Z   Getting requirements to build wheel: started
+build-and-deploy	Install dependencies	2026-01-27T18:43:33.0309453Z   Getting requirements to build wheel: finished with status 'done'
+build-and-deploy	Install dependencies	2026-01-27T18:43:33.0320647Z   Installing backend dependencies: started
+build-and-deploy	Install dependencies	2026-01-27T18:43:34.1289402Z   Installing backend dependencies: finished with status 'done'
+build-and-deploy	Install dependencies	2026-01-27T18:43:34.1296546Z   Preparing metadata (pyproject.toml): started
+build-and-deploy	Install dependencies	2026-01-27T18:43:34.3128025Z   Preparing metadata (pyproject.toml): finished with status 'done'
+build-and-deploy	Install dependencies	2026-01-27T18:43:34.3490959Z Collecting werkzeug~=3.1.3 (from azure-functions->-r backend/requirements.txt (line 1))
+build-and-deploy	Install dependencies	2026-01-27T18:43:34.3693471Z   Downloading werkzeug-3.1.5-py3-none-any.whl.metadata (4.0 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:34.4367436Z Collecting markupsafe>=2.1.1 (from werkzeug~=3.1.3->azure-functions->-r backend/requirements.txt (line 1))
+build-and-deploy	Install dependencies	2026-01-27T18:43:34.4563348Z   Downloading markupsafe-3.0.3-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.7 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:34.6490791Z Collecting cryptography>=2.1.4 (from azure-storage-blob>=12.19.1->-r backend/requirements.txt (line 2))
+build-and-deploy	Install dependencies	2026-01-27T18:43:34.6686758Z   Downloading cryptography-46.0.3-cp311-abi3-manylinux_2_34_x86_64.whl.metadata (5.7 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:34.7040963Z Collecting typing-extensions>=4.6.0 (from azure-storage-blob>=12.19.1->-r backend/requirements.txt (line 2))
+build-and-deploy	Install dependencies	2026-01-27T18:43:34.7233471Z   Downloading typing_extensions-4.15.0-py3-none-any.whl.metadata (3.3 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:34.7488370Z Collecting isodate>=0.6.1 (from azure-storage-blob>=12.19.1->-r backend/requirements.txt (line 2))
+build-and-deploy	Install dependencies	2026-01-27T18:43:34.7697173Z   Downloading isodate-0.7.2-py3-none-any.whl.metadata (11 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:34.8328178Z Collecting msal>=1.30.0 (from azure-identity>=1.17.0->-r backend/requirements.txt (line 3))
+build-and-deploy	Install dependencies	2026-01-27T18:43:34.8523066Z   Downloading msal-1.34.0-py3-none-any.whl.metadata (11 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:34.8796119Z Collecting msal-extensions>=1.2.0 (from azure-identity>=1.17.0->-r backend/requirements.txt (line 3))
+build-and-deploy	Install dependencies	2026-01-27T18:43:34.8989625Z   Downloading msal_extensions-1.3.1-py3-none-any.whl.metadata (7.8 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:34.9494344Z Collecting certifi>=2017.4.17 (from msrest>=0.7.1->-r backend/requirements.txt (line 6))
+build-and-deploy	Install dependencies	2026-01-27T18:43:34.9508725Z   Using cached certifi-2026.1.4-py3-none-any.whl.metadata (2.5 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:34.9783722Z Collecting requests-oauthlib>=0.5.0 (from msrest>=0.7.1->-r backend/requirements.txt (line 6))
+build-and-deploy	Install dependencies	2026-01-27T18:43:34.9979635Z   Downloading requests_oauthlib-2.0.0-py2.py3-none-any.whl.metadata (11 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.0930288Z Collecting charset_normalizer<4,>=2 (from requests>=2.31.0->-r backend/requirements.txt (line 7))
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.0944405Z   Using cached charset_normalizer-3.4.4-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (37 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.1231680Z Collecting idna<4,>=2.5 (from requests>=2.31.0->-r backend/requirements.txt (line 7))
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.1245765Z   Using cached idna-3.11-py3-none-any.whl.metadata (8.4 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.1633162Z Collecting urllib3<3,>=1.21.1 (from requests>=2.31.0->-r backend/requirements.txt (line 7))
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.1648032Z   Using cached urllib3-2.6.3-py3-none-any.whl.metadata (6.9 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.1951252Z Collecting six>=1.5 (from python-dateutil>=2.8.2->-r backend/requirements.txt (line 9))
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.2148048Z   Downloading six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.3552642Z Collecting cffi>=2.0.0 (from cryptography>=2.1.4->azure-storage-blob>=12.19.1->-r backend/requirements.txt (line 2))
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.3759110Z   Downloading cffi-2.0.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (2.6 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.4034039Z Collecting pycparser (from cffi>=2.0.0->cryptography>=2.1.4->azure-storage-blob>=12.19.1->-r backend/requirements.txt (line 2))
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.4240382Z   Downloading pycparser-3.0-py3-none-any.whl.metadata (8.2 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.4737130Z Collecting PyJWT<3,>=1.0.0 (from PyJWT[crypto]<3,>=1.0.0->msal>=1.30.0->azure-identity>=1.17.0->-r backend/requirements.txt (line 3))
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.4937318Z   Downloading PyJWT-2.10.1-py3-none-any.whl.metadata (4.0 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.5937377Z Collecting oauthlib>=3.0.0 (from requests-oauthlib>=0.5.0->msrest>=0.7.1->-r backend/requirements.txt (line 6))
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.6135628Z   Downloading oauthlib-3.3.1-py3-none-any.whl.metadata (7.9 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.6414872Z Downloading azure_functions-1.24.0-py3-none-any.whl (108 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.6696065Z Downloading werkzeug-3.1.5-py3-none-any.whl (225 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.7085374Z Downloading azure_storage_blob-12.28.0-py3-none-any.whl (431 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.7381942Z Downloading azure_identity-1.25.1-py3-none-any.whl (191 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.7606110Z Downloading azure_core-1.38.0-py3-none-any.whl (217 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.7842450Z Downloading azure_ai_vision_imageanalysis-1.0.0-py3-none-any.whl (64 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.8065447Z Downloading msrest-0.7.1-py3-none-any.whl (85 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.8099982Z Using cached requests-2.32.5-py3-none-any.whl (64 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.8113555Z Using cached charset_normalizer-3.4.4-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (151 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.8126646Z Using cached idna-3.11-py3-none-any.whl (71 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.8139496Z Using cached urllib3-2.6.3-py3-none-any.whl (131 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.8337622Z Downloading pyodbc-5.3.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (332 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.8577714Z Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.8624739Z Using cached certifi-2026.1.4-py3-none-any.whl (152 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.8832457Z Downloading cryptography-46.0.3-cp311-abi3-manylinux_2_34_x86_64.whl (4.5 MB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.9337297Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.5/4.5 MB 90.1 MB/s  0:00:00
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.9531378Z Downloading cffi-2.0.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (215 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.9747605Z Downloading isodate-0.7.2-py3-none-any.whl (22 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:35.9963765Z Downloading markupsafe-3.0.3-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (22 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:36.0177840Z Downloading msal-1.34.0-py3-none-any.whl (116 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:36.0395380Z Downloading PyJWT-2.10.1-py3-none-any.whl (22 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:36.0612112Z Downloading msal_extensions-1.3.1-py3-none-any.whl (20 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:36.0831895Z Downloading requests_oauthlib-2.0.0-py2.py3-none-any.whl (24 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:36.1045982Z Downloading oauthlib-3.3.1-py3-none-any.whl (160 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:36.1271032Z Downloading six-1.17.0-py2.py3-none-any.whl (11 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:36.1487463Z Downloading typing_extensions-4.15.0-py3-none-any.whl (44 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:36.1698212Z Downloading pycparser-3.0-py3-none-any.whl (48 kB)
+build-and-deploy	Install dependencies	2026-01-27T18:43:36.1957882Z Building wheels for collected packages: googlemaps
+build-and-deploy	Install dependencies	2026-01-27T18:43:36.1966163Z   Building wheel for googlemaps (pyproject.toml): started
+build-and-deploy	Install dependencies	2026-01-27T18:43:36.3917116Z   Building wheel for googlemaps (pyproject.toml): finished with status 'done'
+build-and-deploy	Install dependencies	2026-01-27T18:43:36.3923094Z   Created wheel for googlemaps: filename=googlemaps-4.10.0-py3-none-any.whl size=40820 sha256=34b0d526846a9496717013107eaffab92350b4384b8ce84fe9c75a31d55e17c3
+build-and-deploy	Install dependencies	2026-01-27T18:43:36.3924560Z   Stored in directory: /home/runner/.cache/pip/wheels/f1/09/77/3cc2f5659cbc62341b30f806aca2b25e6a26c351daa5b1f49a
+build-and-deploy	Install dependencies	2026-01-27T18:43:36.3945324Z Successfully built googlemaps
+build-and-deploy	Install dependencies	2026-01-27T18:43:36.4350413Z Installing collected packages: urllib3, typing-extensions, six, pyodbc, PyJWT, pycparser, oauthlib, markupsafe, isodate, idna, charset_normalizer, certifi, werkzeug, requests, python-dateutil, cffi, requests-oauthlib, googlemaps, cryptography, azure-functions, azure-core, msrest, azure-storage-blob, azure-ai-vision-imageanalysis, msal, msal-extensions, azure-identity
+build-and-deploy	Install dependencies	2026-01-27T18:43:37.6995361Z 
+build-and-deploy	Install dependencies	2026-01-27T18:43:37.7016697Z Successfully installed PyJWT-2.10.1 azure-ai-vision-imageanalysis-1.0.0 azure-core-1.38.0 azure-functions-1.24.0 azure-identity-1.25.1 azure-storage-blob-12.28.0 certifi-2026.1.4 cffi-2.0.0 charset_normalizer-3.4.4 cryptography-46.0.3 googlemaps-4.10.0 idna-3.11 isodate-0.7.2 markupsafe-3.0.3 msal-1.34.0 msal-extensions-1.3.1 msrest-0.7.1 oauthlib-3.3.1 pycparser-3.0 pyodbc-5.3.0 python-dateutil-2.9.0.post0 requests-2.32.5 requests-oauthlib-2.0.0 six-1.17.0 typing-extensions-4.15.0 urllib3-2.6.3 werkzeug-3.1.5
+build-and-deploy	Deploy to Azure Functions	﻿2026-01-27T18:43:38.0222660Z ##[group]Run Azure/functions-action@v1
+build-and-deploy	Deploy to Azure Functions	2026-01-27T18:43:38.0222938Z with:
+build-and-deploy	Deploy to Azure Functions	2026-01-27T18:43:38.0223124Z   app-name: summitos-api
+build-and-deploy	Deploy to Azure Functions	2026-01-27T18:43:38.0223342Z   package: backend
+build-and-deploy	Deploy to Azure Functions	2026-01-27T18:43:38.0228482Z   publish-profile: ***
+build-and-deploy	Deploy to Azure Functions	2026-01-27T18:43:38.0228701Z   scm-do-build-during-deployment: true
+build-and-deploy	Deploy to Azure Functions	2026-01-27T18:43:38.0228958Z   enable-oryx-build: true
+build-and-deploy	Deploy to Azure Functions	2026-01-27T18:43:38.0229173Z   respect-pom-xml: false
+build-and-deploy	Deploy to Azure Functions	2026-01-27T18:43:38.0229378Z   respect-funcignore: false
+build-and-deploy	Deploy to Azure Functions	2026-01-27T18:43:38.0229597Z   remote-build: false
+build-and-deploy	Deploy to Azure Functions	2026-01-27T18:43:38.0229803Z env:
+build-and-deploy	Deploy to Azure Functions	2026-01-27T18:43:38.0229976Z   AZURE_FUNCTIONAPP_NAME: summitos-api
+build-and-deploy	Deploy to Azure Functions	2026-01-27T18:43:38.0230239Z   AZURE_FUNCTIONAPP_PACKAGE_PATH: backend
+build-and-deploy	Deploy to Azure Functions	2026-01-27T18:43:38.0230481Z   PYTHON_VERSION: 3.11
+build-and-deploy	Deploy to Azure Functions	2026-01-27T18:43:38.0230766Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.14/x64
+build-and-deploy	Deploy to Azure Functions	2026-01-27T18:43:38.0231144Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.14/x64/lib/pkgconfig
+build-and-deploy	Deploy to Azure Functions	2026-01-27T18:43:38.0231528Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.14/x64
+build-and-deploy	Deploy to Azure Functions	2026-01-27T18:43:38.0231910Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.14/x64
+build-and-deploy	Deploy to Azure Functions	2026-01-27T18:43:38.0232254Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.14/x64
+build-and-deploy	Deploy to Azure Functions	2026-01-27T18:43:38.0232595Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.14/x64/lib
+build-and-deploy	Deploy to Azure Functions	2026-01-27T18:43:38.0232885Z ##[endgroup]
+build-and-deploy	Deploy to Azure Functions	2026-01-27T18:43:38.3229770Z Successfully parsed SCM credential from publish-profile format.
+build-and-deploy	Deploy to Azure Functions	2026-01-27T18:43:38.3238266Z Using SCM credential for authentication, GitHub Action will not perform resource validation.
+build-and-deploy	Deploy to Azure Functions	2026-01-27T18:43:38.6651055Z Successfully acquired app settings from function app (with SCM credential)!
+build-and-deploy	Deploy to Azure Functions	2026-01-27T18:43:38.6659482Z Will archive backend into /home/runner/work/_temp/temp_web_package_2474567732091102.zip as function app content
+build-and-deploy	Deploy to Azure Functions	2026-01-27T18:43:38.7993175Z Will use Kudu https://<scmsite>/api/zipdeploy to deploy since publish-profile is detected.
+build-and-deploy	Deploy to Azure Functions	2026-01-27T18:43:38.8722107Z ##[error]Execution Exception (state: PublishContent) (step: Invocation)
+build-and-deploy	Deploy to Azure Functions	2026-01-27T18:43:38.8731188Z ##[error]  When request Azure resource at PublishContent, zipDepoy : WEBSITE_RUN_FROM_PACKAGE in your function app is set to an URL. Please remove WEBSITE_RUN_FROM_PACKAGE app setting from your function app.
+build-and-deploy	Deploy to Azure Functions	2026-01-27T18:43:38.8732982Z ##[error]Deployment Failed!
+build-and-deploy	Post Checkout repository	﻿2026-01-27T18:43:38.9226055Z Post job cleanup.
+build-and-deploy	Post Checkout repository	2026-01-27T18:43:39.0128890Z [command]/usr/bin/git version
+build-and-deploy	Post Checkout repository	2026-01-27T18:43:39.0162878Z git version 2.52.0
+build-and-deploy	Post Checkout repository	2026-01-27T18:43:39.0200548Z Temporarily overriding HOME='/home/runner/work/_temp/f12c40e8-f12c-4196-aed8-8ba08639041b' before making global git config changes
+build-and-deploy	Post Checkout repository	2026-01-27T18:43:39.0201693Z Adding repository directory to the temporary git global config as a safe directory
+build-and-deploy	Post Checkout repository	2026-01-27T18:43:39.0205796Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/Summit-OS-Web/Summit-OS-Web
+build-and-deploy	Post Checkout repository	2026-01-27T18:43:39.0238415Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+build-and-deploy	Post Checkout repository	2026-01-27T18:43:39.0266979Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+build-and-deploy	Post Checkout repository	2026-01-27T18:43:39.0450235Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+build-and-deploy	Post Checkout repository	2026-01-27T18:43:39.0468470Z http.https://github.com/.extraheader
+build-and-deploy	Post Checkout repository	2026-01-27T18:43:39.0478526Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+build-and-deploy	Post Checkout repository	2026-01-27T18:43:39.0503614Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+build-and-deploy	Post Checkout repository	2026-01-27T18:43:39.0681888Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+build-and-deploy	Post Checkout repository	2026-01-27T18:43:39.0709835Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+build-and-deploy	Complete job	﻿2026-01-27T18:43:39.1001513Z Cleaning up orphan processes
