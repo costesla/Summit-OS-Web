@@ -9,6 +9,7 @@ from services.calendar import generate_time_slots_for_day, calculate_buffers, ti
 from services.graph import GraphClient
 from services.database import DatabaseClient
 from services.flight import AviationStackClient
+from services.datetime_utils import normalize_to_utc
 
 bp = func.Blueprint()
 
@@ -20,7 +21,7 @@ def calendar_availability(req: func.HttpRequest) -> func.HttpResponse:
         if not date_param:
             return func.HttpResponse("Missing date", status_code=400)
             
-        target_date = parser.parse(date_param)
+        target_date = normalize_to_utc(date_param)
         all_slots = generate_time_slots_for_day(target_date)
         
         graph = GraphClient()
@@ -34,15 +35,15 @@ def calendar_availability(req: func.HttpRequest) -> func.HttpResponse:
             
             has_conflict = False
             for event in existing_events:
-                evt_start = parser.parse(event['start']['dateTime'])
-                evt_end = parser.parse(event['end']['dateTime'])
+                evt_start = normalize_to_utc(event['start']['dateTime'])
+                evt_end = normalize_to_utc(event['end']['dateTime'])
                 
-                # Normalize timezones
-                if evt_start.tzinfo and buf_start.tzinfo is None:
-                    buf_start = buf_start.replace(tzinfo=evt_start.tzinfo)
-                    buf_end = buf_end.replace(tzinfo=evt_start.tzinfo)
+                # Buffer starts/ends are already normalized (UTC) because all_slots are based on target_date (UTC)
+                # But let's be absolutely explicit to prevent any regression
+                buf_start_utc = normalize_to_utc(buf_start)
+                buf_end_utc = normalize_to_utc(buf_end)
 
-                if time_ranges_overlap(buf_start, buf_end, evt_start, evt_end):
+                if time_ranges_overlap(buf_start_utc, buf_end_utc, evt_start, evt_end):
                     has_conflict = True
                     break
             

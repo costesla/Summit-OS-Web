@@ -1,4 +1,5 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from .datetime_utils import normalize_to_utc
 
 BUFFER_MINUTES = 30
 DEFAULT_TRIP_DURATION = 60
@@ -30,6 +31,9 @@ def get_hours_for_day(date_obj: datetime):
     return HOURS_CONFIG.get(js_day)
 
 def calculate_buffers(appointment_start: datetime, duration_minutes=DEFAULT_TRIP_DURATION):
+    # Ensure appointment_start is aware
+    appointment_start = normalize_to_utc(appointment_start)
+    
     buffer_start = appointment_start - timedelta(minutes=BUFFER_MINUTES)
     appointment_end = appointment_start + timedelta(minutes=duration_minutes)
     buffer_end = appointment_end + timedelta(minutes=BUFFER_MINUTES)
@@ -54,6 +58,9 @@ def generate_time_slots_for_day(date_obj: datetime):
     
     start_h, start_m = map(int, start_str.split(":"))
     end_h, end_m = map(int, end_str.split(":"))
+    
+    # Ensure date_obj is aware (UTC)
+    date_obj = normalize_to_utc(date_obj)
     
     # Construct start/end datetimes
     # Use the date component from date_obj, set time
