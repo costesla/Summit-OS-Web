@@ -13,7 +13,8 @@ export default function BookingForm() {
         email: "",
         phone: "",
         passengers: "1",
-        notes: ""
+        notes: "",
+        pickupDateTime: ""
     });
 
     const [priceQuote, setPriceQuote] = useState<string | null>(null);
@@ -77,6 +78,19 @@ export default function BookingForm() {
         setIsSubmitting(true);
 
         try {
+            // Format pickup time for display
+            const pickupTime = formData.pickupDateTime
+                ? new Date(formData.pickupDateTime).toLocaleString('en-US', {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                })
+                : "To be scheduled";
+
             // Send data to our API
             const res = await fetch('/api/book', {
                 method: 'POST',
@@ -84,7 +98,8 @@ export default function BookingForm() {
                 body: JSON.stringify({
                     ...formData,
                     price: priceQuote,
-                    tripDetails
+                    tripDetails,
+                    pickupTime
                 })
             });
             const data = await res.json();
@@ -198,6 +213,18 @@ export default function BookingForm() {
                                 <label>Phone</label>
                                 <input required type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="(555) 123-4567" className="w-full p-3 rounded bg-white/10 border border-white/20 text-white" />
                             </div>
+                        </div>
+                        <div className={styles.group}>
+                            <label>Preferred Pickup Date & Time</label>
+                            <input
+                                type="datetime-local"
+                                name="pickupDateTime"
+                                value={formData.pickupDateTime}
+                                onChange={handleChange}
+                                className="w-full p-3 rounded bg-white/10 border border-white/20 text-white"
+                                min={new Date().toISOString().slice(0, 16)}
+                            />
+                            <small className="text-gray-400 text-xs mt-1 block">Optional - You can also select a time slot later</small>
                         </div>
                         <div className={styles.group}>
                             <label>Passengers</label>
