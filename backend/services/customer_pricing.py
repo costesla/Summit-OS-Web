@@ -77,9 +77,21 @@ class CustomerPricingProfile:
             return False
             
         try:
-            expiry = datetime.strptime(expires_date, "%Y-%m-%d")
-            return datetime.now() >= expiry
-        except:
+            import datetime
+            from services.datetime_utils import normalize_to_utc
+            try:
+                import pytz
+                tz = pytz.utc
+            except ImportError:
+                tz = datetime.timezone.utc
+            
+            expiry = normalize_to_utc(expires_date)
+            now = datetime.datetime.now(tz)
+            
+            return now >= expiry
+        except Exception as e:
+            import logging
+            logging.error(f"Pricing expiry check error: {e}")
             return False
     
     @classmethod
