@@ -15,6 +15,7 @@ def quote(req: func.HttpRequest) -> func.HttpResponse:
         req_body = req.get_json()
         pickup = req_body.get('pickup', '')
         dropoff = req_body.get('dropoff', '')
+        customer_email = req_body.get('email', req_body.get('customerEmail', ''))
         
         gmaps_key = os.environ.get("GOOGLE_MAPS_API_KEY")
         if not gmaps_key:
@@ -34,7 +35,10 @@ def quote(req: func.HttpRequest) -> func.HttpResponse:
         dur_text = element['duration']['text']
 
         pricing = PricingEngine()
-        quote_data = pricing.calculate_trip_price(distance_miles=dist_miles)
+        quote_data = pricing.calculate_trip_price(
+            distance_miles=dist_miles,
+            customer_email=customer_email  # Pass customer email for pricing lookup
+        )
         quote_data["debug"] = {"duration": dur_text, "miles": f"{dist_miles:.1f}"}
         
         import re
