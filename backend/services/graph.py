@@ -14,13 +14,33 @@ class GraphClient:
             raise Exception("Missing Microsoft Graph credentials in env")
 
     def _get_token(self):
+        # OPTION 1: Client Credentials (Service Principal)
+        # This is the preferred method but requires 'Bookings.ReadWrite.All' Application permission
         url = f"https://login.microsoftonline.com/{self.tenant_id}/oauth2/v2.0/token"
-        data = {
-            "client_id": self.client_id,
-            "scope": "https://graph.microsoft.com/.default",
-            "client_secret": self.client_secret,
-            "grant_type": "client_credentials"
-        }
+        
+        # Try ROPC (User Password) if configured, as fallback for 401/Access Denied on Bookings
+        # This mimics a "User" logging in (Delegated Permission)
+        username = os.environ.get("BOOKINGS_USER_EMAIL", "PrivateTrips@costesla.com")
+        password = os.environ.get("BOOKINGS_USER_PASSWORD")
+        
+        if username and password:
+            data = {
+                "client_id": self.client_id,
+                "scope": "Bookings.ReadWrite.All", # Delegated Scope
+                "username": username,
+                "password": password,
+                "grant_type": "password",
+                "client_secret": self.client_secret
+            }
+        else:
+            # Default to App Credentials
+            data = {
+                "client_id": self.client_id,
+                "scope": "https://graph.microsoft.com/.default",
+                "client_secret": self.client_secret,
+                "grant_type": "client_credentials"
+            }
+            
         resp = requests.post(url, data=data)
         if not resp.ok:
             raise Exception(f"Graph Token Error: {resp.status_code} {resp.text}")
