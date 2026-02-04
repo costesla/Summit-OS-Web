@@ -69,6 +69,7 @@ export default function BookingEngine() {
 
         const fetchQuote = async () => {
             setLoading(true);
+            setToastMessage(null); // Clear previous errors
             try {
 
 
@@ -105,8 +106,19 @@ export default function BookingEngine() {
                     setQuote(data.quote);
                 } else {
                     console.error("Quote Logic Error:", data.error);
-                    setToastMessage(data.error || "Failed to calculate pricing");
-                    setQuote(null);
+
+                    // Only show logic error toasts if the address looks like it could be real
+                    // (prevents toast spam while typing "2" or "23")
+                    const isPartialAddress = (pickup.length < 10 || dropoff.length < 10) && data.error === "NOT_FOUND";
+
+                    if (!isPartialAddress) {
+                        setToastMessage(data.error || "Failed to calculate pricing");
+                    }
+
+                    // We keep the old quote if it's just a partial address error to prevent map flashing
+                    if (!isPartialAddress) {
+                        setQuote(null);
+                    }
                 }
             } catch (e: any) {
                 console.error("Fetch Error:", e);
