@@ -155,7 +155,19 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
         pickup = data.get('pickup', "N/A")
         dropoff = data.get('dropoff', "N/A")
         price = data.get('price', "$0.00")
-        pickup_time = data.get('pickupTime', "To be scheduled")
+        
+        # Handle Pickup Time formatting
+        from services.datetime_utils import format_local_time, normalize_to_utc
+        raw_time = data.get('pickupTime') or data.get('appointmentStart')
+        if raw_time:
+            try:
+                dt_utc = normalize_to_utc(raw_time)
+                pickup_time = format_local_time(dt_utc)
+            except:
+                pickup_time = raw_time
+        else:
+            pickup_time = "To be scheduled"
+            
         booking_id = f"R-{int(time.time())}"
         
         # Build HTML with enhanced receipt

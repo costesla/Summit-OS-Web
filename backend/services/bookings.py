@@ -63,7 +63,7 @@ class BookingsClient:
         
         # Modernized payload structure per Microsoft Graph v1.0 docs
         payload = {
-            "customerTimeZone": "UTC",
+            "customerTimeZone": "Mountain Standard Time",
             "smsNotificationsEnabled": False,
             "endDateTime": {
                 "dateTime": end_str,
