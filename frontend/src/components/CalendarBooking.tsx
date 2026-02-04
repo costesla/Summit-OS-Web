@@ -40,8 +40,6 @@ export default function CalendarBooking({
     const [loadingSlots, setLoadingSlots] = useState(false);
     const [booking, setBooking] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [paymentMethod, setPaymentMethod] = useState<'Venmo' | 'Zelle' | 'Cash'>('Cash');
-    const [showZelle, setShowZelle] = useState(false);
 
     // Generate next 30 days for date selection
     const availableDates = Array.from({ length: 30 }, (_, i) => {
@@ -108,7 +106,7 @@ export default function CalendarBooking({
                     duration: 60,
                     price,
                     passengers,
-                    paymentMethod: paymentMethod // Track preferred payment
+                    paymentMethod: 'External' // Default to external for now
                 }),
             });
 
@@ -265,68 +263,6 @@ export default function CalendarBooking({
                                 <li>• <strong>30 min after:</strong> Driver break/reset time</li>
                             </ul>
                         </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Payment Options */}
-            {selectedTime && (
-                <div className="border-t border-white/10 pt-6">
-                    <label className="text-xs font-bold text-gray-400 tracking-widest uppercase mb-4 block">
-                        Payment Method
-                    </label>
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-3">
-                            <a
-                                href="https://www.venmo.com/u/costesla"
-                                target="_blank"
-                                rel="noreferrer"
-                                onClick={() => setPaymentMethod('Venmo')}
-                                className={`flex items-center justify-center gap-2 py-3 rounded-lg font-bold transition-all ${paymentMethod === 'Venmo' ? 'bg-[#008CFF] text-white' : 'bg-white/5 border border-white/10 text-gray-300 hover:bg-white/10'}`}
-                            >
-                                Venmo
-                            </a>
-                            <button
-                                onClick={() => {
-                                    setPaymentMethod('Zelle');
-                                    setShowZelle(true);
-                                }}
-                                className={`flex items-center justify-center gap-2 py-3 rounded-lg font-bold transition-all ${paymentMethod === 'Zelle' ? 'bg-[#6d1ed4] text-white' : 'bg-white/5 border border-white/10 text-gray-300 hover:bg-white/10'}`}
-                            >
-                                Zelle
-                            </button>
-                        </div>
-
-                        <label className="flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-xl cursor-pointer hover:bg-white/10 transition-colors">
-                            <input
-                                type="checkbox"
-                                checked={paymentMethod === 'Cash'}
-                                onChange={() => setPaymentMethod('Cash')}
-                                className="w-5 h-5 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500 bg-transparent"
-                            />
-                            <div className="flex-1">
-                                <span className="text-sm font-bold text-white block">Pay at Pickup (Cash)</span>
-                                <span className="text-[10px] text-gray-400 uppercase tracking-tighter">Pay your driver directly at the end of the trip</span>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-            )}
-
-            {/* Zelle Modal */}
-            {showZelle && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4" onClick={() => setShowZelle(false)}>
-                    <div className="bg-white text-black p-6 rounded-2xl max-w-sm w-full text-center shadow-2xl" onClick={e => e.stopPropagation()}>
-                        <h3 className="text-xl font-bold mb-2 text-[#6d1ed4]">Scan to Pay via Zelle</h3>
-                        <p className="text-sm text-gray-600 mb-4">COS TESLA LLC</p>
-                        <div className="bg-gray-100 p-4 rounded-xl mb-4 inline-block">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src="/assets/zelle-qr.png" alt="Zelle QR Code" className="w-56 h-56 object-contain mx-auto" />
-                        </div>
-                        <p className="text-xs text-gray-500 mb-6">Or use: <b>peter.teehan@costesla.com</b></p>
-                        <button onClick={() => setShowZelle(false)} className="w-full bg-gray-200 text-gray-800 font-bold py-3 rounded-lg hover:bg-gray-300 transition-colors">
-                            Close
-                        </button>
                     </div>
                 </div>
             )}
