@@ -7,9 +7,19 @@ from services.pricing import PricingEngine
 
 bp = func.Blueprint()
 
-@bp.route(route="quote", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
+def _cors_headers():
+    return {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type"
+    }
+
+@bp.route(route="quote", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def quote(req: func.HttpRequest) -> func.HttpResponse:
     logging.info("Pricing quote requested via Blueprint")
+    
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=_cors_headers())
     
     try:
         req_body = req.get_json()
@@ -22,40 +32,101 @@ def quote(req: func.HttpRequest) -> func.HttpResponse:
             raise Exception("Google Maps API Key missing from environment")
             
         gmaps = googlemaps.Client(key=gmaps_key)
-        res = gmaps.distance_matrix(origins=[pickup], destinations=[dropoff], mode="driving")
         
-        if res['status'] != 'OK':
-            raise Exception(f"Google Maps Error: {res['status']}")
-            
-        element = res['rows'][0]['elements'][0]
-        if element.get('status') != 'OK':
-             raise Exception(f"Route not found: {element.get('status')}")
+        # Directions API
+        stops = req_body.get('stops', [])
+        valid_stops = [s for s in stops if s and s.strip()]
+        
+        directions_res = gmaps.directions(
+            origin=pickup,
+            destination=dropoff,
+            waypoints=valid_stops,
+            mode="driving",
+            region="us"
+        )
+        
+        if not directions_res:
+             logging.warning(f"No directions found for {pickup} -> {dropoff}")
+             raise Exception(f"Unable to find a driving route between these addresses")
              
-        dist_miles = element['distance']['value'] * 0.000621371
-        dur_text = element['duration']['text']
+        route = directions_res[0]
+        legs = route.get('legs', [])
+        
+        total_dist_meters = sum(leg['distance']['value'] for leg in legs)
+        total_duration_sec = sum(leg['duration']['value'] for leg in legs)
+        
+        dist_miles = total_dist_meters * 0.000621371
+        dur_text = legs[0]['duration']['text'] if len(legs) == 1 else f"{total_duration_sec // 60} mins"
+        
+        actual_origin = legs[0]['start_address']
+        actual_dest = legs[-1]['end_address']
+
+        trip_type = req_body.get('tripType', 'one-way')
+        return_stops = req_body.get('returnStops', [])
+        valid_return_stops = [s for s in return_stops if s and s.strip()]
+        
+        total_dist_miles = dist_miles
+        total_stops = len(valid_stops)
+        
+        if trip_type == 'round-trip':
+            return_res = gmaps.directions(
+                origin=dropoff,
+                destination=pickup,
+                waypoints=valid_return_stops,
+                mode="driving",
+                region="us"
+            )
+            if return_res:
+                return_route = return_res[0]
+                return_legs = return_route.get('legs', [])
+                return_dist_meters = sum(leg['distance']['value'] for leg in return_legs)
+                total_dist_miles += return_dist_meters * 0.000621371
+                total_stops += len(valid_return_stops)
+                
+        layover_hours = float(req_body.get('layoverHours', 0))
+        simple_wait_time = req_body.get('simpleWaitTime', False)
+        
+        wait_hours = layover_hours
+        if trip_type == 'one-way' and simple_wait_time:
+            wait_hours = max(wait_hours, 1.0)
 
         pricing = PricingEngine()
         quote_data = pricing.calculate_trip_price(
-            distance_miles=dist_miles,
-            customer_email=customer_email  # Pass customer email for pricing lookup
+            distance_miles=total_dist_miles,
+            stops_count=total_stops,
+            wait_time_hours=wait_hours,
+            customer_email=customer_email
         )
-        quote_data["debug"] = {"duration": dur_text, "miles": f"{dist_miles:.1f}"}
         
-        import re
-        try:
-            quote_data["time"] = int(re.search(r"(\d+)\s*min", dur_text).group(1))
-        except:
-            quote_data["time"] = 0
+        quote_data["debug"] = {
+            "duration": dur_text, 
+            "miles": f"{dist_miles:.1f}",
+            "origin": actual_origin,
+            "destination": actual_dest
+        }
+        quote_data["time"] = total_duration_sec // 60
             
         return func.HttpResponse(
             json.dumps({"success": True, "quote": quote_data}),
             status_code=200,
+            headers=_cors_headers(),
             mimetype="application/json"
         )
     except Exception as e:
-        logging.error(f"Pricing Error: {str(e)}")
+        error_msg = str(e)
+        logging.error(f"Pricing Error: {error_msg}")
+        
+        if "Google Maps" in error_msg or "route" in error_msg.lower():
+            return func.HttpResponse(
+                json.dumps({"success": False, "error": error_msg}),
+                status_code=200,
+                headers=_cors_headers(),
+                mimetype="application/json"
+            )
+            
         return func.HttpResponse(
-            json.dumps({"success": False, "error": str(e)}),
+            json.dumps({"success": False, "error": "Internal Pricing Engine Error"}),
             status_code=500,
+            headers=_cors_headers(),
             mimetype="application/json"
         )

@@ -2,28 +2,64 @@ import azure.functions as func
 import sys
 import os
 import logging
+import json
+import importlib
 
-# Path fix - MUST BE ABSOLUTE
+# Path fix - MUST BE ABSOLUTE to prevent blueprint import failures
 app_root = os.path.dirname(os.path.abspath(__file__))
 if app_root not in sys.path:
     sys.path.append(app_root)
+    logging.info(f"Added {app_root} to sys.path")
+
+# Also add 'api' and 'services' to path explicitly if needed, but app_root should cover them
+# as api.pricing etc.
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
-from api.health import bp as health_bp
-from api.pricing import bp as pricing_bp
-from api.tessie import bp as tessie_bp
-from api.ocr import bp as ocr_bp
-from api.reports import bp as reports_bp
-from api.bookings import bp as bookings_bp
-from api.copilot import bp as copilot_bp
+@app.route(route="ping", methods=["GET"])
+def ping_root(req: func.HttpRequest) -> func.HttpResponse:
+    return func.HttpResponse("pong from root", status_code=200)
 
-app.register_blueprint(health_bp)
-app.register_blueprint(pricing_bp)
-app.register_blueprint(tessie_bp)
-app.register_blueprint(ocr_bp)
-app.register_blueprint(reports_bp)
-app.register_blueprint(bookings_bp)
-app.register_blueprint(copilot_bp)
+# Robust Blueprint Registration
+blueprints = [
+    "api.pricing",
+    "api.ocr",
+    "api.bookings",
+    "api.tessie",
+    "api.reports",
+    "api.copilot",
+    "api.health"
+]
 
-logging.info("All blueprints registered successfully.")
+registration_logs = []
+for module_path in blueprints:
+    try:
+        logging.info(f"Attempting to register blueprint: {module_path}")
+        module = importlib.import_module(module_path)
+        if hasattr(module, 'bp'):
+            app.register_blueprint(module.bp)
+            registration_logs.append(f"SUCCESS: {module_path}")
+            logging.info(f"Successfully registered blueprint: {module_path}")
+        else:
+            registration_logs.append(f"WARNING: {module_path} has no 'bp'")
+            logging.warning(f"Blueprint {module_path} has no 'bp' attribute")
+    except Exception as e:
+        err_msg = f"ERROR: {module_path}: {str(e)}"
+        registration_logs.append(err_msg)
+        logging.error(err_msg)
+        import traceback
+        logging.error(traceback.format_exc())
+
+@app.route(route="diag", methods=["GET"])
+def diag(req: func.HttpRequest) -> func.HttpResponse:
+    import sys
+    import os
+    info = {
+        "sys.path": sys.path,
+        "cwd": os.getcwd(),
+        "files": os.listdir('.'),
+        "api_files": os.listdir('api') if os.path.exists('api') else "MISSING api",
+        "registration_logs": registration_logs,
+        "env_vars": {k: "SET" for k in os.environ.keys() if "KEY" in k or "SECRET" in k or "CONN" in k}
+    }
+    return func.HttpResponse(json.dumps(info, indent=2), mimetype="application/json")
