@@ -57,47 +57,30 @@ class BookingsClient:
         token = self.graph._get_token()
         url = f"https://graph.microsoft.com/v1.0/solutions/bookingBusinesses/{self.business_id}/appointments"
         
+        # FIX: Formally send UTC with Z suffix and specify UTC in the payload
+        start_str = start_dt.strftime('%Y-%m-%dT%H:%M:%SZ')
+        end_str = end_dt.strftime('%Y-%m-%dT%H:%M:%SZ')
+        
+        # Modernized payload structure per Microsoft Graph v1.0 docs
         payload = {
-            "@odata.type": "#microsoft.graph.bookingAppointment",
-            "customerTimeZone": "America/Denver",
-            "smsNotificationsEnabled": True,
+            "customerTimeZone": "UTC",
+            "smsNotificationsEnabled": False,
             "endDateTime": {
-                "@odata.type": "#microsoft.graph.dateTimeTimeZone",
-                "dateTime": end_dt.isoformat(),
-                "timeZone": "America/Denver"
+                "dateTime": end_str,
+                "timeZone": "UTC"
             },
-            "isLocationOnline": False,
-            "optOutOfCustomerEmail": False,
-            "anonymousJoinWebUrl": None,
-            "postBuffer": "PT30M", # 30 min post-buffer
-            "preBuffer": "PT30M",  # 30 min pre-buffer
-            "price": 0, # Pricing handled by our engine
-            "priceType": "undefined",
-            "reminders": [
-                {
-                    "@odata.type": "#microsoft.graph.bookingReminder",
-                    "message": "Your SummitOS driver is arriving soon!",
-                    "offset": "PT30M",
-                    "recipients": "customer"
-                }
-            ],
-            "serviceId": service_id,
             "startDateTime": {
-                "@odata.type": "#microsoft.graph.dateTimeTimeZone",
-                "dateTime": start_dt.isoformat(),
-                "timeZone": "America/Denver"
+                "dateTime": start_str,
+                "timeZone": "UTC"
             },
+            "serviceId": service_id,
             "customers": [
                 {
                     "@odata.type": "#microsoft.graph.bookingCustomerInformation",
-                    "customerId": None,
-                    "displayName": customer_data.get('name'),
+                    "name": customer_data.get('name'),
                     "emailAddress": customer_data.get('email'),
-                    "phone": customer_data.get('phone'),
-                    "location": {
-                        "@odata.type": "#microsoft.graph.location",
-                        "displayName": customer_data.get('pickup')
-                    }
+                    "phone": customer_data.get('phone', ''),
+                    "notes": f"Pickup: {customer_data.get('pickup')}\nDropoff: {customer_data.get('dropoff')}"
                 }
             ]
         }
@@ -107,9 +90,13 @@ class BookingsClient:
             "Content-Type": "application/json"
         }
         
+        logging.info(f"Creating Bookings appointment for {customer_data.get('email')} at {start_str}")
+        
         resp = requests.post(url, headers=headers, json=payload)
         if not resp.ok:
-            logging.error(f"Bookings Appt Error: {resp.text}")
-            resp.raise_for_status()
+            # CAPTURE BODY: This is crucial for seeing the 'message' from Microsoft (e.g. 'Invalid Service ID')
+            error_detail = resp.text
+            logging.error(f"Bookings Appt Error: {resp.status_code} - {error_detail}")
+            raise Exception(f"Microsoft Graph Error: {resp.status_code} - {error_detail}")
             
         return resp.json()
