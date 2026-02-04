@@ -28,28 +28,59 @@ def dashboard_summary(req: func.HttpRequest) -> func.HttpResponse:
         vin = os.environ.get("TESSIE_VIN")
         
         # 1. KPIs
-        query = "SELECT TOP 1 * FROM Reports.DailyKPIs WHERE [Date] = CAST(GETDATE() AS DATE)"
-        daily_stats = db.execute_query_with_results(query)
-        stats = daily_stats[0] if daily_stats else {"TotalEarnings": 0, "TotalTips": 0, "RideCount": 0}
+        # Use v_DailyKPIs if it exists (summit_sync uses it), fallback to Reports.DailyKPIs
+        stats = {"TotalEarnings": 0, "TotalTips": 0, "TripCount": 0}
+        try:
+            query = "SELECT TOP 1 * FROM v_DailyKPIs WHERE [Date] = CAST(GETDATE() AS DATE)"
+            daily_stats = db.execute_query_with_results(query)
+            if not daily_stats:
+                query = "SELECT TOP 1 * FROM Reports.DailyKPIs WHERE [Date] = CAST(GETDATE() AS DATE)"
+                daily_stats = db.execute_query_with_results(query)
+            
+            if daily_stats:
+                stats = daily_stats[0]
+                # Map RideCount to TripCount if needed
+                if "RideCount" in stats and "TripCount" not in stats:
+                    stats["TripCount"] = stats["RideCount"]
+        except Exception as e:
+            logging.warning(f"Failed to fetch KPIs: {e}")
         
         # 2. Weather
-        weather_query = "SELECT TOP 1 Temperature_F, Condition FROM Rides.WeatherLog ORDER BY timestamp DESC"
-        weather_data = db.execute_query_with_results(weather_query)
-        weather = weather_data[0] if weather_data else {"Temperature_F": "N/A", "Condition": "N/A"}
+        weather = {"Temperature_F": "N/A", "Condition": "N/A"}
+        try:
+            weather_query = "SELECT TOP 1 Temperature_F, Condition FROM Rides.WeatherLog ORDER BY timestamp DESC"
+            weather_data = db.execute_query_with_results(weather_query)
+            if not weather_data:
+                weather_query = "SELECT TOP 1 Temperature_F, Condition FROM WeatherLog ORDER BY timestamp DESC"
+                weather_data = db.execute_query_with_results(weather_query)
+            
+            if weather_data:
+                weather = weather_data[0]
+        except Exception as e:
+            logging.warning(f"Failed to fetch Weather: {e}")
         
         # 3. Telematics
-        vehicle_state = tessie.get_vehicle_state(vin) if vin else None
-        telematics = {}
-        if vehicle_state:
-            cs = vehicle_state.get('charge_state', {})
-            ds = vehicle_state.get('drive_state', {})
-            telematics = {
-                "battery_level": cs.get('battery_level'),
-                "charging_state": cs.get('charging_state'),
-                "latitude": ds.get('latitude'),
-                "longitude": ds.get('longitude'),
-                "speed": ds.get('speed')
-            }
+        telematics = {
+            "battery_level": 0,
+            "charging_state": "Unknown",
+            "latitude": 38.8339,
+            "longitude": -104.8214,
+            "speed": 0
+        }
+        try:
+            vehicle_state = tessie.get_vehicle_state(vin) if vin else None
+            if vehicle_state:
+                cs = vehicle_state.get('charge_state', {})
+                ds = vehicle_state.get('drive_state', {})
+                telematics = {
+                    "battery_level": cs.get('battery_level', 0),
+                    "charging_state": cs.get('charging_state', "Unknown"),
+                    "latitude": ds.get('latitude', 38.8339),
+                    "longitude": ds.get('longitude', -104.8214),
+                    "speed": ds.get('speed', 0)
+                }
+        except Exception as e:
+            logging.warning(f"Failed to fetch Telematics: {e}")
 
         return func.HttpResponse(
             json.dumps({
@@ -64,4 +95,9 @@ def dashboard_summary(req: func.HttpRequest) -> func.HttpResponse:
         )
     except Exception as e:
         logging.error(f"Reports Error: {traceback.format_exc()}")
-        return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500, mimetype="application/json")
+        return func.HttpResponse(
+            json.dumps({"error": "Internal Reports Error", "details": str(e)}), 
+            status_code=500, 
+            headers=_cors_headers(),
+            mimetype="application/json"
+        )
