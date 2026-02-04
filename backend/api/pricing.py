@@ -113,8 +113,10 @@ def quote(req: func.HttpRequest) -> func.HttpResponse:
             mimetype="application/json"
         )
     except Exception as e:
+        import traceback
         error_msg = str(e)
-        logging.error(f"Pricing Error: {error_msg}")
+        tb = traceback.format_exc()
+        logging.error(f"Pricing Error: {error_msg}\n{tb}")
         
         if "Google Maps" in error_msg or "route" in error_msg.lower():
             return func.HttpResponse(
@@ -125,7 +127,7 @@ def quote(req: func.HttpRequest) -> func.HttpResponse:
             )
             
         return func.HttpResponse(
-            json.dumps({"success": False, "error": "Internal Pricing Engine Error"}),
+            json.dumps({"success": False, "error": error_msg, "traceback": tb}),
             status_code=500,
             headers=_cors_headers(),
             mimetype="application/json"
