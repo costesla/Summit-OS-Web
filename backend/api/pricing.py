@@ -118,7 +118,9 @@ def quote(req: func.HttpRequest) -> func.HttpResponse:
         tb = traceback.format_exc()
         logging.error(f"Pricing Error: {error_msg}\n{tb}")
         
-        if "Google Maps" in error_msg or "route" in error_msg.lower():
+        # Treat route/address errors as 200 Success=False so frontend can show a clean message
+        soft_errors = ["Google Maps", "route", "NOT_FOUND", "ZERO_RESULTS", "Unable to find", "INVALID_REQUEST"]
+        if any(err in error_msg for err in soft_errors) or any(err in error_msg.lower() for err in soft_errors):
             return func.HttpResponse(
                 json.dumps({"success": False, "error": error_msg}),
                 status_code=200,
@@ -127,7 +129,7 @@ def quote(req: func.HttpRequest) -> func.HttpResponse:
             )
             
         return func.HttpResponse(
-            json.dumps({"success": False, "error": error_msg, "traceback": tb}),
+            json.dumps({"success": False, "error": "Internal Pricing Engine Error", "details": error_msg}),
             status_code=500,
             headers=_cors_headers(),
             mimetype="application/json"
