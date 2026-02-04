@@ -77,6 +77,7 @@ export default function RouteMap({
     onPopout
 }: RouteMapProps) {
     const [directionsResponse, setDirectionsResponse] = useState<google.maps.DirectionsResult | null>(null);
+    const [directionsError, setDirectionsError] = useState<google.maps.DirectionsStatus | null>(null);
 
     // Explicitly grab the key
     const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
@@ -108,16 +109,21 @@ export default function RouteMap({
     ) => {
         if (status === 'OK' && response) {
             setDirectionsResponse(response);
+            setDirectionsError(null);
         } else {
-            console.warn("Directions request failed:", status);
+            console.error("Directions request failed:", status);
+            setDirectionsError(status);
+            // We set the response to something non-null to stop the loop, 
+            // but we use null and a separate error state for clarity.
+            // Actually, if we set directionsResponse to null, and directionsError to status,
+            // we need to update the condition.
         }
     }, []);
 
-    // Effect to reset directions if inputs change significantly
+    // Effect to reset directions if inputs change
     useEffect(() => {
-        if (!origin || !destination) {
-            setDirectionsResponse(null);
-        }
+        setDirectionsResponse(null);
+        setDirectionsError(null);
     }, [origin, destination, waypoints]);
 
     // Memoize options at TOP LEVEL (Rules of Hooks)
@@ -231,7 +237,7 @@ export default function RouteMap({
                 onLoad={onMapLoad}
             >
                 {/* Directions Service - Fetches Route */}
-                {directionOptions && (
+                {directionOptions && !directionsResponse && !directionsError && (
                     <DirectionsService
                         options={directionOptions}
                         callback={directionsCallback}
