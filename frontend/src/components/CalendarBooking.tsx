@@ -149,6 +149,7 @@ export default function CalendarBooking({
                     pickup,
                     dropoff,
                     price,
+                    appointmentStart: selectedTime,
                     tripDetails: {
                         dist: tripDistance || "N/A",
                         time: tripDuration || "N/A",
