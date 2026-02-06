@@ -14,36 +14,41 @@ class GraphClient:
             raise Exception("Missing Microsoft Graph credentials in env")
 
     def _get_token(self):
-        # OPTION 1: Client Credentials (Service Principal)
-        # This is the preferred method but requires 'Bookings.ReadWrite.All' Application permission
+        # OPTION 1: Client Credentials (Service Principal) - Preferred to bypass MFA
         url = f"https://login.microsoftonline.com/{self.tenant_id}/oauth2/v2.0/token"
         
-        # Try ROPC (User Password) if configured, as fallback for 401/Access Denied on Bookings
-        # This mimics a "User" logging in (Delegated Permission)
-        username = os.environ.get("BOOKINGS_USER_EMAIL", "PrivateTrips@costesla.com")
-        password = os.environ.get("BOOKINGS_USER_PASSWORD")
-        
-        if username and password:
-            data = {
-                "client_id": self.client_id,
-                "scope": "Bookings.ReadWrite.All", # Delegated Scope
-                "username": username,
-                "password": password,
-                "grant_type": "password",
-                "client_secret": self.client_secret
-            }
-        else:
-            # Default to App Credentials
-            data = {
-                "client_id": self.client_id,
-                "scope": "https://graph.microsoft.com/.default",
-                "client_secret": self.client_secret,
-                "grant_type": "client_credentials"
-            }
+        # Default to App Credentials (Client Credentials Flow)
+        data = {
+            "client_id": self.client_id,
+            "scope": "https://graph.microsoft.com/.default",
+            "client_secret": self.client_secret,
+            "grant_type": "client_credentials"
+        }
             
         resp = requests.post(url, data=data)
+        
+        # Fallback: Try ROPC only if Client Credentials fail and credentials exist
+        # This is generally discouraged but kept for legacy compat if App Permissions aren't set
         if not resp.ok:
+            logging.warning(f"Client Credentials flow failed ({resp.status_code}), attempting ROPC fallback.")
+            username = os.environ.get("BOOKINGS_USER_EMAIL", "PrivateTrips@costesla.com")
+            password = os.environ.get("BOOKINGS_USER_PASSWORD")
+            
+            if username and password:
+                data = {
+                    "client_id": self.client_id,
+                    "scope": "Bookings.ReadWrite.All",
+                    "username": username,
+                    "password": password,
+                    "grant_type": "password",
+                    "client_secret": self.client_secret
+                }
+                resp = requests.post(url, data=data)
+
+        if not resp.ok:
+            logging.error(f"Graph Token Error: {resp.status_code} {resp.text}")
             raise Exception(f"Graph Token Error: {resp.status_code} {resp.text}")
+            
         return resp.json().get("access_token")
 
     def _format_iso_z(self, dt: datetime) -> str:
