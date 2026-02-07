@@ -92,12 +92,18 @@ def calendar_book(req: func.HttpRequest) -> func.HttpResponse:
             'dropoff': dropoff
         }
         
-        appointment = bookings.create_appointment(
-            customer_data=customer_data,
-            start_dt=buffers['buffer_start'],
-            end_dt=buffers['buffer_end'],
-            service_id=service_id
-        )
+        logging.info(f"Invoking BookingsClient.create_appointment for {email}")
+        try:
+            appointment = bookings.create_appointment(
+                customer_data=customer_data,
+                start_dt=buffers['buffer_start'],
+                end_dt=buffers['buffer_end'],
+                service_id=service_id
+            )
+            logging.info(f"Appointment created successfully: {appointment.get('id')}")
+        except Exception as inner_e:
+            logging.error(f"Inner Booking Error: {inner_e}")
+            raise inner_e
         
         return func.HttpResponse(
             json.dumps({"success": True, "eventId": appointment.get('id')}),

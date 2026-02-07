@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@azure/msal-browser": "^5.1.0",
+    "@azure/msal-react": "^5.0.3",
     "@fireworks-js/react": "^2.10.8",
     "@googlemaps/google-maps-services-js": "^3.4.2",
     "@react-google-maps/api": "^2.20.8",
@@ -22,6 +24,8 @@
     "lucide-react": "^0.561.0",
     "next": "^16.1.4",
     "nodemailer": "^7.0.11",
+    "powerbi-client": "^2.23.9",
+    "powerbi-client-react": "^2.0.2",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-leaflet": "^5.0.0",

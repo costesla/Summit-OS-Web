@@ -48,10 +48,18 @@ class OCRClient:
 
         logging.info(f"Starting OCR extraction for URL: {image_url}")
         try:
-            result = self.client.analyze(
-                image_url=image_url,
-                visual_features=[VisualFeatures.READ]
-            )
+            # Use analyze_from_url if available (newer SDK structure)
+            if hasattr(self.client, 'analyze_from_url'):
+                result = self.client.analyze_from_url(
+                    image_url=image_url,
+                    visual_features=[VisualFeatures.READ]
+                )
+            else:
+                 # Fallback (or older SDK?)
+                 result = self.client.analyze(
+                    image_url=image_url,
+                    visual_features=[VisualFeatures.READ]
+                 )
             return self._parse_analysis_result(result)
         except Exception as e:
             logging.error(f"Error during OCR extraction (URL): {str(e)}")
@@ -90,10 +98,42 @@ class OCRClient:
             logging.error(f"Error parsing OCR result: {str(e)}")
             return None
 
-    def parse_ubertrip(self, text):
+    def parse_route_details(self, text):
+        """
+        Parses Route Details (RD) screenshots for full addresses.
+        """
+        data = {
+            "pickup_address": None,
+            "dropoff_address": None
+        }
+        if not text:
+            return data
+            
+        # Logic: Look for "Pickup" and "Dropoff" labels and grab the following lines.
+        # This is a heuristic and might need tuning based on actual screenshot layouts.
+        
+        # Example: 123 Main St \n City, State
+        # We might look for lines that look like addresses.
+        
+        # Simplistic approach: Find "Pickup" look ahead, Find "Dropoff" look ahead.
+        # Python regex lookahead? Or just simpler text segmentation.
+        
+        lines = text.split('\n')
+        for i, line in enumerate(lines):
+            if "pickup" in line.lower():
+                # Grab next non-empty line?
+                if i + 1 < len(lines):
+                    data["pickup_address"] = lines[i+1].strip()
+            if "dropoff" in line.lower() or "destination" in line.lower():
+                if i + 1 < len(lines):
+                    data["dropoff_address"] = lines[i+1].strip()
+                    
+        return data
+
+    def parse_ubertrip(self, text, suffix=None):
         """
         Parses raw text from an Uber receipt to extract key details.
-        Ported from SummitOS_Stage5b_Intelligence.ps1
+        Enhanced to support suffix cues (FD, RD, etc).
         """
         data = {
             "rider": "Unknown",
@@ -101,6 +141,7 @@ class OCRClient:
             "driver_total": 0.0,
             "tip": 0.0,
             "uber_cut": 0.0,
+            "insurance_fees": 0.0, # New Field
             "distance_miles": 0.0,
             "duration_minutes": 0.0,
             "service_type": None,
@@ -117,48 +158,54 @@ class OCRClient:
         if match:
             data["rider"] = match.group(1).strip()
         
-        # 2. Financials
+        # 2. Financials (FD or General)
         # Rider Payment: "Rider payment $15.78" or "Price $15.78"
-        # Note: Python regex needs escaped $ for literal dollar sign if it's not end of line anchor.
-        # But in raw strings, we just look for patterns.
         match = re.search(r"(?:Rider payment|Price|Total)\s*[\$]?([0-9]+\.[0-9]{2})", text, re.IGNORECASE)
         if match:
             data["rider_payment"] = float(match.group(1))
 
-        # Driver Earnings: "Your earnings $7.03" or "You earned $7.03" or standalone "$12.36" (Offer screens)
+        # Driver Earnings
         match = re.search(r"(?:Your earnings|You earned)\s*[\$]?([0-9]+\.[0-9]{2})", text, re.IGNORECASE)
         if match:
             data["driver_total"] = float(match.group(1))
         else:
-            # Fallback for offer/accept screens: Look for the first major dollar amount
-            # Usually looks like "$12.36" on a line by itself
+            # Fallback
             match = re.search(r"^\s*[\$]([0-9]+\.[0-9]{2})\s*$", text, re.MULTILINE)
             if match:
                 data["driver_total"] = float(match.group(1))
-                # For offers, we assume rider payment is at least the driver total
-                data["rider_payment"] = max(data["rider_payment"], data["driver_total"])
+                if data["rider_payment"] == 0:
+                    data["rider_payment"] = max(data["rider_payment"], data["driver_total"])
 
-        # Tip: "Tip $3.00"
+        # Tip
         match = re.search(r"Tip\s*[\$]?([0-9]+\.[0-9]{2})", text, re.IGNORECASE)
         if match:
             data["tip"] = float(match.group(1))
             
-        # Private Payment override (Venmo style "+ $15.00")
+        # Insurance Fees (New)
+        # Look for "Insurance" or "Booking Fee" if part of that block
+        match = re.search(r"(?:Insurance|Booking Fee)\s*[\$]?([0-9]+\.[0-9]{2})", text, re.IGNORECASE)
+        if match:
+            data["insurance_fees"] = float(match.group(1))
+            
+        # Private Payment override
         match = re.search(r"\+\s?\$?([0-9]+\.[0-9]{2})", text)
-        if match and "Venmo" in text: # Simple check for Venmo context
+        if match and "Venmo" in text:
             data["driver_total"] = float(match.group(1))
-            data["rider_payment"] = data["driver_total"] # Private trip assumption
+            data["rider_payment"] = data["driver_total"] 
 
         # 3. Stats
-        # Distance: "12.5 mi"
+        # Distance
         match = re.search(r"([0-9.]+)\s*mi", text, re.IGNORECASE)
         if match:
             data["distance_miles"] = float(match.group(1))
 
-        # Duration: "24 min"
+        # Duration
         match = re.search(r"([0-9]+)\s*min", text, re.IGNORECASE)
         if match:
-            data["duration_minutes"] = int(match.group(1))
+            try:
+                data["duration_minutes"] = int(match.group(1))
+            except:
+                pass
 
         # 4. Service Type
         if re.search(r"(Comfort|Black|XL|Pet|Green)", text, re.IGNORECASE):
@@ -174,10 +221,13 @@ class OCRClient:
         # Calculations
         data["uber_cut"] = data["rider_payment"] - data["driver_total"]
         
-        # Win/Loss Logic (Driver check > 50%)
+        # Win/Loss Logic
         if data["rider_payment"] > 0:
-            if (data["driver_total"] / data["rider_payment"]) >= 0.5:
+            ratio = data["driver_total"] / data["rider_payment"]
+            if ratio >= 0.5:
                 data["result"] = "Win"
+            else:
+                data["result"] = "Loss"
         elif data["driver_total"] > 0:
             data["result"] = "Win" # Optimistic
 
@@ -245,4 +295,40 @@ class OCRClient:
                 data["condition"] = cond
                 break
         
+        return data
+
+    def parse_passenger_context(self, text, known_passengers=None):
+        """
+        Scans text for known passenger names or Venmo payment contexts.
+        """
+        data = {
+            "passenger_firstname": None,
+            "payment_method": "Venmo" # Default assumption if calling this
+        }
+        
+        if not text:
+            return data
+
+        # 1. Check Known Passengers (Highest Priority)
+        # We check full names first to be robust
+        if known_passengers:
+            for name in known_passengers:
+                if name.lower() in text.lower():
+                    data["passenger_firstname"] = name
+                    return data
+        
+        # 2. Heuristic: "Payment from [Name]" (Venmo)
+        match = re.search(r"Payment from\s+([A-Za-z ]+)", text, re.IGNORECASE)
+        if match:
+            extracted = match.group(1).strip()
+            # Basic validation: 2 words, no numbers
+            if " " in extracted and not any(char.isdigit() for char in extracted):
+                 data["passenger_firstname"] = extracted
+                 return data
+
+        # 3. Heuristic: "To [Name]" (Messenger/SMS Header)
+        match = re.search(r"To[:\s]+([A-Za-z ]+)", text, re.IGNORECASE)
+        if match:
+             data["passenger_firstname"] = match.group(1).strip()
+             
         return data

@@ -6,7 +6,7 @@ def zip_backend(output_filename):
     with zipfile.ZipFile(output_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
         for root, dirs, files in os.walk(backend_dir):
             # Exclude directories
-            dirs[:] = [d for d in dirs if d not in ['.venv', 'venv', '__pycache__', '.git', '.vscode', '.python_packages']]
+            dirs[:] = [d for d in dirs if d not in ['.venv', 'venv', 'venv32', '__pycache__', '.git', '.vscode', '.python_packages']]
             
             for file in files:
                 if file.endswith('.pyc') or file == output_filename:
@@ -19,6 +19,8 @@ def zip_backend(output_filename):
                 # So we must strip 'backend/' from the path.
                 
                 arcname = os.path.relpath(file_path, start=backend_dir)
+                # FORCE forward slashes for Linux compatibility
+                arcname = arcname.replace(os.sep, '/')
                 print(f"Adding {arcname}")
                 zipf.write(file_path, arcname)
 

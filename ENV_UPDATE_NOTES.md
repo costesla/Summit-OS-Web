@@ -106,3 +106,37 @@ All charges appear on the same Google Cloud billing account.
 ---
 
 **Status:** Ready for Graph API OAuth setup!
+
+---
+
+# Environment Variable Update - Power BI Intranet Dashboard
+
+## ✅ New Configuration Required
+
+To enable the new Intranet Dashboard with Power BI embedding, the following environment variables need to be added to your `.env.local` and Vercel project settings.
+
+### Microsoft Entra ID (Azure AD) Details
+These are required for the `AuthProvider` to sign in users.
+
+- `NEXT_PUBLIC_AZURE_AD_CLIENT_ID`: The Application (client) ID of your Azure App Registration.
+- `NEXT_PUBLIC_AZURE_AD_TENANT_ID`: The Directory (tenant) ID.
+
+### Power BI Configuration
+These are required to fetch and embed the correct report.
+
+- `NEXT_PUBLIC_POWERBI_REPORT_ID`: The UUID of the Power BI Report you want to display.
+- `NEXT_PUBLIC_POWERBI_GROUP_ID`: (Optional) The UUID of the Workspace (Group). Recommended for better performance and explicit context.
+
+### Example `.env.local` additions
+
+```bash
+# Power BI / Azure AD Intranet Auth
+NEXT_PUBLIC_AZURE_AD_CLIENT_ID=a7d212ac-dd2b-4910-a62a-b623a8ac250c
+NEXT_PUBLIC_AZURE_AD_TENANT_ID=1cd94367-e5ad-4827-90a9-cc4c6124a340
+NEXT_PUBLIC_POWERBI_REPORT_ID=your-report-id-guid
+NEXT_PUBLIC_POWERBI_GROUP_ID=your-workspace-id-guid
+```
+
+### Reference
+- **App Registration**: Ensure the registered app has "Single-page application" platform added with Redirect URI `http://localhost:3000/` (for local) and your production URL.
+- **Permissions**: `User.Read` is sufficient for basic login.
