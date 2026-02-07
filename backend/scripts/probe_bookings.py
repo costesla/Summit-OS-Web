@@ -1,7 +1,7 @@
 import sys
 import os
-sys.path.append(os.path.join(os.getcwd(), 'summit_sync'))
-from lib.graph import GraphClient
+sys.path.append(os.path.join(os.getcwd(), 'backend')) # Point to backend root
+from services.graph import GraphClient
 import requests
 import json
 import logging

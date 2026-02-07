@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 import logging
 import time
 import datetime
@@ -6,6 +10,10 @@ import json
 import traceback
 import sys
 import azure.functions as func
+from lib import datetime_utils
+
+# Enforce 32-bit Python environment
+datetime_utils.ensure_32bit_python()
 
 app = func.FunctionApp()
 
@@ -61,7 +69,9 @@ def process_blob_http(req: func.HttpRequest) -> func.HttpResponse:
         # 2. Log Environment Snapshot
         diag_info = {
             "env": _env_snapshot(),
-            "versions": _versions()
+            "versions": _versions(),
+            "azure_cli": datetime_utils.check_azure_cli(),
+            "home_state": datetime_utils.get_home_state()
         }
         logging.info(f"Diagnostic Snapshot: {json.dumps(diag_info)}")
 
@@ -86,6 +96,14 @@ def process_blob_http(req: func.HttpRequest) -> func.HttpResponse:
         # Use current time as event time
         timestamp_epoch = time.time()
 
+        # Extract suffix from filename
+        # Uber_20260128_1030_FD.png
+        filename = os.path.basename(decoded_url)
+        suffix_match = re.search(r"Uber_\d{8}_\d{4}_([A-Z]{2})", filename)
+        suffix = suffix_match.group(1) if suffix_match else None
+        
+        logging.info(f"Filename Suffix Detected: {suffix}")
+
         # OCR & Classification
         ocr = OCRClient()
         raw_text = ocr.extract_text(blob_url)
@@ -93,7 +111,8 @@ def process_blob_http(req: func.HttpRequest) -> func.HttpResponse:
         if not raw_text:
             raise Exception("OCR returned no text. Check if the blob is accessible and correctly formatted.")
 
-        classification = ocr.classify_image(raw_text)
+        # Default classification
+        classification = "Uber_Core" if suffix in ["FD", "ST", "ED", "RD"] else ocr.classify_image(raw_text)
         logging.info(f"Classification result: {classification}")
 
         trip_data = {
@@ -102,29 +121,62 @@ def process_blob_http(req: func.HttpRequest) -> func.HttpResponse:
             "classification": classification,
             "source_url": blob_url,
             "timestamp_epoch": timestamp_epoch,
-            "raw_text": raw_text[:500]
+            "raw_text": raw_text[:500],
+            "is_cdot_reportable": False # Default Uber trips to False
         }
 
-        # Routing Logic
-        if classification == "Uber_Core":
-            parsed_data = ocr.parse_ubertrip(raw_text)
-            trip_data.update(parsed_data)
+        # Routing Logic based on Suffix or Class
+        if suffix == "RD": # Route Details
+             route_data = ocr.parse_route_details(raw_text)
+             trip_data["pickup_address_full"] = route_data.get("pickup_address")
+             trip_data["dropoff_address_full"] = route_data.get("dropoff_address")
+             # Merge basic info too just in case
+             basic_data = ocr.parse_ubertrip(raw_text, suffix)
+             trip_data.update(basic_data)
+             
+        elif suffix in ["FD", "ST", "ED"] or classification == "Uber_Core":
+             parsed_data = ocr.parse_ubertrip(raw_text, suffix)
+             trip_data.update(parsed_data)
+             
         elif classification == "Expense":
-            trip_data["type"] = "Business Expense"
+             trip_data["type"] = "Business Expense"
+             # Check for Venmo/Passenger in Expense (Just in case)
+             pass_data = ocr.parse_passenger_context(raw_text, ["Esmeralda Dsilva", "Jacuelyn Heslep", "Omar Stovall"])
+             if pass_data.get("passenger_firstname"):
+                  trip_data["passenger_firstname"] = pass_data["passenger_firstname"]
+                  trip_data["classification"] = "Private_Trip"
+                  trip_data["is_cdot_reportable"] = True
+                  trip_data["payment_method"] = "Venmo"
+
         else:
-            trip_data["fare"] = 20.00
-            trip_data["tip"] = 0.00
-            trip_data["payment_method"] = "Venmo" if "Venmo" in raw_text else "Pending"
+             trip_data["fare"] = 20.00
+             trip_data["tip"] = 0.00
+             
+             # Attempt to identify Private Trip Passenger
+             STATIC_PASSENGERS = ["Esmeralda Dsilva", "Jacuelyn Heslep", "Omar Stovall"]
+             pass_data = ocr.parse_passenger_context(raw_text, STATIC_PASSENGERS)
+             
+             if pass_data.get("passenger_firstname"):
+                  trip_data["passenger_firstname"] = pass_data["passenger_firstname"]
+                  trip_data["classification"] = "Private_Trip"
+                  trip_data["is_cdot_reportable"] = True
+                  trip_data["payment_method"] = pass_data.get("payment_method", "Venmo")
+             else:
+                  trip_data["payment_method"] = "Venmo" if "Venmo" in raw_text else "Pending"
+                  if "Venmo" in raw_text or "Call" in filename or "Message" in filename:
+                      trip_data["is_cdot_reportable"] = True
+                      trip_data["classification"] = "Private_Trip"
 
         # Enrich with Tessie
         tessie = TessieClient()
         vin = os.environ.get("TESSIE_VIN")
         if vin:
-            is_private = (classification != "Uber_Core") or ("Venmo" in raw_text)
+            is_private = trip_data.get("is_cdot_reportable", False)
             drive = tessie.match_drive_to_trip(vin, timestamp_epoch, is_private=is_private)
             if drive:
                 trip_data['tessie_drive_id'] = drive.get('id')
                 trip_data['tessie_distance'] = drive.get('distance_miles')
+                trip_data['tessie_distance_mi'] = drive.get('distance_miles') # Map to new column
                 trip_data['tessie_duration'] = drive.get('duration_minutes')
                 trip_data['start_location'] = drive.get('starting_address')
                 trip_data['end_location'] = drive.get('ending_address')
@@ -189,7 +241,7 @@ def sql_probe(req: func.HttpRequest) -> func.HttpResponse:
             status_code=500,
             mimetype="application/json"
         )
-@app.route(route="dashboard-summary", methods=["GET"], auth_level=func.AuthLevel.FUNCTION)
+@app.route(route="dashboard-summary", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
 def dashboard_summary(req: func.HttpRequest) -> func.HttpResponse:
     """
     Returns a unified summary for the Command Center:
@@ -208,10 +260,41 @@ def dashboard_summary(req: func.HttpRequest) -> func.HttpResponse:
         vin = os.environ.get("TESSIE_VIN")
         
         # 1. Fetch Daily KPIs
-        query = "SELECT TOP 1 * FROM v_DailyKPIs WHERE [Date] = CAST(GETDATE() AS DATE)"
-        daily_stats = db.execute_query_with_results(query)
-        stats = daily_stats[0] if daily_stats else {"TotalEarnings": 0, "TotalTips": 0, "TripCount": 0}
+        # Use dynamic home state for "Today" to match user's local day
+        tz_name = datetime_utils.get_sql_timezone()
         
+        query = f"SELECT TOP 1 * FROM v_DailyKPIs WHERE [Date] = CAST(SYSDATETIMEOFFSET() AT TIME ZONE '{tz_name}' AS DATE)"
+        daily_stats = db.execute_query_with_results(query)
+        stats = daily_stats[0] if daily_stats else {"TotalEarnings": 0, "TotalTips": 0, "TripCount": 0, "TotalExpenses": 0}
+        
+        # 1.1 Fetch Expense Breakdown
+        expense_query = f"SELECT Notes as name, Earnings_Driver as amount FROM Trips WHERE TripType = 'Expense' AND CAST(CreatedAt AS DATE) = CAST(SYSDATETIMEOFFSET() AT TIME ZONE '{tz_name}' AS DATE)"
+        expenses = db.execute_query_with_results(expense_query)
+
+        # 1.2 Calculate Tessie Mission Summary (Miles, FSD, Charging)
+        # Fix: Calculate start of MST day relative to now
+        import time
+        from datetime import datetime, timedelta
+        
+        # Get current time in UTC
+        now_utc = datetime.utcnow().replace(tzinfo=pytz.utc)
+        # Adjusted for home state
+        now_local = datetime_utils.utc_to_local(now_utc)
+        # Start of local day
+        start_local = now_local.replace(hour=0, minute=0, second=0, microsecond=0)
+        # Back to UTC to get timestamp
+        start_day_ts = int(start_local.astimezone(pytz.utc).timestamp())
+        
+        drives = tessie.get_drives(vin, start_day_ts, int(time.time())) if vin else []
+        charges = tessie.get_charges(vin, start_day_ts, int(time.time())) if vin else []
+        
+        total_miles = sum(d.get('odometer_distance', 0) for d in drives)
+        total_auto = sum(d.get('autopilot_distance', 0) for d in drives)
+        fsd_pct = (total_auto / total_miles * 100) if total_miles > 0 else 0
+        
+        charge_count = len(charges)
+        charge_cost = sum(float(c.get('cost') or 0) for c in charges)
+
         # 2. Fetch Latest Weather
         weather_query = "SELECT TOP 1 Temperature_F, Condition FROM WeatherLog ORDER BY timestamp DESC"
         weather_data = db.execute_query_with_results(weather_query)
@@ -239,7 +322,23 @@ def dashboard_summary(req: func.HttpRequest) -> func.HttpResponse:
             "stats": stats,
             "weather": weather,
             "telematics": telematics,
-            "server_time": datetime.datetime.now().isoformat()
+            "summary": {
+                "total_miles": round(total_miles, 1),
+                "fsd_pct": round(fsd_pct, 1),
+                "elevation_flux": 1240, 
+                "total_expenses": stats.get("TotalExpenses", 0),
+                "expense_list": expenses,
+                "charge_count": charge_count,
+                "charge_cost": round(charge_cost, 2)
+            },
+            "compliance": {
+                "platform_cut": stats.get("TotalPlatformCut", 0),
+                "service_fees": stats.get("TotalServiceFees", 0),
+                "insurance_fees": stats.get("TotalInsuranceFees", 0),
+                "other_fees": float(stats.get("TotalPlatformCut", 0)) - float(stats.get("TotalServiceFees", 0)) - float(stats.get("TotalInsuranceFees", 0)),
+                "is_profitable": float(stats.get("TotalEarnings", 0)) > float(stats.get("TotalPlatformCut", 0))
+            },
+            "server_time": datetime_utils.format_local_time(datetime.datetime.utcnow())
         }
         
         return func.HttpResponse(
@@ -292,12 +391,18 @@ def log_private_trip(req: func.HttpRequest) -> func.HttpResponse:
             "start_location": pickup,
             "end_location": dropoff,
             "fare": price,
-            "driver_total": price, # For private bookings, it's 100% earnings
+            "driver_total": price,
             "distance_miles": dist,
             "duration_minutes": dur,
             "payment_method": req_body.get('paymentMethod', "Website Booking"),
             "raw_text": f"Private Booking: {name} ({email})",
-            "timestamp_epoch": time.time()
+            "timestamp_epoch": time.time(),
+            
+            # Compliance Fields
+            "is_cdot_reportable": True, # Private trips are ALWAYS reportable
+            "passenger_firstname": name.split()[0] if name else "Guest",
+            "pickup_address_full": pickup, # Assuming website sends clean addr
+            "dropoff_address_full": dropoff
         }
 
         db.save_trip(trip_data)
@@ -529,3 +634,62 @@ def cabin_api(req: func.HttpRequest) -> func.HttpResponse:
             
     except Exception as e:
         return func.HttpResponse(json.dumps({"error": str(e)}), status_code=400)
+@app.route(route="catchup-today", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
+def catchup_today(req: func.HttpRequest) -> func.HttpResponse:
+    """
+    Manually triggers a scan of the local OneDrive folder for today's data.
+    """
+    logging.info("🔴 Manual Dashboard Catch-up Triggered")
+    try:
+        from lib.ocr import OCRClient
+        from lib.database import DatabaseClient
+        from lib.tessie import TessieClient
+        
+        ocr = OCRClient()
+        db = DatabaseClient()
+        tessie = TessieClient()
+        vin = os.environ.get("TESSIE_VIN")
+        
+        # Fixed path for Cloud PC environment
+        WATCH_DIR = r"C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\Pictures\Camera Roll\2026"
+        today_str = datetime.datetime.now().strftime("%Y%m%d")
+        
+        count = 0
+        if not os.path.exists(WATCH_DIR):
+            return func.HttpResponse(json.dumps({"error": "OneDrive directory not accessible"}), status_code=500)
+
+        for root, dirs, files in os.walk(WATCH_DIR):
+            for file in files:
+                if today_str in file and file.lower().endswith(('.jpg', '.jpeg', '.png')):
+                    full_path = os.path.join(root, file)
+                    raw_text = ocr.extract_text_from_stream(full_path)
+                    if not raw_text: continue
+                    
+                    # Logic same as catchup_today.py
+                    import re
+                    suffix_match = re.search(r"Uber_\d{8}_\d{4}_([A-Z]{2})", file)
+                    suffix = suffix_match.group(1) if suffix_match else None
+                    classification = "Uber_Core" if suffix in ["FD", "ST", "ED", "RD"] else ocr.classify_image(raw_text)
+                    
+                    trip_data = {
+                        "classification": classification,
+                        "source_url": f"local://{file}",
+                        "timestamp_epoch": os.path.getmtime(full_path),
+                        "raw_text": raw_text[:500]
+                    }
+                    
+                    if suffix == "RD":
+                        route_data = ocr.parse_route_details(raw_text)
+                        trip_data.update(ocr.parse_ubertrip(raw_text, suffix))
+                        trip_data["pickup_address_full"] = route_data.get("pickup_address")
+                        trip_data["dropoff_address_full"] = route_data.get("dropoff_address")
+                    elif suffix in ["FD", "ST", "ED"] or classification == "Uber_Core":
+                        trip_data.update(ocr.parse_ubertrip(raw_text, suffix))
+                    
+                    db.save_trip(trip_data)
+                    count += 1
+
+        return func.HttpResponse(json.dumps({"success": True, "processed": count}), status_code=200)
+    except Exception as e:
+        logging.error(f"Catch-up failed: {traceback.format_exc()}")
+        return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500)

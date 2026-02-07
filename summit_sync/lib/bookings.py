@@ -2,6 +2,8 @@ import os
 import requests
 import datetime
 import logging
+import pytz
+from . import datetime_utils
 
 class BookingsClient:
     """
@@ -51,19 +53,25 @@ class BookingsClient:
         else: # Sun
             start_t, end_t = "08:00:00", "18:00:00"
 
-        start_dt = f"{date_str}T{start_t}Z"
-        end_dt = f"{date_str}T{end_t}Z"
+        # Convert local business hours to UTC for Graph
+        tz = datetime_utils.get_timezone()
+        
+        local_start = tz.localize(datetime.datetime.strptime(f"{date_str} {start_t}", "%Y-%m-%d %H:%M:%S"))
+        local_end = tz.localize(datetime.datetime.strptime(f"{date_str} {end_t}", "%Y-%m-%d %H:%M:%S"))
+        
+        start_dt_utc = local_start.astimezone(pytz.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        end_dt_utc = local_end.astimezone(pytz.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
         url = f"https://graph.microsoft.com/v1.0/solutions/bookingBusinesses/{self.business_id}/getServiceAvailability"
         
         payload = {
             "serviceId": self.service_id,
             "startDateTime": {
-                "dateTime": start_dt,
+                "dateTime": start_dt_utc,
                 "timeZone": "UTC"
             },
             "endDateTime": {
-                "dateTime": end_dt,
+                "dateTime": end_dt_utc,
                 "timeZone": "UTC"
             }
         }
@@ -97,11 +105,11 @@ class BookingsClient:
             "@odata.type": "#microsoft.graph.bookingAppointment",
             "serviceId": self.service_id,
             "startDateTime": {
-                "dateTime": start_dt.isoformat(),
+                "dateTime": start_dt.astimezone(pytz.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "timeZone": "UTC"
             },
             "endDateTime": {
-                "dateTime": end_dt.isoformat(),
+                "dateTime": end_dt.astimezone(pytz.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "timeZone": "UTC"
             },
             "customerPhone": customer_data.get("phone"),

@@ -131,7 +131,18 @@ class GraphClient:
             "Content-Type": "application/json"
         }
         
-        resp = requests.post(url, headers=headers, json=payload)
+        logging.info(f"Graph POST to {url} with payload subject={subject}")
+        try:
+            resp = requests.post(url, headers=headers, json=payload, timeout=30)
+        except requests.exceptions.Timeout:
+            logging.error("Graph POST Timed out after 30s")
+            raise Exception("Graph API Timeout")
+        except Exception as e:
+            logging.error(f"Graph POST Request Error: {e}")
+            raise e
+            
+        logging.info(f"Graph Output: {resp.status_code} {resp.text}")
+        
         if not resp.ok:
             logging.error(f"Graph Create Error: {resp.text}")
             raise Exception(f"Graph Create Event Error: {resp.status_code} {resp.text}")

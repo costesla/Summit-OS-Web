@@ -7,11 +7,10 @@ Write-Host "Preparing deployment for $appName (Monorepo Backend)..."
 # Remove old zip if exists
 if (Test-Path $zipName) { Remove-Item $zipName }
 
-# Create Zip (Target /backend specifically)
-$files = Get-ChildItem -Path backend/* -Exclude ".venv", "venv", "*__pycache__*", "*.zip", ".git", ".vscode", "scripts", "*.bak", ".python_packages", "config"
-
-Write-Host "Zipping files from /backend..."
-Compress-Archive -Path $files -DestinationPath $zipName -Force
+# Create Zip using Python script (preserves structure correctly)
+Write-Host "Zipping files from /backend using python script..."
+python create_backend_zip.py
+$zipName = "backend_deploy.zip"
 
 # Deploy
 Write-Host "Deploying to Azure..."

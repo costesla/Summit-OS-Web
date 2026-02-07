@@ -23,6 +23,12 @@ def process_blob_http(req: func.HttpRequest) -> func.HttpResponse:
         db = DatabaseClient()
         tessie = TessieClient()
         
+        # Multi-Agent Parallel Orchestration
+        from services.orchestrator import OrchestratorHub
+        from services.output_generator import CardGenerator
+        orchestrator = OrchestratorHub()
+        generator = CardGenerator()
+        
         raw_text = ocr.extract_text(blob_url)
         if not raw_text:
             raise Exception("OCR failed to extract text")
@@ -30,7 +36,9 @@ def process_blob_http(req: func.HttpRequest) -> func.HttpResponse:
         classification = ocr.classify_image(raw_text)
         timestamp_epoch = time.time()
 
+        # Phase 1: Extraction (Raw Data)
         trip_data = {
+            "trip_id": f"T{int(timestamp_epoch)}", # Default ID
             "classification": classification,
             "source_url": blob_url,
             "timestamp_epoch": timestamp_epoch,
@@ -50,10 +58,19 @@ def process_blob_http(req: func.HttpRequest) -> func.HttpResponse:
                     'tessie_drive_id': drive.get('id'),
                     'tessie_distance': drive.get('distance_miles'),
                     'start_location': drive.get('starting_address'),
-                    'end_location': drive.get('ending_address')
+                    'end_location': drive.get('ending_address'),
+                    'start_coords': (drive.get('starting_latitude'), drive.get('starting_longitude')),
+                    'end_coords': (drive.get('ending_latitude'), drive.get('ending_longitude')),
+                    'start_soc_perc': drive.get('starting_battery'),
+                    'end_soc_perc': drive.get('ending_battery'),
+                    'energy_used': drive.get('energy_used_kWh'),
+                    'soc_delta': drive.get('starting_battery', 0) - drive.get('ending_battery', 0)
                 })
 
-        db.save_trip(trip_data)
+        # --- Parallel Orchestration (Accounting, EV, Geo, PowerBI, Compliance, Sidecar) ---
+        final_deliverables = orchestrator.orchestrate(trip_data)
+
+        db.save_trip(final_deliverables)
 
         if classification == "Environmental_Context":
             weather_data = ocr.parse_weather(raw_text)

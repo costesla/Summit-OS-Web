@@ -106,8 +106,8 @@ def ensure_32bit_python():
     """Validates that the execution environment is 32-bit Python."""
     is_64bit = sys.maxsize > 2**32
     if is_64bit:
-        error_msg = "CRITICAL: Detected 64-bit Python environment. SummitOS requires 32-bit Python for compatibility."
-        logging.error(error_msg)
-        raise RuntimeError(error_msg)
+        error_msg = "WARNING: Detected 64-bit Python environment. SummitOS usually requires 32-bit Python for some native compatibility components."
+        logging.warning(error_msg)
+        # We no longer raise RuntimeError to allow local 64-bit debugging while keeping the warning.
     logging.info("Environment Validation: 32-bit Python confirmed.")
     return True

@@ -3,24 +3,70 @@
 @tailwind utilities;
 
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  --color-text-main: #ffffff;
+  --color-text-muted: #a0a0a0;
+  --color-background: #05080a;
 
-  color-scheme: dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #111;
+  /* HSL Base for Glows (Cyan/Teal) */
+  --primary-hsl: 185, 90%, 55%;
+  --secondary-hsl: 195, 80%, 40%;
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* Gradients - Shifted from Red to metallic Teal/Cyan */
+  --gradient-metallic: linear-gradient(135deg, hsl(185, 70%, 40%) 0%, hsl(190, 100%, 60%) 50%, hsl(185, 70%, 40%) 100%);
+  --gradient-dark: linear-gradient(to bottom, var(--color-background), #000000);
+
+  /* Shadows & Glows */
+  --glow-primary: 0 0 30px hsla(185, 100%, 50%, 0.4);
+  --shadow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
 }
 
 body {
-  margin: 0;
-  display: flex;
-  place-content: center;
-  min-width: 320px;
+  background-color: var(--color-background);
+  color: var(--color-text-main);
+  background-image:
+    radial-gradient(circle at 50% 0%, hsla(var(--primary-hsl), 0.15), transparent 60%),
+    var(--gradient-dark);
   min-height: 100vh;
+  font-family: 'Outfit', sans-serif;
+  /* Assuming font is available or falling back */
+  overflow-x: hidden;
+}
+
+/* Utilities */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: var(--shadow-card);
+  border-radius: var(--radius-lg);
+}
+
+.text-gradient-metallic {
+  background: var(--gradient-metallic);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 40px hsla(var(--primary-hsl), 0.3);
+  animation: sheen 3s linear infinite;
+}
+
+@keyframes sheen {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
 }

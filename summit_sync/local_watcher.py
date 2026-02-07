@@ -163,14 +163,20 @@ if __name__ == "__main__":
     charging_thread = threading.Thread(target=poll_charging_sessions, daemon=True)
     charging_thread.start()
 
-    # --- Initial Scan ---
-    logging.info("Scanning for existing screenshots...")
+    # --- Initial Scan (Today's Files Only) ---
+    today_str = datetime.now().strftime("%Y%m%d")
+    logging.info(f"Scanning for existing screenshots from TODAY ({today_str})...")
+    
+    scan_count = 0
     for root, dirs, files in os.walk(WATCH_DIR):
         for file in files:
-            if file.lower().endswith(('.jpg', '.jpeg', '.png')):
+            # Filter: Only process files with today's date string in the name
+            if today_str in file and file.lower().endswith(('.jpg', '.jpeg', '.png')):
                 full_path = os.path.join(root, file)
                 event_handler.upload_file(full_path)
-    logging.info("Initial scan complete.")
+                scan_count += 1
+    
+    logging.info(f"Initial scan complete. Processed {scan_count} items from today.")
 
     observer = Observer()
     observer.schedule(event_handler, WATCH_DIR, recursive=True)

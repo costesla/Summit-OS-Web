@@ -15,8 +15,9 @@ class DatabaseClient:
             return None
         try:
             # Check if we should use Managed Identity (if no password in conn string)
-            # This allows us to transition seamlessly from local (password) to Azure (token)
-            if "Password=" not in self.connection_string and "PWD=" not in self.connection_string:
+            # Use case-insensitive check for password
+            conn_str_lower = self.connection_string.lower()
+            if "password=" not in conn_str_lower and "pwd=" not in conn_str_lower:
                 logging.info("Attempting Managed Identity connection to SQL...")
                 credential = DefaultAzureCredential()
                 token = credential.get_token("https://database.windows.net/.default")
@@ -72,6 +73,25 @@ class DatabaseClient:
         finally:
             conn.close()
 
+    def execute_non_query(self, query, params=None):
+        """Executes a SQL statement (UPDATE/INSERT/DELETE) with optional parameters."""
+        conn = self.get_connection()
+        if not conn:
+            return
+        cursor = conn.cursor()
+        try:
+            if params:
+                cursor.execute(query, params)
+            else:
+                cursor.execute(query)
+            conn.commit()
+            logging.info("Non-query executed successfully.")
+        except Exception as e:
+            logging.error(f"Error executing non-query: {e}")
+            raise e
+        finally:
+            conn.close()
+
     def save_trip(self, trip_data):
         # 1. Determine Trip Type & ID
         is_uber = trip_data.get('classification') == 'Uber_Core'
@@ -113,7 +133,10 @@ class DatabaseClient:
                 Tessie_Distance = ?, Tessie_Duration = ?, Tessie_DriveID = ?,
                 Rider_Payment = ?, Uber_ServiceFee = ?, Platform_Cut = ?, Platform_Emoji = ?,
                 Earnings_Driver = ?, Fare = ?, Tip = ?, SourceURL = ?, Payment_Method = ?, 
-                Classification = ?, Notes = ?, LastUpdated = GETDATE()
+                Classification = ?, Notes = ?,
+                Is_CDOT_Reportable = ?, Passenger_FirstName = ?, Pickup_Address_Full = ?, Dropoff_Address_Full = ?,
+                Tessie_Distance_Mi = ?, Insurance_Fees = ?,
+                LastUpdated = GETDATE()
         WHEN NOT MATCHED THEN
             INSERT (
                 TripID, BlockID, TripType, Timestamp_Offer, Pickup_Place, Dropoff_Place,
@@ -121,9 +144,12 @@ class DatabaseClient:
                 Tessie_Distance, Tessie_Duration, Tessie_DriveID,
                 Rider_Payment, Uber_ServiceFee, Platform_Cut, Platform_Emoji,
                 Earnings_Driver, Fare, Tip, SourceURL, Payment_Method, 
-                Classification, Notes, CreatedAt
+                Classification, Notes,
+                Is_CDOT_Reportable, Passenger_FirstName, Pickup_Address_Full, Dropoff_Address_Full,
+                Tessie_Distance_Mi, Insurance_Fees,
+                CreatedAt
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE());
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE());
         """
         
         t_offer = trip_data.get('timestamp_epoch')
@@ -140,7 +166,14 @@ class DatabaseClient:
             rider_payment, uber_cut, platform_cut, platform_emoji,
             driver_earnings, trip_data.get('fare', 0), trip_data.get('tip', 0),
             source_url, trip_data.get('payment_method'), trip_data.get('classification'),
-            trip_data.get('raw_text')
+            trip_data.get('raw_text'),
+            # Compliance Params
+            1 if trip_data.get('is_cdot_reportable') else 0,
+            trip_data.get('passenger_firstname'),
+            trip_data.get('pickup_address_full'),
+            trip_data.get('dropoff_address_full'),
+            trip_data.get('tessie_distance_mi'),
+            trip_data.get('insurance_fees')
         )
         
         params = (trip_id,) + core_params + (trip_id,) + core_params
