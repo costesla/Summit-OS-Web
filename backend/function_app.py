@@ -50,6 +50,38 @@ for module_path in blueprints:
         import traceback
         logging.error(traceback.format_exc())
 
+@app.route(route="test_graph_auth", methods=["GET"])
+def test_graph_auth(req: func.HttpRequest) -> func.HttpResponse:
+    try:
+        from services.graph import GraphClient
+        client = GraphClient()
+        token = client._get_token()
+        # Validate by calling bookingBusinesses as requested
+        headers = {"Authorization": f"Bearer {token}"}
+        resp = requests.get("https://graph.microsoft.com/v1.0/solutions/bookingBusinesses", headers=headers)
+        
+        return func.HttpResponse(
+            json.dumps({
+                "success": True, 
+                "token_acquired": True,
+                "booking_businesses_status": resp.status_code,
+                "booking_businesses_data": resp.json() if resp.ok else resp.text
+            }, indent=2), 
+            status_code=200, 
+            mimetype="application/json"
+        )
+    except Exception as e:
+        import traceback
+        return func.HttpResponse(
+            json.dumps({
+                "success": False, 
+                "error": str(e),
+                "traceback": traceback.format_exc()
+            }, indent=2), 
+            status_code=500, 
+            mimetype="application/json"
+        )
+
 @app.route(route="diag", methods=["GET"])
 def diag(req: func.HttpRequest) -> func.HttpResponse:
     import sys
