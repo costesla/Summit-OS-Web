@@ -27,27 +27,11 @@ class GraphClient:
             
         resp = requests.post(url, data=data)
         
-        # Fallback: Try ROPC only if Client Credentials fail and credentials exist
-        # This is generally discouraged but kept for legacy compat if App Permissions aren't set
-        if not resp.ok:
-            logging.warning(f"Client Credentials flow failed ({resp.status_code}), attempting ROPC fallback.")
-            username = os.environ.get("BOOKINGS_USER_EMAIL", "PrivateTrips@costesla.com")
-            password = os.environ.get("BOOKINGS_USER_PASSWORD")
-            
-            if username and password:
-                data = {
-                    "client_id": self.client_id,
-                    "scope": "Bookings.ReadWrite.All",
-                    "username": username,
-                    "password": password,
-                    "grant_type": "password",
-                    "client_secret": self.client_secret
-                }
-                resp = requests.post(url, data=data)
-
         if not resp.ok:
             logging.error(f"Graph Token Error: {resp.status_code} {resp.text}")
             raise Exception(f"Graph Token Error: {resp.status_code} {resp.text}")
+            
+        return resp.json().get("access_token")
             
         return resp.json().get("access_token")
 
