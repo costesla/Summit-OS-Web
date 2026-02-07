@@ -49,54 +49,46 @@ class BookingsClient:
 
     def create_appointment(self, customer_data: dict, start_dt: datetime, end_dt: datetime, service_id: str):
         """
-        Creates a new booking appointment.
+        Creates a new booking appointment using standard Graph Calendar API 
+        (Bypassing Bookings API due to persistent 401 Service Principal issues).
         """
-        if not self.business_id:
-            raise Exception("MS_BOOKINGS_BUSINESS_ID not configured")
-
-        token = self.graph._get_token()
-        url = f"https://graph.microsoft.com/v1.0/solutions/bookingBusinesses/{self.business_id}/appointments"
+        # Construct Event Details
+        name = customer_data.get('name', 'Customer')
+        email = customer_data.get('email')
+        phone = customer_data.get('phone', 'N/A')
+        pickup = customer_data.get('pickup', 'N/A')
+        dropoff = customer_data.get('dropoff', 'N/A')
+        notes = customer_data.get('notes', '')
         
-        # FIX: Formally send UTC with Z suffix and specify UTC in the payload
-        start_str = start_dt.strftime('%Y-%m-%dT%H:%M:%SZ')
-        end_str = end_dt.strftime('%Y-%m-%dT%H:%M:%SZ')
+        subject = f"Booking: {name}"
+        body = f"""
+        <h3>New Booking from SummitOS</h3>
+        <p><strong>Customer:</strong> {name}</p>
+        <p><strong>Email:</strong> {email}</p>
+        <p><strong>Phone:</strong> {phone}</p>
+        <hr>
+        <p><strong>Pickup:</strong> {pickup}</p>
+        <p><strong>Dropoff:</strong> {dropoff}</p>
+        <p><strong>Service ID:</strong> {service_id}</p>
+        <p><strong>Notes:</strong> {notes}</p>
+        """
         
-        # Modernized payload structure per Microsoft Graph v1.0 docs
-        payload = {
-            "customerTimeZone": "Mountain Standard Time",
-            "smsNotificationsEnabled": False,
-            "endDateTime": {
-                "dateTime": end_str,
-                "timeZone": "UTC"
-            },
-            "startDateTime": {
-                "dateTime": start_str,
-                "timeZone": "UTC"
-            },
-            "serviceId": service_id,
-            "customers": [
-                {
-                    "@odata.type": "#microsoft.graph.bookingCustomerInformation",
-                    "name": customer_data.get('name'),
-                    "emailAddress": customer_data.get('email'),
-                    "phone": customer_data.get('phone', ''),
-                    "notes": f"Pickup: {customer_data.get('pickup')}\nDropoff: {customer_data.get('dropoff')}"
-                }
-            ]
-        }
+        location = pickup if pickup else "SummitOS Service"
         
-        headers = {
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json"
-        }
+        # Use existing GraphClient logic which we know works (Calendar API)
+        logging.info(f"Creating Calendar Event (Fallback) for {email} at {start_dt}")
         
-        logging.info(f"Creating Bookings appointment for {customer_data.get('email')} at {start_str}")
-        
-        resp = requests.post(url, headers=headers, json=payload)
-        if not resp.ok:
-            # CAPTURE BODY: This is crucial for seeing the 'message' from Microsoft (e.g. 'Invalid Service ID')
-            error_detail = resp.text
-            logging.error(f"Bookings Appt Error: {resp.status_code} - {error_detail}")
-            raise Exception(f"Microsoft Graph Error: {resp.status_code} - {error_detail}")
-            
-        return resp.json()
+        try:
+            # create_calendar_event(self, subject, body, start_dt, end_dt, location, attendee_email)
+            resp = self.graph.create_calendar_event(
+                subject=subject,
+                body=body,
+                start_dt=start_dt,
+                end_dt=end_dt,
+                location=location,
+                attendee_email=email
+            )
+            return resp
+        except Exception as e:
+            logging.error(f"Calendar Fallback Error: {e}")
+            raise e
