@@ -49,7 +49,17 @@ def time_ranges_overlap(start1, end1, start2, end2):
     return start1 < end2 and start2 < end1
 
 def generate_time_slots_for_day(date_obj: datetime):
-    hours = get_hours_for_day(date_obj)
+    """Generate time slots for a given day in Mountain Time, return as UTC."""
+    from .datetime_utils import utc_to_local, get_timezone
+    import pytz
+    
+    # Convert input to Mountain Time to determine the correct day and HOP
+    mt_tz = get_timezone("CO")  # Mountain Time
+    date_obj_utc = normalize_to_utc(date_obj)
+    date_obj_mt = date_obj_utc.astimezone(mt_tz)
+    
+    # Get HOP for this day in Mountain Time
+    hours = get_hours_for_day(date_obj_mt)
     if not hours:
         return []
     
@@ -59,23 +69,23 @@ def generate_time_slots_for_day(date_obj: datetime):
     start_h, start_m = map(int, start_str.split(":"))
     end_h, end_m = map(int, end_str.split(":"))
     
-    # Ensure date_obj is aware (UTC)
-    date_obj = normalize_to_utc(date_obj)
+    # Create start/end times in Mountain Time for this specific date
+    # Use the date component from date_obj_mt
+    current_start_mt = date_obj_mt.replace(hour=start_h, minute=start_m, second=0, microsecond=0)
     
-    # Construct start/end datetimes
-    # Use the date component from date_obj, set time
-    current_start = date_obj.replace(hour=start_h, minute=start_m, second=0, microsecond=0)
-    
-    current_end = date_obj.replace(hour=0, minute=0, second=0, microsecond=0)
+    # Handle end time
     if end_h == 0 and end_str == "00:00":
         # Midnight next day
-        current_end = current_end + timedelta(days=1)
+        current_end_mt = date_obj_mt.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
     else:
-        current_end = current_end.replace(hour=end_h, minute=end_m)
-        
+        current_end_mt = date_obj_mt.replace(hour=end_h, minute=end_m, second=0, microsecond=0)
+    
+    # Generate slots in Mountain Time, then convert to UTC
     slots = []
-    while current_start < current_end:
-        slots.append(current_start)
-        current_start += timedelta(minutes=30)
+    while current_start_mt < current_end_mt:
+        # Convert to UTC for storage/API response
+        slot_utc = current_start_mt.astimezone(pytz.UTC)
+        slots.append(slot_utc)
+        current_start_mt += timedelta(minutes=30)
         
     return slots
