@@ -8,13 +8,13 @@ DEFAULT_TRIP_DURATION = 60
 # But TS used 0=Sun. I will map strict to TS logic.
 # TS: 0=Sun, 1=Mon ... 6=Sat.
 HOURS_CONFIG = {
-    1: {"start": "04:00", "end": "22:00"}, # Mon
-    2: {"start": "04:00", "end": "22:00"}, # Tue
-    3: {"start": "04:00", "end": "22:00"}, # Wed
-    4: {"start": "04:00", "end": "22:00"}, # Thu
-    5: {"start": "04:00", "end": "00:00"}, # Fri (midnight)
-    6: {"start": "08:00", "end": "11:00"}, # Sat
-    0: {"start": "08:00", "end": "18:00"}, # Sun
+    1: {"start": "04:30", "end": "22:00"}, # Mon
+    2: {"start": "04:30", "end": "22:00"}, # Tue
+    3: {"start": "04:30", "end": "22:00"}, # Wed
+    4: {"start": "04:30", "end": "22:00"}, # Thu
+    5: {"start": "04:30", "end": "23:30"}, # Fri (last slot 11:30 PM ends at midnight)
+    6: {"start": "04:30", "end": "23:30"}, # Sat (last slot 11:30 PM ends at midnight)
+    0: {"start": "08:00", "end": "17:00"}, # Sun (last slot 4:30 PM ends at 5:00 PM)
 }
 
 def get_hours_for_day(date_obj: datetime):
