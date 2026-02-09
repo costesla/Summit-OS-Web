@@ -22,6 +22,32 @@ interface TimeSlot {
     end: string;
 }
 
+// Hours of Operation by weekday (0=Sun, 1=Mon, ... 6=Sat)
+const HOP = {
+    1: { start: '04:30', end: '22:00' }, // Mon
+    2: { start: '04:30', end: '22:00' }, // Tue
+    3: { start: '04:30', end: '22:00' }, // Wed
+    4: { start: '04:30', end: '22:00' }, // Thu
+    5: { start: '04:30', end: '23:30' }, // Fri (last slot 11:30 PM ends at midnight)
+    6: { start: '04:30', end: '23:30' }, // Sat (last slot 11:30 PM ends at midnight)
+    0: { start: '08:00', end: '17:00' }, // Sun
+};
+
+// Convert HH:MM to minutes since midnight
+function toMinutes(hhmm: string): number {
+    const [h, m] = hhmm.split(':').map(Number);
+    return h * 60 + m;
+}
+
+// Check if a slot start time is within HOP for its weekday
+function withinHop(dateObj: Date): boolean {
+    const w = dateObj.getDay();
+    const hop = HOP[w as keyof typeof HOP];
+    if (!hop) return false; // Day is off
+    const mins = dateObj.getHours() * 60 + dateObj.getMinutes();
+    return mins >= toMinutes(hop.start) && mins <= toMinutes(hop.end);
+}
+
 export default function CalendarBooking({
     customerName,
     customerEmail,
@@ -70,7 +96,13 @@ export default function CalendarBooking({
                     const sortedSlots = data.slots.sort((a: TimeSlot, b: TimeSlot) =>
                         new Date(a.start).getTime() - new Date(b.start).getTime()
                     );
-                    setAvailableSlots(sortedSlots);
+
+                    // Filter out slots outside Hours of Operation
+                    const filteredSlots = sortedSlots.filter((slot: TimeSlot) =>
+                        withinHop(new Date(slot.start))
+                    );
+
+                    setAvailableSlots(filteredSlots);
                 } else {
                     setError(data.error || "Failed to load available times");
                 }
