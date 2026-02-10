@@ -1,0 +1,2057 @@
+2026-02-06 23:58:37,903 - INFO - OCR Client initialized with API Key at endpoint: https://ai-summitos-prod.cognitiveservices.azure.com/
+2026-02-06 23:58:37,904 - INFO - --- Starting Feb 6 Processing V2 (Clustering) ---
+2026-02-06 23:58:37,904 - INFO - Step 1: Cleaning up existing Feb 6 data...
+2026-02-06 23:58:38,015 - INFO - Deleted 23 existing records.
+2026-02-06 23:58:38,016 - INFO - Step 2: Scanning and Sorting Files...
+2026-02-06 23:58:38,061 - INFO - Found 60 images for 2026-02-06.
+2026-02-06 23:58:38,061 - INFO - Step 3: Clustering Images...
+2026-02-06 23:58:38,061 - INFO - Created 29 clusters/trips.
+2026-02-06 23:58:38,062 - INFO - Step 4: Processing Clusters...
+2026-02-06 23:58:38,062 - INFO - --- Processing Cluster 1/29 (1 images) ---
+2026-02-06 23:58:38,062 - INFO -    OCR Scanning: Screenshot_20260206_060123.jpg
+2026-02-06 23:58:38,063 - ERROR - Error processing Screenshot_20260206_060123.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:38,063 - INFO -    Validating with Tessie (Epoch: 1770382883.0)...
+2026-02-06 23:58:38,971 - INFO - Searching 10 drives for match near 2026-02-06 06:01:23
+2026-02-06 23:58:38,971 - INFO - No matching drive found.
+2026-02-06 23:58:38,973 - WARNING -    No Tessie match.
+2026-02-06 23:58:38,974 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:58:38,974 - INFO - Saving Uber Trip: Te3dcbba7
+2026-02-06 23:58:39,003 - INFO - Successfully saved trip Te3dcbba7 to database.
+2026-02-06 23:58:39,005 - INFO - --- Processing Cluster 2/29 (1 images) ---
+2026-02-06 23:58:39,005 - INFO -    OCR Scanning: Screenshot_20260206_060810.jpg
+2026-02-06 23:58:39,006 - ERROR - Error processing Screenshot_20260206_060810.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:39,006 - INFO -    Validating with Tessie (Epoch: 1770383290.0)...
+2026-02-06 23:58:40,005 - INFO - Searching 10 drives for match near 2026-02-06 06:08:10
+2026-02-06 23:58:40,006 - INFO - No matching drive found.
+2026-02-06 23:58:40,008 - WARNING -    No Tessie match.
+2026-02-06 23:58:40,008 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:58:40,008 - INFO - Saving Uber Trip: Td1d80487
+2026-02-06 23:58:40,020 - INFO - Successfully saved trip Td1d80487 to database.
+2026-02-06 23:58:40,022 - INFO - --- Processing Cluster 3/29 (1 images) ---
+2026-02-06 23:58:40,022 - INFO -    OCR Scanning: Screenshot_20260206_065003.jpg
+2026-02-06 23:58:40,023 - ERROR - Error processing Screenshot_20260206_065003.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:40,023 - INFO -    Validating with Tessie (Epoch: 1770385803.0)...
+2026-02-06 23:58:40,907 - INFO - Searching 10 drives for match near 2026-02-06 06:50:03
+2026-02-06 23:58:40,907 - INFO - No matching drive found.
+2026-02-06 23:58:40,909 - WARNING -    No Tessie match.
+2026-02-06 23:58:40,909 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:58:40,909 - INFO - Saving Uber Trip: T766c3374
+2026-02-06 23:58:40,922 - INFO - Successfully saved trip T766c3374 to database.
+2026-02-06 23:58:40,924 - INFO - --- Processing Cluster 4/29 (1 images) ---
+2026-02-06 23:58:40,924 - INFO -    OCR Scanning: Screenshot_20260206_072736_Chrome.jpg
+2026-02-06 23:58:40,928 - ERROR - Error processing Screenshot_20260206_072736_Chrome.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:40,928 - INFO -    Validating with Tessie (Epoch: 1770388056.0)...
+2026-02-06 23:58:41,874 - INFO - Searching 10 drives for match near 2026-02-06 07:27:36
+2026-02-06 23:58:41,874 - INFO - No matching drive found.
+2026-02-06 23:58:41,876 - WARNING -    No Tessie match.
+2026-02-06 23:58:41,876 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:58:41,876 - INFO - Saving Uber Trip: Tf59afeef
+2026-02-06 23:58:42,063 - INFO - Successfully saved trip Tf59afeef to database.
+2026-02-06 23:58:42,065 - INFO - --- Processing Cluster 5/29 (3 images) ---
+2026-02-06 23:58:42,065 - INFO -    OCR Scanning: Screenshot_20260206_080135_Venmo.jpg
+2026-02-06 23:58:42,067 - ERROR - Error processing Screenshot_20260206_080135_Venmo.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:42,067 - INFO -    OCR Scanning: Screenshot_20260206_080328_Uber Driver.jpg
+2026-02-06 23:58:42,068 - ERROR - Error processing Screenshot_20260206_080328_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:42,068 - INFO -    OCR Scanning: Screenshot_20260206_080436_Venmo.jpg
+2026-02-06 23:58:42,069 - ERROR - Error processing Screenshot_20260206_080436_Venmo.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:42,070 - INFO -    Validating with Tessie (Epoch: 1770390095.0)...
+2026-02-06 23:58:43,087 - INFO - Searching 10 drives for match near 2026-02-06 08:01:35
+2026-02-06 23:58:43,087 - INFO - No matching drive found.
+2026-02-06 23:58:43,089 - WARNING -    No Tessie match.
+2026-02-06 23:58:43,089 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:58:43,089 - INFO - Saving Private Trip: T791818d9
+2026-02-06 23:58:43,123 - INFO - Successfully saved trip T791818d9 to database.
+2026-02-06 23:58:43,125 - INFO - --- Processing Cluster 6/29 (1 images) ---
+2026-02-06 23:58:43,125 - INFO -    OCR Scanning: Screenshot_20260206_080942_M365 Copilot.jpg
+2026-02-06 23:58:43,126 - ERROR - Error processing Screenshot_20260206_080942_M365 Copilot.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:43,126 - INFO -    Validating with Tessie (Epoch: 1770390582.0)...
+2026-02-06 23:58:44,415 - INFO - Searching 10 drives for match near 2026-02-06 08:09:42
+2026-02-06 23:58:44,415 - INFO - No matching drive found.
+2026-02-06 23:58:44,417 - WARNING -    No Tessie match.
+2026-02-06 23:58:44,418 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:58:44,418 - INFO - Saving Uber Trip: T89846b29
+2026-02-06 23:58:44,451 - INFO - Successfully saved trip T89846b29 to database.
+2026-02-06 23:58:44,453 - INFO - --- Processing Cluster 7/29 (3 images) ---
+2026-02-06 23:58:44,453 - INFO -    OCR Scanning: Screenshot_20260206_084253.jpg
+2026-02-06 23:58:44,455 - ERROR - Error processing Screenshot_20260206_084253.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:44,455 - INFO -    OCR Scanning: Screenshot_20260206_084431.jpg
+2026-02-06 23:58:44,457 - ERROR - Error processing Screenshot_20260206_084431.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:44,457 - INFO -    OCR Scanning: Screenshot_20260206_084754_Uber Driver.jpg
+2026-02-06 23:58:44,459 - ERROR - Error processing Screenshot_20260206_084754_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:44,459 - INFO -    Validating with Tessie (Epoch: 1770392573.0)...
+2026-02-06 23:58:45,751 - INFO - Searching 10 drives for match near 2026-02-06 08:42:53
+2026-02-06 23:58:45,752 - INFO - No matching drive found.
+2026-02-06 23:58:45,754 - WARNING -    No Tessie match.
+2026-02-06 23:58:45,754 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:58:45,754 - INFO - Saving Private Trip: T449028c9
+2026-02-06 23:58:45,783 - INFO - Successfully saved trip T449028c9 to database.
+2026-02-06 23:58:45,785 - INFO - --- Processing Cluster 8/29 (2 images) ---
+2026-02-06 23:58:45,785 - INFO -    OCR Scanning: Screenshot_20260206_090525_Uber Driver.jpg
+2026-02-06 23:58:45,787 - ERROR - Error processing Screenshot_20260206_090525_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:45,787 - INFO -    OCR Scanning: Screenshot_20260206_090532_Uber Driver.jpg
+2026-02-06 23:58:45,788 - ERROR - Error processing Screenshot_20260206_090532_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:45,789 - INFO -    Validating with Tessie (Epoch: 1770393925.0)...
+2026-02-06 23:58:46,051 - INFO - OCR Client initialized with API Key at endpoint: https://ai-summitos-prod.cognitiveservices.azure.com/
+2026-02-06 23:58:46,060 - INFO - --- Starting Feb 6 Processing V2 (Clustering) ---
+2026-02-06 23:58:46,104 - INFO - Step 1: Cleaning up existing Feb 6 data...
+2026-02-06 23:58:46,569 - INFO - Deleted 7 existing records.
+2026-02-06 23:58:46,570 - INFO - Step 2: Scanning and Sorting Files...
+2026-02-06 23:58:46,628 - INFO - Found 60 images for 2026-02-06.
+2026-02-06 23:58:46,629 - INFO - Step 3: Clustering Images...
+2026-02-06 23:58:46,630 - INFO - Created 29 clusters/trips.
+2026-02-06 23:58:46,630 - INFO - Step 4: Processing Clusters...
+2026-02-06 23:58:46,630 - INFO - --- Processing Cluster 1/29 (1 images) ---
+2026-02-06 23:58:46,630 - INFO -    OCR Scanning: Screenshot_20260206_060123.jpg
+2026-02-06 23:58:46,631 - ERROR - Error processing Screenshot_20260206_060123.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:46,631 - INFO -    Validating with Tessie (Epoch: 1770382883.0)...
+2026-02-06 23:58:47,310 - INFO - Searching 10 drives for match near 2026-02-06 09:05:25
+2026-02-06 23:58:47,310 - INFO - No matching drive found.
+2026-02-06 23:58:47,312 - WARNING -    No Tessie match.
+2026-02-06 23:58:47,312 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:58:47,312 - INFO - Saving Uber Trip: T138cdd0a
+2026-02-06 23:58:47,341 - INFO - Successfully saved trip T138cdd0a to database.
+2026-02-06 23:58:47,343 - INFO - --- Processing Cluster 9/29 (1 images) ---
+2026-02-06 23:58:47,344 - INFO -    OCR Scanning: Screenshot_20260206_091258_Uber Driver.jpg
+2026-02-06 23:58:47,349 - ERROR - Error processing Screenshot_20260206_091258_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:47,349 - INFO -    Validating with Tessie (Epoch: 1770394378.0)...
+2026-02-06 23:58:48,403 - INFO - Searching 10 drives for match near 2026-02-06 06:01:23
+2026-02-06 23:58:48,403 - INFO - No matching drive found.
+2026-02-06 23:58:48,406 - WARNING -    No Tessie match.
+2026-02-06 23:58:48,406 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:58:48,406 - INFO - Saving Uber Trip: Te3dcbba7
+2026-02-06 23:58:48,420 - INFO - Successfully saved trip Te3dcbba7 to database.
+2026-02-06 23:58:48,422 - INFO - --- Processing Cluster 2/29 (1 images) ---
+2026-02-06 23:58:48,423 - INFO -    OCR Scanning: Screenshot_20260206_060810.jpg
+2026-02-06 23:58:48,424 - ERROR - Error processing Screenshot_20260206_060810.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:48,424 - INFO -    Validating with Tessie (Epoch: 1770383290.0)...
+2026-02-06 23:58:49,015 - INFO - Searching 10 drives for match near 2026-02-06 09:12:58
+2026-02-06 23:58:49,015 - INFO - No matching drive found.
+2026-02-06 23:58:49,017 - WARNING -    No Tessie match.
+2026-02-06 23:58:49,017 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:58:49,018 - INFO - Saving Uber Trip: Tb23336fd
+2026-02-06 23:58:49,032 - INFO - Successfully saved trip Tb23336fd to database.
+2026-02-06 23:58:49,033 - INFO - --- Processing Cluster 10/29 (3 images) ---
+2026-02-06 23:58:49,033 - INFO -    OCR Scanning: Screenshot_20260206_093616_Uber Driver.jpg
+2026-02-06 23:58:49,035 - ERROR - Error processing Screenshot_20260206_093616_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:49,035 - INFO -    OCR Scanning: Screenshot_20260206_093628_Uber Driver.jpg
+2026-02-06 23:58:49,036 - ERROR - Error processing Screenshot_20260206_093628_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:49,037 - INFO -    OCR Scanning: Screenshot_20260206_093734.jpg
+2026-02-06 23:58:49,039 - ERROR - Error processing Screenshot_20260206_093734.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:49,039 - INFO -    Validating with Tessie (Epoch: 1770395776.0)...
+2026-02-06 23:58:49,543 - INFO - Searching 10 drives for match near 2026-02-06 06:08:10
+2026-02-06 23:58:49,543 - INFO - No matching drive found.
+2026-02-06 23:58:49,545 - WARNING -    No Tessie match.
+2026-02-06 23:58:49,546 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:58:49,546 - INFO - Saving Uber Trip: Td1d80487
+2026-02-06 23:58:49,560 - INFO - Successfully saved trip Td1d80487 to database.
+2026-02-06 23:58:49,563 - INFO - --- Processing Cluster 3/29 (1 images) ---
+2026-02-06 23:58:49,563 - INFO -    OCR Scanning: Screenshot_20260206_065003.jpg
+2026-02-06 23:58:49,566 - ERROR - Error processing Screenshot_20260206_065003.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:49,566 - INFO -    Validating with Tessie (Epoch: 1770385803.0)...
+2026-02-06 23:58:50,119 - INFO - Searching 10 drives for match near 2026-02-06 09:36:16
+2026-02-06 23:58:50,120 - INFO - No matching drive found.
+2026-02-06 23:58:50,121 - WARNING -    No Tessie match.
+2026-02-06 23:58:50,122 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:58:50,122 - INFO - Saving Private Trip: T521b0ac9
+2026-02-06 23:58:50,155 - INFO - Successfully saved trip T521b0ac9 to database.
+2026-02-06 23:58:50,157 - INFO - --- Processing Cluster 11/29 (2 images) ---
+2026-02-06 23:58:50,157 - INFO -    OCR Scanning: Screenshot_20260206_102119.jpg
+2026-02-06 23:58:50,159 - ERROR - Error processing Screenshot_20260206_102119.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:50,159 - INFO -    OCR Scanning: Screenshot_20260206_102140_Venmo.jpg
+2026-02-06 23:58:50,160 - ERROR - Error processing Screenshot_20260206_102140_Venmo.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:50,161 - INFO -    Validating with Tessie (Epoch: 1770398479.0)...
+2026-02-06 23:58:50,679 - INFO - Searching 10 drives for match near 2026-02-06 06:50:03
+2026-02-06 23:58:50,679 - INFO - No matching drive found.
+2026-02-06 23:58:50,681 - WARNING -    No Tessie match.
+2026-02-06 23:58:50,682 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:58:50,682 - INFO - Saving Uber Trip: T766c3374
+2026-02-06 23:58:50,693 - INFO - Successfully saved trip T766c3374 to database.
+2026-02-06 23:58:50,695 - INFO - --- Processing Cluster 4/29 (1 images) ---
+2026-02-06 23:58:50,695 - INFO -    OCR Scanning: Screenshot_20260206_072736_Chrome.jpg
+2026-02-06 23:58:50,697 - ERROR - Error processing Screenshot_20260206_072736_Chrome.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:50,697 - INFO -    Validating with Tessie (Epoch: 1770388056.0)...
+2026-02-06 23:58:51,205 - INFO - Searching 10 drives for match near 2026-02-06 10:21:19
+2026-02-06 23:58:51,206 - INFO - No matching drive found.
+2026-02-06 23:58:51,208 - WARNING -    No Tessie match.
+2026-02-06 23:58:51,209 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:58:51,209 - INFO - Saving Private Trip: T84858077
+2026-02-06 23:58:51,221 - INFO - Successfully saved trip T84858077 to database.
+2026-02-06 23:58:51,223 - INFO - --- Processing Cluster 12/29 (3 images) ---
+2026-02-06 23:58:51,223 - INFO -    OCR Scanning: Screenshot_20260206_103744_Uber Driver.jpg
+2026-02-06 23:58:51,224 - ERROR - Error processing Screenshot_20260206_103744_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:51,224 - INFO -    OCR Scanning: Screenshot_20260206_103806_Uber Driver.jpg
+2026-02-06 23:58:51,226 - ERROR - Error processing Screenshot_20260206_103806_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:51,226 - INFO -    OCR Scanning: Screenshot_20260206_104223_Uber Driver.jpg
+2026-02-06 23:58:51,227 - ERROR - Error processing Screenshot_20260206_104223_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:51,228 - INFO -    Validating with Tessie (Epoch: 1770399464.0)...
+2026-02-06 23:58:51,732 - INFO - Searching 10 drives for match near 2026-02-06 07:27:36
+2026-02-06 23:58:51,733 - INFO - No matching drive found.
+2026-02-06 23:58:51,735 - WARNING -    No Tessie match.
+2026-02-06 23:58:51,735 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:58:51,735 - INFO - Saving Uber Trip: Tf59afeef
+2026-02-06 23:58:51,748 - INFO - Successfully saved trip Tf59afeef to database.
+2026-02-06 23:58:51,751 - INFO - --- Processing Cluster 5/29 (3 images) ---
+2026-02-06 23:58:51,752 - INFO -    OCR Scanning: Screenshot_20260206_080135_Venmo.jpg
+2026-02-06 23:58:51,754 - ERROR - Error processing Screenshot_20260206_080135_Venmo.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:51,754 - INFO -    OCR Scanning: Screenshot_20260206_080328_Uber Driver.jpg
+2026-02-06 23:58:51,756 - ERROR - Error processing Screenshot_20260206_080328_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:51,756 - INFO -    OCR Scanning: Screenshot_20260206_080436_Venmo.jpg
+2026-02-06 23:58:51,757 - ERROR - Error processing Screenshot_20260206_080436_Venmo.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:51,758 - INFO -    Validating with Tessie (Epoch: 1770390095.0)...
+2026-02-06 23:58:52,460 - INFO - Searching 10 drives for match near 2026-02-06 10:37:44
+2026-02-06 23:58:52,460 - INFO - No matching drive found.
+2026-02-06 23:58:52,462 - WARNING -    No Tessie match.
+2026-02-06 23:58:52,462 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:58:52,462 - INFO - Saving Private Trip: T1a48ffb5
+2026-02-06 23:58:52,474 - INFO - Successfully saved trip T1a48ffb5 to database.
+2026-02-06 23:58:52,476 - INFO - --- Processing Cluster 13/29 (4 images) ---
+2026-02-06 23:58:52,476 - INFO -    OCR Scanning: Screenshot_20260206_105012.jpg
+2026-02-06 23:58:52,478 - ERROR - Error processing Screenshot_20260206_105012.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:52,478 - INFO -    OCR Scanning: Screenshot_20260206_105027_Uber Driver.jpg
+2026-02-06 23:58:52,480 - ERROR - Error processing Screenshot_20260206_105027_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:52,480 - INFO -    OCR Scanning: Screenshot_20260206_105140_Uber Driver.jpg
+2026-02-06 23:58:52,481 - ERROR - Error processing Screenshot_20260206_105140_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:52,481 - INFO -    OCR Scanning: Screenshot_20260206_105151_Uber Driver.jpg
+2026-02-06 23:58:52,483 - ERROR - Error processing Screenshot_20260206_105151_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:52,483 - INFO -    Validating with Tessie (Epoch: 1770400212.0)...
+2026-02-06 23:58:53,111 - INFO - Searching 10 drives for match near 2026-02-06 08:01:35
+2026-02-06 23:58:53,112 - INFO - No matching drive found.
+2026-02-06 23:58:53,114 - WARNING -    No Tessie match.
+2026-02-06 23:58:53,115 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:58:53,115 - INFO - Saving Private Trip: T791818d9
+2026-02-06 23:58:53,128 - INFO - Successfully saved trip T791818d9 to database.
+2026-02-06 23:58:53,131 - INFO - --- Processing Cluster 6/29 (1 images) ---
+2026-02-06 23:58:53,131 - INFO -    OCR Scanning: Screenshot_20260206_080942_M365 Copilot.jpg
+2026-02-06 23:58:53,132 - ERROR - Error processing Screenshot_20260206_080942_M365 Copilot.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:53,132 - INFO -    Validating with Tessie (Epoch: 1770390582.0)...
+2026-02-06 23:58:53,553 - INFO - Searching 10 drives for match near 2026-02-06 10:50:12
+2026-02-06 23:58:53,553 - INFO - No matching drive found.
+2026-02-06 23:58:53,555 - WARNING -    No Tessie match.
+2026-02-06 23:58:53,555 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:58:53,555 - INFO - Saving Private Trip: T398f2794
+2026-02-06 23:58:53,568 - INFO - Successfully saved trip T398f2794 to database.
+2026-02-06 23:58:53,570 - INFO - --- Processing Cluster 14/29 (5 images) ---
+2026-02-06 23:58:53,570 - INFO -    OCR Scanning: Screenshot_20260206_105701_Uber Driver.jpg
+2026-02-06 23:58:53,571 - ERROR - Error processing Screenshot_20260206_105701_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:53,572 - INFO -    OCR Scanning: Screenshot_20260206_110138_Uber Driver.jpg
+2026-02-06 23:58:53,591 - ERROR - Error processing Screenshot_20260206_110138_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:53,591 - INFO -    OCR Scanning: Screenshot_20260206_110226.jpg
+2026-02-06 23:58:53,603 - ERROR - Error processing Screenshot_20260206_110226.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:53,603 - INFO -    OCR Scanning: Screenshot_20260206_110639_Uber Driver.jpg
+2026-02-06 23:58:53,616 - ERROR - Error processing Screenshot_20260206_110639_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:53,616 - INFO -    OCR Scanning: Screenshot_20260206_110650_Uber Driver.jpg
+2026-02-06 23:58:53,628 - ERROR - Error processing Screenshot_20260206_110650_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:53,628 - INFO -    Validating with Tessie (Epoch: 1770400621.0)...
+2026-02-06 23:58:54,108 - INFO - Searching 10 drives for match near 2026-02-06 08:09:42
+2026-02-06 23:58:54,108 - INFO - No matching drive found.
+2026-02-06 23:58:54,110 - WARNING -    No Tessie match.
+2026-02-06 23:58:54,110 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:58:54,111 - INFO - Saving Uber Trip: T89846b29
+2026-02-06 23:58:54,123 - INFO - Successfully saved trip T89846b29 to database.
+2026-02-06 23:58:54,127 - INFO - --- Processing Cluster 7/29 (3 images) ---
+2026-02-06 23:58:54,128 - INFO -    OCR Scanning: Screenshot_20260206_084253.jpg
+2026-02-06 23:58:54,130 - ERROR - Error processing Screenshot_20260206_084253.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:54,131 - INFO -    OCR Scanning: Screenshot_20260206_084431.jpg
+2026-02-06 23:58:54,132 - ERROR - Error processing Screenshot_20260206_084431.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:54,133 - INFO -    OCR Scanning: Screenshot_20260206_084754_Uber Driver.jpg
+2026-02-06 23:58:54,134 - ERROR - Error processing Screenshot_20260206_084754_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:54,135 - INFO -    Validating with Tessie (Epoch: 1770392573.0)...
+2026-02-06 23:58:54,791 - INFO - Searching 10 drives for match near 2026-02-06 10:57:01
+2026-02-06 23:58:54,791 - INFO - No matching drive found.
+2026-02-06 23:58:54,793 - WARNING -    No Tessie match.
+2026-02-06 23:58:54,793 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:58:54,793 - INFO - Saving Private Trip: Te2d397a3
+2026-02-06 23:58:54,805 - INFO - Successfully saved trip Te2d397a3 to database.
+2026-02-06 23:58:54,807 - INFO - --- Processing Cluster 15/29 (1 images) ---
+2026-02-06 23:58:54,807 - INFO -    OCR Scanning: Screenshot_20260206_111330_Uber Driver.jpg
+2026-02-06 23:58:54,811 - ERROR - Error processing Screenshot_20260206_111330_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:54,811 - INFO -    Validating with Tessie (Epoch: 1770401610.0)...
+2026-02-06 23:58:55,153 - INFO - Searching 10 drives for match near 2026-02-06 08:42:53
+2026-02-06 23:58:55,153 - INFO - No matching drive found.
+2026-02-06 23:58:55,155 - WARNING -    No Tessie match.
+2026-02-06 23:58:55,155 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:58:55,155 - INFO - Saving Private Trip: T449028c9
+2026-02-06 23:58:55,168 - INFO - Successfully saved trip T449028c9 to database.
+2026-02-06 23:58:55,171 - INFO - --- Processing Cluster 8/29 (2 images) ---
+2026-02-06 23:58:55,171 - INFO -    OCR Scanning: Screenshot_20260206_090525_Uber Driver.jpg
+2026-02-06 23:58:55,174 - ERROR - Error processing Screenshot_20260206_090525_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:55,174 - INFO -    OCR Scanning: Screenshot_20260206_090532_Uber Driver.jpg
+2026-02-06 23:58:55,176 - ERROR - Error processing Screenshot_20260206_090532_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:55,177 - INFO -    Validating with Tessie (Epoch: 1770393925.0)...
+2026-02-06 23:58:55,840 - INFO - Searching 10 drives for match near 2026-02-06 11:13:30
+2026-02-06 23:58:55,840 - INFO - No matching drive found.
+2026-02-06 23:58:55,842 - WARNING -    No Tessie match.
+2026-02-06 23:58:55,842 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:58:55,842 - INFO - Saving Uber Trip: Tbb894c33
+2026-02-06 23:58:55,854 - INFO - Successfully saved trip Tbb894c33 to database.
+2026-02-06 23:58:55,856 - INFO - --- Processing Cluster 16/29 (2 images) ---
+2026-02-06 23:58:55,857 - INFO -    OCR Scanning: Screenshot_20260206_112443_Uber Driver.jpg
+2026-02-06 23:58:55,858 - ERROR - Error processing Screenshot_20260206_112443_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:55,859 - INFO -    OCR Scanning: Screenshot_20260206_112536.jpg
+2026-02-06 23:58:55,860 - ERROR - Error processing Screenshot_20260206_112536.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:55,860 - INFO -    Validating with Tessie (Epoch: 1770402283.0)...
+2026-02-06 23:58:56,449 - INFO - Searching 10 drives for match near 2026-02-06 09:05:25
+2026-02-06 23:58:56,449 - INFO - No matching drive found.
+2026-02-06 23:58:56,452 - WARNING -    No Tessie match.
+2026-02-06 23:58:56,452 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:58:56,452 - INFO - Saving Uber Trip: T138cdd0a
+2026-02-06 23:58:56,466 - INFO - Successfully saved trip T138cdd0a to database.
+2026-02-06 23:58:56,468 - INFO - --- Processing Cluster 9/29 (1 images) ---
+2026-02-06 23:58:56,469 - INFO -    OCR Scanning: Screenshot_20260206_091258_Uber Driver.jpg
+2026-02-06 23:58:56,470 - ERROR - Error processing Screenshot_20260206_091258_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:56,470 - INFO -    Validating with Tessie (Epoch: 1770394378.0)...
+2026-02-06 23:58:57,252 - INFO - Searching 10 drives for match near 2026-02-06 11:24:43
+2026-02-06 23:58:57,252 - INFO - No matching drive found.
+2026-02-06 23:58:57,254 - WARNING -    No Tessie match.
+2026-02-06 23:58:57,254 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:58:57,255 - INFO - Saving Uber Trip: T24e31dcb
+2026-02-06 23:58:57,268 - INFO - Successfully saved trip T24e31dcb to database.
+2026-02-06 23:58:57,270 - INFO - --- Processing Cluster 17/29 (2 images) ---
+2026-02-06 23:58:57,270 - INFO -    OCR Scanning: Screenshot_20260206_113547_Uber Driver.jpg
+2026-02-06 23:58:57,271 - ERROR - Error processing Screenshot_20260206_113547_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:57,272 - INFO -    OCR Scanning: Screenshot_20260206_113637_Uber Driver.jpg
+2026-02-06 23:58:57,274 - ERROR - Error processing Screenshot_20260206_113637_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:57,275 - INFO -    Validating with Tessie (Epoch: 1770402947.0)...
+2026-02-06 23:58:57,960 - INFO - Searching 10 drives for match near 2026-02-06 09:12:58
+2026-02-06 23:58:57,960 - INFO - No matching drive found.
+2026-02-06 23:58:57,963 - WARNING -    No Tessie match.
+2026-02-06 23:58:57,964 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:58:57,964 - INFO - Saving Uber Trip: Tb23336fd
+2026-02-06 23:58:57,977 - INFO - Successfully saved trip Tb23336fd to database.
+2026-02-06 23:58:57,980 - INFO - --- Processing Cluster 10/29 (3 images) ---
+2026-02-06 23:58:57,980 - INFO -    OCR Scanning: Screenshot_20260206_093616_Uber Driver.jpg
+2026-02-06 23:58:57,981 - ERROR - Error processing Screenshot_20260206_093616_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:57,981 - INFO -    OCR Scanning: Screenshot_20260206_093628_Uber Driver.jpg
+2026-02-06 23:58:57,982 - ERROR - Error processing Screenshot_20260206_093628_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:57,982 - INFO -    OCR Scanning: Screenshot_20260206_093734.jpg
+2026-02-06 23:58:57,983 - ERROR - Error processing Screenshot_20260206_093734.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:57,983 - INFO -    Validating with Tessie (Epoch: 1770395776.0)...
+2026-02-06 23:58:59,086 - INFO - Searching 10 drives for match near 2026-02-06 11:35:47
+2026-02-06 23:58:59,086 - INFO - No matching drive found.
+2026-02-06 23:58:59,088 - WARNING -    No Tessie match.
+2026-02-06 23:58:59,088 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:58:59,088 - INFO - Saving Uber Trip: T92ec2ae3
+2026-02-06 23:58:59,100 - INFO - Successfully saved trip T92ec2ae3 to database.
+2026-02-06 23:58:59,102 - INFO - --- Processing Cluster 18/29 (1 images) ---
+2026-02-06 23:58:59,102 - INFO -    OCR Scanning: Screenshot_20260206_114359_Uber Driver.jpg
+2026-02-06 23:58:59,119 - ERROR - Error processing Screenshot_20260206_114359_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:59,119 - INFO -    Validating with Tessie (Epoch: 1770403439.0)...
+2026-02-06 23:58:59,685 - INFO - Searching 10 drives for match near 2026-02-06 09:36:16
+2026-02-06 23:58:59,685 - INFO - No matching drive found.
+2026-02-06 23:58:59,687 - WARNING -    No Tessie match.
+2026-02-06 23:58:59,687 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:58:59,687 - INFO - Saving Private Trip: T521b0ac9
+2026-02-06 23:58:59,700 - INFO - Successfully saved trip T521b0ac9 to database.
+2026-02-06 23:58:59,702 - INFO - --- Processing Cluster 11/29 (2 images) ---
+2026-02-06 23:58:59,702 - INFO -    OCR Scanning: Screenshot_20260206_102119.jpg
+2026-02-06 23:58:59,704 - ERROR - Error processing Screenshot_20260206_102119.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:59,704 - INFO -    OCR Scanning: Screenshot_20260206_102140_Venmo.jpg
+2026-02-06 23:58:59,704 - ERROR - Error processing Screenshot_20260206_102140_Venmo.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:59,705 - INFO -    Validating with Tessie (Epoch: 1770398479.0)...
+2026-02-06 23:59:00,733 - INFO - Searching 10 drives for match near 2026-02-06 11:43:59
+2026-02-06 23:59:00,733 - INFO - No matching drive found.
+2026-02-06 23:59:00,735 - WARNING -    No Tessie match.
+2026-02-06 23:59:00,735 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:59:00,735 - INFO - Saving Uber Trip: T5761316d
+2026-02-06 23:59:00,749 - INFO - Successfully saved trip T5761316d to database.
+2026-02-06 23:59:00,751 - INFO - --- Processing Cluster 19/29 (4 images) ---
+2026-02-06 23:59:00,751 - INFO -    OCR Scanning: Screenshot_20260206_120441_Uber Driver.jpg
+2026-02-06 23:59:00,768 - ERROR - Error processing Screenshot_20260206_120441_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:00,768 - INFO -    OCR Scanning: Screenshot_20260206_120450_Uber Driver.jpg
+2026-02-06 23:59:00,781 - ERROR - Error processing Screenshot_20260206_120450_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:00,781 - INFO -    OCR Scanning: Screenshot_20260206_120458_Uber Driver.jpg
+2026-02-06 23:59:00,798 - ERROR - Error processing Screenshot_20260206_120458_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:00,798 - INFO -    OCR Scanning: Screenshot_20260206_120852_Uber Driver.jpg
+2026-02-06 23:59:00,813 - ERROR - Error processing Screenshot_20260206_120852_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:00,813 - INFO -    Validating with Tessie (Epoch: 1770404681.0)...
+2026-02-06 23:59:01,335 - INFO - Searching 10 drives for match near 2026-02-06 10:21:19
+2026-02-06 23:59:01,335 - INFO - No matching drive found.
+2026-02-06 23:59:01,337 - WARNING -    No Tessie match.
+2026-02-06 23:59:01,337 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:59:01,338 - INFO - Saving Private Trip: T84858077
+2026-02-06 23:59:01,350 - INFO - Successfully saved trip T84858077 to database.
+2026-02-06 23:59:01,352 - INFO - --- Processing Cluster 12/29 (3 images) ---
+2026-02-06 23:59:01,353 - INFO -    OCR Scanning: Screenshot_20260206_103744_Uber Driver.jpg
+2026-02-06 23:59:01,356 - ERROR - Error processing Screenshot_20260206_103744_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:01,356 - INFO -    OCR Scanning: Screenshot_20260206_103806_Uber Driver.jpg
+2026-02-06 23:59:01,358 - ERROR - Error processing Screenshot_20260206_103806_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:01,359 - INFO -    OCR Scanning: Screenshot_20260206_104223_Uber Driver.jpg
+2026-02-06 23:59:01,361 - ERROR - Error processing Screenshot_20260206_104223_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:01,361 - INFO -    Validating with Tessie (Epoch: 1770399464.0)...
+2026-02-06 23:59:02,363 - INFO - Searching 10 drives for match near 2026-02-06 12:04:41
+2026-02-06 23:59:02,363 - INFO - No matching drive found.
+2026-02-06 23:59:02,365 - WARNING -    No Tessie match.
+2026-02-06 23:59:02,365 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:59:02,365 - INFO - Saving Private Trip: T04812798
+2026-02-06 23:59:02,378 - INFO - Successfully saved trip T04812798 to database.
+2026-02-06 23:59:02,380 - INFO - --- Processing Cluster 20/29 (4 images) ---
+2026-02-06 23:59:02,380 - INFO -    OCR Scanning: Screenshot_20260206_121948_Uber Driver.jpg
+2026-02-06 23:59:02,397 - ERROR - Error processing Screenshot_20260206_121948_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:02,397 - INFO -    OCR Scanning: Screenshot_20260206_122127_Uber Driver.jpg
+2026-02-06 23:59:02,411 - ERROR - Error processing Screenshot_20260206_122127_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:02,411 - INFO -    OCR Scanning: Screenshot_20260206_122451.jpg
+2026-02-06 23:59:02,423 - ERROR - Error processing Screenshot_20260206_122451.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:02,423 - INFO -    OCR Scanning: Screenshot_20260206_122459.jpg
+2026-02-06 23:59:02,435 - ERROR - Error processing Screenshot_20260206_122459.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:02,436 - INFO -    Validating with Tessie (Epoch: 1770405588.0)...
+2026-02-06 23:59:02,801 - INFO - Searching 10 drives for match near 2026-02-06 10:37:44
+2026-02-06 23:59:02,802 - INFO - No matching drive found.
+2026-02-06 23:59:02,804 - WARNING -    No Tessie match.
+2026-02-06 23:59:02,804 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:59:02,805 - INFO - Saving Private Trip: T1a48ffb5
+2026-02-06 23:59:02,816 - INFO - Successfully saved trip T1a48ffb5 to database.
+2026-02-06 23:59:02,818 - INFO - --- Processing Cluster 13/29 (4 images) ---
+2026-02-06 23:59:02,818 - INFO -    OCR Scanning: Screenshot_20260206_105012.jpg
+2026-02-06 23:59:02,819 - ERROR - Error processing Screenshot_20260206_105012.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:02,819 - INFO -    OCR Scanning: Screenshot_20260206_105027_Uber Driver.jpg
+2026-02-06 23:59:02,820 - ERROR - Error processing Screenshot_20260206_105027_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:02,821 - INFO -    OCR Scanning: Screenshot_20260206_105140_Uber Driver.jpg
+2026-02-06 23:59:02,823 - ERROR - Error processing Screenshot_20260206_105140_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:02,823 - INFO -    OCR Scanning: Screenshot_20260206_105151_Uber Driver.jpg
+2026-02-06 23:59:02,824 - ERROR - Error processing Screenshot_20260206_105151_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:02,824 - INFO -    Validating with Tessie (Epoch: 1770400212.0)...
+2026-02-06 23:59:03,544 - INFO - Searching 10 drives for match near 2026-02-06 12:19:48
+2026-02-06 23:59:03,545 - INFO - No matching drive found.
+2026-02-06 23:59:03,547 - WARNING -    No Tessie match.
+2026-02-06 23:59:03,547 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:59:03,547 - INFO - Saving Private Trip: Tde1dfd28
+2026-02-06 23:59:03,559 - INFO - Successfully saved trip Tde1dfd28 to database.
+2026-02-06 23:59:03,561 - INFO - --- Processing Cluster 21/29 (1 images) ---
+2026-02-06 23:59:03,561 - INFO -    OCR Scanning: Screenshot_20260206_124114_Samsung Wallet.jpg
+2026-02-06 23:59:03,578 - ERROR - Error processing Screenshot_20260206_124114_Samsung Wallet.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:03,579 - INFO -    Validating with Tessie (Epoch: 1770406874.0)...
+2026-02-06 23:59:03,964 - INFO - Searching 10 drives for match near 2026-02-06 10:50:12
+2026-02-06 23:59:03,964 - INFO - No matching drive found.
+2026-02-06 23:59:03,967 - WARNING -    No Tessie match.
+2026-02-06 23:59:03,967 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:59:03,967 - INFO - Saving Private Trip: T398f2794
+2026-02-06 23:59:03,979 - INFO - Successfully saved trip T398f2794 to database.
+2026-02-06 23:59:03,981 - INFO - --- Processing Cluster 14/29 (5 images) ---
+2026-02-06 23:59:03,981 - INFO -    OCR Scanning: Screenshot_20260206_105701_Uber Driver.jpg
+2026-02-06 23:59:03,984 - ERROR - Error processing Screenshot_20260206_105701_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:03,984 - INFO -    OCR Scanning: Screenshot_20260206_110138_Uber Driver.jpg
+2026-02-06 23:59:03,986 - ERROR - Error processing Screenshot_20260206_110138_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:03,987 - INFO -    OCR Scanning: Screenshot_20260206_110226.jpg
+2026-02-06 23:59:03,988 - ERROR - Error processing Screenshot_20260206_110226.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:03,989 - INFO -    OCR Scanning: Screenshot_20260206_110639_Uber Driver.jpg
+2026-02-06 23:59:03,990 - ERROR - Error processing Screenshot_20260206_110639_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:03,990 - INFO -    OCR Scanning: Screenshot_20260206_110650_Uber Driver.jpg
+2026-02-06 23:59:03,991 - ERROR - Error processing Screenshot_20260206_110650_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:03,991 - INFO -    Validating with Tessie (Epoch: 1770400621.0)...
+2026-02-06 23:59:04,712 - INFO - Searching 10 drives for match near 2026-02-06 12:41:14
+2026-02-06 23:59:04,712 - INFO - No matching drive found.
+2026-02-06 23:59:04,714 - WARNING -    No Tessie match.
+2026-02-06 23:59:04,714 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:59:04,714 - INFO - Saving Private Trip: T038b4f46
+2026-02-06 23:59:04,743 - INFO - Successfully saved trip T038b4f46 to database.
+2026-02-06 23:59:04,745 - INFO - --- Processing Cluster 22/29 (1 images) ---
+2026-02-06 23:59:04,745 - INFO -    OCR Scanning: Screenshot_20260206_125240_Uber Driver.jpg
+2026-02-06 23:59:04,761 - ERROR - Error processing Screenshot_20260206_125240_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:04,761 - INFO -    Validating with Tessie (Epoch: 1770407560.0)...
+2026-02-06 23:59:05,122 - INFO - Searching 10 drives for match near 2026-02-06 10:57:01
+2026-02-06 23:59:05,123 - INFO - No matching drive found.
+2026-02-06 23:59:05,125 - WARNING -    No Tessie match.
+2026-02-06 23:59:05,125 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:59:05,125 - INFO - Saving Private Trip: Te2d397a3
+2026-02-06 23:59:05,138 - INFO - Successfully saved trip Te2d397a3 to database.
+2026-02-06 23:59:05,141 - INFO - --- Processing Cluster 15/29 (1 images) ---
+2026-02-06 23:59:05,142 - INFO -    OCR Scanning: Screenshot_20260206_111330_Uber Driver.jpg
+2026-02-06 23:59:05,145 - ERROR - Error processing Screenshot_20260206_111330_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:05,145 - INFO -    Validating with Tessie (Epoch: 1770401610.0)...
+2026-02-06 23:59:05,861 - INFO - Searching 10 drives for match near 2026-02-06 12:52:40
+2026-02-06 23:59:05,861 - INFO - No matching drive found.
+2026-02-06 23:59:05,863 - WARNING -    No Tessie match.
+2026-02-06 23:59:05,864 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:59:05,864 - INFO - Saving Uber Trip: T28756d7a
+2026-02-06 23:59:05,876 - INFO - Successfully saved trip T28756d7a to database.
+2026-02-06 23:59:05,878 - INFO - --- Processing Cluster 23/29 (2 images) ---
+2026-02-06 23:59:05,878 - INFO -    OCR Scanning: Screenshot_20260206_125753_Starbucks.jpg
+2026-02-06 23:59:05,895 - ERROR - Error processing Screenshot_20260206_125753_Starbucks.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:05,895 - INFO -    OCR Scanning: Screenshot_20260206_125759_Starbucks.jpg
+2026-02-06 23:59:05,911 - ERROR - Error processing Screenshot_20260206_125759_Starbucks.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:05,911 - INFO -    Validating with Tessie (Epoch: 1770407873.0)...
+2026-02-06 23:59:06,230 - INFO - Searching 10 drives for match near 2026-02-06 11:13:30
+2026-02-06 23:59:06,230 - INFO - No matching drive found.
+2026-02-06 23:59:06,232 - WARNING -    No Tessie match.
+2026-02-06 23:59:06,232 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:59:06,232 - INFO - Saving Uber Trip: Tbb894c33
+2026-02-06 23:59:06,246 - INFO - Successfully saved trip Tbb894c33 to database.
+2026-02-06 23:59:06,249 - INFO - --- Processing Cluster 16/29 (2 images) ---
+2026-02-06 23:59:06,250 - INFO -    OCR Scanning: Screenshot_20260206_112443_Uber Driver.jpg
+2026-02-06 23:59:06,252 - ERROR - Error processing Screenshot_20260206_112443_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:06,253 - INFO -    OCR Scanning: Screenshot_20260206_112536.jpg
+2026-02-06 23:59:06,254 - ERROR - Error processing Screenshot_20260206_112536.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:06,255 - INFO -    Validating with Tessie (Epoch: 1770402283.0)...
+2026-02-06 23:59:07,021 - INFO - Searching 10 drives for match near 2026-02-06 12:57:53
+2026-02-06 23:59:07,021 - INFO - No matching drive found.
+2026-02-06 23:59:07,023 - WARNING -    No Tessie match.
+2026-02-06 23:59:07,023 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:59:07,023 - INFO - Saving Uber Trip: T3fb10e6b
+2026-02-06 23:59:07,058 - INFO - Successfully saved trip T3fb10e6b to database.
+2026-02-06 23:59:07,060 - INFO - --- Processing Cluster 24/29 (2 images) ---
+2026-02-06 23:59:07,060 - INFO -    OCR Scanning: Screenshot_20260206_144047_Uber Driver.jpg
+2026-02-06 23:59:07,061 - ERROR - Error processing Screenshot_20260206_144047_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:07,061 - INFO -    OCR Scanning: Screenshot_20260206_144100_Uber Driver.jpg
+2026-02-06 23:59:07,081 - ERROR - Error processing Screenshot_20260206_144100_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:07,081 - INFO -    Validating with Tessie (Epoch: 1770414047.0)...
+2026-02-06 23:59:07,411 - INFO - Searching 10 drives for match near 2026-02-06 11:24:43
+2026-02-06 23:59:07,411 - INFO - No matching drive found.
+2026-02-06 23:59:07,414 - WARNING -    No Tessie match.
+2026-02-06 23:59:07,414 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:59:07,414 - INFO - Saving Uber Trip: T24e31dcb
+2026-02-06 23:59:07,427 - INFO - Successfully saved trip T24e31dcb to database.
+2026-02-06 23:59:07,429 - INFO - --- Processing Cluster 17/29 (2 images) ---
+2026-02-06 23:59:07,429 - INFO -    OCR Scanning: Screenshot_20260206_113547_Uber Driver.jpg
+2026-02-06 23:59:07,430 - ERROR - Error processing Screenshot_20260206_113547_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:07,430 - INFO -    OCR Scanning: Screenshot_20260206_113637_Uber Driver.jpg
+2026-02-06 23:59:07,431 - ERROR - Error processing Screenshot_20260206_113637_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:07,432 - INFO -    Validating with Tessie (Epoch: 1770402947.0)...
+2026-02-06 23:59:08,097 - INFO - Searching 10 drives for match near 2026-02-06 14:40:47
+2026-02-06 23:59:08,098 - INFO - No matching drive found.
+2026-02-06 23:59:08,100 - WARNING -    No Tessie match.
+2026-02-06 23:59:08,100 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:59:08,100 - INFO - Saving Uber Trip: T46a7cc79
+2026-02-06 23:59:08,112 - INFO - Successfully saved trip T46a7cc79 to database.
+2026-02-06 23:59:08,114 - INFO - --- Processing Cluster 25/29 (1 images) ---
+2026-02-06 23:59:08,114 - INFO -    OCR Scanning: Screenshot_20260206_144616_Uber Driver.jpg
+2026-02-06 23:59:08,130 - ERROR - Error processing Screenshot_20260206_144616_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:08,130 - INFO -    Validating with Tessie (Epoch: 1770414376.0)...
+2026-02-06 23:59:08,447 - INFO - Searching 10 drives for match near 2026-02-06 11:35:47
+2026-02-06 23:59:08,448 - INFO - No matching drive found.
+2026-02-06 23:59:08,450 - WARNING -    No Tessie match.
+2026-02-06 23:59:08,450 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:59:08,451 - INFO - Saving Uber Trip: T92ec2ae3
+2026-02-06 23:59:08,463 - INFO - Successfully saved trip T92ec2ae3 to database.
+2026-02-06 23:59:08,465 - INFO - --- Processing Cluster 18/29 (1 images) ---
+2026-02-06 23:59:08,465 - INFO -    OCR Scanning: Screenshot_20260206_114359_Uber Driver.jpg
+2026-02-06 23:59:08,466 - ERROR - Error processing Screenshot_20260206_114359_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:08,466 - INFO -    Validating with Tessie (Epoch: 1770403439.0)...
+2026-02-06 23:59:09,183 - INFO - Searching 10 drives for match near 2026-02-06 14:46:16
+2026-02-06 23:59:09,183 - INFO - No matching drive found.
+2026-02-06 23:59:09,185 - WARNING -    No Tessie match.
+2026-02-06 23:59:09,185 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:59:09,186 - INFO - Saving Uber Trip: T2020022e
+2026-02-06 23:59:09,198 - INFO - Successfully saved trip T2020022e to database.
+2026-02-06 23:59:09,200 - INFO - --- Processing Cluster 26/29 (1 images) ---
+2026-02-06 23:59:09,200 - INFO -    OCR Scanning: Screenshot_20260206_145306_Uber Driver.jpg
+2026-02-06 23:59:09,220 - ERROR - Error processing Screenshot_20260206_145306_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:09,220 - INFO -    Validating with Tessie (Epoch: 1770414786.0)...
+2026-02-06 23:59:09,489 - INFO - Searching 10 drives for match near 2026-02-06 11:43:59
+2026-02-06 23:59:09,490 - INFO - No matching drive found.
+2026-02-06 23:59:09,492 - WARNING -    No Tessie match.
+2026-02-06 23:59:09,492 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:59:09,493 - INFO - Saving Uber Trip: T5761316d
+2026-02-06 23:59:09,505 - INFO - Successfully saved trip T5761316d to database.
+2026-02-06 23:59:09,507 - INFO - --- Processing Cluster 19/29 (4 images) ---
+2026-02-06 23:59:09,509 - INFO -    OCR Scanning: Screenshot_20260206_120441_Uber Driver.jpg
+2026-02-06 23:59:09,510 - ERROR - Error processing Screenshot_20260206_120441_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:09,511 - INFO -    OCR Scanning: Screenshot_20260206_120450_Uber Driver.jpg
+2026-02-06 23:59:09,512 - ERROR - Error processing Screenshot_20260206_120450_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:09,513 - INFO -    OCR Scanning: Screenshot_20260206_120458_Uber Driver.jpg
+2026-02-06 23:59:09,514 - ERROR - Error processing Screenshot_20260206_120458_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:09,515 - INFO -    OCR Scanning: Screenshot_20260206_120852_Uber Driver.jpg
+2026-02-06 23:59:09,516 - ERROR - Error processing Screenshot_20260206_120852_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:09,517 - INFO -    Validating with Tessie (Epoch: 1770404681.0)...
+2026-02-06 23:59:10,577 - INFO - Searching 10 drives for match near 2026-02-06 14:53:06
+2026-02-06 23:59:10,577 - INFO - No matching drive found.
+2026-02-06 23:59:10,579 - WARNING -    No Tessie match.
+2026-02-06 23:59:10,579 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:59:10,579 - INFO - Saving Uber Trip: T5c461fe8
+2026-02-06 23:59:10,592 - INFO - Successfully saved trip T5c461fe8 to database.
+2026-02-06 23:59:10,595 - INFO - --- Processing Cluster 27/29 (2 images) ---
+2026-02-06 23:59:10,595 - INFO -    OCR Scanning: Screenshot_20260206_150648_Uber Driver.jpg
+2026-02-06 23:59:10,611 - ERROR - Error processing Screenshot_20260206_150648_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:10,611 - INFO -    OCR Scanning: Screenshot_20260206_151052_Uber Driver.jpg
+2026-02-06 23:59:10,623 - ERROR - Error processing Screenshot_20260206_151052_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:10,623 - INFO -    Validating with Tessie (Epoch: 1770415608.0)...
+2026-02-06 23:59:10,769 - INFO - Searching 10 drives for match near 2026-02-06 12:04:41
+2026-02-06 23:59:10,770 - INFO - No matching drive found.
+2026-02-06 23:59:10,772 - WARNING -    No Tessie match.
+2026-02-06 23:59:10,772 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:59:10,772 - INFO - Saving Private Trip: T04812798
+2026-02-06 23:59:10,783 - INFO - Successfully saved trip T04812798 to database.
+2026-02-06 23:59:10,786 - INFO - --- Processing Cluster 20/29 (4 images) ---
+2026-02-06 23:59:10,786 - INFO -    OCR Scanning: Screenshot_20260206_121948_Uber Driver.jpg
+2026-02-06 23:59:10,788 - ERROR - Error processing Screenshot_20260206_121948_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:10,788 - INFO -    OCR Scanning: Screenshot_20260206_122127_Uber Driver.jpg
+2026-02-06 23:59:10,790 - ERROR - Error processing Screenshot_20260206_122127_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:10,790 - INFO -    OCR Scanning: Screenshot_20260206_122451.jpg
+2026-02-06 23:59:10,792 - ERROR - Error processing Screenshot_20260206_122451.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:10,793 - INFO -    OCR Scanning: Screenshot_20260206_122459.jpg
+2026-02-06 23:59:10,794 - ERROR - Error processing Screenshot_20260206_122459.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:10,795 - INFO -    Validating with Tessie (Epoch: 1770405588.0)...
+2026-02-06 23:59:11,744 - INFO - Searching 10 drives for match near 2026-02-06 15:06:48
+2026-02-06 23:59:11,745 - INFO - No matching drive found.
+2026-02-06 23:59:11,746 - WARNING -    No Tessie match.
+2026-02-06 23:59:11,746 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:59:11,747 - INFO - Saving Uber Trip: T84fda681
+2026-02-06 23:59:11,758 - INFO - Successfully saved trip T84fda681 to database.
+2026-02-06 23:59:11,760 - INFO - --- Processing Cluster 28/29 (3 images) ---
+2026-02-06 23:59:11,760 - INFO -    OCR Scanning: Screenshot_20260206_152642_Uber Driver.jpg
+2026-02-06 23:59:11,778 - ERROR - Error processing Screenshot_20260206_152642_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:11,778 - INFO -    OCR Scanning: Screenshot_20260206_152747_Uber Driver.jpg
+2026-02-06 23:59:11,781 - ERROR - Error processing Screenshot_20260206_152747_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:11,782 - INFO -    OCR Scanning: Screenshot_20260206_152753_Uber Driver.jpg
+2026-02-06 23:59:11,794 - ERROR - Error processing Screenshot_20260206_152753_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:11,794 - INFO -    Validating with Tessie (Epoch: 1770416802.0)...
+2026-02-06 23:59:11,841 - INFO - Searching 10 drives for match near 2026-02-06 12:19:48
+2026-02-06 23:59:11,841 - INFO - No matching drive found.
+2026-02-06 23:59:11,843 - WARNING -    No Tessie match.
+2026-02-06 23:59:11,844 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:59:11,844 - INFO - Saving Private Trip: Tde1dfd28
+2026-02-06 23:59:11,856 - INFO - Successfully saved trip Tde1dfd28 to database.
+2026-02-06 23:59:11,858 - INFO - --- Processing Cluster 21/29 (1 images) ---
+2026-02-06 23:59:11,858 - INFO -    OCR Scanning: Screenshot_20260206_124114_Samsung Wallet.jpg
+2026-02-06 23:59:11,859 - ERROR - Error processing Screenshot_20260206_124114_Samsung Wallet.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:11,859 - INFO -    Validating with Tessie (Epoch: 1770406874.0)...
+2026-02-06 23:59:13,085 - INFO - Searching 10 drives for match near 2026-02-06 15:26:42
+2026-02-06 23:59:13,086 - INFO - No matching drive found.
+2026-02-06 23:59:13,087 - WARNING -    No Tessie match.
+2026-02-06 23:59:13,088 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:59:13,088 - INFO - Saving Private Trip: T97c83998
+2026-02-06 23:59:13,099 - INFO - Successfully saved trip T97c83998 to database.
+2026-02-06 23:59:13,101 - INFO - --- Processing Cluster 29/29 (2 images) ---
+2026-02-06 23:59:13,101 - INFO -    OCR Scanning: Screenshot_20260206_153333.jpg
+2026-02-06 23:59:13,135 - INFO - Searching 10 drives for match near 2026-02-06 12:41:14
+2026-02-06 23:59:13,135 - INFO - No matching drive found.
+2026-02-06 23:59:13,137 - WARNING -    No Tessie match.
+2026-02-06 23:59:13,137 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:59:13,138 - INFO - Saving Private Trip: T038b4f46
+2026-02-06 23:59:13,148 - INFO - Successfully saved trip T038b4f46 to database.
+2026-02-06 23:59:13,150 - INFO - --- Processing Cluster 22/29 (1 images) ---
+2026-02-06 23:59:13,151 - INFO -    OCR Scanning: Screenshot_20260206_125240_Uber Driver.jpg
+2026-02-06 23:59:13,151 - ERROR - Error processing Screenshot_20260206_125240_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:13,152 - INFO -    Validating with Tessie (Epoch: 1770407560.0)...
+2026-02-06 23:59:14,713 - ERROR - Error processing Screenshot_20260206_153333.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:14,715 - INFO -    OCR Scanning: Screenshot_20260206_153350.jpg
+2026-02-06 23:59:14,728 - ERROR - Error processing Screenshot_20260206_153350.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:14,728 - INFO -    Validating with Tessie (Epoch: 1770417213.0)...
+2026-02-06 23:59:14,913 - INFO - Searching 10 drives for match near 2026-02-06 12:52:40
+2026-02-06 23:59:14,914 - INFO - No matching drive found.
+2026-02-06 23:59:14,916 - WARNING -    No Tessie match.
+2026-02-06 23:59:14,916 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:59:14,916 - INFO - Saving Uber Trip: T28756d7a
+2026-02-06 23:59:14,929 - INFO - Successfully saved trip T28756d7a to database.
+2026-02-06 23:59:14,931 - INFO - --- Processing Cluster 23/29 (2 images) ---
+2026-02-06 23:59:14,932 - INFO -    OCR Scanning: Screenshot_20260206_125753_Starbucks.jpg
+2026-02-06 23:59:14,933 - ERROR - Error processing Screenshot_20260206_125753_Starbucks.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:14,933 - INFO -    OCR Scanning: Screenshot_20260206_125759_Starbucks.jpg
+2026-02-06 23:59:14,933 - ERROR - Error processing Screenshot_20260206_125759_Starbucks.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:14,934 - INFO -    Validating with Tessie (Epoch: 1770407873.0)...
+2026-02-06 23:59:16,140 - INFO - Searching 10 drives for match near 2026-02-06 15:33:33
+2026-02-06 23:59:16,141 - INFO - No matching drive found.
+2026-02-06 23:59:16,142 - WARNING -    No Tessie match.
+2026-02-06 23:59:16,143 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:59:16,143 - INFO - Saving Uber Trip: T3a9450b9
+2026-02-06 23:59:16,161 - INFO - Successfully saved trip T3a9450b9 to database.
+2026-02-06 23:59:16,163 - INFO - --- Processing Complete ---
+2026-02-06 23:59:16,315 - INFO - Searching 10 drives for match near 2026-02-06 12:57:53
+2026-02-06 23:59:16,316 - INFO - No matching drive found.
+2026-02-06 23:59:16,318 - WARNING -    No Tessie match.
+2026-02-06 23:59:16,318 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:59:16,318 - INFO - Saving Uber Trip: T3fb10e6b
+2026-02-06 23:59:16,341 - INFO - Successfully saved trip T3fb10e6b to database.
+2026-02-06 23:59:16,344 - INFO - --- Processing Cluster 24/29 (2 images) ---
+2026-02-06 23:59:16,345 - INFO -    OCR Scanning: Screenshot_20260206_144047_Uber Driver.jpg
+2026-02-06 23:59:16,346 - ERROR - Error processing Screenshot_20260206_144047_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:16,347 - INFO -    OCR Scanning: Screenshot_20260206_144100_Uber Driver.jpg
+2026-02-06 23:59:16,348 - ERROR - Error processing Screenshot_20260206_144100_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:16,348 - INFO -    Validating with Tessie (Epoch: 1770414047.0)...
+2026-02-06 23:59:17,673 - INFO - Searching 10 drives for match near 2026-02-06 14:40:47
+2026-02-06 23:59:17,673 - INFO - No matching drive found.
+2026-02-06 23:59:17,675 - WARNING -    No Tessie match.
+2026-02-06 23:59:17,675 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:59:17,676 - INFO - Saving Uber Trip: T46a7cc79
+2026-02-06 23:59:17,690 - INFO - Successfully saved trip T46a7cc79 to database.
+2026-02-06 23:59:17,692 - INFO - --- Processing Cluster 25/29 (1 images) ---
+2026-02-06 23:59:17,693 - INFO -    OCR Scanning: Screenshot_20260206_144616_Uber Driver.jpg
+2026-02-06 23:59:17,694 - ERROR - Error processing Screenshot_20260206_144616_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:17,694 - INFO -    Validating with Tessie (Epoch: 1770414376.0)...
+2026-02-06 23:59:19,131 - INFO - Searching 10 drives for match near 2026-02-06 14:46:16
+2026-02-06 23:59:19,131 - INFO - No matching drive found.
+2026-02-06 23:59:19,133 - WARNING -    No Tessie match.
+2026-02-06 23:59:19,133 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:59:19,133 - INFO - Saving Uber Trip: T2020022e
+2026-02-06 23:59:19,148 - INFO - Successfully saved trip T2020022e to database.
+2026-02-06 23:59:19,151 - INFO - --- Processing Cluster 26/29 (1 images) ---
+2026-02-06 23:59:19,151 - INFO -    OCR Scanning: Screenshot_20260206_145306_Uber Driver.jpg
+2026-02-06 23:59:19,152 - ERROR - Error processing Screenshot_20260206_145306_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:19,152 - INFO -    Validating with Tessie (Epoch: 1770414786.0)...
+2026-02-06 23:59:20,874 - INFO - Searching 10 drives for match near 2026-02-06 14:53:06
+2026-02-06 23:59:20,875 - INFO - No matching drive found.
+2026-02-06 23:59:20,877 - WARNING -    No Tessie match.
+2026-02-06 23:59:20,877 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:59:20,877 - INFO - Saving Uber Trip: T5c461fe8
+2026-02-06 23:59:20,890 - INFO - Successfully saved trip T5c461fe8 to database.
+2026-02-06 23:59:20,892 - INFO - --- Processing Cluster 27/29 (2 images) ---
+2026-02-06 23:59:20,892 - INFO -    OCR Scanning: Screenshot_20260206_150648_Uber Driver.jpg
+2026-02-06 23:59:20,893 - ERROR - Error processing Screenshot_20260206_150648_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:20,893 - INFO -    OCR Scanning: Screenshot_20260206_151052_Uber Driver.jpg
+2026-02-06 23:59:20,894 - ERROR - Error processing Screenshot_20260206_151052_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:20,895 - INFO -    Validating with Tessie (Epoch: 1770415608.0)...
+2026-02-06 23:59:22,394 - INFO - Searching 10 drives for match near 2026-02-06 15:06:48
+2026-02-06 23:59:22,394 - INFO - No matching drive found.
+2026-02-06 23:59:22,400 - WARNING -    No Tessie match.
+2026-02-06 23:59:22,401 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:59:22,401 - INFO - Saving Uber Trip: T84fda681
+2026-02-06 23:59:22,413 - INFO - Successfully saved trip T84fda681 to database.
+2026-02-06 23:59:22,416 - INFO - --- Processing Cluster 28/29 (3 images) ---
+2026-02-06 23:59:22,416 - INFO -    OCR Scanning: Screenshot_20260206_152642_Uber Driver.jpg
+2026-02-06 23:59:22,419 - ERROR - Error processing Screenshot_20260206_152642_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:22,420 - INFO -    OCR Scanning: Screenshot_20260206_152747_Uber Driver.jpg
+2026-02-06 23:59:22,421 - ERROR - Error processing Screenshot_20260206_152747_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:22,422 - INFO -    OCR Scanning: Screenshot_20260206_152753_Uber Driver.jpg
+2026-02-06 23:59:22,424 - ERROR - Error processing Screenshot_20260206_152753_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:22,424 - INFO -    Validating with Tessie (Epoch: 1770416802.0)...
+2026-02-06 23:59:24,168 - INFO - Searching 10 drives for match near 2026-02-06 15:26:42
+2026-02-06 23:59:24,168 - INFO - No matching drive found.
+2026-02-06 23:59:24,171 - WARNING -    No Tessie match.
+2026-02-06 23:59:24,171 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:59:24,171 - INFO - Saving Private Trip: T97c83998
+2026-02-06 23:59:24,187 - INFO - Successfully saved trip T97c83998 to database.
+2026-02-06 23:59:24,190 - INFO - --- Processing Cluster 29/29 (2 images) ---
+2026-02-06 23:59:24,190 - INFO -    OCR Scanning: Screenshot_20260206_153333.jpg
+2026-02-06 23:59:24,212 - ERROR - Error processing Screenshot_20260206_153333.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:24,212 - INFO -    OCR Scanning: Screenshot_20260206_153350.jpg
+2026-02-06 23:59:24,214 - ERROR - Error processing Screenshot_20260206_153350.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:24,215 - INFO -    Validating with Tessie (Epoch: 1770417213.0)...
+2026-02-06 23:59:25,496 - INFO - Searching 10 drives for match near 2026-02-06 15:33:33
+2026-02-06 23:59:25,496 - INFO - No matching drive found.
+2026-02-06 23:59:25,498 - WARNING -    No Tessie match.
+2026-02-06 23:59:25,499 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:59:25,499 - INFO - Saving Uber Trip: T3a9450b9
+2026-02-06 23:59:25,511 - INFO - Successfully saved trip T3a9450b9 to database.
+2026-02-06 23:59:25,514 - INFO - --- Processing Complete ---
+2026-02-07 00:00:18,846 - INFO - OCR Client initialized with API Key at endpoint: https://ai-summitos-prod.cognitiveservices.azure.com/
+2026-02-07 00:00:18,851 - INFO - --- Starting Feb 6 Processing V2 (Clustering) ---
+2026-02-07 00:00:18,852 - INFO - Step 1: Cleaning up existing Feb 6 data...
+2026-02-07 00:00:18,971 - INFO - Deleted 29 existing records.
+2026-02-07 00:00:18,973 - INFO - Step 2: Scanning and Sorting Files...
+2026-02-07 00:00:19,032 - INFO - Found 60 images for 2026-02-06.
+2026-02-07 00:00:19,039 - INFO - Step 3: Clustering Images...
+2026-02-07 00:00:19,040 - INFO - Created 29 clusters/trips.
+2026-02-07 00:00:19,041 - INFO - Step 4: Processing Clusters...
+2026-02-07 00:00:19,041 - INFO - --- Processing Cluster 1/29 (1 images) ---
+2026-02-07 00:00:19,042 - INFO -    OCR Scanning: Screenshot_20260206_060123.jpg
+2026-02-07 00:00:19,061 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '337823'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'a9c7e17c-03f2-11f1-8590-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:00:19,976 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '12377'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'eb2eed3f-fc9b-4c40-875c-9a10cf78df56'
+    'x-ms-request-id': 'eb2eed3f-fc9b-4c40-875c-9a10cf78df56'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:00:19 GMT'
+2026-02-07 00:00:20,027 - ERROR - Error processing Screenshot_20260206_060123.jpg: cannot access local variable 're' where it is not associated with a value
+2026-02-07 00:00:20,029 - INFO -    Validating with Tessie (Epoch: 1770382883.0)...
+2026-02-07 00:00:21,462 - INFO - Searching 10 drives for match near 2026-02-06 06:01:23
+2026-02-07 00:00:21,502 - INFO - No matching drive found.
+2026-02-07 00:00:21,504 - WARNING -    No Tessie match.
+2026-02-07 00:00:21,505 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-07 00:00:21,505 - INFO - Saving Uber Trip: Te3dcbba7
+2026-02-07 00:00:21,541 - INFO - Successfully saved trip Te3dcbba7 to database.
+2026-02-07 00:00:21,549 - INFO - --- Processing Cluster 2/29 (1 images) ---
+2026-02-07 00:00:21,574 - INFO -    OCR Scanning: Screenshot_20260206_060810.jpg
+2026-02-07 00:00:21,673 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '520221'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'ab567249-03f2-11f1-af34-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:00:22,154 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '11743'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '44656348-25b0-4c37-baa2-fd59a7bfbae7'
+    'x-ms-request-id': '44656348-25b0-4c37-baa2-fd59a7bfbae7'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:00:21 GMT'
+2026-02-07 00:00:22,225 - ERROR - Error processing Screenshot_20260206_060810.jpg: cannot access local variable 're' where it is not associated with a value
+2026-02-07 00:00:22,237 - INFO -    Validating with Tessie (Epoch: 1770383290.0)...
+2026-02-07 00:00:23,873 - INFO - Searching 10 drives for match near 2026-02-06 06:08:10
+2026-02-07 00:00:23,880 - INFO - No matching drive found.
+2026-02-07 00:00:23,939 - WARNING -    No Tessie match.
+2026-02-07 00:00:23,952 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-07 00:00:23,954 - INFO - Saving Uber Trip: Td1d80487
+2026-02-07 00:00:23,985 - INFO - Successfully saved trip Td1d80487 to database.
+2026-02-07 00:00:23,994 - INFO - --- Processing Cluster 3/29 (1 images) ---
+2026-02-07 00:00:24,010 - INFO -    OCR Scanning: Screenshot_20260206_065003.jpg
+2026-02-07 00:00:24,012 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '557456'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'acbb54dd-03f2-11f1-92ca-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:00:24,997 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '14529'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '089a1784-2f53-4409-81e9-7a845062cebe'
+    'x-ms-request-id': '089a1784-2f53-4409-81e9-7a845062cebe'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:00:24 GMT'
+2026-02-07 00:00:25,058 - ERROR - Error processing Screenshot_20260206_065003.jpg: cannot access local variable 're' where it is not associated with a value
+2026-02-07 00:00:25,172 - INFO -    Validating with Tessie (Epoch: 1770385803.0)...
+2026-02-07 00:00:25,898 - INFO - Searching 10 drives for match near 2026-02-06 06:50:03
+2026-02-07 00:00:25,899 - INFO - No matching drive found.
+2026-02-07 00:00:25,901 - WARNING -    No Tessie match.
+2026-02-07 00:00:25,902 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-07 00:00:25,902 - INFO - Saving Uber Trip: T766c3374
+2026-02-07 00:00:25,930 - INFO - Successfully saved trip T766c3374 to database.
+2026-02-07 00:00:25,939 - INFO - --- Processing Cluster 4/29 (1 images) ---
+2026-02-07 00:00:25,940 - INFO -    OCR Scanning: Screenshot_20260206_072736_Chrome.jpg
+2026-02-07 00:00:25,967 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '637636'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'ade57d78-03f2-11f1-ba12-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:00:27,235 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '14519'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'e4f92eb8-97f4-48ec-9dc6-70a441385a55'
+    'x-ms-request-id': 'e4f92eb8-97f4-48ec-9dc6-70a441385a55'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:00:26 GMT'
+2026-02-07 00:00:27,281 - ERROR - Error processing Screenshot_20260206_072736_Chrome.jpg: cannot access local variable 're' where it is not associated with a value
+2026-02-07 00:00:27,285 - INFO -    Validating with Tessie (Epoch: 1770388056.0)...
+2026-02-07 00:00:28,081 - INFO - Searching 10 drives for match near 2026-02-06 07:27:36
+2026-02-07 00:00:28,082 - INFO - No matching drive found.
+2026-02-07 00:00:28,084 - WARNING -    No Tessie match.
+2026-02-07 00:00:28,084 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-07 00:00:28,085 - INFO - Saving Uber Trip: Tf59afeef
+2026-02-07 00:00:28,118 - INFO - Successfully saved trip Tf59afeef to database.
+2026-02-07 00:00:28,126 - INFO - --- Processing Cluster 5/29 (3 images) ---
+2026-02-07 00:00:28,127 - INFO -    OCR Scanning: Screenshot_20260206_080135_Venmo.jpg
+2026-02-07 00:00:28,134 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '280274'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'af303ca8-03f2-11f1-8711-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:00:28,346 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '11115'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '3c9fe312-aca7-4798-bdb7-810d8eb38220'
+    'x-ms-request-id': '3c9fe312-aca7-4798-bdb7-810d8eb38220'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:00:27 GMT'
+2026-02-07 00:00:30,371 - INFO -    OCR Scanning: Screenshot_20260206_080328_Uber Driver.jpg
+2026-02-07 00:00:30,373 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '170279'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'b085f82c-03f2-11f1-8eb3-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:00:30,517 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '10334'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'dd0f5951-a2b1-4531-a657-c5710cab9c2b'
+    'x-ms-request-id': 'dd0f5951-a2b1-4531-a657-c5710cab9c2b'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:00:30 GMT'
+2026-02-07 00:00:32,582 - INFO -    OCR Scanning: Screenshot_20260206_080436_Venmo.jpg
+2026-02-07 00:00:32,619 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '133329'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'b1dca06f-03f2-11f1-b6ff-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:00:32,764 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '5177'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '1149a1d2-2232-458e-8287-ced449593334'
+    'x-ms-request-id': '1149a1d2-2232-458e-8287-ced449593334'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:00:32 GMT'
+2026-02-07 00:00:34,781 - INFO -    Validating with Tessie (Epoch: 1770390095.0)...
+2026-02-07 00:00:35,662 - INFO - Searching 10 drives for match near 2026-02-06 08:01:35
+2026-02-07 00:00:35,662 - INFO - No matching drive found.
+2026-02-07 00:00:35,664 - WARNING -    No Tessie match.
+2026-02-07 00:00:35,664 - INFO -    Saving Trip: Private_Trip - $142.01
+2026-02-07 00:00:35,664 - INFO - Saving Private Trip: T791818d9
+2026-02-07 00:00:35,712 - INFO - Successfully saved trip T791818d9 to database.
+2026-02-07 00:00:35,715 - INFO - --- Processing Cluster 6/29 (1 images) ---
+2026-02-07 00:00:35,715 - INFO -    OCR Scanning: Screenshot_20260206_080942_M365 Copilot.jpg
+2026-02-07 00:00:35,717 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '134625'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'b3b568bc-03f2-11f1-8f72-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:00:36,291 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '2408'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '784439e3-6750-42fa-81c4-f7007eec4839'
+    'x-ms-request-id': '784439e3-6750-42fa-81c4-f7007eec4839'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:00:35 GMT'
+2026-02-07 00:00:38,297 - INFO -    Validating with Tessie (Epoch: 1770390582.0)...
+2026-02-07 00:00:39,212 - INFO - Searching 10 drives for match near 2026-02-06 08:09:42
+2026-02-07 00:00:39,213 - INFO - No matching drive found.
+2026-02-07 00:00:39,215 - WARNING -    No Tessie match.
+2026-02-07 00:00:39,215 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-07 00:00:39,216 - INFO - Saving Uber Trip: T89846b29
+2026-02-07 00:00:39,249 - INFO - Successfully saved trip T89846b29 to database.
+2026-02-07 00:00:39,252 - INFO - --- Processing Cluster 7/29 (3 images) ---
+2026-02-07 00:00:39,252 - INFO -    OCR Scanning: Screenshot_20260206_084253.jpg
+2026-02-07 00:00:39,271 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '612965'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'b5d3a0ab-03f2-11f1-b5ad-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:00:39,723 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '16118'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'cda96cca-83c4-4e21-9ebe-db170070028e'
+    'x-ms-request-id': 'cda96cca-83c4-4e21-9ebe-db170070028e'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:00:39 GMT'
+2026-02-07 00:00:41,758 - INFO -    OCR Scanning: Screenshot_20260206_084431.jpg
+2026-02-07 00:00:41,768 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '527138'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'b750a1b9-03f2-11f1-b32b-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:00:43,412 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '15731'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '3a127e8e-e4e0-42a2-b199-6f0210f66450'
+    'x-ms-request-id': '3a127e8e-e4e0-42a2-b199-6f0210f66450'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:00:42 GMT'
+2026-02-07 00:00:45,440 - INFO -    OCR Scanning: Screenshot_20260206_084754_Uber Driver.jpg
+2026-02-07 00:00:45,444 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '802074'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'b9819a9c-03f2-11f1-8ccd-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:00:46,105 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '8266'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'e5fa2bf1-ff47-42ac-bcee-1ac272ffad22'
+    'x-ms-request-id': 'e5fa2bf1-ff47-42ac-bcee-1ac272ffad22'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:00:45 GMT'
+2026-02-07 00:00:48,166 - INFO -    Validating with Tessie (Epoch: 1770392573.0)...
+2026-02-07 00:00:49,622 - INFO - Searching 10 drives for match near 2026-02-06 08:42:53
+2026-02-07 00:00:49,632 - INFO - No matching drive found.
+2026-02-07 00:00:49,634 - WARNING -    No Tessie match.
+2026-02-07 00:00:49,638 - INFO -    Saving Trip: Private_Trip - $2.49
+2026-02-07 00:00:49,639 - INFO - Saving Private Trip: T449028c9
+2026-02-07 00:00:49,667 - INFO - Successfully saved trip T449028c9 to database.
+2026-02-07 00:00:49,669 - INFO - --- Processing Cluster 8/29 (2 images) ---
+2026-02-07 00:00:49,715 - INFO -    OCR Scanning: Screenshot_20260206_090525_Uber Driver.jpg
+2026-02-07 00:00:49,729 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '487882'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'bc0f5db2-03f2-11f1-87ed-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:00:50,690 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '15167'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '142d1f7f-5a3d-4791-ac1e-c49a0e3a74bd'
+    'x-ms-request-id': '142d1f7f-5a3d-4791-ac1e-c49a0e3a74bd'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:00:50 GMT'
+2026-02-07 00:00:54,224 - INFO -    OCR Scanning: Screenshot_20260206_090532_Uber Driver.jpg
+2026-02-07 00:00:55,323 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '579339'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'bf650118-03f2-11f1-a271-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:00:55,812 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '8616'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'c8718d5d-2406-46f3-9e48-00b95366cd5d'
+    'x-ms-request-id': 'c8718d5d-2406-46f3-9e48-00b95366cd5d'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:00:55 GMT'
+2026-02-07 00:00:58,254 - INFO -    Validating with Tessie (Epoch: 1770393925.0)...
+2026-02-07 00:00:59,447 - INFO - Searching 10 drives for match near 2026-02-06 09:05:25
+2026-02-07 00:00:59,448 - INFO - No matching drive found.
+2026-02-07 00:00:59,450 - WARNING -    No Tessie match.
+2026-02-07 00:00:59,450 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-07 00:00:59,451 - INFO - Saving Uber Trip: T138cdd0a
+2026-02-07 00:00:59,480 - INFO - Successfully saved trip T138cdd0a to database.
+2026-02-07 00:00:59,482 - INFO - --- Processing Cluster 9/29 (1 images) ---
+2026-02-07 00:00:59,482 - INFO -    OCR Scanning: Screenshot_20260206_091258_Uber Driver.jpg
+2026-02-07 00:00:59,485 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '698938'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'c1e00a7c-03f2-11f1-8e12-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:00:59,686 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '14422'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '1a8764d5-3e3d-4635-937d-663a475d082d'
+    'x-ms-request-id': '1a8764d5-3e3d-4635-937d-663a475d082d'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:00:59 GMT'
+2026-02-07 00:01:01,729 - INFO -    Validating with Tessie (Epoch: 1770394378.0)...
+2026-02-07 00:01:02,626 - INFO - OCR Client initialized with API Key at endpoint: https://ai-summitos-prod.cognitiveservices.azure.com/
+2026-02-07 00:01:02,631 - INFO - --- Starting Feb 6 Processing V2 (Clustering) ---
+2026-02-07 00:01:02,633 - INFO - Step 1: Cleaning up existing Feb 6 data...
+2026-02-07 00:01:02,688 - INFO - Searching 10 drives for match near 2026-02-06 09:12:58
+2026-02-07 00:01:02,690 - INFO - No matching drive found.
+2026-02-07 00:01:02,692 - WARNING -    No Tessie match.
+2026-02-07 00:01:02,692 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-07 00:01:02,692 - INFO - Saving Uber Trip: Tb23336fd
+2026-02-07 00:01:02,732 - INFO - Successfully saved trip Tb23336fd to database.
+2026-02-07 00:01:02,735 - INFO - --- Processing Cluster 10/29 (3 images) ---
+2026-02-07 00:01:02,735 - INFO -    OCR Scanning: Screenshot_20260206_093616_Uber Driver.jpg
+2026-02-07 00:01:02,746 - INFO - Deleted 9 existing records.
+2026-02-07 00:01:02,752 - INFO - Step 2: Scanning and Sorting Files...
+2026-02-07 00:01:02,767 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '327241'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'c3d4d13d-03f2-11f1-836f-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:02,796 - INFO - Found 60 images for 2026-02-06.
+2026-02-07 00:01:02,797 - INFO - Step 3: Clustering Images...
+2026-02-07 00:01:02,798 - INFO - Created 29 clusters/trips.
+2026-02-07 00:01:02,798 - INFO - Step 4: Processing Clusters...
+2026-02-07 00:01:02,799 - INFO - --- Processing Cluster 1/29 (1 images) ---
+2026-02-07 00:01:02,819 - INFO -    OCR Scanning: Screenshot_20260206_060123.jpg
+2026-02-07 00:01:02,821 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '337823'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'c3dd0bb1-03f2-11f1-9ae6-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:03,149 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '12416'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'd8ad19b3-3498-4f23-9daf-4f95ba6bc474'
+    'x-ms-request-id': 'd8ad19b3-3498-4f23-9daf-4f95ba6bc474'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:02 GMT'
+2026-02-07 00:01:04,105 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '12377'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '2fc4ce9d-e464-4c5e-80f3-e52e50d3ebac'
+    'x-ms-request-id': '2fc4ce9d-e464-4c5e-80f3-e52e50d3ebac'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:03 GMT'
+2026-02-07 00:01:05,205 - INFO -    OCR Scanning: Screenshot_20260206_093628_Uber Driver.jpg
+2026-02-07 00:01:05,216 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '427513'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'c54a91ae-03f2-11f1-a8b1-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:05,385 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '13575'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'e69a621c-f75a-461e-94f4-21b472c5652a'
+    'x-ms-request-id': 'e69a621c-f75a-461e-94f4-21b472c5652a'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:04 GMT'
+2026-02-07 00:01:06,153 - INFO -    Validating with Tessie (Epoch: 1770382883.0)...
+2026-02-07 00:01:06,820 - INFO - Searching 10 drives for match near 2026-02-06 06:01:23
+2026-02-07 00:01:06,820 - INFO - No matching drive found.
+2026-02-07 00:01:06,823 - WARNING -    No Tessie match.
+2026-02-07 00:01:06,823 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-07 00:01:06,823 - INFO - Saving Uber Trip: Te3dcbba7
+2026-02-07 00:01:06,854 - INFO - Successfully saved trip Te3dcbba7 to database.
+2026-02-07 00:01:06,858 - INFO - --- Processing Cluster 2/29 (1 images) ---
+2026-02-07 00:01:06,859 - INFO -    OCR Scanning: Screenshot_20260206_060810.jpg
+2026-02-07 00:01:06,860 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '520221'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'c6456fe2-03f2-11f1-bcaf-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:07,039 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '11743'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'ce1e0885-b24e-4241-b132-9bc598f6ae35'
+    'x-ms-request-id': 'ce1e0885-b24e-4241-b132-9bc598f6ae35'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:06 GMT'
+2026-02-07 00:01:07,418 - INFO -    OCR Scanning: Screenshot_20260206_093734.jpg
+2026-02-07 00:01:07,421 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '616202'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'c69b08ab-03f2-11f1-99d5-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:07,704 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '18082'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '440397ed-d2b0-40a2-b5e9-3e1b88c0e733'
+    'x-ms-request-id': '440397ed-d2b0-40a2-b5e9-3e1b88c0e733'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:07 GMT'
+2026-02-07 00:01:09,099 - INFO -    Validating with Tessie (Epoch: 1770383290.0)...
+2026-02-07 00:01:09,737 - INFO -    Validating with Tessie (Epoch: 1770395776.0)...
+2026-02-07 00:01:09,777 - INFO - Searching 10 drives for match near 2026-02-06 06:08:10
+2026-02-07 00:01:09,782 - INFO - No matching drive found.
+2026-02-07 00:01:09,785 - WARNING -    No Tessie match.
+2026-02-07 00:01:09,785 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-07 00:01:09,785 - INFO - Saving Uber Trip: Td1d80487
+2026-02-07 00:01:09,816 - INFO - Successfully saved trip Td1d80487 to database.
+2026-02-07 00:01:09,824 - INFO - --- Processing Cluster 3/29 (1 images) ---
+2026-02-07 00:01:09,828 - INFO -    OCR Scanning: Screenshot_20260206_065003.jpg
+2026-02-07 00:01:09,832 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '557456'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'c80ae4a8-03f2-11f1-aad5-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:10,050 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '14529'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '6dabf6bc-26aa-4494-bff0-93b795d884d0'
+    'x-ms-request-id': '6dabf6bc-26aa-4494-bff0-93b795d884d0'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:09 GMT'
+2026-02-07 00:01:10,765 - INFO - Searching 10 drives for match near 2026-02-06 09:36:16
+2026-02-07 00:01:10,768 - INFO - No matching drive found.
+2026-02-07 00:01:10,771 - WARNING -    No Tessie match.
+2026-02-07 00:01:10,780 - INFO -    Saving Trip: Private_Trip - $156.84
+2026-02-07 00:01:10,780 - INFO - Saving Private Trip: T521b0ac9
+2026-02-07 00:01:10,813 - INFO - Successfully saved trip T521b0ac9 to database.
+2026-02-07 00:01:10,823 - INFO - --- Processing Cluster 11/29 (2 images) ---
+2026-02-07 00:01:10,826 - INFO -    OCR Scanning: Screenshot_20260206_102119.jpg
+2026-02-07 00:01:10,830 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '632289'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'c8a3169a-03f2-11f1-a5c1-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:10,840 - INFO - Response status: 429
+Response headers:
+    'Content-Length': '270'
+    'Content-Type': 'application/json'
+    'Retry-After': '9'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:10 GMT'
+2026-02-07 00:01:12,110 - INFO -    Validating with Tessie (Epoch: 1770385803.0)...
+2026-02-07 00:01:12,909 - INFO - Searching 10 drives for match near 2026-02-06 06:50:03
+2026-02-07 00:01:12,909 - INFO - No matching drive found.
+2026-02-07 00:01:12,911 - WARNING -    No Tessie match.
+2026-02-07 00:01:12,911 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-07 00:01:12,911 - INFO - Saving Uber Trip: T766c3374
+2026-02-07 00:01:12,939 - INFO - Successfully saved trip T766c3374 to database.
+2026-02-07 00:01:12,942 - INFO - --- Processing Cluster 4/29 (1 images) ---
+2026-02-07 00:01:12,942 - INFO -    OCR Scanning: Screenshot_20260206_072736_Chrome.jpg
+2026-02-07 00:01:12,943 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '637636'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'c9e59eaf-03f2-11f1-8d9c-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:12,952 - INFO - Response status: 429
+Response headers:
+    'Content-Length': '270'
+    'Content-Type': 'application/json'
+    'Retry-After': '7'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:12 GMT'
+2026-02-07 00:01:19,845 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '632289'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'c8a3169a-03f2-11f1-a5c1-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:19,953 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '637636'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'c9e59eaf-03f2-11f1-8d9c-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:20,179 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '14519'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'a4ee8492-c7a3-4db8-894f-cde502a5030b'
+    'x-ms-request-id': 'a4ee8492-c7a3-4db8-894f-cde502a5030b'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:19 GMT'
+2026-02-07 00:01:20,191 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '18101'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'd9c0d694-55e0-4784-9a89-20c8232f13d1'
+    'x-ms-request-id': 'd9c0d694-55e0-4784-9a89-20c8232f13d1'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:19 GMT'
+2026-02-07 00:01:22,225 - INFO -    Validating with Tessie (Epoch: 1770388056.0)...
+2026-02-07 00:01:22,259 - INFO -    OCR Scanning: Screenshot_20260206_102140_Venmo.jpg
+2026-02-07 00:01:22,268 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '273508'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'cf74794f-03f2-11f1-a133-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:22,293 - INFO - Response status: 429
+Response headers:
+    'Content-Length': '270'
+    'Content-Type': 'application/json'
+    'Retry-After': '2'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:21 GMT'
+2026-02-07 00:01:23,144 - INFO - Searching 10 drives for match near 2026-02-06 07:27:36
+2026-02-07 00:01:23,146 - INFO - No matching drive found.
+2026-02-07 00:01:23,149 - WARNING -    No Tessie match.
+2026-02-07 00:01:23,150 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-07 00:01:23,170 - INFO - Saving Uber Trip: Tf59afeef
+2026-02-07 00:01:23,412 - INFO - Successfully saved trip Tf59afeef to database.
+2026-02-07 00:01:23,414 - INFO - --- Processing Cluster 5/29 (3 images) ---
+2026-02-07 00:01:23,414 - INFO -    OCR Scanning: Screenshot_20260206_080135_Venmo.jpg
+2026-02-07 00:01:23,416 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '280274'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'd0239eb4-03f2-11f1-afbb-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:23,428 - INFO - Response status: 429
+Response headers:
+    'Content-Length': '269'
+    'Content-Type': 'application/json'
+    'Retry-After': '1'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:22 GMT'
+2026-02-07 00:01:24,350 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '273508'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'cf74794f-03f2-11f1-a133-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:24,434 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '280274'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'd0239eb4-03f2-11f1-afbb-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:24,448 - INFO - Response status: 429
+Response headers:
+    'Content-Length': '270'
+    'Content-Type': 'application/json'
+    'Retry-After': '2'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:23 GMT'
+2026-02-07 00:01:24,829 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '11245'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '1eaaade6-6fa5-45b8-90be-ba5d90d7496e'
+    'x-ms-request-id': '1eaaade6-6fa5-45b8-90be-ba5d90d7496e'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:24 GMT'
+2026-02-07 00:01:26,452 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '280274'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'd0239eb4-03f2-11f1-afbb-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:26,760 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '11115'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'c0de6443-d6cb-4455-9088-4089ee0067bf'
+    'x-ms-request-id': 'c0de6443-d6cb-4455-9088-4089ee0067bf'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:26 GMT'
+2026-02-07 00:01:26,851 - INFO -    Validating with Tessie (Epoch: 1770398479.0)...
+2026-02-07 00:01:27,547 - INFO - Searching 10 drives for match near 2026-02-06 10:21:19
+2026-02-07 00:01:27,547 - INFO - No matching drive found.
+2026-02-07 00:01:27,549 - WARNING -    No Tessie match.
+2026-02-07 00:01:27,549 - INFO -    Saving Trip: Private_Trip - $30.0
+2026-02-07 00:01:27,550 - INFO - Saving Private Trip: T84858077
+2026-02-07 00:01:27,583 - INFO - Successfully saved trip T84858077 to database.
+2026-02-07 00:01:27,591 - INFO - --- Processing Cluster 12/29 (3 images) ---
+2026-02-07 00:01:27,591 - INFO -    OCR Scanning: Screenshot_20260206_103744_Uber Driver.jpg
+2026-02-07 00:01:27,616 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '432363'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'd2a47e20-03f2-11f1-b331-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:27,630 - INFO - Response status: 429
+Response headers:
+    'Content-Length': '269'
+    'Content-Type': 'application/json'
+    'Retry-After': '1'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:27 GMT'
+2026-02-07 00:01:28,631 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '432363'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'd2a47e20-03f2-11f1-b331-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:28,793 - INFO -    OCR Scanning: Screenshot_20260206_080328_Uber Driver.jpg
+2026-02-07 00:01:28,794 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '170279'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'd3584b82-03f2-11f1-b19e-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:28,809 - INFO - Response status: 429
+Response headers:
+    'Content-Length': '270'
+    'Content-Type': 'application/json'
+    'Retry-After': '2'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:28 GMT'
+2026-02-07 00:01:28,843 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '9869'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '23391004-1725-4f6f-a6d0-84c7465ea9fd'
+    'x-ms-request-id': '23391004-1725-4f6f-a6d0-84c7465ea9fd'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:28 GMT'
+2026-02-07 00:01:30,833 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '170279'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'd3584b82-03f2-11f1-b19e-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:30,863 - INFO -    OCR Scanning: Screenshot_20260206_103806_Uber Driver.jpg
+2026-02-07 00:01:32,109 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '438300'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'd55217d8-03f2-11f1-9f78-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:32,248 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '10334'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'b7937403-f70a-47f0-b019-1a737cb36737'
+    'x-ms-request-id': 'b7937403-f70a-47f0-b019-1a737cb36737'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:31 GMT'
+2026-02-07 00:01:32,380 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '8852'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'f91d9735-5c7c-4a0e-b856-ddeba54bdb8a'
+    'x-ms-request-id': 'f91d9735-5c7c-4a0e-b856-ddeba54bdb8a'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:31 GMT'
+2026-02-07 00:01:34,289 - INFO -    OCR Scanning: Screenshot_20260206_080436_Venmo.jpg
+2026-02-07 00:01:34,293 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '133329'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'd69f61dd-03f2-11f1-a74f-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:34,304 - INFO - Response status: 429
+Response headers:
+    'Content-Length': '270'
+    'Content-Type': 'application/json'
+    'Retry-After': '2'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:33 GMT'
+2026-02-07 00:01:34,472 - INFO -    OCR Scanning: Screenshot_20260206_104223_Uber Driver.jpg
+2026-02-07 00:01:34,516 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '528246'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'd6c1742b-03f2-11f1-a627-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:34,531 - INFO - Response status: 429
+Response headers:
+    'Content-Length': '270'
+    'Content-Type': 'application/json'
+    'Retry-After': '2'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:34 GMT'
+2026-02-07 00:01:36,329 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '133329'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'd69f61dd-03f2-11f1-a74f-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:36,534 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '528246'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'd6c1742b-03f2-11f1-a627-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:36,546 - INFO - Response status: 429
+Response headers:
+    'Content-Length': '270'
+    'Content-Type': 'application/json'
+    'Retry-After': '3'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:36 GMT'
+2026-02-07 00:01:36,971 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '5177'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'd735880e-d51d-4fb1-9ce0-b434c6300219'
+    'x-ms-request-id': 'd735880e-d51d-4fb1-9ce0-b434c6300219'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:36 GMT'
+2026-02-07 00:01:38,988 - INFO -    Validating with Tessie (Epoch: 1770390095.0)...
+2026-02-07 00:01:39,559 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '528246'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'd6c1742b-03f2-11f1-a627-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:39,622 - INFO - Searching 10 drives for match near 2026-02-06 08:01:35
+2026-02-07 00:01:39,622 - INFO - No matching drive found.
+2026-02-07 00:01:39,625 - WARNING -    No Tessie match.
+2026-02-07 00:01:39,625 - INFO -    Saving Trip: Private_Trip - $142.01
+2026-02-07 00:01:39,625 - INFO - Saving Private Trip: T791818d9
+2026-02-07 00:01:39,641 - INFO - Successfully saved trip T791818d9 to database.
+2026-02-07 00:01:39,643 - INFO - --- Processing Cluster 6/29 (1 images) ---
+2026-02-07 00:01:39,653 - INFO -    OCR Scanning: Screenshot_20260206_080942_M365 Copilot.jpg
+2026-02-07 00:01:39,654 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '134625'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'd9d16754-03f2-11f1-a517-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:39,664 - INFO - Response status: 429
+Response headers:
+    'Content-Length': '270'
+    'Content-Type': 'application/json'
+    'Retry-After': '3'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:39 GMT'
+2026-02-07 00:01:39,825 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '8963'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '7a5008c9-9343-4f91-a191-becd8fda2ef0'
+    'x-ms-request-id': '7a5008c9-9343-4f91-a191-becd8fda2ef0'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:39 GMT'
+2026-02-07 00:01:41,886 - INFO -    Validating with Tessie (Epoch: 1770399464.0)...
+2026-02-07 00:01:42,665 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '134625'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'd9d16754-03f2-11f1-a517-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:42,720 - INFO - Searching 10 drives for match near 2026-02-06 10:37:44
+2026-02-07 00:01:42,731 - INFO - No matching drive found.
+2026-02-07 00:01:42,734 - WARNING -    No Tessie match.
+2026-02-07 00:01:42,736 - INFO -    Saving Trip: Private_Trip - $4.87
+2026-02-07 00:01:42,737 - INFO - Saving Private Trip: T1a48ffb5
+2026-02-07 00:01:42,787 - INFO - Successfully saved trip T1a48ffb5 to database.
+2026-02-07 00:01:42,790 - INFO - --- Processing Cluster 13/29 (4 images) ---
+2026-02-07 00:01:42,791 - INFO -    OCR Scanning: Screenshot_20260206_105012.jpg
+2026-02-07 00:01:42,812 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '631112'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'dbb33669-03f2-11f1-9673-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:42,860 - INFO - Response status: 429
+Response headers:
+    'Content-Length': '270'
+    'Content-Type': 'application/json'
+    'Retry-After': '3'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:42 GMT'
+2026-02-07 00:01:42,878 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '2408'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'e4d7457c-9bd7-46b5-b6cf-0a19e7645868'
+    'x-ms-request-id': 'e4d7457c-9bd7-46b5-b6cf-0a19e7645868'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:42 GMT'
+2026-02-07 00:01:44,954 - INFO -    Validating with Tessie (Epoch: 1770390582.0)...
+2026-02-07 00:01:45,905 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '631112'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'dbb33669-03f2-11f1-9673-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:47,177 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '16829'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'ef5eb366-daf0-4f7b-8241-9bcc247a7716'
+    'x-ms-request-id': 'ef5eb366-daf0-4f7b-8241-9bcc247a7716'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:46 GMT'
+2026-02-07 00:01:49,446 - INFO -    OCR Scanning: Screenshot_20260206_105027_Uber Driver.jpg
+2026-02-07 00:01:49,516 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '460439'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'dfb24330-03f2-11f1-97e0-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:49,529 - INFO - Searching 10 drives for match near 2026-02-06 08:09:42
+2026-02-07 00:01:49,545 - INFO - No matching drive found.
+2026-02-07 00:01:49,547 - WARNING -    No Tessie match.
+2026-02-07 00:01:49,547 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-07 00:01:49,548 - INFO - Saving Uber Trip: T89846b29
+2026-02-07 00:01:49,558 - INFO - Response status: 429
+Response headers:
+    'Content-Length': '269'
+    'Content-Type': 'application/json'
+    'Retry-After': '1'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:49 GMT'
+2026-02-07 00:01:49,561 - INFO - Successfully saved trip T89846b29 to database.
+2026-02-07 00:01:49,570 - INFO - --- Processing Cluster 7/29 (3 images) ---
+2026-02-07 00:01:49,591 - INFO -    OCR Scanning: Screenshot_20260206_084253.jpg
+2026-02-07 00:01:49,599 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '612965'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'dfbed1cc-03f2-11f1-958a-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:49,619 - INFO - Response status: 429
+Response headers:
+    'Content-Length': '269'
+    'Content-Type': 'application/json'
+    'Retry-After': '1'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:48 GMT'
+2026-02-07 00:01:50,652 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '612965'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'dfbed1cc-03f2-11f1-958a-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:50,779 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '460439'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'dfb24330-03f2-11f1-97e0-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.13.12 (Windows-11-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 00:01:51,413 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '16118'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '277bd413-6437-4d21-bc78-6ed9d72f96af'
+    'x-ms-request-id': '277bd413-6437-4d21-bc78-6ed9d72f96af'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:50 GMT'
+2026-02-07 00:01:51,543 - INFO - Response status: 429
+Response headers:
+    'Content-Length': '270'
+    'Content-Type': 'application/json'
+    'Retry-After': '5'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sat, 07 Feb 2026 07:01:50 GMT'

@@ -1,0 +1,70 @@
+--- Duplicate Audit: 69 entries found ---
+ID: M_JACKIE_JAN30 | Type: Private | Earn: $68.57 | File: N/A
+ID: T04f35a66 | Type: Private | Earn: $0.00 | File: 20260130_092020.jpg
+ID: T0f04db61 | Type: Uber | Earn: $7.80 | File: Screenshot_20260130_101138_Uber Driver.jpg
+ID: T0fb2300b | Type: Uber | Earn: $7.80 | File: Screenshot_20260130_103602_Uber Driver.jpg
+ID: T1057e56e | Type: Private | Earn: $0.00 | File: Screenshot_20260130_195455.jpg
+ID: T128a1a8e | Type: Private | Earn: $0.00 | File: Screenshot_20260130_172502.jpg
+ID: T16135281 | Type: Uber | Earn: $0.00 | File: Screenshot_20260130_100856_Uber Driver.jpg
+ID: T167212ee | Type: Private | Earn: $0.00 | File: Screenshot_20260130_193608_Starbucks.jpg
+ID: T17b3262a | Type: Private | Earn: $0.00 | File: Screenshot_20260130_090110.jpg
+ID: T1b636795 | Type: Uber | Earn: $10.13 | File: Screenshot_20260130_110318_Uber Driver.jpg
+ID: T24237834 | Type: Uber | Earn: $5.27 | File: Screenshot_20260130_102053_Uber Driver.jpg
+ID: T2c9d43ac | Type: Private | Earn: $0.00 | File: Screenshot_20260130_072754.jpg
+ID: T2dbf5846 | Type: Private | Earn: $0.00 | File: Screenshot_20260130_180454.jpg
+ID: T32553a7e | Type: Private | Earn: $24.00 | File: Screenshot_20260130_070722_Venmo.jpg
+ID: T357e8839 | Type: Private | Earn: $0.00 | File: Screenshot_20260130_194343.jpg
+ID: T3879dfbe | Type: Private | Earn: $0.00 | File: Screenshot_20260130_193304_Uber Driver.jpg
+ID: T3a5bd444 | Type: Private | Earn: $0.00 | File: Screenshot_20260130_070642.jpg
+ID: T3cea8395 | Type: Private | Earn: $0.00 | File: Screenshot_20260130_095449.jpg
+ID: T3e179f3b | Type: Private | Earn: $0.00 | File: Screenshot_20260130_071541.jpg
+ID: T3e2dc66a | Type: Private | Earn: $0.00 | File: Screenshot_20260130_062037.jpg
+ID: T3f993196 | Type: Private | Earn: $0.00 | File: Screenshot_20260130_090222.jpg
+ID: T4003d881 | Type: Private | Earn: $0.00 | File: Screenshot_20260130_185616_Uber Driver.jpg
+ID: T42076557 | Type: Private | Earn: $0.00 | File: Screenshot_20260130_094857.jpg
+ID: T44e3c878 | Type: Private | Earn: $0.00 | File: Screenshot_20260130_072934.jpg
+ID: T485345c2 | Type: Private | Earn: $0.00 | File: Screenshot_20260130_081518.jpg
+ID: T48ab2890 | Type: Private | Earn: $0.00 | File: Screenshot_20260130_202710.jpg
+ID: T49928386 | Type: Uber | Earn: $0.00 | File: Screenshot_20260130_104418.jpg
+ID: T4aa40372 | Type: Private | Earn: $0.00 | File: Screenshot_20260130_090120.jpg
+ID: T4f758614 | Type: Uber | Earn: $14.79 | File: Screenshot_20260130_185009_Uber Driver.jpg
+ID: T514d1e86 | Type: Uber | Earn: $15.17 | File: Screenshot_20260130_192425_Uber Driver.jpg
+ID: T539f9a40 | Type: Private | Earn: $0.00 | File: Screenshot_20260130_060811.jpg
+ID: T5601055a | Type: Private | Earn: $0.00 | File: Screenshot_20260130_172144.jpg
+ID: T56c79211 | Type: Uber | Earn: $7.80 | File: Screenshot_20260130_101133_Uber Driver.jpg
+ID: T610156fa | Type: Private | Earn: $0.00 | File: Screenshot_20260130_172241.jpg
+ID: T65a663be | Type: Private | Earn: $0.00 | File: Screenshot_20260130_102328_Uber Driver.jpg
+ID: T7111f4f1 | Type: Private | Earn: $0.00 | File: Screenshot_20260130_180626_Uber Driver.jpg
+ID: T782231be | Type: Private | Earn: $0.00 | File: Screenshot_20260130_060452_Chrome.jpg
+ID: T799e8a87 | Type: Private | Earn: $0.00 | File: Screenshot_20260130_090314.jpg
+ID: T7d577461 | Type: Private | Earn: $0.00 | File: Screenshot_20260130_182400_Uber Driver.jpg
+ID: T7d9f78d4 | Type: Private | Earn: $0.00 | File: Screenshot_20260130_095502.jpg
+ID: T7dfbed56 | Type: Private | Earn: $0.00 | File: Screenshot_20260130_180535.jpg
+ID: T7dfe022c | Type: Private | Earn: $0.00 | File: Screenshot_20260130_190903_Uber Driver.jpg
+ID: T7f521190 | Type: Uber | Earn: $0.00 | File: Screenshot_20260130_181530_Uber Driver.jpg
+ID: T869c5222 | Type: Private | Earn: $0.00 | File: Screenshot_20260130_081416.jpg
+ID: T88524432 | Type: Private | Earn: $0.00 | File: Screenshot_20260130_061028.jpg
+ID: T91767da0 | Type: Private | Earn: $0.00 | File: Screenshot_20260130_090326.jpg
+ID: T96ee3e82 | Type: Private | Earn: $0.00 | File: Screenshot_20260130_172419.jpg
+ID: T988bc45f | Type: Uber | Earn: $17.30 | File: Screenshot_20260130_184725_Uber Driver.jpg
+ID: T9b13ee66 | Type: Private | Earn: $0.00 | File: Screenshot_20260130_085126.jpg
+ID: T9bfd7932 | Type: Private | Earn: $0.00 | File: Screenshot_20260130_064242.jpg
+ID: T9f1f74d5 | Type: Private | Earn: $0.00 | File: Screenshot_20260130_100759_Uber Driver.jpg
+ID: Ta6b3a320 | Type: Uber | Earn: $0.00 | File: Screenshot_20260130_102011_Uber Driver.jpg
+ID: Ta95ec8e1 | Type: Uber | Earn: $5.27 | File: Screenshot_20260130_100847_Uber Driver.jpg
+ID: Ta98d0e46 | Type: Private | Earn: $0.00 | File: Screenshot_20260130_090207.jpg
+ID: Ta9be982d | Type: Uber | Earn: $0.00 | File: Screenshot_20260130_185017_Uber Driver.jpg
+ID: Tad33bae0 | Type: Private | Earn: $0.00 | File: Screenshot_20260130_090226.jpg
+ID: Tb7f5922e | Type: Uber | Earn: $0.00 | File: Screenshot_20260130_110325_Uber Driver.jpg
+ID: Tbbb44947 | Type: Private | Earn: $0.00 | File: Screenshot_20260130_070713_Venmo.jpg
+ID: Tc3c945ef | Type: Private | Earn: $0.00 | File: Screenshot_20260130_081527.jpg
+ID: Tcb5642b5 | Type: Private | Earn: $0.00 | File: Screenshot_20260130_194355.jpg
+ID: Tcc53939d | Type: Private | Earn: $0.00 | File: Screenshot_20260130_100053_Messages.jpg
+ID: Td81693cd | Type: Uber | Earn: $17.30 | File: Screenshot_20260130_181513_Uber Driver.jpg
+ID: Te960dd65 | Type: Private | Earn: $0.00 | File: Screenshot_20260130_100040_Messages.jpg
+ID: Tebea80dc | Type: Private | Earn: $0.00 | File: 20260130_092009.jpg
+ID: Ted03f65c | Type: Private | Earn: $0.00 | File: Screenshot_20260130_191313_Uber Driver.jpg
+ID: Tf2b5ad53 | Type: Private | Earn: $0.00 | File: Screenshot_20260130_085034.jpg
+ID: Tf39cb1db | Type: Private | Earn: $0.00 | File: Screenshot_20260130_070505.jpg
+ID: Tfbfb7b94 | Type: Private | Earn: $0.00 | File: Screenshot_20260130_090301.jpg
+ID: Tfcf1f558 | Type: Private | Earn: $0.00 | File: Screenshot_20260130_093719_Outlook.jpg

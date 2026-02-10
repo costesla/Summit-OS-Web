@@ -1,0 +1,21 @@
+Total drives in evening window: 5
+Drive 362574046: 19:11:53 -> 19:27:37 MST
+  Distance: 10.93 mi, Energy: 2.72 kWh
+  Route: 2005 Spirerock Path, Colorado Springs, Colorado 80919, United States -> 229 Gleneagle Gate View, Colorado Springs, Colorado 80921, United States
+--------------------
+Drive 362571750: 19:04:17 -> 19:11:30 MST
+  Distance: 3.22 mi, Energy: 1.24 kWh
+  Route: 7055 Commerce Center Drive, Colorado Springs, Colorado 80919, United States -> 2005 Spirerock Path, Colorado Springs, Colorado 80919, United States
+--------------------
+Drive 362570059: 18:47:49 -> 19:00:03 MST
+  Distance: 9.18 mi, Energy: 1.22 kWh
+  Route: 1889 Silversmith Road, Colorado Springs, Colorado 80921, United States -> 7055 Commerce Center Drive, Colorado Springs, Colorado 80919, United States
+--------------------
+Drive 362568096: 18:40:40 -> 18:47:27 MST
+  Distance: 2.74 mi, Energy: 1.02 kWh
+  Route: 229 Gleneagle Gate View, Colorado Springs, Colorado 80921, United States -> 1889 Silversmith Road, Colorado Springs, Colorado 80921, United States
+--------------------
+Drive 362561300: 18:00:01 -> 18:06:55 MST
+  Distance: 2.48 mi, Energy: -0.02 kWh
+  Route: 535 Wuthering Height Drive, Colorado Springs, Colorado 80921, United States -> 229 Gleneagle Gate View, Colorado Springs, Colorado 80921, United States
+--------------------

@@ -1,0 +1,388 @@
+{
+    "shift_start": "2026-02-02T04:45:00",
+    "shift_end": "2026-02-02T20:42:00",
+    "image_count": 76,
+    "target_directory": "C:\\Users\\PeterTeehan\\OneDrive - COS Tesla LLC\\SummitOS_Data\\2026\\02\\02\\0445-2042",
+    "files": [
+        {
+            "filename": "Screenshot_20260202_044546.jpg",
+            "timestamp": "04:45:46",
+            "hash": "3206405437ca23ad1b89684165cabc33aaa16ce7fd14e143e6901885a52bc0b1"
+        },
+        {
+            "filename": "Screenshot_20260202_044713_Uber Driver.jpg",
+            "timestamp": "04:47:13",
+            "hash": "23fa7e96a46c7b129cea7e088a3220d65cd6967460a7a4d7e9228304c4d93eae"
+        },
+        {
+            "filename": "Screenshot_20260202_050812_Uber Driver.jpg",
+            "timestamp": "05:08:12",
+            "hash": "802a8e6d56b18a6a27a25b5f81004a698f4ca5dd2d0024332c3be66fb895a006"
+        },
+        {
+            "filename": "Screenshot_20260202_050819_Uber Driver.jpg",
+            "timestamp": "05:08:19",
+            "hash": "202cb4105367e2574cceac79b25043e90bd6769f9b505f95f7fa69ea3db0f909"
+        },
+        {
+            "filename": "Screenshot_20260202_051839_Uber Driver.jpg",
+            "timestamp": "05:18:39",
+            "hash": "4d574eacfa4e1144a3a2e6f555630564aed0d8cd1bb63fe5149e66db56bbed0f"
+        },
+        {
+            "filename": "Screenshot_20260202_052853_Uber Driver.jpg",
+            "timestamp": "05:28:53",
+            "hash": "9e2bbcf167aa28051262b688b5924e224aaa09fa4847b9a52793718923a485b5"
+        },
+        {
+            "filename": "Screenshot_20260202_053016_Uber Driver.jpg",
+            "timestamp": "05:30:16",
+            "hash": "d5cf15a12769b011afbb09ccec877df483aa44179d72ac31e0fd226a2b48b710"
+        },
+        {
+            "filename": "Screenshot_20260202_053033_Uber Driver.jpg",
+            "timestamp": "05:30:33",
+            "hash": "d43f9933361820e6ad03b68ead4464b20c3043cbf4caa69471425a4d4cfc9ca3"
+        },
+        {
+            "filename": "Screenshot_20260202_053159.jpg",
+            "timestamp": "05:31:59",
+            "hash": "b6f335c73a7db01b57dbfd767fbc98eeab88b50b7b3685fb28106ee154b1fe17"
+        },
+        {
+            "filename": "Screenshot_20260202_053932_Uber Driver.jpg",
+            "timestamp": "05:39:32",
+            "hash": "039ef742f2c0a49f53739fbef6d02bd8fc213b273dc409b3a81e368077b47020"
+        },
+        {
+            "filename": "Screenshot_20260202_061447_Uber Driver.jpg",
+            "timestamp": "06:14:47",
+            "hash": "cb24fce349b39f1ed2610c839d0f9315a2f5aefd096b133849050d060de32f10"
+        },
+        {
+            "filename": "Screenshot_20260202_061527.jpg",
+            "timestamp": "06:15:27",
+            "hash": "de048f0e4b988aecde92ba01f2818f3424c77eb0ce5d67b238d06f4a8622c6e8"
+        },
+        {
+            "filename": "Screenshot_20260202_071206.jpg",
+            "timestamp": "07:12:06",
+            "hash": "400e6b22d6063e88c9feb321aeaa270c896ce23b177fe54ab3527bc36ad7c2a0"
+        },
+        {
+            "filename": "Screenshot_20260202_074637.jpg",
+            "timestamp": "07:46:37",
+            "hash": "aee820449875eb3f8503dee09434fd6e2dc9b9656ff5be57cff72eabc853965a"
+        },
+        {
+            "filename": "Screenshot_20260202_080136_GitHub.jpg",
+            "timestamp": "08:01:36",
+            "hash": "2ba5deb0a71434a5ee725d12ae8d090fc9c7a6752d6616cb48eeab283eb0f13f"
+        },
+        {
+            "filename": "Screenshot_20260202_081013_Chrome.jpg",
+            "timestamp": "08:10:13",
+            "hash": "04dc4d4ab350132ef26b32377e2b234f016a19df43b3b047c72984fee5edafea"
+        },
+        {
+            "filename": "Screenshot_20260202_082310_Chrome.jpg",
+            "timestamp": "08:23:10",
+            "hash": "eddd5cd364c4216f489d31e8a86d34a1e977db7959c7f40e09b8f11de26b8a09"
+        },
+        {
+            "filename": "Screenshot_20260202_082834_Uber Driver.jpg",
+            "timestamp": "08:28:34",
+            "hash": "5af82f85f5f04881b20852215907582c0d09b0ff87b489df474bbb3fc90338eb"
+        },
+        {
+            "filename": "Screenshot_20260202_083306_Uber Driver.jpg",
+            "timestamp": "08:33:06",
+            "hash": "8c7dbc4f6d74b2cc0416d8454114f60c127391eb6df4fc5babfbc4b66e7e5b42"
+        },
+        {
+            "filename": "Screenshot_20260202_083313_Uber Driver.jpg",
+            "timestamp": "08:33:13",
+            "hash": "07cfd23676307c319dfb78847336a0587a7d96538647f3e4cb9e9d9625cbf99a"
+        },
+        {
+            "filename": "Screenshot_20260202_083636_Uber Driver.jpg",
+            "timestamp": "08:36:36",
+            "hash": "e3d90a228176a1f03936815768e753fd2b15d997b46e714c10d8de4d08ead8f3"
+        },
+        {
+            "filename": "Screenshot_20260202_083716_Uber Driver.jpg",
+            "timestamp": "08:37:16",
+            "hash": "4a94e29fa0de5a2081589460f6d868987405b9312d94d7ae5bdbefa3793ea532"
+        },
+        {
+            "filename": "Screenshot_20260202_084057_Uber Driver.jpg",
+            "timestamp": "08:40:57",
+            "hash": "ace9b1f2eacd48e55dd33de07ced60c7f2e85083bccfdbf698d783fb746bbc5c"
+        },
+        {
+            "filename": "Screenshot_20260202_084103_Uber Driver.jpg",
+            "timestamp": "08:41:03",
+            "hash": "2bbf5a0a5714f7246476cfcc41ed3143db978d27a26ea1163063dd7eba2a3b06"
+        },
+        {
+            "filename": "Screenshot_20260202_085608_Uber Driver.jpg",
+            "timestamp": "08:56:08",
+            "hash": "0d13ec0759011af9d5f539e98e9e8fe7008ba5caa2211d858f163817153a1955"
+        },
+        {
+            "filename": "Screenshot_20260202_085900_Uber Driver.jpg",
+            "timestamp": "08:59:00",
+            "hash": "28556abd06ee23ad9ac3ec24a2a1f2e33cda2960676c401ea7f111632bf852f1"
+        },
+        {
+            "filename": "Screenshot_20260202_085921_Uber Driver.jpg",
+            "timestamp": "08:59:21",
+            "hash": "50242e9d1187403a0844a10b3d5d9a402bda9fa00c8cf0508bfe091c688c298d"
+        },
+        {
+            "filename": "Screenshot_20260202_090602_Uber Driver.jpg",
+            "timestamp": "09:06:02",
+            "hash": "45b58601ced1f1c457104386756450ea0bc34e0c2674946f15e49d237c56d96b"
+        },
+        {
+            "filename": "Screenshot_20260202_092104_Uber Driver.jpg",
+            "timestamp": "09:21:04",
+            "hash": "34c2728642bf8c73adfe8fe617d15e21a77c8f1150bb3b5742e4934d87aa15c7"
+        },
+        {
+            "filename": "Screenshot_20260202_092455.jpg",
+            "timestamp": "09:24:55",
+            "hash": "f340d32853523ad9b9a7fbf5d551ac5928265b55503367b23dcbac1e4fa6e195"
+        },
+        {
+            "filename": "Screenshot_20260202_093547.jpg",
+            "timestamp": "09:35:47",
+            "hash": "6b28cf6569fb5ee05727464c72a051ef60c0e0e836ff9dc27bda3f7084ce6a01"
+        },
+        {
+            "filename": "Screenshot_20260202_093903_Uber Driver.jpg",
+            "timestamp": "09:39:03",
+            "hash": "5c925aa4b6b4b436da021b24a715fd9d8968006e830ca9d34b535ab915846974"
+        },
+        {
+            "filename": "Screenshot_20260202_094435_Uber Driver.jpg",
+            "timestamp": "09:44:35",
+            "hash": "1181e5b64aab20f67a2ef419492b4ab88df55c522907f9f920c1364ca17a5d16"
+        },
+        {
+            "filename": "Screenshot_20260202_094453_Uber Driver.jpg",
+            "timestamp": "09:44:53",
+            "hash": "8a10ebcee2b6364a2c17938c330e99b19df3ba2899b036321695b6448747774c"
+        },
+        {
+            "filename": "Screenshot_20260202_095112_Uber Driver.jpg",
+            "timestamp": "09:51:12",
+            "hash": "a479a2afa8c52db671936af647d190796183b3ff49e0c2c689723c182bbb6bbd"
+        },
+        {
+            "filename": "Screenshot_20260202_100544_Uber Driver.jpg",
+            "timestamp": "10:05:44",
+            "hash": "f99eca3205acb8308adda0df5b2ec28ed5f90bdddfa1a5c492b94880f6505d9b"
+        },
+        {
+            "filename": "Screenshot_20260202_100919_Uber Driver.jpg",
+            "timestamp": "10:09:19",
+            "hash": "58e3a721565bae6746dca83b2e3775dc81c87f18296cb115864e839b17929f24"
+        },
+        {
+            "filename": "Screenshot_20260202_101225_Uber Driver.jpg",
+            "timestamp": "10:12:25",
+            "hash": "5820df823caa7208134e821be8a7044d5e91825af2620afc6b8e2bedbaa04d78"
+        },
+        {
+            "filename": "Screenshot_20260202_102142_Uber Driver.jpg",
+            "timestamp": "10:21:42",
+            "hash": "5159d4c2f3fff1b9f29bd97dabfe8e9f6aceafd27b57310107053d72cb3c4e5f"
+        },
+        {
+            "filename": "Screenshot_20260202_104407_Uber Driver.jpg",
+            "timestamp": "10:44:07",
+            "hash": "db83c04c54013de967846836f9573c32dea6ab28b3107d3a71f95cb83203ccd0"
+        },
+        {
+            "filename": "Screenshot_20260202_104434_Uber Driver.jpg",
+            "timestamp": "10:44:34",
+            "hash": "eea9f0e343fdcc59fc4bbe651c4c07bad95db72ca9ee289569b3a027d706b612"
+        },
+        {
+            "filename": "Screenshot_20260202_104527.jpg",
+            "timestamp": "10:45:27",
+            "hash": "1cfa1d05bcb225cd385523f5166cef8d2ece8fc59d204be17ac38923372657b4"
+        },
+        {
+            "filename": "Screenshot_20260202_105049.jpg",
+            "timestamp": "10:50:49",
+            "hash": "8c6b4300898db230a2f916dc4e72d91683d1bb77de4ceecf0bc061273acb768e"
+        },
+        {
+            "filename": "Screenshot_20260202_105110_Starbucks.jpg",
+            "timestamp": "10:51:10",
+            "hash": "87f1f630219619b0f52ecb22d068845b28945ecae32542cde697dad4b7169599"
+        },
+        {
+            "filename": "Screenshot_20260202_105504_Uber Driver.jpg",
+            "timestamp": "10:55:04",
+            "hash": "b55393b79462e76f92569afd17671372c933f4c882eb8b3b2e050daca1174847"
+        },
+        {
+            "filename": "Screenshot_20260202_105905.jpg",
+            "timestamp": "10:59:05",
+            "hash": "6537dfff45f3d9672251a3d7c5aa2195aaba84123fb502dbe0b033f0c492d0a3"
+        },
+        {
+            "filename": "Screenshot_20260202_110658_M365 Copilot.jpg",
+            "timestamp": "11:06:58",
+            "hash": "0e93965ad670b6e9641b6ea7bca3e9da7e3760775892e899a9e54d9d36d5c2bf"
+        },
+        {
+            "filename": "Screenshot_20260202_112628_M365 Copilot.jpg",
+            "timestamp": "11:26:28",
+            "hash": "db71e8723c8d27d48c11f8e5f24e299898d477e638b89e646a9fb3a75ba06ab3"
+        },
+        {
+            "filename": "Screenshot_20260202_112728.jpg",
+            "timestamp": "11:27:28",
+            "hash": "0da5f6d17091fe283a91db01a6f997b7138ef6c8d8b3882b20b418cb87ab0ef2"
+        },
+        {
+            "filename": "Screenshot_20260202_112743.jpg",
+            "timestamp": "11:27:43",
+            "hash": "162e739b0cfcbf2960687e61f847fdfe00739ce012da1f883b14d22ca41ea237"
+        },
+        {
+            "filename": "Screenshot_20260202_115314_McDonald's.jpg",
+            "timestamp": "11:53:14",
+            "hash": "2dcae6c5c362c40727521350f05a20afecc9f4f3b4023293ad6d3ee6165d820a"
+        },
+        {
+            "filename": "20260202_125551.jpg",
+            "timestamp": "12:55:51",
+            "hash": "0e78081f307775ed51f7f2d7588ff8bc0a8936a05847dc931d8783ac4fab6446"
+        },
+        {
+            "filename": "Screenshot_20260202_155456_Uber Driver.jpg",
+            "timestamp": "15:54:56",
+            "hash": "c5f56b2dd723bf582b7f4bf86b178c28ab7750262e8be2c5a07acd261dafad8d"
+        },
+        {
+            "filename": "Screenshot_20260202_155721.jpg",
+            "timestamp": "15:57:21",
+            "hash": "c0111d01012e4c6072d330ca8405aced5419c58883f24aa09b511183d3efbec5"
+        },
+        {
+            "filename": "Screenshot_20260202_161208_Uber Driver.jpg",
+            "timestamp": "16:12:08",
+            "hash": "80cec286266c8325c32557b6e178a34cadbaa83a52a52dbbf25a2d4c3a332e5e"
+        },
+        {
+            "filename": "Screenshot_20260202_161827_Uber Driver.jpg",
+            "timestamp": "16:18:27",
+            "hash": "61720d23c046a941d0085611227d7e5c7e7cd43640cb28729ff53fe5f663f8c5"
+        },
+        {
+            "filename": "Screenshot_20260202_162311_Uber Driver.jpg",
+            "timestamp": "16:23:11",
+            "hash": "019e14fed7328ff33ae892cd8f35be1913664ae69ff6b9482b9e1fc4dd504ddd"
+        },
+        {
+            "filename": "Screenshot_20260202_163007_Uber Driver.jpg",
+            "timestamp": "16:30:07",
+            "hash": "b9aa1da17799af0ea436fec47f8a0386187cfdbb9c67b2b2e33dc7dd9b53f876"
+        },
+        {
+            "filename": "Screenshot_20260202_163044_Uber Driver.jpg",
+            "timestamp": "16:30:44",
+            "hash": "2b0bb8aaa3709d1f2fb26ecfc7811438e4000ede173f9f01e6340cb36634ce3a"
+        },
+        {
+            "filename": "Screenshot_20260202_163145.jpg",
+            "timestamp": "16:31:45",
+            "hash": "e0cf65e61e2191b6e9741f752578ba9e90c2c34e3a97e653abf63a973fb2e469"
+        },
+        {
+            "filename": "Screenshot_20260202_163647_Uber Driver.jpg",
+            "timestamp": "16:36:47",
+            "hash": "69e2d0da930dfbfe2b86a5f4c395c651ccd21bde93e6f4029ae4c320e634273e"
+        },
+        {
+            "filename": "Screenshot_20260202_163921_Uber Driver.jpg",
+            "timestamp": "16:39:21",
+            "hash": "9ba74e78291df44ccf31eb8fbd5785a8d4753c50876de85b52082abfa7ae9b0a"
+        },
+        {
+            "filename": "Screenshot_20260202_165436_Uber Driver.jpg",
+            "timestamp": "16:54:36",
+            "hash": "7573869d1c739099c471344e789ac4ada72fda14154b821dd98b3eb1139ec11b"
+        },
+        {
+            "filename": "Screenshot_20260202_165534.jpg",
+            "timestamp": "16:55:34",
+            "hash": "c601921cdf8731242316f76c1acb9b083d52b7e67c95902960f0b095e51b22a5"
+        },
+        {
+            "filename": "Screenshot_20260202_165539.jpg",
+            "timestamp": "16:55:39",
+            "hash": "67f8bc0f172db73d3aa06c431ae37831ef6a9a9f5dea653478c05ac077ca2800"
+        },
+        {
+            "filename": "Screenshot_20260202_165823_Uber Driver.jpg",
+            "timestamp": "16:58:23",
+            "hash": "ebca6fe3cb555aa9dcda9de60e62c95a9c484d7143a69b05a7fa3cf221aa6e83"
+        },
+        {
+            "filename": "Screenshot_20260202_180357.jpg",
+            "timestamp": "18:03:57",
+            "hash": "b459175e7afdaeec7faac4e058e185a80a88679fdf598ae522234d49d57075ab"
+        },
+        {
+            "filename": "Screenshot_20260202_183923_Uber Driver.jpg",
+            "timestamp": "18:39:23",
+            "hash": "0eacdc46b4ebe64084bbacd963deda4b2508065274a5ba8bc24ca5d7ee562bf6"
+        },
+        {
+            "filename": "Screenshot_20260202_184023_Uber Driver.jpg",
+            "timestamp": "18:40:23",
+            "hash": "bf769d59ba69d7b03cd0e8b6ba62da4d00603244881aa19d269c0c1397912882"
+        },
+        {
+            "filename": "Screenshot_20260202_184744_Uber Driver.jpg",
+            "timestamp": "18:47:44",
+            "hash": "2ea875d04c223e0cdafd31e71cb9c0322c93f57b05f458166bc6b08499c0c2bc"
+        },
+        {
+            "filename": "Screenshot_20260202_190346_Uber Driver.jpg",
+            "timestamp": "19:03:46",
+            "hash": "9e917c56c14dbb6b170364f06bac5cb0b20bf7099a9e83cbe0d02031f9dc7c12"
+        },
+        {
+            "filename": "Screenshot_20260202_203102_Venmo.jpg",
+            "timestamp": "20:31:02",
+            "hash": "fb2220fec65fbe080f037a484ac0d19f947208dd11a497813910555616f7ad29"
+        },
+        {
+            "filename": "Screenshot_20260202_203214_Uber Driver.jpg",
+            "timestamp": "20:32:14",
+            "hash": "209110b10f3a64e9689fd08a459eb127563f2cb5fb6901db64d29d4aab7f7238"
+        },
+        {
+            "filename": "Screenshot_20260202_203256.jpg",
+            "timestamp": "20:32:56",
+            "hash": "948f2b6b55c118c116fbc00927b85c780083803a9c1cfaad73139ad5552c6d8f"
+        },
+        {
+            "filename": "Screenshot_20260202_204106.jpg",
+            "timestamp": "20:41:06",
+            "hash": "145e868a5b3edff22b1fe48e50f58013494c65d9fea983a832873349ff4d8c49"
+        },
+        {
+            "filename": "Screenshot_20260202_204116.jpg",
+            "timestamp": "20:41:16",
+            "hash": "3379de0db41038fde25ddf4c20b73161b550abbefd7a19f2bfe0e296a7e26577"
+        }
+    ]
+}

@@ -1,0 +1,13 @@
+2026-02-02 22:51:22,669 - WARNING - Tessie API key not found. Telemetry will not function.
+2026-02-02 22:51:22,669 - INFO - No environment configuration found.
+2026-02-02 22:51:22,695 - INFO - ManagedIdentityCredential will use IMDS
+2026-02-02 22:51:22,705 - ERROR - Failed to initialize OCR Client with AAD: Parameter 'endpoint' must not be None.
+Fetching Tessie drives from 2026-02-02 04:00:00 to 2026-02-02 22:00:00...
+Traceback (most recent call last):
+  File "C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\summit_sync\tessie_uber_match.py", line 128, in <module>
+    result = match_logic()
+             ^^^^^^^^^^^^^
+  File "C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\summit_sync\tessie_uber_match.py", line 47, in match_logic
+    print(f"Found {len(tessie_drives)} Tessie drives.")
+                   ^^^^^^^^^^^^^^^^^^
+TypeError: object of type 'NoneType' has no len()

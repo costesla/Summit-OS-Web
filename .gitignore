@@ -1,5 +1,6 @@
 # Dependencies
 /node_modules
+frontend/node_modules/
 /.pnp
 .pnp.js
 
@@ -8,10 +9,12 @@
 
 # Next.js
 /.next/
-/out/
+frontend/.next/
+frontend/out/
 
 # Production
 /build
+frontend/build
 
 # Misc
 .DS_Store
@@ -38,3 +41,18 @@ local.settings.json
 .vercel
 
 .vercel
+
+# Python Backend
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+backend/.venv
+backend/venv32
+backend/.python_packages
+*.zip
+backend/deploy.zip
+backend_deploy.zip
+token.pickle
+backend/diag_bookings.py

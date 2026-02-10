@@ -128,7 +128,8 @@ class DatabaseClient:
         ON (target.TripID = source.TripID)
         WHEN MATCHED THEN
             UPDATE SET 
-                BlockID = ?, TripType = ?, Timestamp_Offer = ?, Pickup_Place = ?, Dropoff_Place = ?,
+                BlockID = ?, TripType = ?, Timestamp_Offer = ?, Timestamp_Pickup = ?, Timestamp_Dropoff = ?,
+                Pickup_Place = ?, Dropoff_Place = ?,
                 Distance_mi = ?, Duration_min = ?, Uber_Distance = ?, Uber_Duration = ?,
                 Tessie_Distance = ?, Tessie_Duration = ?, Tessie_DriveID = ?,
                 Rider_Payment = ?, Uber_ServiceFee = ?, Platform_Cut = ?, Platform_Emoji = ?,
@@ -139,7 +140,8 @@ class DatabaseClient:
                 LastUpdated = GETDATE()
         WHEN NOT MATCHED THEN
             INSERT (
-                TripID, BlockID, TripType, Timestamp_Offer, Pickup_Place, Dropoff_Place,
+                TripID, BlockID, TripType, Timestamp_Offer, Timestamp_Pickup, Timestamp_Dropoff,
+                Pickup_Place, Dropoff_Place,
                 Distance_mi, Duration_min, Uber_Distance, Uber_Duration,
                 Tessie_Distance, Tessie_Duration, Tessie_DriveID,
                 Rider_Payment, Uber_ServiceFee, Platform_Cut, Platform_Emoji,
@@ -149,15 +151,24 @@ class DatabaseClient:
                 Tessie_Distance_Mi, Insurance_Fees,
                 CreatedAt
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE());
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE());
         """
         
+        # Convert timestamps
         t_offer = trip_data.get('timestamp_epoch')
+        t_pickup = trip_data.get('timestamp_pickup_epoch')
+        t_dropoff = trip_data.get('timestamp_dropoff_epoch')
+        
         if t_offer:
             t_offer = datetime.datetime.fromtimestamp(t_offer)
+        if t_pickup:
+            t_pickup = datetime.datetime.fromtimestamp(t_pickup)
+        if t_dropoff:
+            t_dropoff = datetime.datetime.fromtimestamp(t_dropoff)
 
         core_params = (
-            trip_data.get('block_name'), trip_type, t_offer, trip_data.get('start_location'), trip_data.get('end_location'),
+            trip_data.get('block_name'), trip_type, t_offer, t_pickup, t_dropoff,
+            trip_data.get('start_location'), trip_data.get('end_location'),
             trip_data.get('tessie_distance', 0) or trip_data.get('distance_miles', 0), 
             trip_data.get('tessie_duration', 0) or trip_data.get('duration_minutes', 0),
             trip_data.get('distance_miles', 0), trip_data.get('duration_minutes', 0),
@@ -187,6 +198,7 @@ class DatabaseClient:
             raise
         finally:
             conn.close()
+
 
     def save_charge(self, charge_data):
         session_id = charge_data.get('session_id')

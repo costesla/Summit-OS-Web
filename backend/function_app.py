@@ -29,7 +29,8 @@ blueprints = [
     "api.tessie",
     "api.reports",
     "api.copilot",
-    "api.health"
+    "api.health",
+    "api.operations"
 ]
 
 registration_logs = []

@@ -4,7 +4,6 @@ const path = require('path');
 const nextConfig = {
     output: 'export',
     outputFileTracingRoot: path.join(__dirname),
-
 };
 
 module.exports = nextConfig;

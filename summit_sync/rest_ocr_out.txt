@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\summit_sync\scripts\test_ocr_rest.py", line 37, in <module>
+    test_ocr_rest()
+  File "C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\summit_sync\scripts\test_ocr_rest.py", line 28, in test_ocr_rest
+    data = f.read()
+           ^^^^^^^^
+OSError: [Errno 22] Invalid argument

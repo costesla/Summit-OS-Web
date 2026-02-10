@@ -1,0 +1,601 @@
+TripID,CustomerName,PickupLocation,DropoffLocation,PickupTime,DropoffTime,Status,Fare,Driver,DistanceMiles,DurationMinutes
+e3cbff25-8457-4015-8c31-3cce22ddd005,Customer 797,The Broadmoor,Downtown COS,2025-10-30T06:26:16.859546,2025-10-30T06:39:16.859546,Completed,15.99,Peter Teehan,5.6,13
+36b86305-a94c-4b55-ab06-06eb26eadb8a,Customer 213,US Air Force Academy,Garden of the Gods,2025-10-30T11:20:10.859546,2025-10-30T11:54:10.859546,Completed,30.33,Jane Smith,13.8,34
+b9c86c1d-f255-468f-9a68-f194442ea4f3,Customer 306,Castle Rock,Manitou Springs,2025-10-30T12:48:24.859546,2025-10-30T14:15:24.859546,Cancelled,115.88,Peter Teehan,79.7,87
+7545af5e-cbb6-4f9b-8c81-aab0b7059fab,Customer 510,Denver International Airport,Garden of the Gods,2025-10-30T17:10:42.859546,2025-10-30T18:42:42.859546,Completed,120.8,Auto-Dispatch,83.6,92
+7a625221-9dd2-40b6-84a1-1f6cd221d602,Customer 101,Denver International Airport,Downtown COS,2025-10-30T22:09:21.859546,2025-10-30T23:43:21.859546,Completed,124.11,John Doe,86.3,94
+330e1087-ce46-49ad-8bcd-68de703d43c2,Customer 827,Manitou Springs,The Broadmoor,2025-10-31T14:54:13.859546,2025-10-31T15:08:13.859546,Cancelled,16.42,Jane Smith,5.8,14
+2bdfe60f-e8f7-46b4-924c-99089e0ba44d,Customer 873,Colorado Springs Airport,Garden of the Gods,2025-10-31T17:43:54.859546,2025-10-31T18:00:54.859546,Cancelled,18.78,Jane Smith,7.2,17
+2a1d8b88-6601-45ff-8660-3ac91ccec5b1,Customer 798,US Air Force Academy,Garden of the Gods,2025-10-31T21:07:35.859546,2025-10-31T21:49:35.859546,Completed,35.7,Peter Teehan,16.8,42
+edb51dde-805b-4265-9c27-0818ac99c01a,Customer 411,Garden of the Gods,US Air Force Academy,2025-11-01T05:55:23.859546,2025-11-01T06:18:23.859546,Cancelled,22.6,Peter Teehan,9.3,23
+508dae42-49a1-467c-b4bd-7032602fd1a6,Customer 827,Denver International Airport,Castle Rock,2025-11-01T08:03:24.859546,2025-11-01T09:19:24.859546,Completed,103.66,John Doe,69.9,76
+b9e17f72-764a-4b08-8ad7-11e81408b707,Customer 872,Denver International Airport,The Broadmoor,2025-11-01T08:38:08.859546,2025-11-01T10:02:08.859546,Cancelled,111.74,Jane Smith,76.4,84
+7ec43583-2d48-4f0b-b3b0-97e86df5c346,Customer 949,Denver International Airport,Colorado Springs Airport,2025-11-01T12:42:08.859546,2025-11-01T13:53:08.859546,Cancelled,97.23,Jane Smith,64.8,71
+d23b057e-2eed-4e3a-a3fd-d66561e109f4,Customer 965,Manitou Springs,US Air Force Academy,2025-11-01T16:39:52.859546,2025-11-01T17:13:52.859546,Cancelled,30.27,Peter Teehan,13.7,34
+596b29df-5406-4b3e-9883-aaec784a0c1c,Customer 333,Manitou Springs,Denver International Airport,2025-11-01T21:42:00.859546,2025-11-01T22:55:00.859546,Cancelled,100.05,Peter Teehan,67.0,73
+68e96393-cd7b-45a3-b76f-302705f74257,Customer 129,Garden of the Gods,Downtown COS,2025-11-02T02:15:03.859546,2025-11-02T02:48:03.859546,No Show,29.57,Auto-Dispatch,13.3,33
+559ea6bb-e8bc-4475-888e-93cb9b248b66,Customer 338,The Broadmoor,Denver International Airport,2025-11-02T08:40:16.859546,2025-11-02T09:52:16.859546,Cancelled,99.09,Jane Smith,66.3,72
+127cd55c-bbae-49b4-a969-6dbfd9c837de,Customer 924,Denver International Airport,Colorado Springs Airport,2025-11-03T04:27:49.859546,2025-11-03T05:37:49.859546,Cancelled,96.03,Auto-Dispatch,63.8,70
+e6b54a05-f64d-4f27-9d4c-24fb9ced48fc,Customer 222,Manitou Springs,Colorado Springs Airport,2025-11-03T07:43:04.859546,2025-11-03T08:10:04.859546,Completed,25.57,Peter Teehan,11.0,27
+924d7054-e4a7-4132-8460-748ef19e1a4b,Customer 440,Colorado Springs Airport,US Air Force Academy,2025-11-03T10:12:25.859546,2025-11-03T10:39:25.859546,Completed,25.81,Jane Smith,11.2,27
+4017e372-63d9-4581-bb31-8c2b9b50ac02,Customer 709,Manitou Springs,Castle Rock,2025-11-03T16:22:04.859546,2025-11-03T17:41:04.859546,Completed,106.6,Jane Smith,72.3,79
+4d0221a7-fc67-4086-b268-01d269cfbe2d,Customer 373,US Air Force Academy,Colorado Springs Airport,2025-11-04T01:25:42.859546,2025-11-04T02:04:42.859546,Cancelled,33.58,Peter Teehan,15.6,39
+a8cc9187-0a52-4941-abf4-a66c02642f2c,Customer 413,The Broadmoor,Downtown COS,2025-11-04T06:30:05.859546,2025-11-04T06:40:05.859546,Completed,15.0,Auto-Dispatch,4.1,10
+726d0ae1-6b98-4dd3-b612-d74944d5c03a,Customer 613,The Broadmoor,US Air Force Academy,2025-11-04T10:58:10.859546,2025-11-04T11:33:10.859546,Completed,31.17,John Doe,14.2,35
+4d364267-06bb-421a-9cde-da4dda9fee5c,Customer 762,US Air Force Academy,Manitou Springs,2025-11-04T18:26:13.859546,2025-11-04T19:03:13.859546,Completed,32.17,Peter Teehan,14.8,37
+eadd3d6d-9dfe-408b-a9c5-618c7e9caa82,Customer 992,Denver International Airport,Downtown COS,2025-11-04T20:47:19.859546,2025-11-04T22:04:19.859546,No Show,103.82,Jane Smith,70.1,77
+bd94e52e-f161-4f4f-9d6f-83a340f379f6,Customer 855,Manitou Springs,The Broadmoor,2025-11-05T01:14:33.859546,2025-11-05T01:41:33.859546,No Show,25.29,John Doe,10.9,27
+7070a523-e2e4-4005-90b3-3fb0052ca06d,Customer 863,US Air Force Academy,Colorado Springs Airport,2025-11-05T07:48:31.859546,2025-11-05T08:33:31.859546,Completed,38.38,John Doe,18.4,45
+b0c4649a-0215-40ab-a751-a3fdbf10bf2f,Customer 182,Manitou Springs,Garden of the Gods,2025-11-05T19:45:17.859546,2025-11-05T20:05:17.859546,No Show,20.83,Jane Smith,8.3,20
+519c4d4c-01f4-4e40-84f9-c6f123cfd1e2,Customer 200,US Air Force Academy,Manitou Springs,2025-11-05T19:52:17.859546,2025-11-05T20:32:17.859546,Completed,34.68,Jane Smith,16.2,40
+6083c1ce-15ef-43b5-977c-166cae378066,Customer 122,Downtown COS,Denver International Airport,2025-11-06T00:42:19.859546,2025-11-06T02:19:19.859546,Completed,127.16,Jane Smith,88.7,97
+000fe23e-ea7e-495a-9f53-73029442e120,Customer 784,The Broadmoor,Denver International Airport,2025-11-06T01:20:15.859546,2025-11-06T02:36:15.859546,Completed,103.68,Auto-Dispatch,69.9,76
+77125d6c-8588-45ac-816d-9ef82e0be0b7,Customer 137,Colorado Springs Airport,US Air Force Academy,2025-11-06T08:40:07.859546,2025-11-06T08:57:07.859546,Completed,18.49,Auto-Dispatch,7.0,17
+694821fd-8d2b-4fb4-b0dc-684924ba993f,Customer 393,Downtown COS,The Broadmoor,2025-11-06T09:50:55.859546,2025-11-06T10:39:55.859546,Completed,40.72,Jane Smith,19.7,49
+11ec6a2a-91db-487b-b4e8-0aaa479b1c2f,Customer 334,The Broadmoor,Denver International Airport,2025-11-06T10:15:06.859546,2025-11-06T11:47:06.859546,No Show,121.58,Auto-Dispatch,84.3,92
+dbc6d430-8c5c-4c7d-99cd-3c04ff8fd5d4,Customer 535,Colorado Springs Airport,Garden of the Gods,2025-11-06T12:34:37.859546,2025-11-06T12:59:37.859546,Completed,24.42,John Doe,10.4,25
+4a04a8a6-cb78-44fb-8b2b-cbe086714e5f,Customer 339,Garden of the Gods,Downtown COS,2025-11-07T03:47:32.859546,2025-11-07T04:32:32.859546,Completed,38.19,Auto-Dispatch,18.3,45
+c6e17dd2-1725-407d-a67b-5056b849a8d2,Customer 763,Garden of the Gods,Manitou Springs,2025-11-07T04:38:08.859546,2025-11-07T05:21:08.859546,No Show,36.7,John Doe,17.4,43
+ea80d210-db28-48b1-a963-d74bd5a3adda,Customer 951,Denver International Airport,Colorado Springs Airport,2025-11-07T21:42:59.859546,2025-11-07T22:48:59.859546,Completed,92.2,Auto-Dispatch,60.8,66
+650d5021-28b0-47fa-95ea-b6981395d5aa,Customer 621,Garden of the Gods,Manitou Springs,2025-11-07T22:50:18.859546,2025-11-07T23:28:18.859546,Cancelled,33.05,Auto-Dispatch,15.3,38
+9badea19-3c69-447e-a150-46cdbe7d706f,Customer 915,Garden of the Gods,The Broadmoor,2025-11-08T02:10:54.859546,2025-11-08T02:58:54.859546,Cancelled,40.32,John Doe,19.5,48
+1721d71d-5500-43ef-a2f8-be68c182ae97,Customer 532,Denver International Airport,Castle Rock,2025-11-08T03:42:02.859546,2025-11-08T05:06:02.859546,No Show,111.99,Auto-Dispatch,76.6,84
+43bebe30-a6f9-40fb-8f23-113c96fccb01,Customer 644,Manitou Springs,Downtown COS,2025-11-08T04:50:40.859546,2025-11-08T04:58:40.859546,Completed,15.0,John Doe,3.3,8
+be2b9410-7a71-48a5-b534-43d72f829968,Customer 826,Downtown COS,The Broadmoor,2025-11-08T05:08:43.859546,2025-11-08T05:35:43.859546,Completed,25.49,Peter Teehan,11.0,27
+e267c661-c63f-497c-8030-bb47ef0c75af,Customer 980,Manitou Springs,Castle Rock,2025-11-08T16:54:30.859546,2025-11-08T18:26:30.859546,Completed,121.03,Peter Teehan,83.8,92
+3166a67e-91ed-468b-a8a9-0a3247ee4487,Customer 905,Downtown COS,Manitou Springs,2025-11-08T18:24:31.859546,2025-11-08T19:04:31.859546,Completed,34.67,John Doe,16.2,40
+bac5dc30-0399-4cfa-915f-10034db64718,Customer 205,Denver International Airport,Downtown COS,2025-11-08T19:27:33.859546,2025-11-08T21:09:33.859546,No Show,132.63,Auto-Dispatch,93.1,102
+463d5528-f1c5-40f8-a9d3-e4b17e690c4a,Customer 975,Castle Rock,US Air Force Academy,2025-11-08T20:12:49.859546,2025-11-08T21:39:49.859546,No Show,115.68,John Doe,79.5,87
+0fe66a50-0030-4302-96ad-e0eb8d30cea1,Customer 312,Castle Rock,Garden of the Gods,2025-11-09T00:23:11.859546,2025-11-09T01:32:11.859546,Completed,95.56,Peter Teehan,63.4,69
+9efb12cb-f2b5-42ea-8de8-251b028eedd8,Customer 692,Castle Rock,Downtown COS,2025-11-09T04:20:01.859546,2025-11-09T05:59:01.859546,Cancelled,129.36,John Doe,90.5,99
+efb73312-1fac-4157-b59d-6507b963938b,Customer 575,Colorado Springs Airport,Garden of the Gods,2025-11-09T08:27:11.859546,2025-11-09T08:48:11.859546,Completed,21.03,Peter Teehan,8.4,21
+73b5e462-d463-4606-912d-3795ee96ba66,Customer 737,The Broadmoor,Colorado Springs Airport,2025-11-09T09:08:00.859546,2025-11-09T09:33:00.859546,Completed,24.37,Auto-Dispatch,10.4,25
+8cb94a9f-8251-426f-ad78-90188b24f5e2,Customer 579,Denver International Airport,Castle Rock,2025-11-09T12:10:45.859546,2025-11-09T13:42:45.859546,Completed,120.95,Jane Smith,83.8,92
+6466d555-95e8-486e-8669-09360326d338,Customer 891,Downtown COS,Garden of the Gods,2025-11-09T13:50:03.859546,2025-11-09T14:32:03.859546,Cancelled,36.09,Auto-Dispatch,17.1,42
+6ad7de35-0198-4e3d-bac5-d2532d7f1938,Customer 644,US Air Force Academy,Manitou Springs,2025-11-09T14:06:31.859546,2025-11-09T14:16:31.859546,Completed,15.0,Peter Teehan,4.1,10
+8267d52a-69eb-4605-ab50-d5180dea9ce7,Customer 377,Manitou Springs,The Broadmoor,2025-11-09T14:24:11.859546,2025-11-09T14:55:11.859546,Cancelled,28.15,Jane Smith,12.5,31
+045d1a41-8046-4025-b964-1d8d82660327,Customer 861,Downtown COS,Colorado Springs Airport,2025-11-09T18:59:53.859546,2025-11-09T19:33:53.859546,Completed,30.7,Jane Smith,14.0,34
+a4e5d808-5682-4f13-9c33-7c78879ab4c3,Customer 477,Manitou Springs,Garden of the Gods,2025-11-10T23:55:56.859546,2025-11-11T00:04:56.859546,Completed,15.0,Auto-Dispatch,4.0,9
+57ba5705-4d48-4cd4-a043-f3105ffd0f0d,Customer 909,The Broadmoor,Denver International Airport,2025-11-11T01:34:52.859546,2025-11-11T02:40:52.859546,No Show,91.92,John Doe,60.5,66
+64205deb-b21c-4c85-b789-1139cd9e970d,Customer 737,Garden of the Gods,Colorado Springs Airport,2025-11-11T06:17:41.859546,2025-11-11T06:25:41.859546,Cancelled,15.0,John Doe,3.5,8
+15d9f078-9482-42a3-aa61-433dc1b4a504,Customer 593,Denver International Airport,Manitou Springs,2025-11-11T11:24:01.859546,2025-11-11T12:45:01.859546,Cancelled,109.09,Peter Teehan,74.3,81
+9e82716f-515d-4ca0-ae0b-ac2d3bfde092,Customer 779,US Air Force Academy,Colorado Springs Airport,2025-11-12T02:20:07.859546,2025-11-12T02:54:07.859546,Cancelled,30.22,Peter Teehan,13.7,34
+a59b4ec9-8514-43cc-9a73-467b44f67a18,Customer 454,Manitou Springs,Colorado Springs Airport,2025-11-12T11:36:58.859546,2025-11-12T12:13:58.859546,No Show,32.67,Peter Teehan,15.1,37
+e3a58a64-82bf-4a53-8b1b-3be70da00354,Customer 980,Denver International Airport,Colorado Springs Airport,2025-11-13T12:55:23.859546,2025-11-13T14:16:23.859546,Completed,109.05,Peter Teehan,74.2,81
+dd7022ff-e432-452f-83d0-d7d72ec741f5,Customer 872,Castle Rock,Garden of the Gods,2025-11-13T13:22:26.859546,2025-11-13T14:59:26.859546,Completed,127.36,John Doe,88.9,97
+dadcd4f0-c99d-4f9d-b117-a782620b61df,Customer 687,The Broadmoor,Colorado Springs Airport,2025-11-13T15:37:32.859546,2025-11-13T15:48:32.859546,Completed,15.0,Auto-Dispatch,4.7,11
+be6f3f4e-fddc-4708-b6e5-70f028ed94ce,Customer 429,Colorado Springs Airport,Castle Rock,2025-11-13T16:41:45.859546,2025-11-13T18:09:45.859546,Completed,116.4,Jane Smith,80.1,88
+c1973fbd-308d-4ac5-8579-5f93c1523bff,Customer 527,US Air Force Academy,Castle Rock,2025-11-13T18:47:20.859546,2025-11-13T19:58:20.859546,Cancelled,97.46,Auto-Dispatch,65.0,71
+2b512b80-4ab7-4233-83dc-e5c059907e95,Customer 139,Downtown COS,Castle Rock,2025-11-13T21:32:26.859546,2025-11-13T22:43:26.859546,Completed,97.56,Peter Teehan,65.1,71
+ae5a7e73-8aeb-418b-95d7-3cf1eda8d7e1,Customer 402,Colorado Springs Airport,Garden of the Gods,2025-11-13T22:39:50.859546,2025-11-13T22:55:50.859546,Completed,18.1,Auto-Dispatch,6.8,16
+d8c515d4-b571-49e9-90e7-15d6325630d4,Customer 597,Downtown COS,Castle Rock,2025-11-14T05:51:49.859546,2025-11-14T07:19:49.859546,Cancelled,116.7,Auto-Dispatch,80.4,88
+8e8e082b-b974-474c-9f5b-82b56a6c6cc8,Customer 440,Garden of the Gods,The Broadmoor,2025-11-14T06:32:47.859546,2025-11-14T06:51:47.859546,No Show,19.98,Peter Teehan,7.8,19
+c8602e5c-507d-4216-a279-8e582d83c7ba,Customer 185,Manitou Springs,Castle Rock,2025-11-14T12:32:49.859546,2025-11-14T13:39:49.859546,Completed,93.13,Jane Smith,61.5,67
+7e9f7edd-939f-4018-ba58-9d5dc7896618,Customer 829,Manitou Springs,Garden of the Gods,2025-11-14T16:07:24.859546,2025-11-14T16:26:24.859546,Cancelled,20.24,Peter Teehan,8.0,19
+5be16861-d55c-445f-96d1-adb1e056eeb2,Customer 210,Castle Rock,Garden of the Gods,2025-11-14T23:01:02.859546,2025-11-15T00:41:02.859546,Completed,130.97,Peter Teehan,91.8,100
+f4fef5ab-2f8e-43f7-8dfa-930df167b2c6,Customer 308,Manitou Springs,The Broadmoor,2025-11-14T23:08:18.859546,2025-11-14T23:46:18.859546,Completed,33.06,Jane Smith,15.3,38
+55fcd90e-9b01-4851-a05c-f82aec8418ee,Customer 896,The Broadmoor,Denver International Airport,2025-11-14T23:20:25.859546,2025-11-15T00:35:25.859546,Completed,102.36,Jane Smith,68.9,75
+ca31f7f5-ffd1-4bc0-af33-2bb3232bb768,Customer 335,Denver International Airport,US Air Force Academy,2025-11-15T05:03:21.859546,2025-11-15T06:43:21.859546,Completed,130.31,Jane Smith,91.2,100
+d4a74d14-a4b7-4975-b902-0e808c747444,Customer 463,Colorado Springs Airport,Manitou Springs,2025-11-15T12:59:31.859546,2025-11-15T13:18:31.859546,Cancelled,19.97,Jane Smith,7.8,19
+b48a0186-4849-4e42-aebe-6b1d9289e1fb,Customer 524,US Air Force Academy,Manitou Springs,2025-11-15T17:40:24.859546,2025-11-15T18:23:24.859546,No Show,36.82,Peter Teehan,17.5,43
+d2d70a0a-1d6f-44d8-b619-7d1f686b8e5c,Customer 522,Castle Rock,US Air Force Academy,2025-11-15T21:19:32.859546,2025-11-15T23:02:32.859546,Completed,133.52,Jane Smith,93.8,103
+db260262-e3f1-4b4f-8e99-bfc1bc4ceeed,Customer 952,US Air Force Academy,Denver International Airport,2025-11-15T23:19:53.859546,2025-11-16T00:39:53.859546,Completed,107.91,Jane Smith,73.3,80
+c2c2efff-ab4f-4b99-91fa-69a76a2764eb,Customer 332,Manitou Springs,US Air Force Academy,2025-11-16T01:04:22.859546,2025-11-16T01:36:22.859546,Completed,29.06,Jane Smith,13.0,32
+2320a293-6ced-4cd1-9108-a768c872f217,Customer 574,US Air Force Academy,Denver International Airport,2025-11-16T08:17:09.859546,2025-11-16T09:57:09.859546,Completed,130.96,Auto-Dispatch,91.8,100
+efc4ef76-2c23-45e0-8388-48110e880272,Customer 365,Castle Rock,US Air Force Academy,2025-11-16T09:34:48.859546,2025-11-16T11:11:48.859546,Cancelled,127.52,Auto-Dispatch,89.0,97
+facf08e8-f7e0-44d6-b7f9-19340accbf84,Customer 990,Downtown COS,Colorado Springs Airport,2025-11-16T11:08:25.859546,2025-11-16T11:55:25.859546,Completed,39.72,Peter Teehan,19.1,47
+b6e5e977-66ef-406b-974c-f246c7a826ac,Customer 104,Downtown COS,The Broadmoor,2025-11-16T19:35:54.859546,2025-11-16T20:03:54.859546,Completed,25.94,Jane Smith,11.2,28
+f2554950-1ada-4dfc-9ed4-8f3b3e595307,Customer 861,Manitou Springs,Colorado Springs Airport,2025-11-16T21:51:46.859546,2025-11-16T22:13:46.859546,Completed,22.15,Peter Teehan,9.1,22
+73cb11b8-36e1-4dde-a34a-cc4b116b34b5,Customer 236,Denver International Airport,Garden of the Gods,2025-11-17T02:16:07.859546,2025-11-17T03:36:07.859546,Cancelled,107.66,Peter Teehan,73.1,80
+04bb195c-4db3-40e2-8e83-de1f78613c76,Customer 769,Manitou Springs,Garden of the Gods,2025-11-17T04:33:00.859546,2025-11-17T05:01:00.859546,No Show,26.45,Peter Teehan,11.5,28
+13b5a689-10d4-4c97-98ba-f78062a80bab,Customer 646,Denver International Airport,Downtown COS,2025-11-17T05:35:42.859546,2025-11-17T07:08:42.859546,Completed,122.29,John Doe,84.8,93
+53aa8001-bb3a-4e78-904c-a6f496edf5c0,Customer 911,The Broadmoor,Castle Rock,2025-11-17T12:26:44.859546,2025-11-17T14:07:44.859546,Cancelled,131.29,Auto-Dispatch,92.0,101
+c4a045e2-a012-4a1b-90d9-90c660fd717b,Customer 131,Manitou Springs,The Broadmoor,2025-11-18T06:47:35.859546,2025-11-18T07:14:35.859546,Completed,25.28,Auto-Dispatch,10.9,27
+39448160-4d31-49c4-b172-c12e78a261a3,Customer 423,Denver International Airport,Castle Rock,2025-11-18T08:33:38.859546,2025-11-18T10:13:38.859546,Cancelled,130.01,Peter Teehan,91.0,100
+3fb7e4c3-b269-4dc7-8cd8-3b2351803032,Customer 137,Downtown COS,Manitou Springs,2025-11-18T11:37:47.859546,2025-11-18T12:05:47.859546,No Show,26.4,John Doe,11.5,28
+7ac27b06-eda6-4f0d-90f2-b873cd70b7c9,Customer 449,Downtown COS,US Air Force Academy,2025-11-18T18:18:58.859546,2025-11-18T18:53:58.859546,Completed,31.44,Peter Teehan,14.4,35
+3cff1c46-e262-4c50-9b6a-361bd896f017,Customer 724,Garden of the Gods,Denver International Airport,2025-11-18T22:53:44.859546,2025-11-19T00:25:44.859546,Completed,121.81,Auto-Dispatch,84.5,92
+40b54c9f-6635-4bbd-b11b-f298c87aae34,Customer 402,Colorado Springs Airport,Castle Rock,2025-11-19T00:04:36.859546,2025-11-19T01:31:36.859546,Cancelled,116.1,John Doe,79.9,87
+53702e59-bb89-4c92-8673-f7a4b5cdb0dd,Customer 204,Castle Rock,US Air Force Academy,2025-11-19T06:51:06.859546,2025-11-19T08:23:06.859546,Completed,121.32,Jane Smith,84.1,92
+4f7b9d0f-4f62-4b6e-87ad-69787f45f69f,Customer 130,Manitou Springs,Colorado Springs Airport,2025-11-19T14:18:32.859546,2025-11-19T14:59:32.859546,No Show,35.22,John Doe,16.6,41
+93ae0ab7-97f0-4c06-94c7-078470dcabde,Customer 815,Castle Rock,Denver International Airport,2025-11-19T20:12:55.859546,2025-11-19T21:35:55.859546,Completed,111.52,John Doe,76.2,83
+66b5f1bd-05e3-4aae-a89d-dad260b673a8,Customer 645,Castle Rock,Denver International Airport,2025-11-20T06:07:55.859546,2025-11-20T07:42:55.859546,Completed,125.04,John Doe,87.0,95
+c812372b-e851-464d-b69c-d44292d38a71,Customer 699,The Broadmoor,Downtown COS,2025-11-20T12:45:00.859546,2025-11-20T12:55:00.859546,Completed,15.0,Auto-Dispatch,4.4,10
+7c287593-7e61-435e-8e8f-d7e0aa000bca,Customer 645,The Broadmoor,Downtown COS,2025-11-20T16:00:43.859546,2025-11-20T16:29:43.859546,Completed,26.71,Peter Teehan,11.7,29
+7021bcaa-2838-439e-b276-e70799444102,Customer 836,Colorado Springs Airport,US Air Force Academy,2025-11-21T02:00:04.859546,2025-11-21T02:20:04.859546,Completed,20.88,Peter Teehan,8.4,20
+1bf8ab8d-9832-475e-8d4b-0bb0bb8c15be,Customer 342,Downtown COS,US Air Force Academy,2025-11-21T04:49:11.859546,2025-11-21T05:22:11.859546,Completed,29.75,Peter Teehan,13.4,33
+61051d87-61ed-4f7d-8dc5-07795c0cfa6b,Customer 760,The Broadmoor,Castle Rock,2025-11-21T08:53:00.859546,2025-11-21T10:09:00.859546,Completed,103.2,Peter Teehan,69.6,76
+51ee009c-a228-44d8-af63-76ca2a216f3d,Customer 685,Castle Rock,US Air Force Academy,2025-11-21T08:59:33.859546,2025-11-21T10:17:33.859546,Completed,105.99,Peter Teehan,71.8,78
+776d4d78-2861-401b-8a74-054c7c43cd3d,Customer 651,Manitou Springs,Colorado Springs Airport,2025-11-21T14:23:50.859546,2025-11-21T14:53:50.859546,Completed,27.36,John Doe,12.1,30
+5c250495-d5c0-489e-84ce-b3d79dc9860c,Customer 654,Colorado Springs Airport,The Broadmoor,2025-11-21T16:32:06.859546,2025-11-21T17:13:06.859546,No Show,35.15,Jane Smith,16.5,41
+4c981e4c-745d-46d6-a118-60d16338aa38,Customer 145,Downtown COS,Colorado Springs Airport,2025-11-21T17:22:06.859546,2025-11-21T17:29:06.859546,Cancelled,15.0,John Doe,3.0,7
+24d73bf6-79a9-4d2c-bb99-52935e4607e7,Customer 898,Manitou Springs,Castle Rock,2025-11-22T00:54:36.859546,2025-11-22T02:12:36.859546,Completed,105.51,Peter Teehan,71.4,78
+dd3a0ccd-7609-4910-b17c-e46b2a991251,Customer 878,Colorado Springs Airport,Castle Rock,2025-11-22T01:05:35.859546,2025-11-22T02:30:35.859546,Cancelled,113.4,Auto-Dispatch,77.7,85
+b88efb6f-0a7c-42ca-8bf2-21aa369cde42,Customer 871,Downtown COS,Manitou Springs,2025-11-22T08:55:52.859546,2025-11-22T09:19:52.859546,Completed,23.75,John Doe,10.0,24
+4a29e91d-4878-4c16-9d73-0012f7b44178,Customer 693,Denver International Airport,Colorado Springs Airport,2025-11-22T09:10:28.859546,2025-11-22T10:47:28.859546,Completed,126.97,John Doe,88.6,97
+8215fa80-8c71-49ae-8448-496778d1269b,Customer 604,The Broadmoor,US Air Force Academy,2025-11-22T13:53:59.859546,2025-11-22T14:36:59.859546,Completed,36.66,Peter Teehan,17.4,43
+e0ca2447-dd60-4d8a-b221-98e1b246866e,Customer 204,Garden of the Gods,The Broadmoor,2025-11-22T15:27:02.859546,2025-11-22T16:04:02.859546,Completed,32.79,Peter Teehan,15.2,37
+16497cc1-3d77-4450-9884-00e0e888c086,Customer 361,The Broadmoor,Castle Rock,2025-11-22T22:33:04.859546,2025-11-23T00:02:04.859546,Cancelled,117.99,Auto-Dispatch,81.4,89
+18f7fec1-ca8c-49ef-b0c1-db387ca54cff,Customer 848,Garden of the Gods,Manitou Springs,2025-11-23T00:01:26.859546,2025-11-23T00:37:26.859546,Completed,32.01,Jane Smith,14.7,36
+89006787-7703-4aec-962f-039171a778a0,Customer 100,Manitou Springs,Garden of the Gods,2025-11-23T05:44:15.859546,2025-11-23T06:05:15.859546,Completed,21.64,John Doe,8.8,21
+8097c0df-b41e-4ca3-bd78-eeaa0608bc5e,Customer 244,Colorado Springs Airport,Denver International Airport,2025-11-23T10:32:52.859546,2025-11-23T12:00:52.859546,Completed,117.13,John Doe,80.7,88
+14dc8639-1a54-40a6-a70c-ec828fe28c21,Customer 267,US Air Force Academy,Downtown COS,2025-11-23T11:08:13.859546,2025-11-23T11:18:13.859546,Completed,15.0,Jane Smith,4.1,10
+0373c693-8751-49f9-be22-692709709039,Customer 159,Manitou Springs,Colorado Springs Airport,2025-11-23T15:26:43.859546,2025-11-23T15:49:43.859546,No Show,22.63,Jane Smith,9.4,23
+20a2a060-bb08-4b29-b22f-c7def61e560d,Customer 549,Denver International Airport,US Air Force Academy,2025-11-23T16:24:43.859546,2025-11-23T17:59:43.859546,Completed,125.3,Jane Smith,87.2,95
+efdd22bd-69fe-49f9-9046-88167f9f0f8f,Customer 966,Downtown COS,Castle Rock,2025-11-23T20:13:42.859546,2025-11-23T21:49:42.859546,Completed,126.03,John Doe,87.8,96
+635f0112-17fc-4d94-87ad-5b1d7662c892,Customer 769,Colorado Springs Airport,Castle Rock,2025-11-24T09:12:16.859546,2025-11-24T10:52:16.859546,Completed,130.04,Peter Teehan,91.0,100
+f653fc3e-934e-4801-a03c-ed4bfefa4974,Customer 524,Denver International Airport,Garden of the Gods,2025-11-24T09:18:38.859546,2025-11-24T10:47:38.859546,No Show,117.67,Peter Teehan,81.1,89
+eb2a6354-024a-4198-ad3f-241230a64362,Customer 580,Garden of the Gods,Denver International Airport,2025-11-24T16:38:41.859546,2025-11-24T17:55:41.859546,Completed,104.47,Jane Smith,70.6,77
+4d575fa9-7e48-44c4-ab63-3448bc0d4105,Customer 292,Manitou Springs,Colorado Springs Airport,2025-11-24T17:23:21.859546,2025-11-24T18:11:21.859546,No Show,40.47,Auto-Dispatch,19.6,48
+ec75d658-9675-4139-9bbd-26a57909a2db,Customer 503,Colorado Springs Airport,Manitou Springs,2025-11-24T17:35:55.859546,2025-11-24T18:06:55.859546,Completed,28.21,Jane Smith,12.6,31
+b32d23ee-e5a6-47b8-9eeb-8620a63eaed4,Customer 362,US Air Force Academy,Denver International Airport,2025-11-24T21:45:22.859546,2025-11-24T23:29:22.859546,Cancelled,134.57,John Doe,94.7,104
+50b33ddb-41b8-4517-8ea8-72ba85dbb16f,Customer 795,US Air Force Academy,Downtown COS,2025-11-25T13:49:06.859546,2025-11-25T14:28:06.859546,Completed,33.71,Jane Smith,15.7,39
+d643b505-3fb9-4785-9d23-40898e958c9b,Customer 924,Castle Rock,Downtown COS,2025-11-25T18:42:29.859546,2025-11-25T20:22:29.859546,Completed,130.2,John Doe,91.2,100
+65d08352-5154-43e3-bf1a-1de4b4dafc74,Customer 125,Denver International Airport,Castle Rock,2025-11-25T19:51:13.859546,2025-11-25T21:02:13.859546,Completed,97.56,Jane Smith,65.1,71
+7419fee6-ed85-443a-b6e4-d1d3827283ce,Customer 776,Castle Rock,US Air Force Academy,2025-11-26T02:53:34.859546,2025-11-26T03:59:34.859546,No Show,91.8,John Doe,60.4,66
+f25e2734-4e12-46ee-adeb-d13fad1de7fd,Customer 772,Manitou Springs,Colorado Springs Airport,2025-11-26T04:14:42.859546,2025-11-26T04:43:42.859546,Completed,27.21,John Doe,12.0,29
+0e91223a-0e17-43d5-808b-17a2378aecd8,Customer 736,Denver International Airport,Colorado Springs Airport,2025-11-26T07:47:33.859546,2025-11-26T09:20:33.859546,Completed,122.52,Auto-Dispatch,85.0,93
+8f820abe-e5dc-40ba-ab65-99f1676e2bcb,Customer 932,Castle Rock,Garden of the Gods,2025-11-26T15:30:59.859546,2025-11-26T16:45:59.859546,Completed,101.75,Peter Teehan,68.4,75
+d8fecab5-10d3-49f6-8884-dab04343c3b7,Customer 211,Garden of the Gods,US Air Force Academy,2025-11-26T21:02:59.859546,2025-11-26T21:50:59.859546,Completed,40.39,Peter Teehan,19.5,48
+c27319df-a747-4611-9daa-95d29fd7fa4c,Customer 388,Denver International Airport,US Air Force Academy,2025-11-27T09:21:20.859546,2025-11-27T10:47:20.859546,Cancelled,115.08,Peter Teehan,79.1,86
+8d5684b2-9096-45ed-9310-db9703793d45,Customer 648,Garden of the Gods,Downtown COS,2025-11-27T10:10:50.859546,2025-11-27T10:19:50.859546,No Show,15.0,Jane Smith,3.8,9
+59530e0a-fb51-478a-ada8-76883ea3a147,Customer 875,Colorado Springs Airport,US Air Force Academy,2025-11-27T13:21:39.859546,2025-11-27T13:39:39.859546,Completed,19.49,Jane Smith,7.6,18
+cd6e1da3-d044-4e83-afb5-dada93ab7608,Customer 800,Colorado Springs Airport,US Air Force Academy,2025-11-27T19:52:52.859546,2025-11-27T20:21:52.859546,No Show,26.96,Peter Teehan,11.8,29
+477d26c9-a004-4251-bd31-b662a5f6f3e5,Customer 550,Castle Rock,Garden of the Gods,2025-11-27T22:43:01.859546,2025-11-28T00:18:01.859546,Completed,124.4,Auto-Dispatch,86.5,95
+bac02602-2f27-4490-8744-a6975dfe940a,Customer 657,Denver International Airport,Manitou Springs,2025-11-28T04:41:14.859546,2025-11-28T06:11:14.859546,Cancelled,119.36,Jane Smith,82.5,90
+f1c4b8fe-cd59-42b1-84e6-7e697c076f11,Customer 159,Denver International Airport,Castle Rock,2025-11-28T07:41:49.859546,2025-11-28T08:59:49.859546,Completed,105.34,Auto-Dispatch,71.3,78
+1093ed82-732d-4041-b09c-f7aab3a88ee2,Customer 565,Manitou Springs,The Broadmoor,2025-11-28T09:03:58.859546,2025-11-28T09:25:58.859546,Completed,22.03,John Doe,9.0,22
+c6003b95-2a0d-4486-b4cb-329540ca97f9,Customer 654,Manitou Springs,US Air Force Academy,2025-11-28T09:08:05.859546,2025-11-28T09:30:05.859546,Cancelled,21.87,Jane Smith,8.9,22
+bb17111b-ded4-4914-91fe-e924a2e0fc64,Customer 853,Colorado Springs Airport,Garden of the Gods,2025-11-28T10:41:29.859546,2025-11-28T11:07:29.859546,Cancelled,24.58,Jane Smith,10.5,26
+07cf461d-c39b-44d1-a6be-c41f6db8aab4,Customer 751,Castle Rock,US Air Force Academy,2025-11-28T16:57:56.859546,2025-11-28T18:32:56.859546,Completed,124.36,Peter Teehan,86.5,95
+79f5492d-4a70-4c9f-acd8-b5c6082d4bb5,Customer 608,US Air Force Academy,Colorado Springs Airport,2025-11-28T20:06:20.859546,2025-11-28T20:14:20.859546,Completed,15.0,Auto-Dispatch,3.5,8
+424f68f3-f397-4c6f-ab39-626296d50eaf,Customer 732,Garden of the Gods,Castle Rock,2025-11-29T15:31:08.859546,2025-11-29T16:37:08.859546,Completed,91.36,John Doe,60.1,66
+f3b2e92f-84eb-49e2-801d-0f557dcccf47,Customer 448,Colorado Springs Airport,Castle Rock,2025-11-29T17:10:15.859546,2025-11-29T18:52:15.859546,No Show,132.76,John Doe,93.2,102
+6a67729d-5ce3-429d-9d90-a2a050c1cae0,Customer 408,US Air Force Academy,Colorado Springs Airport,2025-11-29T19:37:59.859546,2025-11-29T19:49:59.859546,Completed,15.18,Auto-Dispatch,5.1,12
+ef3411a0-acf9-44dc-9275-293a4571e234,Customer 756,US Air Force Academy,Castle Rock,2025-11-29T20:36:56.859546,2025-11-29T22:02:56.859546,Cancelled,114.07,Peter Teehan,78.3,86
+44d844cd-4c67-44cf-afe8-daf26cb9d5ab,Customer 344,Denver International Airport,Garden of the Gods,2025-11-29T22:12:52.859546,2025-11-29T23:19:52.859546,Completed,92.81,John Doe,61.3,67
+6d84550e-3bba-47dd-b9c9-8d94afc9a731,Customer 728,Downtown COS,Castle Rock,2025-11-30T01:58:31.859546,2025-11-30T03:38:31.859546,No Show,130.45,John Doe,91.4,100
+0ffcd8e9-ca4c-4e49-9093-679f190dd746,Customer 915,Garden of the Gods,Colorado Springs Airport,2025-11-30T03:43:03.859546,2025-11-30T04:20:03.859546,Completed,32.29,Auto-Dispatch,14.9,37
+f7054779-8f35-4c54-8e87-855cf124b344,Customer 648,Downtown COS,Castle Rock,2025-11-30T13:24:21.859546,2025-11-30T15:05:21.859546,Completed,131.83,Peter Teehan,92.5,101
+a1160fb8-dccf-4b81-b452-6c3ef43f7102,Customer 272,Manitou Springs,US Air Force Academy,2025-11-30T19:22:20.859546,2025-11-30T19:59:20.859546,Completed,32.19,Peter Teehan,14.8,37
+617b56c2-1bf6-4d16-b03e-b0323d0f8a8c,Customer 388,Manitou Springs,Denver International Airport,2025-12-01T04:23:57.859546,2025-12-01T05:53:57.859546,Cancelled,119.3,Peter Teehan,82.4,90
+76dd3e2e-b5cc-424f-ba59-328c53ea2b60,Customer 353,Colorado Springs Airport,Castle Rock,2025-12-01T13:59:50.859546,2025-12-01T15:13:50.859546,Completed,100.38,Jane Smith,67.3,74
+603d78f9-893d-4c62-9e8f-afde4b42e266,Customer 844,Manitou Springs,Castle Rock,2025-12-01T15:16:53.859546,2025-12-01T16:45:53.859546,Completed,117.93,John Doe,81.3,89
+2445c017-f452-4ad7-b12e-4d432bcb1d29,Customer 214,Colorado Springs Airport,US Air Force Academy,2025-12-01T19:16:04.859546,2025-12-01T19:32:04.859546,Completed,17.83,Auto-Dispatch,6.6,16
+9c5ae213-7ddf-41d4-a6c5-b41201d61f85,Customer 186,Garden of the Gods,Castle Rock,2025-12-01T19:48:34.859546,2025-12-01T21:10:34.859546,Cancelled,109.54,Auto-Dispatch,74.6,82
+ee87dd0c-a15f-4189-8754-874981377054,Customer 478,US Air Force Academy,The Broadmoor,2025-12-02T04:25:32.859546,2025-12-02T04:46:32.859546,Completed,21.54,John Doe,8.7,21
+782e92b4-329f-4bef-bc49-23b23f6b7842,Customer 220,Denver International Airport,The Broadmoor,2025-12-02T06:42:01.859546,2025-12-02T08:01:01.859546,Completed,106.27,Auto-Dispatch,72.0,79
+7f3e1b66-10d0-41f5-8ad3-f98a2777ed53,Customer 798,Downtown COS,The Broadmoor,2025-12-02T11:36:52.859546,2025-12-02T11:45:52.859546,Cancelled,15.0,John Doe,4.0,9
+8cef3a97-d2f3-4bac-a7e0-3646dec45a92,Customer 771,Downtown COS,Castle Rock,2025-12-02T15:26:49.859546,2025-12-02T16:46:49.859546,Completed,107.52,Peter Teehan,73.0,80
+9af116b4-8e9e-4559-9a06-5b0866c66a73,Customer 936,Garden of the Gods,Downtown COS,2025-12-02T16:42:10.859546,2025-12-02T17:28:10.859546,Completed,38.75,Jane Smith,18.6,46
+5f79df1f-93aa-4e5e-8419-08cec2c6a565,Customer 876,Garden of the Gods,Colorado Springs Airport,2025-12-03T00:53:17.859546,2025-12-03T01:01:17.859546,Completed,15.0,John Doe,3.2,8
+265c75b2-f419-4a5c-9992-f6a6bfd0452f,Customer 167,Garden of the Gods,Denver International Airport,2025-12-03T10:47:09.859546,2025-12-03T11:57:09.859546,Completed,96.82,Peter Teehan,64.5,70
+01c37f64-c82b-49d8-b45b-0d437b0e2250,Customer 410,Downtown COS,Castle Rock,2025-12-03T12:36:05.859546,2025-12-03T13:42:05.859546,No Show,91.76,Peter Teehan,60.4,66
+72c81388-5ffa-49d2-bef7-ebf0e0832ab1,Customer 156,Manitou Springs,Garden of the Gods,2025-12-04T00:33:10.859546,2025-12-04T00:56:10.859546,Cancelled,22.62,Auto-Dispatch,9.4,23
+3f214d20-420e-4e6d-be59-3a5807d9835f,Customer 505,Downtown COS,The Broadmoor,2025-12-04T00:35:10.859546,2025-12-04T00:48:10.859546,Completed,15.88,John Doe,5.5,13
+3c07463e-2430-4b4b-99f2-46c2667afc37,Customer 185,The Broadmoor,Denver International Airport,2025-12-04T07:36:11.859546,2025-12-04T09:11:11.859546,Completed,125.33,Auto-Dispatch,87.3,95
+02b93b5c-f03f-4831-b9ba-3f199a7669b9,Customer 695,Manitou Springs,Colorado Springs Airport,2025-12-04T11:28:29.859546,2025-12-04T11:59:29.859546,Completed,28.06,Jane Smith,12.5,31
+0a1f1efb-31b8-46a0-a0c5-3a3934be6ed6,Customer 844,Manitou Springs,Denver International Airport,2025-12-04T12:17:10.859546,2025-12-04T13:28:10.859546,No Show,97.38,Auto-Dispatch,64.9,71
+4154933a-8c86-43e6-a357-324b7d42830b,Customer 870,US Air Force Academy,Castle Rock,2025-12-04T15:31:13.859546,2025-12-04T17:05:13.859546,Completed,123.24,Jane Smith,85.6,94
+9b2b9458-ac81-4b3c-95e3-ff2d240cd4db,Customer 529,Manitou Springs,Garden of the Gods,2025-12-04T19:10:56.859546,2025-12-04T19:45:56.859546,Completed,30.97,Jane Smith,14.1,35
+3f64b83a-a9d9-473e-b0e8-21abfcb725be,Customer 538,US Air Force Academy,Garden of the Gods,2025-12-04T19:13:07.859546,2025-12-04T19:58:07.859546,Completed,38.25,Jane Smith,18.3,45
+f2e9be64-a290-4150-9950-95cc99c73e7d,Customer 873,US Air Force Academy,The Broadmoor,2025-12-05T00:09:23.859546,2025-12-05T00:25:23.859546,Completed,17.61,John Doe,6.5,16
+a4484559-ced0-46d3-9cca-fa8faffb1f65,Customer 896,The Broadmoor,Downtown COS,2025-12-05T00:37:09.859546,2025-12-05T01:07:09.859546,Completed,27.66,Peter Teehan,12.2,30
+717ba748-e62d-4ab8-b7db-f0bfe8ca0774,Customer 523,Garden of the Gods,Denver International Airport,2025-12-05T05:19:39.859546,2025-12-05T06:51:39.859546,Completed,121.56,Jane Smith,84.2,92
+bc6747dd-0abc-417a-bbc3-b0073914995c,Customer 626,The Broadmoor,Garden of the Gods,2025-12-06T03:07:46.859546,2025-12-06T03:47:46.859546,Cancelled,34.77,John Doe,16.3,40
+c1c7a84a-70c1-498f-a3e3-e808b41704f9,Customer 531,US Air Force Academy,The Broadmoor,2025-12-06T20:59:25.859546,2025-12-06T21:11:25.859546,No Show,15.19,Auto-Dispatch,5.1,12
+c34770d6-e3af-436c-817a-1a528851183e,Customer 986,Castle Rock,Manitou Springs,2025-12-07T02:47:51.859546,2025-12-07T03:55:51.859546,Completed,93.88,John Doe,62.1,68
+8958f44e-a87a-4b2e-b700-dd3138b2dbcf,Customer 309,Downtown COS,Garden of the Gods,2025-12-07T10:08:43.859546,2025-12-07T10:26:43.859546,Completed,18.86,Jane Smith,7.2,18
+2a392da7-038e-47db-8fbe-2c821a52da47,Customer 362,Manitou Springs,US Air Force Academy,2025-12-07T10:35:40.859546,2025-12-07T10:57:40.859546,Completed,21.76,Peter Teehan,8.9,22
+1d4690db-63fb-46c5-adbf-c397c7cecf82,Customer 159,Garden of the Gods,US Air Force Academy,2025-12-07T16:59:13.859546,2025-12-07T17:16:13.859546,Completed,18.67,Peter Teehan,7.1,17
+3700d587-2410-4506-a7d9-2df23826fa27,Customer 684,The Broadmoor,Manitou Springs,2025-12-08T17:32:05.859546,2025-12-08T18:02:05.859546,Completed,27.75,John Doe,12.3,30
+f61dd9fa-67d0-409e-9e6d-1dc651c2dfbd,Customer 489,Denver International Airport,US Air Force Academy,2025-12-09T06:10:22.859546,2025-12-09T07:43:22.859546,Completed,122.94,Auto-Dispatch,85.4,93
+3ff7d0ef-fcb1-452c-b0f9-2ea75206a012,Customer 809,Garden of the Gods,Castle Rock,2025-12-09T20:52:30.859546,2025-12-09T22:04:30.859546,Completed,98.11,John Doe,65.5,72
+08a0e51d-3480-4377-9ba4-a08b33622473,Customer 112,Downtown COS,Denver International Airport,2025-12-09T21:16:17.859546,2025-12-09T22:57:17.859546,Completed,131.53,Auto-Dispatch,92.2,101
+a46de675-9cd0-4c1a-b00b-3ae59e7a4315,Customer 228,Garden of the Gods,The Broadmoor,2025-12-10T04:50:29.859546,2025-12-10T05:38:29.859546,Completed,40.39,Peter Teehan,19.5,48
+1210669d-03bc-4bfe-9c1f-9e01e8c900e1,Customer 427,Castle Rock,The Broadmoor,2025-12-10T06:14:07.859546,2025-12-10T07:50:07.859546,Completed,125.67,Peter Teehan,87.5,96
+e8d851df-82ed-4f0b-92b4-6bde2797c50b,Customer 154,Castle Rock,Colorado Springs Airport,2025-12-10T11:25:58.859546,2025-12-10T12:46:58.859546,Completed,109.06,Peter Teehan,74.2,81
+725ecc94-453e-493f-bbb8-55b6df9f42bc,Customer 723,Denver International Airport,Castle Rock,2025-12-10T14:34:35.859546,2025-12-10T15:43:35.859546,Completed,94.78,Peter Teehan,62.8,69
+9d316f8c-80b9-4a96-b06f-1fcd0a794807,Customer 863,Garden of the Gods,US Air Force Academy,2025-12-10T19:36:43.859546,2025-12-10T20:14:43.859546,No Show,33.48,John Doe,15.6,38
+6e5bc38d-4e74-444f-bc42-049acd83cea8,Customer 980,Garden of the Gods,Downtown COS,2025-12-10T22:33:33.859546,2025-12-10T22:52:33.859546,Completed,20.2,Jane Smith,8.0,19
+6ef5b7d6-7b0a-4fb0-997c-ca69216c52d1,Customer 485,Manitou Springs,Colorado Springs Airport,2025-12-11T02:04:19.859546,2025-12-11T02:14:19.859546,No Show,15.0,Auto-Dispatch,4.3,10
+fe4269c8-853c-45b4-b370-323d7d9acdb4,Customer 911,Denver International Airport,The Broadmoor,2025-12-11T03:22:22.859546,2025-12-11T04:47:22.859546,Completed,113.06,Auto-Dispatch,77.4,85
+bf07ef02-fc57-4f71-a1c1-e136fb8f4948,Customer 586,US Air Force Academy,Manitou Springs,2025-12-12T06:10:02.859546,2025-12-12T06:44:02.859546,No Show,30.61,John Doe,13.9,34
+42800376-cbd8-45db-b3aa-d950b26a2d25,Customer 920,US Air Force Academy,The Broadmoor,2025-12-12T11:04:43.859546,2025-12-12T11:50:43.859546,No Show,38.55,Peter Teehan,18.5,46
+f682ee11-7812-491a-b43e-ab6a63f26d0c,Customer 261,Downtown COS,Garden of the Gods,2025-12-12T14:04:15.859546,2025-12-12T14:24:15.859546,Completed,20.34,Auto-Dispatch,8.1,20
+aebed16a-afc8-43b0-8b84-8cb18548df44,Customer 598,US Air Force Academy,The Broadmoor,2025-12-12T17:27:21.859546,2025-12-12T17:38:21.859546,Cancelled,15.0,Jane Smith,4.5,11
+298af673-a18a-49fb-bf93-1e38db7edd8f,Customer 836,Colorado Springs Airport,Garden of the Gods,2025-12-12T23:42:31.859546,2025-12-13T00:24:31.859546,Cancelled,35.95,Auto-Dispatch,17.0,42
+e4ca9952-e285-4254-bc03-377d3eebdd92,Customer 984,The Broadmoor,Manitou Springs,2025-12-13T12:28:23.859546,2025-12-13T12:55:23.859546,No Show,25.7,Peter Teehan,11.1,27
+844a4c6a-e316-44a8-9aa2-7e97b469be53,Customer 479,Manitou Springs,Colorado Springs Airport,2025-12-13T20:36:04.859546,2025-12-13T21:13:04.859546,Completed,32.46,Auto-Dispatch,15.0,37
+8e7d4006-4689-4d95-a7f5-4b46dfaabcc5,Customer 113,US Air Force Academy,The Broadmoor,2025-12-14T01:40:30.859546,2025-12-14T01:56:30.859546,Completed,17.67,John Doe,6.5,16
+071b84eb-bf0d-4e81-a4ee-5c00d3be80d9,Customer 913,Castle Rock,Downtown COS,2025-12-14T09:59:56.859546,2025-12-14T11:21:56.859546,Cancelled,109.79,Jane Smith,74.8,82
+67a62165-788f-4edb-a03b-f9fd27af62da,Customer 745,The Broadmoor,Denver International Airport,2025-12-14T17:49:05.859546,2025-12-14T18:55:05.859546,No Show,91.39,Auto-Dispatch,60.1,66
+b6b10293-32b6-44c0-a0c5-8d6946327b1c,Customer 806,Garden of the Gods,Denver International Airport,2025-12-14T19:41:23.859546,2025-12-14T20:48:23.859546,Cancelled,92.75,Jane Smith,61.2,67
+951aa7de-6832-49e0-8620-26a855358280,Customer 789,Colorado Springs Airport,Denver International Airport,2025-12-14T21:57:19.859546,2025-12-14T23:20:19.859546,No Show,111.52,Auto-Dispatch,76.2,83
+969929c8-5827-415d-be44-f6d29448332d,Customer 829,The Broadmoor,Denver International Airport,2025-12-15T01:53:38.859546,2025-12-15T03:16:38.859546,Completed,111.19,Peter Teehan,76.0,83
+a322be62-13a3-4287-8195-5d3e4df14afc,Customer 445,Manitou Springs,Garden of the Gods,2025-12-15T09:13:13.859546,2025-12-15T09:29:13.859546,Completed,17.57,Peter Teehan,6.5,16
+b2921d13-3d7a-43e6-bb38-90779c22f0f8,Customer 429,Manitou Springs,The Broadmoor,2025-12-15T12:17:17.859546,2025-12-15T12:35:17.859546,Completed,19.43,Peter Teehan,7.5,18
+54bf27d3-76d9-4190-b66e-e9671dbb3d1a,Customer 919,Colorado Springs Airport,Castle Rock,2025-12-15T23:01:08.859546,2025-12-16T00:19:08.859546,Cancelled,105.64,Auto-Dispatch,71.5,78
+5ae552ee-6885-4de7-9407-b2b0d831436e,Customer 263,Downtown COS,The Broadmoor,2025-12-16T05:34:03.859546,2025-12-16T06:04:03.859546,Cancelled,27.48,John Doe,12.1,30
+af506881-6c3f-4b94-aeb6-1318d3ca930c,Customer 188,US Air Force Academy,Downtown COS,2025-12-16T09:47:21.859546,2025-12-16T10:35:21.859546,Cancelled,39.97,Auto-Dispatch,19.3,48
+dcfd44dc-5383-4317-be26-e7bcfa5f412e,Customer 865,Garden of the Gods,Manitou Springs,2025-12-16T16:41:34.859546,2025-12-16T16:56:34.859546,Completed,16.96,John Doe,6.1,15
+2dc7bd6d-fc3e-49c3-8555-36d06ecd6700,Customer 356,Denver International Airport,Manitou Springs,2025-12-17T02:55:31.859546,2025-12-17T04:02:31.859546,Completed,92.89,Jane Smith,61.3,67
+f244268d-8df1-48d0-8e73-25fccdfc07a8,Customer 465,Castle Rock,Garden of the Gods,2025-12-17T05:42:13.859546,2025-12-17T07:24:13.859546,Completed,132.24,John Doe,92.8,102
+3c8dc046-7a71-4edf-91ff-711127f2d58f,Customer 459,Garden of the Gods,Denver International Airport,2025-12-17T05:46:14.859546,2025-12-17T07:28:14.859546,No Show,132.63,Peter Teehan,93.1,102
+73d19c71-4df4-4516-bd2d-6f3daa29ace1,Customer 150,The Broadmoor,Denver International Airport,2025-12-17T12:32:27.859546,2025-12-17T13:38:27.859546,Cancelled,91.93,John Doe,60.5,66
+4720aa5b-4b85-4517-831e-2495604a3eb5,Customer 821,Downtown COS,Garden of the Gods,2025-12-17T16:31:18.859546,2025-12-17T16:47:18.859546,No Show,17.76,Peter Teehan,6.6,16
+22b0ff84-dffb-4615-ad7a-b16740d11fe4,Customer 705,Colorado Springs Airport,Downtown COS,2025-12-17T17:39:04.859546,2025-12-17T18:26:04.859546,Completed,39.68,Jane Smith,19.1,47
+1767281e-afc0-4e18-abe3-a730a6684f39,Customer 633,Manitou Springs,The Broadmoor,2025-12-17T21:26:36.859546,2025-12-17T21:48:36.859546,Completed,21.84,John Doe,8.9,22
+82c811f6-ad9f-49be-b141-3062ad41159c,Customer 564,Castle Rock,Colorado Springs Airport,2025-12-17T22:57:52.859546,2025-12-18T00:20:52.859546,No Show,111.11,Peter Teehan,75.9,83
+ca12d520-83fe-4ac2-ab2d-780d4afe6bef,Customer 744,Downtown COS,US Air Force Academy,2025-12-18T02:56:30.859546,2025-12-18T03:20:30.859546,Cancelled,23.62,Jane Smith,9.9,24
+c02b0dea-d8e6-4ebc-bd42-c5371a3fed84,Customer 337,Manitou Springs,Downtown COS,2025-12-18T08:07:43.859546,2025-12-18T08:34:43.859546,Completed,25.31,Auto-Dispatch,10.9,27
+bf6cad63-c931-4ba6-bb8d-03d701c7066e,Customer 225,Manitou Springs,The Broadmoor,2025-12-18T09:30:13.859546,2025-12-18T09:41:13.859546,Completed,15.0,Peter Teehan,4.6,11
+04636ec4-0f7a-420a-ba89-8e5ccfb3dbd4,Customer 883,Manitou Springs,Denver International Airport,2025-12-18T20:31:57.859546,2025-12-18T22:07:57.859546,Cancelled,126.29,Jane Smith,88.0,96
+2125559f-2b7e-4d21-979e-0a3644aa16aa,Customer 696,The Broadmoor,Colorado Springs Airport,2025-12-19T03:06:21.859546,2025-12-19T03:32:21.859546,Completed,24.86,Jane Smith,10.6,26
+b53a5817-61c5-4929-a963-9411ed6a3ccd,Customer 906,The Broadmoor,Garden of the Gods,2025-12-19T05:29:28.859546,2025-12-19T06:15:28.859546,No Show,38.8,Peter Teehan,18.6,46
+0d19e1db-9340-47f3-b17e-0472f893b96f,Customer 963,Manitou Springs,Garden of the Gods,2025-12-19T07:46:28.859546,2025-12-19T08:15:28.859546,No Show,26.98,John Doe,11.8,29
+2c528c6b-09f2-481b-a134-69f56dca808d,Customer 539,Downtown COS,Manitou Springs,2025-12-19T13:36:24.859546,2025-12-19T14:01:24.859546,No Show,24.22,Peter Teehan,10.3,25
+807244d1-d130-4bfe-9b7c-17bf7d5d80cd,Customer 728,Garden of the Gods,The Broadmoor,2025-12-19T14:46:12.859546,2025-12-19T15:15:12.859546,Cancelled,26.58,Peter Teehan,11.6,29
+4e6c0a90-5fe8-4a0e-bbaf-6405c0ba3a25,Customer 131,Garden of the Gods,The Broadmoor,2025-12-19T20:14:03.859546,2025-12-19T20:58:03.859546,Completed,37.67,Auto-Dispatch,18.0,44
+d72d5876-8abb-4194-a6d8-d3d72bda559a,Customer 531,The Broadmoor,Garden of the Gods,2025-12-19T22:34:10.859546,2025-12-19T23:02:10.859546,Completed,26.22,Auto-Dispatch,11.4,28
+74d13161-5be0-4148-b75a-aa42ebfeb338,Customer 383,Denver International Airport,The Broadmoor,2025-12-19T23:38:47.859546,2025-12-20T01:21:47.859546,Completed,133.3,Jane Smith,93.6,103
+840f7f75-4b57-4538-9f96-a1c0e1b8477c,Customer 556,Manitou Springs,Colorado Springs Airport,2025-12-20T00:08:46.859546,2025-12-20T00:43:46.859546,Cancelled,30.97,John Doe,14.1,35
+a40279cc-eab0-4383-98ba-fb2c1a29bd90,Customer 715,The Broadmoor,US Air Force Academy,2025-12-20T08:17:29.859546,2025-12-20T09:02:29.859546,Completed,38.28,Peter Teehan,18.3,45
+09d1ddb5-24fa-413e-a7b7-45c4bbd86b64,Customer 873,The Broadmoor,Denver International Airport,2025-12-20T08:48:41.859546,2025-12-20T10:32:41.859546,Completed,134.85,John Doe,94.9,104
+6fd43a30-3c7d-4a47-a0ac-73f2560364d6,Customer 357,US Air Force Academy,Downtown COS,2025-12-20T16:16:23.859546,2025-12-20T16:30:23.859546,No Show,16.61,John Doe,5.9,14
+4b4ddccf-6f6e-451d-87d3-5f77fe17ad77,Customer 444,Colorado Springs Airport,Castle Rock,2025-12-20T21:58:32.859546,2025-12-20T23:41:32.859546,Completed,133.52,Auto-Dispatch,93.8,103
+353cbdde-a6cf-483c-acb7-cd4154da2a68,Customer 420,Downtown COS,US Air Force Academy,2025-12-21T00:03:30.859546,2025-12-21T00:31:30.859546,Cancelled,25.93,John Doe,11.2,28
+90df7d00-9cf3-4695-9ff1-431dfba1bb7a,Customer 985,Denver International Airport,Colorado Springs Airport,2025-12-21T00:48:50.859546,2025-12-21T02:15:50.859546,Completed,115.12,Jane Smith,79.1,87
+6d9ac4f6-80a1-4c2e-b100-dc7b15c76c00,Customer 937,Garden of the Gods,Castle Rock,2025-12-21T07:00:38.859546,2025-12-21T08:16:38.859546,Completed,102.62,Jane Smith,69.1,76
+923f18e6-34d6-4341-90e0-4c85ff103693,Customer 379,The Broadmoor,Denver International Airport,2025-12-21T08:34:50.859546,2025-12-21T10:04:50.859546,Cancelled,119.54,Jane Smith,82.6,90
+0fa10aa3-8ece-438d-b094-4e04f6d5cf70,Customer 449,Downtown COS,Manitou Springs,2025-12-21T17:15:02.859546,2025-12-21T17:39:02.859546,Cancelled,23.46,Auto-Dispatch,9.8,24
+84cbeb53-da88-46fe-a25a-0fe658824be4,Customer 258,Downtown COS,Denver International Airport,2025-12-22T04:19:11.859546,2025-12-22T05:59:11.859546,Completed,130.86,Peter Teehan,91.7,100
+2dd8121a-1662-49af-95fe-267b3a2ae456,Customer 155,US Air Force Academy,Downtown COS,2025-12-22T17:05:42.859546,2025-12-22T17:47:42.859546,Completed,35.86,Peter Teehan,16.9,42
+039138c3-6beb-44ea-9e96-a3a84b4ca831,Customer 412,Manitou Springs,US Air Force Academy,2025-12-22T21:04:30.859546,2025-12-22T21:39:30.859546,No Show,30.81,John Doe,14.0,35
+3c55bb40-452b-40bb-93d3-68dbbfc5c201,Customer 158,US Air Force Academy,Castle Rock,2025-12-23T01:40:39.859546,2025-12-23T03:07:39.859546,Cancelled,115.35,Jane Smith,79.3,87
+d923f541-5586-43c7-b623-35a6268f2f7a,Customer 166,Colorado Springs Airport,Manitou Springs,2025-12-23T04:23:30.859546,2025-12-23T04:59:30.859546,Completed,31.97,John Doe,14.7,36
+fb749bec-661c-4479-8a9b-8d1d2f1f882a,Customer 173,Downtown COS,Manitou Springs,2025-12-23T06:33:37.859546,2025-12-23T07:12:37.859546,Cancelled,34.01,Jane Smith,15.9,39
+33bd2559-21b6-41aa-ba35-7ee493b0ec46,Customer 472,The Broadmoor,Castle Rock,2025-12-23T09:01:22.859546,2025-12-23T10:22:22.859546,Completed,108.7,Jane Smith,74.0,81
+4df6c71f-42b3-42d1-8caf-f677eacf8b41,Customer 393,Denver International Airport,Garden of the Gods,2025-12-23T12:05:19.859546,2025-12-23T13:27:19.859546,Completed,110.54,John Doe,75.4,82
+78d5e4a6-7209-482b-a05a-b532cc31f796,Customer 979,US Air Force Academy,The Broadmoor,2025-12-23T21:38:47.859546,2025-12-23T22:07:47.859546,Completed,27.12,Peter Teehan,11.9,29
+ddfc5145-482b-44d8-80bf-373a445f99c4,Customer 777,Denver International Airport,Colorado Springs Airport,2025-12-24T02:59:44.859546,2025-12-24T04:32:44.859546,Cancelled,122.27,Auto-Dispatch,84.8,93
+40a4d5f4-d30b-4af7-b134-a54041a02527,Customer 893,Downtown COS,Castle Rock,2025-12-24T07:43:04.859546,2025-12-24T09:17:04.859546,Cancelled,123.13,John Doe,85.5,94
+01cd78b5-6ee6-40ea-9407-b79470d353ec,Customer 871,US Air Force Academy,Manitou Springs,2025-12-24T12:21:22.859546,2025-12-24T12:59:22.859546,Completed,33.4,Auto-Dispatch,15.5,38
+3dad0061-f6d2-4b15-9c3f-ed4dfce3d4e9,Customer 739,Denver International Airport,Castle Rock,2025-12-24T15:36:05.859546,2025-12-24T16:48:05.859546,Completed,98.22,John Doe,65.6,72
+e024d56d-dd62-4942-9f83-6740e4592a89,Customer 645,Colorado Springs Airport,Garden of the Gods,2025-12-24T17:28:02.859546,2025-12-24T18:11:02.859546,Completed,36.5,Auto-Dispatch,17.3,43
+8eecd70f-a3ca-4765-b696-57757d608789,Customer 765,Garden of the Gods,Manitou Springs,2025-12-25T19:03:00.859546,2025-12-25T19:39:00.859546,Completed,31.65,Auto-Dispatch,14.5,36
+cd6e58f5-4974-4e8a-b43f-9d86ade16987,Customer 487,Denver International Airport,Downtown COS,2025-12-26T04:55:48.859546,2025-12-26T06:09:48.859546,Completed,101.45,Jane Smith,68.2,74
+43e5dec2-56ad-437a-a44d-3ef9d6d1cb7e,Customer 182,Denver International Airport,Manitou Springs,2025-12-26T12:41:01.859546,2025-12-26T14:00:01.859546,Completed,106.45,Jane Smith,72.2,79
+0c8cc95d-4406-4efe-8293-167560175bdf,Customer 760,Colorado Springs Airport,Manitou Springs,2025-12-26T21:34:40.859546,2025-12-26T22:14:40.859546,Completed,34.87,Peter Teehan,16.4,40
+6cd6b361-750a-4d43-8e74-45b7bcbdbc2d,Customer 625,Garden of the Gods,US Air Force Academy,2025-12-27T11:31:38.859546,2025-12-27T12:04:38.859546,Completed,29.8,Auto-Dispatch,13.5,33
+2caf2e9b-bdce-45dc-90a7-3a61b52253cd,Customer 516,Denver International Airport,Castle Rock,2025-12-27T14:40:35.859546,2025-12-27T16:01:35.859546,Completed,108.49,John Doe,73.8,81
+a0bbe9d1-a208-4e62-b2f4-dd85eb87b0c0,Customer 735,Colorado Springs Airport,US Air Force Academy,2025-12-27T15:33:44.859546,2025-12-27T16:13:44.859546,No Show,34.79,Peter Teehan,16.3,40
+5acc3eb9-ea7d-4fb4-9ffe-616bc84ef70f,Customer 324,The Broadmoor,Denver International Airport,2025-12-27T18:41:34.859546,2025-12-27T20:05:34.859546,Cancelled,112.2,Peter Teehan,76.8,84
+bb383375-c49d-476c-9684-7fa61a43332d,Customer 298,US Air Force Academy,Manitou Springs,2025-12-27T20:26:30.859546,2025-12-27T20:45:30.859546,Completed,20.17,Jane Smith,8.0,19
+7d065525-a599-45fc-bc01-d7a154318489,Customer 705,Garden of the Gods,Denver International Airport,2025-12-27T21:14:31.859546,2025-12-27T22:20:31.859546,Completed,92.16,Jane Smith,60.7,66
+28984291-43e3-44d1-88ce-ef2024196046,Customer 352,US Air Force Academy,Castle Rock,2025-12-27T21:47:28.859546,2025-12-27T23:22:28.859546,Cancelled,125.09,Auto-Dispatch,87.1,95
+54f70255-56df-4f3c-bc63-b5487aa27e6d,Customer 753,Denver International Airport,US Air Force Academy,2025-12-27T23:02:40.859546,2025-12-28T00:42:40.859546,Completed,130.04,Peter Teehan,91.0,100
+b2badeb3-d920-4ee3-8eb7-5e91a97506aa,Customer 523,Denver International Airport,The Broadmoor,2025-12-28T05:00:00.859546,2025-12-28T06:23:00.859546,Completed,111.49,Auto-Dispatch,76.2,83
+405b6f09-af5f-4ba7-9f0c-0b277aaf5ee7,Customer 768,Downtown COS,Colorado Springs Airport,2025-12-28T06:25:26.859546,2025-12-28T06:38:26.859546,Completed,15.77,Peter Teehan,5.4,13
+e4c9ed18-1794-4f0f-8ebe-4b9922cca70b,Customer 467,Castle Rock,Denver International Airport,2025-12-28T08:43:48.859546,2025-12-28T10:25:48.859546,No Show,132.56,Auto-Dispatch,93.0,102
+ab0546e3-fc3c-4930-a330-5bd46522fbf8,Customer 498,Downtown COS,Denver International Airport,2025-12-28T11:22:57.859546,2025-12-28T12:43:57.859546,No Show,109.03,Peter Teehan,74.2,81
+52078f4d-b5c4-4865-a504-80e4dd6681ac,Customer 339,Castle Rock,Colorado Springs Airport,2025-12-28T11:38:35.859546,2025-12-28T13:02:35.859546,Completed,112.08,Jane Smith,76.7,84
+932182e8-6b32-460b-b25d-40bfc262ec76,Customer 180,Colorado Springs Airport,Denver International Airport,2025-12-28T13:53:21.859546,2025-12-28T15:16:21.859546,Completed,110.68,Jane Smith,75.5,83
+ceee5f60-1d00-4288-91d3-e8d6bc31daa9,Customer 677,Castle Rock,Downtown COS,2025-12-28T14:34:00.859546,2025-12-28T15:47:00.859546,No Show,100.11,Auto-Dispatch,67.1,73
+40218ee5-2df7-4bde-84c7-6707f332ae79,Customer 952,The Broadmoor,Garden of the Gods,2025-12-28T15:00:03.859546,2025-12-28T15:21:03.859546,Cancelled,21.64,Jane Smith,8.8,21
+d93b69c3-cba2-4149-a328-7de49567bbd3,Customer 110,Garden of the Gods,Manitou Springs,2025-12-28T19:43:29.859546,2025-12-28T20:10:29.859546,Completed,25.68,John Doe,11.1,27
+405842f3-2964-4bee-9311-fcdd7f931ae2,Customer 879,Manitou Springs,Denver International Airport,2025-12-28T21:41:45.859546,2025-12-28T23:01:45.859546,Completed,107.62,Peter Teehan,73.1,80
+40247d3f-3be7-47dc-85ca-9704d704dd55,Customer 372,Castle Rock,US Air Force Academy,2025-12-28T23:30:32.859546,2025-12-29T01:01:32.859546,Completed,119.78,Peter Teehan,82.8,91
+e74318fa-7c85-42da-a7f8-7bf36f34b4f6,Customer 699,Colorado Springs Airport,Denver International Airport,2025-12-29T07:40:16.859546,2025-12-29T08:48:16.859546,No Show,94.63,John Doe,62.7,68
+6b492601-8753-4268-9c6e-d8cfe443d09d,Customer 280,US Air Force Academy,Garden of the Gods,2025-12-29T10:01:09.859546,2025-12-29T10:34:09.859546,Completed,29.55,Peter Teehan,13.3,33
+f61af309-e808-4038-9860-9955c0e27059,Customer 980,Castle Rock,The Broadmoor,2025-12-29T13:18:29.859546,2025-12-29T14:45:29.859546,No Show,115.6,Peter Teehan,79.5,87
+d1e087c3-127d-433e-9ccc-94de1ea8fe23,Customer 254,US Air Force Academy,Garden of the Gods,2025-12-29T14:34:44.859546,2025-12-29T15:18:44.859546,No Show,37.31,Jane Smith,17.7,44
+5bd6c29e-215f-4036-9192-61bc623926fa,Customer 621,Castle Rock,The Broadmoor,2025-12-29T15:52:07.859546,2025-12-29T17:31:07.859546,Completed,129.36,John Doe,90.5,99
+e8007909-0707-45bb-ade4-efd9b45809d1,Customer 529,Denver International Airport,Manitou Springs,2025-12-29T17:25:17.859546,2025-12-29T18:55:17.859546,Completed,118.75,Peter Teehan,82.0,90
+886a445e-4db5-49bf-bae7-41e9e41e2e24,Customer 388,US Air Force Academy,Castle Rock,2025-12-29T22:01:43.859546,2025-12-29T23:12:43.859546,No Show,97.3,Peter Teehan,64.8,71
+58273baa-7635-4758-ac3e-69a736fda4f3,Customer 865,Colorado Springs Airport,Castle Rock,2025-12-30T05:07:50.859546,2025-12-30T06:48:50.859546,Completed,131.89,Peter Teehan,92.5,101
+6599c306-9cb7-4ca7-a9e6-f3b59236c3bb,Customer 372,Garden of the Gods,The Broadmoor,2025-12-30T12:18:22.859546,2025-12-30T12:53:22.859546,Completed,31.26,John Doe,14.3,35
+e5c747a5-da00-4bd4-8fe4-dc4220ebca0a,Customer 677,Downtown COS,US Air Force Academy,2025-12-30T21:07:54.859546,2025-12-30T21:42:54.859546,Cancelled,30.77,Peter Teehan,14.0,35
+91ab23d1-fe8d-4ddb-833d-b53ee3ba67b2,Customer 115,Castle Rock,US Air Force Academy,2025-12-30T22:58:16.859546,2025-12-31T00:23:16.859546,No Show,113.37,Peter Teehan,77.7,85
+d0dd1f07-fd98-4c48-8d57-42d67c3e4427,Customer 401,The Broadmoor,Castle Rock,2025-12-30T23:40:21.859546,2025-12-31T01:15:21.859546,Completed,125.05,Jane Smith,87.0,95
+be29705a-51bf-47af-8bf6-b551e9420735,Customer 595,The Broadmoor,US Air Force Academy,2025-12-31T14:47:55.859546,2025-12-31T15:24:55.859546,Completed,32.22,Peter Teehan,14.8,37
+b067e987-2d7d-46a0-9578-8dbf5c346198,Customer 914,Manitou Springs,Castle Rock,2025-12-31T15:12:24.859546,2025-12-31T16:44:24.859546,No Show,121.36,John Doe,84.1,92
+623a1f1e-394d-4a8b-9a40-f796f51097fb,Customer 902,Downtown COS,Colorado Springs Airport,2025-12-31T18:54:20.859546,2025-12-31T19:32:20.859546,Completed,33.05,Auto-Dispatch,15.3,38
+fcc3f592-1581-432d-a790-7ff2cf9de839,Customer 958,The Broadmoor,US Air Force Academy,2025-12-31T19:24:43.859546,2025-12-31T19:33:43.859546,Cancelled,15.0,Jane Smith,3.9,9
+b3958582-c06c-4f63-8ed9-870e26a4e5da,Customer 676,The Broadmoor,Castle Rock,2025-12-31T21:10:36.859546,2025-12-31T22:19:36.859546,Cancelled,94.95,John Doe,63.0,69
+ec6b0c31-920c-4d5f-9ec2-9cf6a758cd50,Customer 388,Colorado Springs Airport,US Air Force Academy,2026-01-01T00:31:10.859546,2026-01-01T01:20:10.859546,Completed,40.73,Jane Smith,19.7,49
+119a4ab0-160b-4911-8088-6f74e764c2bb,Customer 982,Garden of the Gods,US Air Force Academy,2026-01-01T01:25:23.859546,2026-01-01T02:06:23.859546,Cancelled,35.08,Auto-Dispatch,16.5,41
+de8014a2-33c8-4695-939b-0c2f59825724,Customer 296,US Air Force Academy,Colorado Springs Airport,2026-01-01T16:59:13.859546,2026-01-01T17:10:13.859546,Cancelled,15.0,Auto-Dispatch,4.4,11
+5e371fd4-3f58-4e9d-a46a-60d6a2146a34,Customer 167,US Air Force Academy,Manitou Springs,2026-01-01T17:17:49.859546,2026-01-01T17:58:49.859546,Cancelled,35.32,John Doe,16.6,41
+d12f7c8b-e051-4739-a822-d5c18169a3d8,Customer 511,Denver International Airport,Garden of the Gods,2026-01-01T22:53:47.859546,2026-01-02T00:05:47.859546,No Show,98.13,Auto-Dispatch,65.5,72
+5498b64b-d81c-4984-af9e-ff3c5f950dd1,Customer 429,US Air Force Academy,Manitou Springs,2026-01-01T22:55:04.859546,2026-01-01T23:44:04.859546,Completed,40.59,John Doe,19.6,49
+8b1c3f91-af88-4132-851b-f9585f1317cb,Customer 723,US Air Force Academy,Denver International Airport,2026-01-02T01:33:59.859546,2026-01-02T02:50:59.859546,Completed,104.86,Auto-Dispatch,70.9,77
+7c8b5009-7202-469d-961f-5278381f02f3,Customer 690,Colorado Springs Airport,Downtown COS,2026-01-02T05:55:39.859546,2026-01-02T06:39:39.859546,Completed,37.24,John Doe,17.7,44
+b5a92479-58bf-4a15-9ff1-b2cc40c8051b,Customer 434,Garden of the Gods,Denver International Airport,2026-01-03T01:44:18.859546,2026-01-03T03:05:18.859546,Completed,108.81,Peter Teehan,74.0,81
+74f95c63-5010-47eb-a03a-011281d4cb78,Customer 477,Garden of the Gods,Castle Rock,2026-01-03T03:00:47.859546,2026-01-03T04:29:47.859546,No Show,117.46,Peter Teehan,81.0,89
+97d44a35-cf93-464c-86f5-06c9fb5d0813,Customer 937,Castle Rock,The Broadmoor,2026-01-03T03:47:45.859546,2026-01-03T05:23:45.859546,Completed,126.26,Peter Teehan,88.0,96
+8ad76e54-f96a-4adf-bdfb-adf1cfa2de73,Customer 743,US Air Force Academy,Garden of the Gods,2026-01-03T04:46:15.859546,2026-01-03T05:18:15.859546,Completed,28.7,Peter Teehan,12.8,32
+44983324-3628-4900-9dc7-0f81f8e956cb,Customer 960,US Air Force Academy,The Broadmoor,2026-01-03T06:29:39.859546,2026-01-03T06:39:39.859546,Completed,15.0,Peter Teehan,4.2,10
+0cb9022b-5e11-4cf5-b474-23fcb80acf44,Customer 849,Manitou Springs,US Air Force Academy,2026-01-03T09:51:19.859546,2026-01-03T10:12:19.859546,Completed,21.28,John Doe,8.6,21
+b99ca6fd-9dfd-47f7-b636-c382b7433741,Customer 840,Garden of the Gods,Castle Rock,2026-01-03T14:02:43.859546,2026-01-03T15:31:43.859546,Completed,117.9,Auto-Dispatch,81.3,89
+2149b7d9-3391-4650-98af-1b73fc2a934d,Customer 124,Castle Rock,Garden of the Gods,2026-01-03T14:04:12.859546,2026-01-03T15:10:12.859546,Completed,92.22,John Doe,60.8,66
+948da3ba-2957-49ed-9700-ef1e270296be,Customer 681,Garden of the Gods,Castle Rock,2026-01-03T21:01:27.859546,2026-01-03T22:33:27.859546,Completed,121.47,Jane Smith,84.2,92
+2c40028a-b131-4185-bf18-6914371a6bd3,Customer 514,Denver International Airport,US Air Force Academy,2026-01-04T06:00:29.859546,2026-01-04T07:27:29.859546,Completed,115.22,Jane Smith,79.2,87
+fdec2ddc-ab8d-4aa8-9f2d-9676e9054248,Customer 304,Denver International Airport,Castle Rock,2026-01-04T13:16:16.859546,2026-01-04T14:22:16.859546,No Show,91.72,John Doe,60.4,66
+b7877f97-ff4a-4412-aa09-9fa11158b431,Customer 657,The Broadmoor,Denver International Airport,2026-01-05T00:52:25.859546,2026-01-05T02:18:25.859546,Cancelled,114.3,Auto-Dispatch,78.4,86
+381128b7-bc31-4a5e-830c-247d6b6a35f2,Customer 302,Garden of the Gods,The Broadmoor,2026-01-05T05:47:05.859546,2026-01-05T06:12:05.859546,Completed,23.92,Jane Smith,10.1,25
+0a04f217-e109-4fd6-b54b-7358ef20ea3d,Customer 553,Downtown COS,Garden of the Gods,2026-01-05T13:20:50.859546,2026-01-05T14:00:50.859546,Completed,34.43,Jane Smith,16.1,40
+febf8ecf-360e-4e37-bd0e-05dbfc8a62db,Customer 845,Manitou Springs,Downtown COS,2026-01-05T23:07:04.859546,2026-01-05T23:15:04.859546,Cancelled,15.0,Auto-Dispatch,3.4,8
+c09ee9bc-405b-4ae6-a3f8-c577c60ff69c,Customer 448,US Air Force Academy,Castle Rock,2026-01-06T02:11:43.859546,2026-01-06T03:40:43.859546,Cancelled,117.5,Peter Teehan,81.0,89
+37dc92fa-48d7-48b0-9c60-90227cddafce,Customer 514,Manitou Springs,Downtown COS,2026-01-06T04:20:00.859546,2026-01-06T04:37:00.859546,Completed,18.69,Jane Smith,7.1,17
+ea59f7a7-33f9-4f20-8fe3-c1db5cc0ea36,Customer 833,Downtown COS,The Broadmoor,2026-01-06T08:17:45.859546,2026-01-06T09:06:45.859546,Completed,40.58,Auto-Dispatch,19.6,49
+11ab70ae-a39f-44c1-b9b7-f1d8a1270522,Customer 616,Garden of the Gods,Colorado Springs Airport,2026-01-06T16:53:39.859546,2026-01-06T17:37:39.859546,Cancelled,37.12,John Doe,17.6,44
+735837b4-765d-4b03-beb2-04662e615196,Customer 687,US Air Force Academy,Downtown COS,2026-01-06T20:59:03.859546,2026-01-06T21:12:03.859546,Completed,15.81,Peter Teehan,5.5,13
+52de2e73-99d6-41ba-a547-4349aae688b0,Customer 759,US Air Force Academy,Colorado Springs Airport,2026-01-07T04:54:24.859546,2026-01-07T05:34:24.859546,Cancelled,34.6,John Doe,16.2,40
+fe8f088a-0f79-4323-b609-d365879480fe,Customer 618,The Broadmoor,Garden of the Gods,2026-01-07T13:23:58.859546,2026-01-07T14:07:58.859546,No Show,37.34,Jane Smith,17.8,44
+4dc5ed89-3725-4a5d-bc19-30c390629709,Customer 563,Garden of the Gods,US Air Force Academy,2026-01-07T15:57:35.859546,2026-01-07T16:32:35.859546,No Show,31.04,John Doe,14.2,35
+f6988fe8-24bf-475b-85fc-e9e25a4acd7e,Customer 452,Castle Rock,Manitou Springs,2026-01-07T22:43:50.859546,2026-01-08T00:15:50.859546,No Show,120.99,Auto-Dispatch,83.8,92
+a40365ad-5aaa-40fe-afba-9ab5ab9efcbb,Customer 788,Downtown COS,Colorado Springs Airport,2026-01-08T02:21:53.859546,2026-01-08T03:01:53.859546,Completed,34.52,Auto-Dispatch,16.2,40
+62424b40-0080-4fd5-a122-2d09030a0898,Customer 663,Garden of the Gods,The Broadmoor,2026-01-08T04:36:37.859546,2026-01-08T05:01:37.859546,Cancelled,23.99,Peter Teehan,10.1,25
+432b1073-f323-4aef-890c-409858165bad,Customer 297,Downtown COS,Denver International Airport,2026-01-08T08:57:37.859546,2026-01-08T10:17:37.859546,Completed,107.98,Peter Teehan,73.4,80
+059be769-6871-41e6-a5e3-7cfd51a1a362,Customer 779,Downtown COS,Garden of the Gods,2026-01-08T10:21:38.859546,2026-01-08T10:38:38.859546,Completed,18.7,John Doe,7.1,17
+07b6a781-deb0-428b-9a30-250b54a5ea27,Customer 779,Castle Rock,The Broadmoor,2026-01-08T16:50:46.859546,2026-01-08T18:26:46.859546,No Show,125.81,Jane Smith,87.6,96
+584ed49e-3358-4e86-aff5-1bdc90a100fa,Customer 211,Garden of the Gods,Denver International Airport,2026-01-09T03:14:18.859546,2026-01-09T04:52:18.859546,No Show,128.75,Auto-Dispatch,90.0,98
+2a6c95a9-df53-45b8-85d1-057d2958a44f,Customer 427,Downtown COS,US Air Force Academy,2026-01-09T11:10:40.859546,2026-01-09T11:38:40.859546,Cancelled,26.23,Peter Teehan,11.4,28
+f06935a8-d28b-4558-b5bc-d2096e7b438f,Customer 418,Manitou Springs,Colorado Springs Airport,2026-01-09T14:17:17.859546,2026-01-09T14:46:17.859546,Completed,26.77,Auto-Dispatch,11.7,29
+1fcaded7-6d50-4ec2-9eda-3522780a714a,Customer 958,Denver International Airport,The Broadmoor,2026-01-09T15:38:54.859546,2026-01-09T17:21:54.859546,Completed,133.56,Jane Smith,93.8,103
+900100a7-d89c-4b97-ae54-e49a5e910e65,Customer 182,Castle Rock,US Air Force Academy,2026-01-09T17:40:27.859546,2026-01-09T18:52:27.859546,Completed,99.14,Jane Smith,66.3,72
+9ab50827-8bd3-400b-b9ea-6c5f0c9b80fd,Customer 862,Manitou Springs,Garden of the Gods,2026-01-09T20:57:28.859546,2026-01-09T21:12:28.859546,Completed,17.31,Jane Smith,6.3,15
+71015285-afe7-48c0-822f-45d3eab9bbbc,Customer 239,Downtown COS,Garden of the Gods,2026-01-10T01:50:05.859546,2026-01-10T02:09:05.859546,Cancelled,19.89,Auto-Dispatch,7.8,19
+17f654a8-da71-4921-9726-98418ffca6f6,Customer 692,Castle Rock,Denver International Airport,2026-01-10T05:15:46.859546,2026-01-10T06:23:46.859546,No Show,94.39,Jane Smith,62.5,68
+410b8306-a94d-4c64-8117-dda2143512a1,Customer 689,The Broadmoor,Downtown COS,2026-01-10T08:52:00.859546,2026-01-10T09:04:00.859546,Completed,15.01,Jane Smith,5.0,12
+b6271584-f13c-43f3-92a3-0331692133b8,Customer 822,Downtown COS,Garden of the Gods,2026-01-10T15:45:27.859546,2026-01-10T16:16:27.859546,Cancelled,28.3,Peter Teehan,12.6,31
+b899d174-342d-47b4-b47a-950920c7c0a9,Customer 785,US Air Force Academy,Denver International Airport,2026-01-10T17:24:50.859546,2026-01-10T18:58:50.859546,No Show,123.93,Peter Teehan,86.1,94
+1e0b2510-eaea-4131-ad01-67b1e099e653,Customer 156,Manitou Springs,Castle Rock,2026-01-10T20:43:37.859546,2026-01-10T22:01:37.859546,Cancelled,105.5,Jane Smith,71.4,78
+78485533-094e-4fb4-8d38-5a68aec3a3ca,Customer 266,Colorado Springs Airport,Manitou Springs,2026-01-10T20:46:16.859546,2026-01-10T21:26:16.859546,No Show,34.45,Jane Smith,16.1,40
+2e301388-f10c-4306-a591-23f6ed1b700d,Customer 194,Downtown COS,Denver International Airport,2026-01-11T07:31:54.859546,2026-01-11T08:38:54.859546,Completed,93.51,Jane Smith,61.8,67
+f273446e-7da5-4a73-a532-7c053480c3fb,Customer 347,Castle Rock,Colorado Springs Airport,2026-01-11T08:14:16.859546,2026-01-11T09:51:16.859546,Completed,127.61,Jane Smith,89.1,97
+ec9bf9e8-6430-4289-9db5-5b67a4098cab,Customer 404,Garden of the Gods,Castle Rock,2026-01-11T11:53:59.859546,2026-01-11T13:21:59.859546,Completed,116.5,Auto-Dispatch,80.2,88
+c04c91bc-3fa1-4da1-a794-e270021c4a23,Customer 724,Castle Rock,The Broadmoor,2026-01-11T15:04:08.859546,2026-01-11T16:48:08.859546,Completed,134.81,Jane Smith,94.8,104
+94f8409f-d52e-491b-9630-d2c3a8ba94e1,Customer 363,Colorado Springs Airport,Castle Rock,2026-01-11T15:51:13.859546,2026-01-11T17:35:13.859546,Completed,134.67,Auto-Dispatch,94.7,104
+faab5f65-8d10-4cdf-b958-594d711e56ee,Customer 531,Garden of the Gods,Castle Rock,2026-01-11T23:29:38.859546,2026-01-12T00:42:38.859546,Completed,99.87,Auto-Dispatch,66.9,73
+a2e33734-b803-4397-8757-735b12d23bf9,Customer 887,Castle Rock,Downtown COS,2026-01-12T02:24:24.859546,2026-01-12T03:36:24.859546,Completed,98.36,John Doe,65.7,72
+a62ffaeb-e464-4bf9-8345-3a8aa42b3313,Customer 547,Denver International Airport,Garden of the Gods,2026-01-12T09:16:37.859546,2026-01-12T10:40:37.859546,Completed,112.23,Auto-Dispatch,76.8,84
+e85440ff-3692-4ea4-959e-4132be849e1c,Customer 926,Denver International Airport,US Air Force Academy,2026-01-12T09:23:47.859546,2026-01-12T10:39:47.859546,No Show,102.98,Jane Smith,69.4,76
+c8cbcb5d-39ce-4395-8777-ec79c35382b9,Customer 746,Manitou Springs,Denver International Airport,2026-01-13T08:15:49.859546,2026-01-13T09:51:49.859546,Cancelled,125.55,Auto-Dispatch,87.4,96
+fd991540-6d53-4ab8-9b9a-68a9d0b23663,Customer 764,US Air Force Academy,Colorado Springs Airport,2026-01-13T08:35:16.859546,2026-01-13T09:03:16.859546,Cancelled,25.94,Peter Teehan,11.3,28
+c7155154-28bc-4b1f-b913-fef84342fb40,Customer 122,Castle Rock,The Broadmoor,2026-01-13T11:40:56.859546,2026-01-13T12:54:56.859546,Completed,101.41,Auto-Dispatch,68.1,74
+1906a4b8-536d-423d-b69c-a6e47e6dc5d8,Customer 299,The Broadmoor,Downtown COS,2026-01-13T15:12:29.859546,2026-01-13T15:37:29.859546,Completed,24.05,Auto-Dispatch,10.2,25
+707fe8d3-6c0b-469b-8ecc-45b546a5f659,Customer 341,Castle Rock,Colorado Springs Airport,2026-01-13T21:55:14.859546,2026-01-13T23:26:14.859546,Completed,120.13,Auto-Dispatch,83.1,91
+ed48161c-5744-41f0-8b03-9a59160c4b4d,Customer 753,Colorado Springs Airport,US Air Force Academy,2026-01-13T22:11:49.859546,2026-01-13T22:33:49.859546,Completed,22.33,John Doe,9.2,22
+20ea5e7a-b0cf-4f14-9a98-8190fd1edef6,Customer 862,Castle Rock,Colorado Springs Airport,2026-01-13T22:46:32.859546,2026-01-13T23:53:32.859546,Completed,92.91,Jane Smith,61.3,67
+340c2afb-4ede-4081-bc9a-67f51a366e00,Customer 512,Denver International Airport,Downtown COS,2026-01-14T03:33:28.859546,2026-01-14T04:58:28.859546,Completed,113.6,Auto-Dispatch,77.9,85
+d812d109-0248-4252-a3c3-d5694c823ee8,Customer 601,Colorado Springs Airport,Garden of the Gods,2026-01-14T18:05:31.859546,2026-01-14T18:28:31.859546,Completed,22.41,Jane Smith,9.2,23
+52e4d78a-5671-4431-9e1a-b4ab4a1b3733,Customer 129,Manitou Springs,US Air Force Academy,2026-01-14T18:06:02.859546,2026-01-14T18:43:02.859546,Completed,32.41,John Doe,14.9,37
+12e607a1-28bb-4bcf-abb7-e6c7c6ff1503,Customer 843,US Air Force Academy,Garden of the Gods,2026-01-15T01:10:19.859546,2026-01-15T01:28:19.859546,Completed,19.08,Auto-Dispatch,7.3,18
+b5bcb80f-c185-48a3-842b-ce97687febfb,Customer 384,Garden of the Gods,The Broadmoor,2026-01-15T04:56:53.859546,2026-01-15T05:22:53.859546,Completed,24.64,Auto-Dispatch,10.5,26
+fc434c7b-aabd-45a7-b6e6-34a8d767d37c,Customer 244,Downtown COS,US Air Force Academy,2026-01-15T13:58:57.859546,2026-01-15T14:12:57.859546,Completed,16.08,Peter Teehan,5.6,14
+0c2f5ec7-61dd-48df-a92e-d4f444de280c,Customer 810,US Air Force Academy,Colorado Springs Airport,2026-01-16T15:07:57.859546,2026-01-16T15:35:57.859546,Completed,26.28,Peter Teehan,11.4,28
+fc737664-a311-45b2-b199-c33e620b0d65,Customer 498,The Broadmoor,Downtown COS,2026-01-17T02:47:28.859546,2026-01-17T03:17:28.859546,Completed,27.53,John Doe,12.2,30
+1adc9f62-f63b-4324-81bc-6f2d3ac2fc26,Customer 269,Downtown COS,Denver International Airport,2026-01-17T03:54:51.859546,2026-01-17T05:34:51.859546,No Show,129.94,Auto-Dispatch,91.0,100
+bfaccbbf-467f-4c1d-a035-cbac2aa59a7b,Customer 354,US Air Force Academy,The Broadmoor,2026-01-17T07:43:14.859546,2026-01-17T08:20:14.859546,Completed,32.83,Jane Smith,15.2,37
+c6a70ef0-5672-4142-80b8-97a0c0dda313,Customer 778,Garden of the Gods,Castle Rock,2026-01-17T08:11:18.859546,2026-01-17T09:53:18.859546,No Show,133.11,Jane Smith,93.5,102
+b506c39c-9081-45b1-9855-4d3e13f23ef2,Customer 118,US Air Force Academy,Colorado Springs Airport,2026-01-17T12:38:03.859546,2026-01-17T12:52:03.859546,Cancelled,16.63,John Doe,5.9,14
+b5049f06-e320-4f32-93e5-2fad21193787,Customer 493,Downtown COS,Castle Rock,2026-01-17T13:09:30.859546,2026-01-17T14:27:30.859546,No Show,105.37,Jane Smith,71.3,78
+796ba0d0-0087-41bd-9721-60e1fc4aa2da,Customer 736,Manitou Springs,Castle Rock,2026-01-17T13:52:42.859546,2026-01-17T15:20:42.859546,Completed,116.51,Jane Smith,80.2,88
+041c5b12-fad9-48f0-8605-ad7316243494,Customer 467,Colorado Springs Airport,The Broadmoor,2026-01-17T14:26:57.859546,2026-01-17T15:06:57.859546,Completed,34.75,Jane Smith,16.3,40
+7bb5176e-ae6a-44aa-9ae0-bfab9c8592d8,Customer 441,Denver International Airport,Manitou Springs,2026-01-17T16:12:00.859546,2026-01-17T17:32:00.859546,No Show,107.41,John Doe,72.9,80
+bea52452-3a73-4f47-83cc-675802e5832c,Customer 991,Castle Rock,Denver International Airport,2026-01-17T16:43:11.859546,2026-01-17T18:19:11.859546,Completed,125.8,Peter Teehan,87.6,96
+50c0dec0-5e2c-4f5f-9e82-36a537df9b5f,Customer 247,Downtown COS,Manitou Springs,2026-01-17T23:36:28.859546,2026-01-18T00:08:28.859546,Completed,29.08,John Doe,13.0,32
+fbfd0cf2-c298-488f-8eef-0c8b43204125,Customer 316,Manitou Springs,Colorado Springs Airport,2026-01-18T01:47:15.859546,2026-01-18T02:05:15.859546,Completed,19.43,John Doe,7.5,18
+bfbe3932-16e0-4f4b-8898-8776a43e72d2,Customer 680,Castle Rock,Colorado Springs Airport,2026-01-18T02:33:26.859546,2026-01-18T03:47:26.859546,Completed,100.4,Jane Smith,67.3,74
+528bbbf9-e94f-4690-bf92-9078a2ce68c4,Customer 946,The Broadmoor,Manitou Springs,2026-01-18T17:46:25.859546,2026-01-18T18:13:25.859546,Completed,25.37,Auto-Dispatch,10.9,27
+dd0dab3b-f5ab-4d60-bf50-89fd7539686c,Customer 908,Manitou Springs,Downtown COS,2026-01-19T01:17:23.859546,2026-01-19T01:47:23.859546,Cancelled,27.62,Auto-Dispatch,12.2,30
+c799b6fc-a76c-4e6f-9035-2a4a9240eca2,Customer 335,The Broadmoor,Castle Rock,2026-01-19T03:35:54.859546,2026-01-19T04:50:54.859546,Completed,101.82,John Doe,68.5,75
+5dcff858-d110-484e-93a1-8fbefdf2a6e6,Customer 129,Manitou Springs,Castle Rock,2026-01-19T06:46:10.859546,2026-01-19T08:04:10.859546,Completed,105.41,John Doe,71.3,78
+916158a3-d2f1-46df-a839-4cd8d5d9abc0,Customer 615,Denver International Airport,Manitou Springs,2026-01-19T12:59:45.859546,2026-01-19T14:39:45.859546,No Show,129.9,Auto-Dispatch,90.9,100
+d8e116e4-66fe-4be7-936d-c3a10838a558,Customer 417,Castle Rock,Manitou Springs,2026-01-19T20:33:38.859546,2026-01-19T21:52:38.859546,Completed,106.14,John Doe,71.9,79
+860cf8c5-a660-4832-8e2b-fc3d92e3f40a,Customer 962,US Air Force Academy,The Broadmoor,2026-01-19T20:54:18.859546,2026-01-19T21:20:18.859546,Completed,24.51,Jane Smith,10.4,26
+9469ca7d-5ceb-4353-93d1-0fafc750a7c3,Customer 967,Denver International Airport,Colorado Springs Airport,2026-01-20T03:08:04.859546,2026-01-20T04:21:04.859546,Completed,100.17,Jane Smith,67.1,73
+12fb3f0f-5cb2-4b3d-a5d8-53bc6ccc6c22,Customer 996,Manitou Springs,Castle Rock,2026-01-20T04:28:38.859546,2026-01-20T06:01:38.859546,Completed,122.17,Jane Smith,84.7,93
+bcf4a9eb-7e24-47df-9098-1f49c786427f,Customer 319,The Broadmoor,Downtown COS,2026-01-20T06:37:59.859546,2026-01-20T06:50:59.859546,Completed,15.81,John Doe,5.5,13
+b2a44f42-5094-4613-9556-76f1d2bdfd4e,Customer 744,Manitou Springs,Castle Rock,2026-01-20T08:32:25.859546,2026-01-20T10:14:25.859546,Completed,132.44,John Doe,93.0,102
+64405d5e-97b9-4c57-9987-a10e0c0dae0b,Customer 148,Denver International Airport,Colorado Springs Airport,2026-01-20T11:00:56.859546,2026-01-20T12:24:56.859546,Completed,112.73,Auto-Dispatch,77.2,84
+0377a05f-6935-420a-ad53-ad727b49a103,Customer 888,Colorado Springs Airport,Castle Rock,2026-01-20T12:25:40.859546,2026-01-20T14:01:40.859546,Completed,126.34,Auto-Dispatch,88.1,96
+6d73b433-93fc-4aad-9c08-769cf50cc68e,Customer 382,The Broadmoor,Downtown COS,2026-01-20T19:20:19.859546,2026-01-20T19:29:19.859546,Cancelled,15.0,Auto-Dispatch,3.8,9
+ea7b20fc-ebbd-4a45-9b40-1ee0b41e659c,Customer 159,Colorado Springs Airport,Manitou Springs,2026-01-21T01:54:25.859546,2026-01-21T02:38:25.859546,Completed,37.22,Auto-Dispatch,17.7,44
+cc3e881a-9631-421a-ad4d-088704bde6aa,Customer 750,Downtown COS,Denver International Airport,2026-01-21T05:33:37.859546,2026-01-21T07:09:37.859546,Cancelled,126.01,John Doe,87.8,96
+b3b1a15c-a4f6-4ab0-9dfb-962386bfb869,Customer 285,Garden of the Gods,The Broadmoor,2026-01-21T08:33:20.859546,2026-01-21T08:40:20.859546,Completed,15.0,Auto-Dispatch,3.0,7
+0bb2ec78-8f1c-4c8e-a468-b045e999d998,Customer 263,Denver International Airport,Castle Rock,2026-01-21T14:38:31.859546,2026-01-21T15:53:31.859546,Completed,102.52,Jane Smith,69.0,75
+48cb1dd4-a039-4156-926d-fcc1dd36e194,Customer 215,Castle Rock,Downtown COS,2026-01-21T18:09:11.859546,2026-01-21T19:42:11.859546,Completed,122.67,Peter Teehan,85.1,93
+7f7e6eea-1642-4a80-8e26-3146ed4c9fd1,Customer 523,Castle Rock,Denver International Airport,2026-01-22T01:43:17.859546,2026-01-22T03:05:17.859546,No Show,110.45,Auto-Dispatch,75.4,82
+065c8961-c740-4a6e-9ed5-3fb5d037724e,Customer 524,Downtown COS,Denver International Airport,2026-01-22T06:49:42.859546,2026-01-22T08:13:42.859546,No Show,112.57,Auto-Dispatch,77.1,84
+6b67d80a-14f3-455b-b9ca-a4ea382c4bf9,Customer 270,Colorado Springs Airport,US Air Force Academy,2026-01-22T08:48:37.859546,2026-01-22T09:19:37.859546,No Show,28.5,Jane Smith,12.7,31
+16209d89-8564-4be7-b8d9-7198e9cad298,Customer 110,US Air Force Academy,The Broadmoor,2026-01-22T08:54:41.859546,2026-01-22T09:37:41.859546,Completed,36.67,Peter Teehan,17.4,43
+a0ddd956-c6a3-4fb6-a978-8956fff3d41b,Customer 736,Castle Rock,Colorado Springs Airport,2026-01-22T11:19:27.859546,2026-01-22T12:31:27.859546,No Show,98.57,John Doe,65.9,72
+5bcd9273-0cb6-4ec3-b899-168dc2e4089c,Customer 989,Colorado Springs Airport,Manitou Springs,2026-01-22T11:36:53.859546,2026-01-22T12:22:53.859546,Completed,38.62,Peter Teehan,18.5,46
+4fc1245a-6ba4-478d-a10e-14856dac348f,Customer 431,Downtown COS,Colorado Springs Airport,2026-01-22T13:32:14.859546,2026-01-22T13:58:14.859546,Cancelled,24.64,Auto-Dispatch,10.5,26
+0c00b211-da2f-48fd-a08a-dacf7d481bf3,Customer 733,Colorado Springs Airport,Downtown COS,2026-01-22T16:56:35.859546,2026-01-22T17:05:35.859546,Completed,15.0,Auto-Dispatch,3.7,9
+01f2b4ff-5427-46f9-b980-3e11436c1622,Customer 504,The Broadmoor,Colorado Springs Airport,2026-01-22T18:50:12.859546,2026-01-22T19:39:12.859546,Completed,40.56,Auto-Dispatch,19.6,49
+e35aca33-3715-4ec2-8b16-6c324dca41f1,Customer 493,US Air Force Academy,Manitou Springs,2026-01-22T19:19:13.859546,2026-01-22T19:29:13.859546,Completed,15.0,Jane Smith,4.2,10
+a3815c38-f2d2-4bb0-b653-ac2434ba2706,Customer 870,Manitou Springs,US Air Force Academy,2026-01-22T23:30:01.859546,2026-01-22T23:59:01.859546,Completed,26.71,Peter Teehan,11.7,29
+3c7bc047-75a8-4e10-8fe5-a9f0fa3a16f4,Customer 279,Garden of the Gods,Denver International Airport,2026-01-23T05:23:05.859546,2026-01-23T06:30:05.859546,No Show,93.01,Peter Teehan,61.4,67
+3a6ea190-0011-487f-807d-d723f4703c04,Customer 705,The Broadmoor,Denver International Airport,2026-01-23T19:06:49.859546,2026-01-23T20:43:49.859546,Completed,127.26,Jane Smith,88.8,97
+947d534f-0d34-4c37-99ff-8f6bfee92b7b,Customer 433,Colorado Springs Airport,Manitou Springs,2026-01-23T22:53:39.859546,2026-01-23T23:02:39.859546,Completed,15.0,John Doe,3.6,9
+566c7dab-9fef-4eb9-9e9a-f0fb07fef642,Customer 605,Manitou Springs,Downtown COS,2026-01-24T05:31:17.859546,2026-01-24T06:09:17.859546,Completed,33.5,Jane Smith,15.6,38
+bc94f438-e9c3-458b-8150-014c70fd8e4c,Customer 837,Denver International Airport,Colorado Springs Airport,2026-01-24T13:54:54.859546,2026-01-24T15:15:54.859546,Completed,108.49,Auto-Dispatch,73.8,81
+d17454fe-0d02-4941-b6a3-1651607231b7,Customer 263,The Broadmoor,Castle Rock,2026-01-24T21:06:35.859546,2026-01-24T22:44:35.859546,Completed,127.88,Auto-Dispatch,89.3,98
+c34ebe77-e0cd-49f2-8c7a-7709e40b6335,Customer 118,US Air Force Academy,Downtown COS,2026-01-25T07:59:46.859546,2026-01-25T08:48:46.859546,Completed,41.25,John Doe,20.0,49
+8aa4b0ac-f64e-4851-9fc1-bb35658e875a,Customer 124,Downtown COS,Garden of the Gods,2026-01-25T15:19:23.859546,2026-01-25T16:07:23.859546,Completed,40.26,John Doe,19.4,48
+301eaea9-2d2b-4f70-b400-1af46e340ae5,Customer 682,US Air Force Academy,Denver International Airport,2026-01-25T22:34:10.859546,2026-01-26T00:06:10.859546,Cancelled,120.81,Jane Smith,83.6,92
+5a021c89-a316-4d4b-9ed6-367e5d053218,Customer 212,Manitou Springs,Garden of the Gods,2026-01-26T06:25:31.859546,2026-01-26T06:39:31.859546,Cancelled,16.29,Auto-Dispatch,5.7,14
+ddbef59f-5cae-4e68-b1e9-2d2a1d05c31c,Customer 166,Denver International Airport,Garden of the Gods,2026-01-26T08:58:17.859546,2026-01-26T10:35:17.859546,Cancelled,127.11,Peter Teehan,88.7,97
+b84757db-3006-42c5-9962-edcfac2c6321,Customer 484,US Air Force Academy,Garden of the Gods,2026-01-27T01:26:20.859546,2026-01-27T01:42:20.859546,Completed,17.76,Jane Smith,6.6,16
+fca97930-920f-4701-be51-19eb2450d136,Customer 860,Garden of the Gods,Denver International Airport,2026-01-27T03:22:24.859546,2026-01-27T04:30:24.859546,Completed,94.24,Auto-Dispatch,62.4,68
+27024199-1759-456e-9e02-909968813fb9,Customer 812,Castle Rock,Downtown COS,2026-01-27T09:07:05.859546,2026-01-27T10:50:05.859546,Cancelled,134.3,John Doe,94.4,103
+f48df36b-c5ff-4a07-b071-5ab4c58e559b,Customer 549,Castle Rock,Denver International Airport,2026-01-27T09:20:36.859546,2026-01-27T10:28:36.859546,No Show,94.55,Peter Teehan,62.6,68
+29bad047-0e3d-44d4-8fa7-6f032b0d152d,Customer 893,Manitou Springs,Downtown COS,2026-01-27T10:26:26.859546,2026-01-27T10:50:26.859546,Completed,23.6,Auto-Dispatch,9.9,24
+a3d4107f-d380-4757-b0d6-a7c0fcce6a17,Customer 563,Denver International Airport,Garden of the Gods,2026-01-27T10:40:23.859546,2026-01-27T11:51:23.859546,No Show,97.42,John Doe,64.9,71
+425c0f90-125f-491b-87cc-ea9e20b58408,Customer 924,Downtown COS,Garden of the Gods,2026-01-27T14:17:32.859546,2026-01-27T14:51:32.859546,No Show,30.37,Auto-Dispatch,13.8,34
+6c98ad3e-961c-44c5-8915-a7285acec434,Customer 797,US Air Force Academy,Denver International Airport,2026-01-27T17:08:55.859546,2026-01-27T18:17:55.859546,Completed,95.33,Jane Smith,63.3,69
+fb31784c-57de-40db-9236-7d1350b3b274,Customer 761,The Broadmoor,Garden of the Gods,2026-01-27T22:20:44.859546,2026-01-27T22:37:44.859546,Completed,18.75,Peter Teehan,7.1,17
+1976446e-54ca-4785-a199-732ecc717e8a,Customer 336,Colorado Springs Airport,The Broadmoor,2026-01-28T02:41:14.859546,2026-01-28T02:49:14.859546,No Show,15.0,Jane Smith,3.3,8
+d98e5316-2799-49c3-8664-5e43fb260752,Customer 469,Castle Rock,Colorado Springs Airport,2026-01-28T04:43:55.859546,2026-01-28T06:19:55.859546,Scheduled,126.2,Jane Smith,88.0,96
+cf484e2c-2fce-4be5-b0a3-a3c3a624aa0f,Customer 995,Downtown COS,Colorado Springs Airport,2026-01-28T09:53:14.859546,2026-01-28T10:37:14.859546,Pending,37.12,Auto-Dispatch,17.6,44
+92fa0507-3dff-44a3-9031-7b3d9e79b0a3,Customer 734,US Air Force Academy,Downtown COS,2026-01-28T12:51:28.859546,2026-01-28T13:17:28.859546,Scheduled,24.76,Auto-Dispatch,10.6,26
+1a5bb83f-891a-4971-94bd-e60e0aa03123,Customer 645,Denver International Airport,Castle Rock,2026-01-28T15:02:15.859546,2026-01-28T16:17:15.859546,Pending,102.3,Jane Smith,68.8,75
+7890e59d-119c-4682-b691-da5ff7d8f114,Customer 164,Garden of the Gods,The Broadmoor,2026-01-28T17:03:37.859546,2026-01-28T17:29:37.859546,Pending,25.07,Auto-Dispatch,10.8,26
+02ee99e7-9af1-4bff-863c-d02aa811b4f1,Customer 604,US Air Force Academy,Manitou Springs,2026-01-28T17:29:27.859546,2026-01-28T18:03:27.859546,Scheduled,30.68,Jane Smith,14.0,34
+17f54fbb-2d37-4ce4-99db-934442238373,Customer 750,Downtown COS,Castle Rock,2026-01-28T18:45:49.859546,2026-01-28T20:27:49.859546,Scheduled,133.29,Auto-Dispatch,93.6,102
+7a1cb445-c50e-441d-a5a8-23bf3e085c6b,Customer 282,The Broadmoor,Colorado Springs Airport,2026-01-29T07:09:55.859546,2026-01-29T07:54:55.859546,Scheduled,37.99,John Doe,18.1,45
+69890850-ef01-4389-96b1-d834b851d19a,Customer 738,Denver International Airport,Castle Rock,2026-01-29T07:45:50.859546,2026-01-29T09:26:50.859546,Scheduled,131.78,Auto-Dispatch,92.4,101
+006adf88-4238-44e1-a7a7-6825e718b41f,Customer 850,Manitou Springs,Downtown COS,2026-01-29T09:55:11.859546,2026-01-29T10:18:11.859546,Scheduled,22.45,Jane Smith,9.3,23
+d171a1e7-540e-4cdc-9622-ee48ad06dd27,Customer 935,Castle Rock,US Air Force Academy,2026-01-29T15:13:24.859546,2026-01-29T16:45:24.859546,Scheduled,121.73,John Doe,84.4,92
+12987366-c20e-4614-8486-aa03a623d3fd,Customer 521,US Air Force Academy,Colorado Springs Airport,2026-01-29T23:30:31.859546,2026-01-29T23:54:31.859546,Scheduled,23.4,John Doe,9.8,24
+613c0166-6f91-47ee-8570-c34b1c3e5921,Customer 198,Denver International Airport,Colorado Springs Airport,2026-01-30T03:37:45.859546,2026-01-30T05:18:45.859546,Scheduled,131.33,John Doe,92.1,101
+486a4de0-e421-4365-b442-b033709856cd,Customer 252,Manitou Springs,The Broadmoor,2026-01-30T05:56:34.859546,2026-01-30T06:14:34.859546,Scheduled,18.9,Peter Teehan,7.2,18
+b31eae14-0295-43c9-85fd-141f2d957f97,Customer 406,Garden of the Gods,Manitou Springs,2026-01-30T06:16:32.859546,2026-01-30T06:44:32.859546,Pending,26.38,Jane Smith,11.5,28
+a8755d04-27fe-4d0e-aaa6-5c3f92ddc52b,Customer 321,The Broadmoor,Colorado Springs Airport,2026-01-30T08:13:34.859546,2026-01-30T08:40:34.859546,Scheduled,25.83,John Doe,11.2,27
+33273de2-e855-4158-b014-f3940f728236,Customer 515,Garden of the Gods,US Air Force Academy,2026-01-30T19:39:01.859546,2026-01-30T20:04:01.859546,Pending,23.89,Auto-Dispatch,10.1,25
+8e231998-a27e-4124-9629-43118d630a98,Customer 251,Downtown COS,Garden of the Gods,2026-01-30T20:48:29.859546,2026-01-30T20:59:29.859546,Scheduled,15.0,Peter Teehan,4.6,11
+fe800873-aac5-4754-9f46-60f523459d03,Customer 589,US Air Force Academy,Colorado Springs Airport,2026-01-31T02:27:46.859546,2026-01-31T03:01:46.859546,Scheduled,30.66,John Doe,13.9,34
+fdb1faab-f0a0-4e7a-9de3-3c56e645436a,Customer 795,Castle Rock,Garden of the Gods,2026-01-31T05:16:28.859546,2026-01-31T06:49:28.859546,Pending,122.04,Jane Smith,84.6,93
+414f30dc-71f3-4f59-88e3-faab02b5d4c9,Customer 286,Castle Rock,Downtown COS,2026-01-31T07:34:15.859546,2026-01-31T08:40:15.859546,Scheduled,91.75,Peter Teehan,60.4,66
+84af784a-9ad2-470d-aa50-8a95e12fea3c,Customer 581,Manitou Springs,US Air Force Academy,2026-01-31T08:35:12.859546,2026-01-31T09:17:12.859546,Pending,35.77,Jane Smith,16.9,42
+e60ce86e-4a65-47c3-b429-2a30ddd547e6,Customer 431,US Air Force Academy,The Broadmoor,2026-01-31T11:21:08.859546,2026-01-31T11:44:08.859546,Pending,22.59,Auto-Dispatch,9.3,23
+0685413a-d1fb-4b6c-8aa8-3074d668f854,Customer 547,The Broadmoor,Downtown COS,2026-01-31T17:01:44.859546,2026-01-31T17:19:44.859546,Pending,19.45,Peter Teehan,7.5,18
+71c873f6-5088-4898-b5eb-680a6a431d68,Customer 167,Colorado Springs Airport,Manitou Springs,2026-01-31T21:05:45.859546,2026-01-31T21:42:45.859546,Pending,32.5,Peter Teehan,15.0,37
+934b50a5-c02b-4a31-88aa-8ad9374d75f5,Customer 280,Denver International Airport,Garden of the Gods,2026-02-01T04:43:50.859546,2026-02-01T06:00:50.859546,Scheduled,103.98,John Doe,70.2,77
+c9b81de5-669b-4589-9826-ab202b031932,Customer 246,Denver International Airport,Castle Rock,2026-02-01T05:05:30.859546,2026-02-01T06:47:30.859546,Scheduled,132.61,John Doe,93.1,102
+63cd265b-40c5-439c-ae79-1a5be6ff5ff5,Customer 563,Garden of the Gods,Castle Rock,2026-02-01T18:11:17.859546,2026-02-01T19:53:17.859546,Scheduled,133.11,John Doe,93.5,102
+7fbf2828-bb93-43e4-90e9-786fa8c820e5,Customer 115,Colorado Springs Airport,Manitou Springs,2026-02-02T02:16:01.859546,2026-02-02T02:53:01.859546,Scheduled,32.24,Jane Smith,14.9,37
+21b4793e-7442-4213-ac4b-86dba3ed206c,Customer 220,The Broadmoor,Castle Rock,2026-02-02T12:01:39.859546,2026-02-02T13:07:39.859546,Scheduled,92.35,Peter Teehan,60.9,66
+a740f545-d307-445c-b0df-1413b62b27cf,Customer 316,The Broadmoor,Colorado Springs Airport,2026-02-02T17:08:01.859546,2026-02-02T17:46:01.859546,Scheduled,32.87,Auto-Dispatch,15.2,38
+d6c2f9b5-7ec9-42c7-9a0f-a5ce01394c2f,Customer 302,Manitou Springs,Garden of the Gods,2026-02-02T22:06:01.859546,2026-02-02T22:36:01.859546,Scheduled,27.59,Auto-Dispatch,12.2,30
+144785fa-6e42-407e-9ea7-e5324ea18c4c,Customer 284,Colorado Springs Airport,Manitou Springs,2026-02-03T03:24:26.859546,2026-02-03T04:07:26.859546,Scheduled,36.56,Peter Teehan,17.3,43
+30d86eaf-3e8c-4ca3-976b-d5c82c53062b,Customer 720,Colorado Springs Airport,Downtown COS,2026-02-03T03:40:27.859546,2026-02-03T04:11:27.859546,Pending,28.55,Auto-Dispatch,12.7,31
+c43e4e3d-fb8a-4138-9297-afab50d4f7df,Customer 168,Manitou Springs,Denver International Airport,2026-02-03T16:28:13.859546,2026-02-03T17:57:13.859546,Pending,118.47,Jane Smith,81.8,89
+a0e911a1-51e7-4d41-830d-7afd61251ccf,Customer 824,Denver International Airport,Manitou Springs,2026-02-03T23:21:30.859546,2026-02-04T00:41:30.859546,Scheduled,107.42,Auto-Dispatch,72.9,80
+7bcc351d-16a8-44cd-9f57-90229d2c2750,Customer 379,Castle Rock,Denver International Airport,2026-02-04T00:13:14.859546,2026-02-04T01:41:14.859546,Pending,116.26,John Doe,80.0,88
+c595e91f-0838-4fa2-a18d-23dd10d400b9,Customer 739,Colorado Springs Airport,US Air Force Academy,2026-02-04T00:47:12.859546,2026-02-04T01:20:12.859546,Pending,29.54,John Doe,13.3,33
+3c90e87d-aaf4-4b9a-9371-ae624cda8552,Customer 799,Downtown COS,US Air Force Academy,2026-02-04T03:34:34.859546,2026-02-04T04:05:34.859546,Pending,28.23,Jane Smith,12.6,31
+c8140ecd-d13c-4199-b140-9918303ade05,Customer 866,Castle Rock,Denver International Airport,2026-02-04T10:11:18.859546,2026-02-04T11:44:18.859546,Scheduled,122.53,John Doe,85.0,93
+23941102-5235-4f96-8e26-8024085eb991,Customer 154,Denver International Airport,Castle Rock,2026-02-04T10:11:39.859546,2026-02-04T11:53:39.859546,Scheduled,132.36,John Doe,92.9,102
+cc203708-51a7-4d5d-ba0a-7816aafffe03,Customer 931,US Air Force Academy,Castle Rock,2026-02-04T16:26:15.859546,2026-02-04T18:02:15.859546,Scheduled,126.36,Auto-Dispatch,88.1,96
+b9607a10-8298-4232-a7ba-51f0235f8154,Customer 680,US Air Force Academy,Downtown COS,2026-02-05T02:11:25.859546,2026-02-05T02:55:25.859546,Scheduled,37.52,Jane Smith,17.9,44
+cbd2b01c-8fcd-4772-a6f9-2b5c97526ef9,Customer 575,Denver International Airport,Garden of the Gods,2026-02-05T05:10:27.859546,2026-02-05T06:48:27.859546,Scheduled,128.06,Peter Teehan,89.4,98
+063fce9b-9f46-44ec-95ee-ec64382e8e3f,Customer 995,Manitou Springs,Colorado Springs Airport,2026-02-05T13:35:16.859546,2026-02-05T13:58:16.859546,Scheduled,23.01,John Doe,9.6,23
+e13227f7-771d-4aa4-8840-a32cf39f3546,Customer 600,Downtown COS,Manitou Springs,2026-02-05T17:01:11.859546,2026-02-05T17:21:11.859546,Scheduled,20.27,Auto-Dispatch,8.0,20
+a209367e-3fd4-40b8-98c9-90e182b7f457,Customer 126,Castle Rock,US Air Force Academy,2026-02-05T22:17:20.859546,2026-02-05T23:25:20.859546,Scheduled,93.59,Auto-Dispatch,61.9,68
+0e4847f7-4abd-4a84-bf91-acaadb0b0e95,Customer 853,Downtown COS,Castle Rock,2026-02-06T05:29:07.859546,2026-02-06T07:02:07.859546,Scheduled,122.53,Auto-Dispatch,85.0,93
+7eeef925-a456-4a2b-ac05-b43f81fca24f,Customer 971,Garden of the Gods,The Broadmoor,2026-02-06T07:13:26.859546,2026-02-06T07:34:26.859546,Pending,21.29,Jane Smith,8.6,21
+eb53d5e8-1394-4a33-8d1a-296ba3ed420f,Customer 701,US Air Force Academy,Manitou Springs,2026-02-06T11:43:51.859546,2026-02-06T11:54:51.859546,Pending,15.0,John Doe,4.5,11
+5c1e0714-0807-4598-a343-8e5906718750,Customer 165,Denver International Airport,Castle Rock,2026-02-06T12:06:41.859546,2026-02-06T13:19:41.859546,Pending,99.96,Auto-Dispatch,67.0,73
+e5bfaf66-e80f-4982-b8ad-293f607a0e0b,Customer 450,Garden of the Gods,US Air Force Academy,2026-02-06T12:24:07.859546,2026-02-06T12:56:07.859546,Scheduled,29.09,Peter Teehan,13.1,32
+e6106917-68f3-4f6b-b174-9650140b6638,Customer 762,Castle Rock,Garden of the Gods,2026-02-06T20:47:41.859546,2026-02-06T22:25:41.859546,Pending,128.52,John Doe,89.8,98
+3624f8ba-c063-45aa-8828-f34fe5ab07f1,Customer 168,Garden of the Gods,The Broadmoor,2026-02-06T21:20:30.859546,2026-02-06T21:39:30.859546,Scheduled,20.14,Auto-Dispatch,7.9,19
+ce1b5c1e-b4bf-4079-ae0f-6cc77c4bf2d4,Customer 653,Castle Rock,The Broadmoor,2026-02-06T23:10:17.859546,2026-02-07T00:24:17.859546,Pending,100.98,John Doe,67.8,74
+2c5f687a-9e6d-4d48-a583-ad783703d854,Customer 767,Manitou Springs,Denver International Airport,2026-02-07T00:39:48.859546,2026-02-07T01:47:48.859546,Pending,93.57,Peter Teehan,61.9,68
+5d8d5f1d-8586-413c-9543-20c780c75d25,Customer 479,Castle Rock,Denver International Airport,2026-02-07T07:30:20.859546,2026-02-07T08:56:20.859546,Pending,114.54,Jane Smith,78.6,86
+e8d33914-3252-46d0-a913-649e5d801d0e,Customer 784,Manitou Springs,Downtown COS,2026-02-07T08:06:18.859546,2026-02-07T08:39:18.859546,Scheduled,29.57,Jane Smith,13.3,33
+74fa6210-fcc7-4adb-94b1-4694027b99e3,Customer 123,Garden of the Gods,Downtown COS,2026-02-07T12:22:33.859546,2026-02-07T12:32:33.859546,Scheduled,15.0,Peter Teehan,4.2,10
+d0055846-97f8-48e7-9a2c-e4594aa58c94,Customer 151,Downtown COS,US Air Force Academy,2026-02-07T14:45:04.859546,2026-02-07T14:58:04.859546,Scheduled,15.38,John Doe,5.2,13
+24912e82-e304-46a4-9b5c-782f5ba3cdb5,Customer 620,Manitou Springs,US Air Force Academy,2026-02-08T02:21:41.859546,2026-02-08T02:41:41.859546,Pending,20.63,John Doe,8.2,20
+9c6854e5-30a5-49b5-b513-486162567736,Customer 744,Manitou Springs,The Broadmoor,2026-02-08T02:50:45.859546,2026-02-08T03:31:45.859546,Scheduled,35.61,Jane Smith,16.8,41
+8d3d6e0b-7591-486f-a944-bad1397cd907,Customer 419,Castle Rock,The Broadmoor,2026-02-08T04:03:13.859546,2026-02-08T05:15:13.859546,Scheduled,99.13,Peter Teehan,66.3,72
+1abbbef1-7ce7-4b1f-94a9-25a608d7fa96,Customer 938,Garden of the Gods,Manitou Springs,2026-02-08T04:43:38.859546,2026-02-08T05:08:38.859546,Pending,24.03,Jane Smith,10.2,25
+57a9b854-1f07-4313-a30b-e30d07f7bc22,Customer 506,Colorado Springs Airport,Garden of the Gods,2026-02-08T05:09:43.859546,2026-02-08T05:33:43.859546,Scheduled,23.55,Auto-Dispatch,9.9,24
+f8c3d53e-bf80-47a6-b850-9b0a8eb4d24b,Customer 203,US Air Force Academy,The Broadmoor,2026-02-08T10:29:58.859546,2026-02-08T11:18:58.859546,Scheduled,40.79,Jane Smith,19.7,49
+3e5735ba-0f5e-4d9c-ad27-e401f3308406,Customer 224,Garden of the Gods,The Broadmoor,2026-02-09T02:19:44.859546,2026-02-09T03:01:44.859546,Pending,36.31,Jane Smith,17.2,42
+78a42baf-63b2-4c36-b912-563d5105c410,Customer 323,Castle Rock,Garden of the Gods,2026-02-09T05:14:23.859546,2026-02-09T06:44:23.859546,Scheduled,119.46,John Doe,82.6,90
+99199185-e77f-4995-bd28-e8d7385f11dc,Customer 444,Downtown COS,Castle Rock,2026-02-09T13:03:54.859546,2026-02-09T14:10:54.859546,Scheduled,92.6,John Doe,61.1,67
+5e2743f2-d596-42a4-adf4-d5d370651dc5,Customer 740,Colorado Springs Airport,Denver International Airport,2026-02-09T17:51:43.859546,2026-02-09T19:29:43.859546,Pending,128.16,Peter Teehan,89.5,98
+d69a8632-4ca8-445c-81e8-be368559b5bf,Customer 441,The Broadmoor,US Air Force Academy,2026-02-09T23:36:45.859546,2026-02-10T00:18:45.859546,Scheduled,35.72,Peter Teehan,16.8,42
+537505b7-2168-4813-b653-44e28ae25575,Customer 778,Denver International Airport,US Air Force Academy,2026-02-10T02:03:11.859546,2026-02-10T03:32:11.859546,Scheduled,118.08,Peter Teehan,81.5,89
+1623cec4-9835-47d7-b5a3-f3f483de39c7,Customer 563,The Broadmoor,Downtown COS,2026-02-10T03:10:05.859546,2026-02-10T03:56:05.859546,Scheduled,38.75,Auto-Dispatch,18.6,46
+a06ac0e8-4540-4fee-8556-c182e31c17f1,Customer 198,Downtown COS,Castle Rock,2026-02-10T03:16:49.859546,2026-02-10T04:41:49.859546,Pending,113.87,John Doe,78.1,85
+f0afddaf-a3b2-4209-8ee2-1de8a7179813,Customer 484,Downtown COS,Colorado Springs Airport,2026-02-10T08:29:06.859546,2026-02-10T09:07:06.859546,Scheduled,33.08,John Doe,15.3,38
+b5cffbc2-8aaa-4f9c-a127-b45f026f86f5,Customer 472,Manitou Springs,Downtown COS,2026-02-10T11:17:28.859546,2026-02-10T11:43:28.859546,Pending,24.73,Jane Smith,10.6,26
+e042658c-27b2-4f14-8dc6-56c76ee67def,Customer 134,Colorado Springs Airport,US Air Force Academy,2026-02-10T16:09:34.859546,2026-02-10T16:21:34.859546,Pending,15.19,Jane Smith,5.1,12
+43b9d600-e6a9-4337-abb0-f608b08198cd,Customer 848,Colorado Springs Airport,The Broadmoor,2026-02-11T00:24:19.859546,2026-02-11T01:12:19.859546,Scheduled,39.96,Auto-Dispatch,19.3,48
+fd32ca0a-ca17-495e-a564-ebf5c9685f72,Customer 720,Colorado Springs Airport,Castle Rock,2026-02-11T04:03:49.859546,2026-02-11T05:21:49.859546,Scheduled,105.03,Auto-Dispatch,71.0,78
+0f76b38d-1f17-45a3-88f1-359e25a055ec,Customer 603,Garden of the Gods,Colorado Springs Airport,2026-02-11T04:30:06.859546,2026-02-11T04:41:06.859546,Pending,15.0,Peter Teehan,4.8,11
+d29e88a7-7106-44c6-9164-9a44953e3e72,Customer 429,Garden of the Gods,Downtown COS,2026-02-11T04:40:54.859546,2026-02-11T05:22:54.859546,Scheduled,36.31,Peter Teehan,17.2,42
+6035bb20-d8ca-487e-8f25-48d357be3628,Customer 758,The Broadmoor,US Air Force Academy,2026-02-11T08:06:59.859546,2026-02-11T08:14:59.859546,Pending,15.0,Jane Smith,3.6,8
+26dfbe89-bf44-404d-9e9c-1028dd55e987,Customer 884,Downtown COS,Manitou Springs,2026-02-11T12:21:53.859546,2026-02-11T12:46:53.859546,Scheduled,24.23,John Doe,10.3,25
+58f0bf42-6cb5-4d56-944f-6f4f86597fd8,Customer 414,Garden of the Gods,Denver International Airport,2026-02-11T15:39:14.859546,2026-02-11T17:08:14.859546,Scheduled,118.0,John Doe,81.4,89
+251dff29-54a4-40cc-89ec-e88b575d0b80,Customer 774,Colorado Springs Airport,Denver International Airport,2026-02-11T15:52:45.859546,2026-02-11T17:16:45.859546,Pending,112.42,Peter Teehan,76.9,84
+c79f7e77-4b66-4f8f-bb8c-19fc1bc1c9d2,Customer 799,Manitou Springs,The Broadmoor,2026-02-11T19:33:00.859546,2026-02-11T19:56:00.859546,Scheduled,22.89,John Doe,9.5,23
+6e8bb6ec-8d15-4477-9767-aa06910f318b,Customer 126,Castle Rock,Colorado Springs Airport,2026-02-11T21:21:32.859546,2026-02-11T22:57:32.859546,Pending,125.47,Auto-Dispatch,87.4,96
+6477ae78-c433-4587-ba21-f06e9a4d79b7,Customer 153,The Broadmoor,Downtown COS,2026-02-11T21:38:23.859546,2026-02-11T22:23:23.859546,Scheduled,38.4,John Doe,18.4,45
+9873570b-b7c5-4d15-acc2-589e214d6cab,Customer 781,Garden of the Gods,Manitou Springs,2026-02-11T23:51:58.859546,2026-02-12T00:08:58.859546,Scheduled,18.53,Jane Smith,7.0,17
+06e1a8d3-9600-4cf0-80fa-d4d45230cee1,Customer 994,US Air Force Academy,Denver International Airport,2026-02-12T06:39:45.859546,2026-02-12T07:56:45.859546,Scheduled,104.17,Peter Teehan,70.3,77
+06222997-63dc-40c8-9965-166382acc9eb,Customer 270,US Air Force Academy,Castle Rock,2026-02-12T09:21:09.859546,2026-02-12T10:29:09.859546,Pending,94.01,John Doe,62.2,68
+90d8e085-83c6-4b5f-95c7-3823dbd460ed,Customer 944,Manitou Springs,Denver International Airport,2026-02-12T09:23:33.859546,2026-02-12T10:33:33.859546,Scheduled,96.85,Jane Smith,64.5,70
+6cce40a9-6db6-4eb8-a5e6-e9168aef6816,Customer 120,Colorado Springs Airport,Denver International Airport,2026-02-12T11:57:55.859546,2026-02-12T13:16:55.859546,Scheduled,106.56,Jane Smith,72.2,79
+92f069b2-8997-4e63-b5d2-7c14d3d4bd42,Customer 221,US Air Force Academy,Garden of the Gods,2026-02-12T16:20:24.859546,2026-02-12T16:45:24.859546,Scheduled,24.22,Jane Smith,10.3,25
+cf8bbce0-9661-4ca3-ad7d-968bc556e19e,Customer 428,US Air Force Academy,Garden of the Gods,2026-02-13T06:30:56.859546,2026-02-13T06:46:56.859546,Pending,17.55,Peter Teehan,6.5,16
+e071c7a6-82d0-424c-8b1d-4061e1e9c5cf,Customer 554,Castle Rock,Manitou Springs,2026-02-13T06:41:07.859546,2026-02-13T08:08:07.859546,Pending,115.38,Jane Smith,79.3,87
+81570229-0710-4deb-abc0-8ca98e079bf4,Customer 845,The Broadmoor,Manitou Springs,2026-02-13T07:07:56.859546,2026-02-13T07:37:56.859546,Scheduled,27.95,Peter Teehan,12.4,30
+f85b5122-b298-4ffa-8e2f-d7479f84ca33,Customer 436,Castle Rock,Garden of the Gods,2026-02-13T17:00:22.859546,2026-02-13T18:08:22.859546,Scheduled,94.49,Jane Smith,62.6,68
+bfa40d7e-815f-4e1e-8038-49a07b6c8a9e,Customer 566,The Broadmoor,US Air Force Academy,2026-02-14T09:54:57.859546,2026-02-14T10:08:57.859546,Scheduled,16.06,Peter Teehan,5.6,14
+27ea29b4-a8a7-416a-a554-6d7a0f851e94,Customer 835,Denver International Airport,Castle Rock,2026-02-14T21:54:42.859546,2026-02-14T23:06:42.859546,Pending,98.43,Auto-Dispatch,65.7,72
+af4035d9-6389-4eb0-bada-d04b3d579239,Customer 447,Denver International Airport,The Broadmoor,2026-02-14T22:25:33.859546,2026-02-14T23:41:33.859546,Pending,102.74,John Doe,69.2,76
+afd0b92b-48b7-4c53-84ec-48735aa1024c,Customer 461,US Air Force Academy,Downtown COS,2026-02-14T23:45:21.859546,2026-02-14T23:57:21.859546,Scheduled,15.0,Jane Smith,4.9,12
+1d47545a-fab6-4b86-883c-c56544b443ad,Customer 360,Denver International Airport,Manitou Springs,2026-02-15T03:55:24.859546,2026-02-15T05:24:24.859546,Pending,117.79,Jane Smith,81.2,89
+487529a9-6fb1-47a7-8af7-c4be4b9a1732,Customer 534,Garden of the Gods,Downtown COS,2026-02-15T07:07:41.859546,2026-02-15T07:21:41.859546,Scheduled,16.2,Auto-Dispatch,5.7,14
+13178f9f-43e5-4004-a1e4-437d23223124,Customer 899,Colorado Springs Airport,Downtown COS,2026-02-15T13:58:00.859546,2026-02-15T14:09:00.859546,Pending,15.0,Auto-Dispatch,4.7,11
+4451c529-6597-434b-9efa-853e4825b537,Customer 239,Downtown COS,Manitou Springs,2026-02-16T02:31:20.859546,2026-02-16T02:55:20.859546,Scheduled,23.63,Jane Smith,9.9,24
+e36cc6e8-2aaa-4317-b0f6-768b9605f512,Customer 970,Castle Rock,Garden of the Gods,2026-02-16T02:40:22.859546,2026-02-16T04:17:22.859546,Pending,126.85,Jane Smith,88.5,97
+2712ffc8-cbfb-4d51-9030-965b7d74619d,Customer 807,The Broadmoor,Castle Rock,2026-02-16T04:18:30.859546,2026-02-16T05:56:30.859546,Scheduled,128.48,John Doe,89.8,98
+9864a007-fede-4de9-87b3-5b1630ae0d50,Customer 650,Colorado Springs Airport,The Broadmoor,2026-02-16T09:46:46.859546,2026-02-16T10:32:46.859546,Pending,38.65,Peter Teehan,18.5,46
+d5822307-d9d2-4627-81e7-d916427f1a95,Customer 377,US Air Force Academy,Garden of the Gods,2026-02-16T21:55:34.859546,2026-02-16T22:38:34.859546,Scheduled,36.98,John Doe,17.6,43
+4e60eaa1-e0b4-439f-91fb-e6df0b34e09b,Customer 842,Castle Rock,Colorado Springs Airport,2026-02-17T06:11:21.859546,2026-02-17T07:37:21.859546,Scheduled,114.09,Jane Smith,78.3,86
+4d16cd4e-3ede-4955-984c-bb379a07d3b8,Customer 325,Castle Rock,Garden of the Gods,2026-02-17T07:55:39.859546,2026-02-17T09:06:39.859546,Scheduled,97.44,Auto-Dispatch,65.0,71
+bad92f6e-f375-449e-ab68-9feff7417461,Customer 765,Denver International Airport,Castle Rock,2026-02-17T10:33:11.859546,2026-02-17T11:43:11.859546,Scheduled,96.82,John Doe,64.5,70
+f71abe1b-73ba-473d-b94c-8e34bb9e27b8,Customer 963,Castle Rock,Downtown COS,2026-02-17T17:38:11.859546,2026-02-17T19:16:11.859546,Scheduled,127.96,Jane Smith,89.4,98
+435753f6-ab4d-44b4-b4ba-057929900f07,Customer 953,US Air Force Academy,Denver International Airport,2026-02-17T18:39:08.859546,2026-02-17T19:52:08.859546,Scheduled,99.37,Jane Smith,66.5,73
+9a36db3a-8b03-416c-b359-08c31bcabc04,Customer 643,Colorado Springs Airport,The Broadmoor,2026-02-18T11:03:37.859546,2026-02-18T11:26:37.859546,Scheduled,22.78,Jane Smith,9.4,23
+fbac4225-ea43-4fa4-a6e6-ce2c7d737c39,Customer 834,Colorado Springs Airport,Manitou Springs,2026-02-18T14:23:06.859546,2026-02-18T14:53:06.859546,Scheduled,27.41,John Doe,12.1,30
+3f98a91e-f018-4885-9deb-d9718256bd05,Customer 373,Denver International Airport,US Air Force Academy,2026-02-18T15:23:23.859546,2026-02-18T16:55:23.859546,Scheduled,121.31,Auto-Dispatch,84.1,92
+373d91f6-93b0-46fb-aabd-7b4030ede449,Customer 519,US Air Force Academy,Garden of the Gods,2026-02-18T17:27:44.859546,2026-02-18T18:10:44.859546,Scheduled,36.63,John Doe,17.4,43
+9458d357-f3f4-45b5-b61d-fd427c423a93,Customer 957,Garden of the Gods,Manitou Springs,2026-02-19T05:14:00.859546,2026-02-19T05:43:00.859546,Pending,26.92,John Doe,11.8,29
+cd217bee-8420-4a6c-ac7c-b2a7f581b16e,Customer 721,The Broadmoor,US Air Force Academy,2026-02-19T08:41:52.859546,2026-02-19T09:30:52.859546,Pending,41.01,Peter Teehan,19.9,49
+cd7f08ce-0158-4e68-9ce0-c3ec4d63243d,Customer 656,Castle Rock,US Air Force Academy,2026-02-19T15:56:29.859546,2026-02-19T17:15:29.859546,Scheduled,106.8,Auto-Dispatch,72.4,79
+d14f6820-486e-4c6e-9ce5-d5489dc00975,Customer 937,Castle Rock,Denver International Airport,2026-02-19T22:49:08.859546,2026-02-20T00:27:08.859546,Pending,127.71,Peter Teehan,89.2,98
+2cf4e12a-1984-4448-9a8b-4e9588b925f5,Customer 775,Colorado Springs Airport,The Broadmoor,2026-02-20T02:24:42.859546,2026-02-20T02:39:42.859546,Pending,16.99,John Doe,6.1,15
+52d9d19b-600c-4e17-8db0-7aa3d4eb349e,Customer 871,Colorado Springs Airport,Downtown COS,2026-02-20T03:21:41.859546,2026-02-20T03:55:41.859546,Scheduled,30.54,Auto-Dispatch,13.9,34
+d1c0545b-e4be-4892-a13e-d0107443da00,Customer 525,The Broadmoor,Manitou Springs,2026-02-20T04:01:06.859546,2026-02-20T04:37:06.859546,Scheduled,32.1,Peter Teehan,14.8,36
+43fd5677-1769-43d4-b365-c93fec16590d,Customer 462,Denver International Airport,Colorado Springs Airport,2026-02-20T13:27:05.859546,2026-02-20T14:45:05.859546,Scheduled,105.47,John Doe,71.4,78
+617c7d66-b3d6-45d7-99d0-fe2876c8189e,Customer 158,Garden of the Gods,Manitou Springs,2026-02-20T13:50:24.859546,2026-02-20T14:13:24.859546,Scheduled,22.81,Peter Teehan,9.5,23
+d4bcdcc6-1cd6-4b42-9336-896b53c7167e,Customer 466,The Broadmoor,US Air Force Academy,2026-02-20T19:23:57.859546,2026-02-20T19:46:57.859546,Pending,22.49,Auto-Dispatch,9.3,23
+39e7a496-d566-467b-a348-61c925646f39,Customer 320,Downtown COS,Denver International Airport,2026-02-20T20:52:05.859546,2026-02-20T22:32:05.859546,Scheduled,130.93,John Doe,91.7,100
+d5a0d731-703f-4b0c-96b5-a38bc74f3bad,Customer 442,Denver International Airport,Colorado Springs Airport,2026-02-20T22:07:11.859546,2026-02-20T23:29:11.859546,Pending,109.44,Jane Smith,74.6,82
+b9313d48-b014-4340-9185-d30f45d14344,Customer 492,US Air Force Academy,Colorado Springs Airport,2026-02-21T02:12:13.859546,2026-02-21T02:25:13.859546,Scheduled,15.73,Peter Teehan,5.4,13
+288a8a55-ae24-4b12-bb1d-c95af8aee3bd,Customer 316,US Air Force Academy,Garden of the Gods,2026-02-21T05:01:47.859546,2026-02-21T05:13:47.859546,Scheduled,15.0,John Doe,4.8,12
+2b0a55a4-081e-4e9d-99cb-a5aff2e4397a,Customer 981,Garden of the Gods,The Broadmoor,2026-02-21T07:59:33.859546,2026-02-21T08:45:33.859546,Pending,38.66,John Doe,18.5,46
+1033e511-ddcb-450a-afdc-c4f390cb8c26,Customer 661,Colorado Springs Airport,Denver International Airport,2026-02-21T22:41:28.859546,2026-02-21T23:47:28.859546,Pending,91.62,Peter Teehan,60.3,66
+ab9da0b6-c3f1-41bd-b5f1-25b06f45e9b5,Customer 143,US Air Force Academy,Denver International Airport,2026-02-22T05:53:05.859546,2026-02-22T07:20:05.859546,Pending,115.26,Peter Teehan,79.2,87
+b6519f99-1f9a-4566-afc6-1ed3019adb3f,Customer 583,The Broadmoor,Denver International Airport,2026-02-22T12:57:29.859546,2026-02-22T14:11:29.859546,Pending,100.42,Auto-Dispatch,67.3,74
+2e8115f4-83c1-4b9c-bef7-e09585dfd50f,Customer 951,Manitou Springs,Castle Rock,2026-02-22T19:26:29.859546,2026-02-22T20:43:29.859546,Scheduled,104.01,John Doe,70.2,77
+6dce1a0f-0cf6-4a36-8ff2-420c5490b1fd,Customer 677,Downtown COS,Castle Rock,2026-02-23T03:44:55.859546,2026-02-23T05:20:55.859546,Pending,125.82,Peter Teehan,87.7,96
+e138b90c-065e-43ce-bde4-6499d2c21c8d,Customer 810,Colorado Springs Airport,Garden of the Gods,2026-02-23T08:17:35.859546,2026-02-23T08:27:35.859546,Pending,15.0,Jane Smith,4.3,10
+e9657c87-555a-4d5e-b5a6-3c8a82405a16,Customer 914,Manitou Springs,Colorado Springs Airport,2026-02-23T08:27:14.859546,2026-02-23T09:13:14.859546,Scheduled,38.97,Jane Smith,18.7,46
+63c9b083-9551-4325-b4c3-0523127587a3,Customer 298,Manitou Springs,Castle Rock,2026-02-23T17:43:08.859546,2026-02-23T18:50:08.859546,Pending,93.09,Auto-Dispatch,61.5,67
+c4deec30-d4e2-454a-91cd-599de3689ed3,Customer 529,Garden of the Gods,Downtown COS,2026-02-23T19:06:07.859546,2026-02-23T19:31:07.859546,Scheduled,24.17,Jane Smith,10.2,25
+819ec03b-7cd6-4b50-a394-bc74a4f055a5,Customer 143,Denver International Airport,Garden of the Gods,2026-02-23T21:47:54.859546,2026-02-23T22:54:54.859546,Pending,93.0,Jane Smith,61.4,67
+bf07c824-ebd5-420f-935a-6b8450c6eef3,Customer 418,The Broadmoor,Colorado Springs Airport,2026-02-24T07:53:33.859546,2026-02-24T08:40:33.859546,Scheduled,39.26,John Doe,18.9,47
+7d0a9091-0b36-4ec7-be3d-9710be71cbcc,Customer 826,The Broadmoor,Castle Rock,2026-02-24T10:00:39.859546,2026-02-24T11:38:39.859546,Scheduled,127.97,John Doe,89.4,98
+f03812ab-7374-4292-8b38-6dc05b1eb2a1,Customer 490,US Air Force Academy,Downtown COS,2026-02-24T14:01:55.859546,2026-02-24T14:10:55.859546,Pending,15.0,Auto-Dispatch,3.7,9
+dd445ce6-1e4c-494d-b49b-806beb2cdb72,Customer 561,Downtown COS,US Air Force Academy,2026-02-24T16:36:49.859546,2026-02-24T17:02:49.859546,Scheduled,25.09,John Doe,10.8,26
+10069fc2-4965-455b-a8c3-f30e8a3da76e,Customer 272,Castle Rock,Downtown COS,2026-02-24T16:44:45.859546,2026-02-24T18:11:45.859546,Scheduled,116.13,John Doe,79.9,87
+3e7b60e6-815d-45df-8518-fbe1f810f9e1,Customer 757,Denver International Airport,Garden of the Gods,2026-02-24T18:09:34.859546,2026-02-24T19:22:34.859546,Scheduled,100.2,Auto-Dispatch,67.2,73
+9c8003f2-3a22-4201-9d93-0f33e8a98d6a,Customer 654,The Broadmoor,Garden of the Gods,2026-02-24T19:41:42.859546,2026-02-24T20:18:42.859546,Scheduled,32.53,Jane Smith,15.0,37
+b862e2d1-3ec5-4ffb-b600-4059f5dbb92b,Customer 842,Garden of the Gods,Castle Rock,2026-02-24T22:11:43.859546,2026-02-24T23:20:43.859546,Scheduled,95.61,Auto-Dispatch,63.5,69
+8b55359a-fa4c-4196-a4b3-89af03eaa160,Customer 520,The Broadmoor,Castle Rock,2026-02-25T01:00:19.859546,2026-02-25T02:34:19.859546,Scheduled,123.9,Peter Teehan,86.1,94
+ea5ace76-22ae-4309-9652-63d7a44fee51,Customer 153,Manitou Springs,Castle Rock,2026-02-25T15:14:38.859546,2026-02-25T16:35:38.859546,Scheduled,108.86,John Doe,74.1,81
+7101a67c-a7bc-4564-98ca-acd74762b0e1,Customer 170,Garden of the Gods,Downtown COS,2026-02-25T18:49:08.859546,2026-02-25T18:57:08.859546,Pending,15.0,Auto-Dispatch,3.5,8
+92afb1cf-7223-45d3-8c8d-81b173274918,Customer 200,Denver International Airport,US Air Force Academy,2026-02-25T23:05:38.859546,2026-02-26T00:22:38.859546,Scheduled,104.62,Auto-Dispatch,70.7,77
+a1910e7e-0f67-48fe-bbf9-3b2b7d748f68,Customer 594,Garden of the Gods,Denver International Airport,2026-02-26T08:09:11.859546,2026-02-26T09:32:11.859546,Pending,110.97,Auto-Dispatch,75.8,83
+4e44e680-1fe0-40ef-ba63-87249027187a,Customer 562,Castle Rock,The Broadmoor,2026-02-26T23:02:19.859546,2026-02-27T00:18:19.859546,Scheduled,103.59,Auto-Dispatch,69.9,76
+c0a6a784-6569-4a7a-9865-8aa18b500c57,Customer 652,Colorado Springs Airport,Downtown COS,2026-02-27T01:02:58.859546,2026-02-27T01:18:58.859546,Scheduled,17.78,John Doe,6.6,16

@@ -1,0 +1,23 @@
+ERROR:root:CRITICAL: Detected 64-bit Python environment. SummitOS requires 32-bit Python for compatibility.
+
+--- Testing 32-bit Enforcement ---
+[FAIL] 32-bit check failed: CRITICAL: Detected 64-bit Python environment. SummitOS requires 32-bit Python for compatibility.
+
+--- Testing Timezone Conversions ---
+State: CO | Local: Monday, February 02 at 08:30 AM MST
+[OK] Correctly converted for CO
+State: NV | Local: Monday, February 02 at 07:30 AM PST
+[OK] Correctly converted for NV
+State: NY | Local: Monday, February 02 at 10:30 AM EST
+[OK] Correctly converted for NY
+
+--- Testing Formatting Requirement ---
+[OK] Format matches requirement: Monday, February 02 at 08:30 AM MST
+
+--- Testing UTC Normalization ---
+Input: 2026-02-02 10:30:00-07:00 | Normalized: 2026-02-02 17:30:00+00:00
+[OK] Normalization correct.
+
+--- Testing Azure CLI Diagnostics ---
+Status: error
+Message: Azure CLI is not installed or not in PATH.

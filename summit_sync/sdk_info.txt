@@ -1,0 +1,5 @@
+Client methods:
+['__abstractmethods__', '__annotations__', '__class__', '__delattr__', '__dict__', '__dir__', '__doc__', '__enter__', '__eq__', '__exit__', '__format__', '__ge__', '__getattribute__', '__getstate__', '__gt__', '__hash__', '__init__', '__init_subclass__', '__le__', '__lt__', '__module__', '__ne__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__', '__slots__', '__str__', '__subclasshook__', '__weakref__', '_abc_impl', '_analyze_from_image_data', '_analyze_from_url', '_client', '_config', '_deserialize', '_serialize', 'analyze', 'analyze_from_url', 'close', 'send_request']
+
+Analyze signature:
+(image_data: bytes, visual_features: List[azure.ai.vision.imageanalysis.models._enums.VisualFeatures], *, language: Optional[str] = None, gender_neutral_caption: Optional[bool] = None, smart_crops_aspect_ratios: Optional[List[float]] = None, model_version: Optional[str] = None, **kwargs: Any) -> azure.ai.vision.imageanalysis.models._models.ImageAnalysisResult

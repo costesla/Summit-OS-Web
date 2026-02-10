@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\summit_sync\scripts\manual_adjust_payments.py", line 6, in <module>
+    from lib.database import DatabaseClient
+  File "C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\summit_sync\lib\database.py", line 74
+    def execute_non_query(self, query, params=None):
+IndentationError: expected an indented block after 'finally' statement on line 73

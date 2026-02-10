@@ -1,0 +1,176 @@
+2026-01-29 20:18:51,680 - Forcing processing for TODAY (2026-01-29)...
+2026-01-29 20:18:51,709 - Uploading: Screenshot_20260129_110004_Uber Driver.jpg
+2026-01-29 20:18:51,732 - Request URL: 'https://stsummitosprod.blob.core.windows.net/uploads/Screenshot_20260129_110004_Uber%20Driver.jpg'
+Request method: 'PUT'
+Request headers:
+    'Content-Length': '687931'
+    'x-ms-blob-type': 'REDACTED'
+    'x-ms-version': 'REDACTED'
+    'Content-Type': 'application/octet-stream'
+    'Accept': 'application/xml'
+    'User-Agent': 'azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'x-ms-date': 'REDACTED'
+    'x-ms-client-request-id': '669c0d34-fd8a-11f0-b933-7c1e529ce9b1'
+    'Authorization': 'REDACTED'
+A body is sent with the request
+2026-01-29 20:18:53,346 - Response status: 201
+Response headers:
+    'Content-Length': '0'
+    'Content-MD5': 'REDACTED'
+    'Last-Modified': 'Fri, 30 Jan 2026 03:18:53 GMT'
+    'ETag': '"0x8DE5FAE4BC4E39F"'
+    'Server': 'Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0'
+    'x-ms-request-id': 'a5e9a74d-901e-006c-2797-916e0b000000'
+    'x-ms-client-request-id': '669c0d34-fd8a-11f0-b933-7c1e529ce9b1'
+    'x-ms-version': 'REDACTED'
+    'x-ms-content-crc64': 'REDACTED'
+    'x-ms-request-server-encrypted': 'REDACTED'
+    'Date': 'Fri, 30 Jan 2026 03:18:52 GMT'
+2026-01-29 20:18:53,347 - Triggering function for: Screenshot_20260129_110004_Uber Driver.jpg
+2026-01-29 20:18:57,406 - Error triggering function: HTTPConnectionPool(host='localhost', port=7078): Max retries exceeded with url: /api/process-blob (Caused by NewConnectionError("HTTPConnection(host='localhost', port=7078): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))
+2026-01-29 20:18:58,406 - Uploading: Screenshot_20260129_111136_Uber Driver.jpg
+2026-01-29 20:18:58,552 - Request URL: 'https://stsummitosprod.blob.core.windows.net/uploads/Screenshot_20260129_111136_Uber%20Driver.jpg'
+Request method: 'PUT'
+Request headers:
+    'Content-Length': '629168'
+    'x-ms-blob-type': 'REDACTED'
+    'x-ms-version': 'REDACTED'
+    'Content-Type': 'application/octet-stream'
+    'Accept': 'application/xml'
+    'User-Agent': 'azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'x-ms-date': 'REDACTED'
+    'x-ms-client-request-id': '6aad15f7-fd8a-11f0-b326-7c1e529ce9b1'
+    'Authorization': 'REDACTED'
+A body is sent with the request
+2026-01-29 20:18:58,624 - Response status: 201
+Response headers:
+    'Content-Length': '0'
+    'Content-MD5': 'REDACTED'
+    'Last-Modified': 'Fri, 30 Jan 2026 03:18:58 GMT'
+    'ETag': '"0x8DE5FAE4EEA8549"'
+    'Server': 'Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0'
+    'x-ms-request-id': 'a5e9c10b-901e-006c-4597-916e0b000000'
+    'x-ms-client-request-id': '6aad15f7-fd8a-11f0-b326-7c1e529ce9b1'
+    'x-ms-version': 'REDACTED'
+    'x-ms-content-crc64': 'REDACTED'
+    'x-ms-request-server-encrypted': 'REDACTED'
+    'Date': 'Fri, 30 Jan 2026 03:18:58 GMT'
+2026-01-29 20:18:58,625 - Triggering function for: Screenshot_20260129_111136_Uber Driver.jpg
+2026-01-29 20:19:02,684 - Error triggering function: HTTPConnectionPool(host='localhost', port=7078): Max retries exceeded with url: /api/process-blob (Caused by NewConnectionError("HTTPConnection(host='localhost', port=7078): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))
+2026-01-29 20:19:03,684 - Uploading: Screenshot_20260129_111758_Uber Driver.jpg
+2026-01-29 20:19:03,691 - Request URL: 'https://stsummitosprod.blob.core.windows.net/uploads/Screenshot_20260129_111758_Uber%20Driver.jpg'
+Request method: 'PUT'
+Request headers:
+    'Content-Length': '640050'
+    'x-ms-blob-type': 'REDACTED'
+    'x-ms-version': 'REDACTED'
+    'Content-Type': 'application/octet-stream'
+    'Accept': 'application/xml'
+    'User-Agent': 'azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'x-ms-date': 'REDACTED'
+    'x-ms-client-request-id': '6dbd3aed-fd8a-11f0-a5df-7c1e529ce9b1'
+    'Authorization': 'REDACTED'
+A body is sent with the request
+2026-01-29 20:19:03,752 - Response status: 201
+Response headers:
+    'Content-Length': '0'
+    'Content-MD5': 'REDACTED'
+    'Last-Modified': 'Fri, 30 Jan 2026 03:19:03 GMT'
+    'ETag': '"0x8DE5FAE51F8C1A6"'
+    'Server': 'Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0'
+    'x-ms-request-id': 'a5e9da88-901e-006c-4097-916e0b000000'
+    'x-ms-client-request-id': '6dbd3aed-fd8a-11f0-a5df-7c1e529ce9b1'
+    'x-ms-version': 'REDACTED'
+    'x-ms-content-crc64': 'REDACTED'
+    'x-ms-request-server-encrypted': 'REDACTED'
+    'Date': 'Fri, 30 Jan 2026 03:19:03 GMT'
+2026-01-29 20:19:03,752 - Triggering function for: Screenshot_20260129_111758_Uber Driver.jpg
+2026-01-29 20:19:07,823 - Error triggering function: HTTPConnectionPool(host='localhost', port=7078): Max retries exceeded with url: /api/process-blob (Caused by NewConnectionError("HTTPConnection(host='localhost', port=7078): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))
+2026-01-29 20:19:08,824 - Uploading: Screenshot_20260129_112632_Uber Driver.jpg
+2026-01-29 20:19:08,827 - Request URL: 'https://stsummitosprod.blob.core.windows.net/uploads/Screenshot_20260129_112632_Uber%20Driver.jpg'
+Request method: 'PUT'
+Request headers:
+    'Content-Length': '488469'
+    'x-ms-blob-type': 'REDACTED'
+    'x-ms-version': 'REDACTED'
+    'Content-Type': 'application/octet-stream'
+    'Accept': 'application/xml'
+    'User-Agent': 'azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'x-ms-date': 'REDACTED'
+    'x-ms-client-request-id': '70cccd90-fd8a-11f0-b3da-7c1e529ce9b1'
+    'Authorization': 'REDACTED'
+A body is sent with the request
+2026-01-29 20:19:08,877 - Response status: 201
+Response headers:
+    'Content-Length': '0'
+    'Content-MD5': 'REDACTED'
+    'Last-Modified': 'Fri, 30 Jan 2026 03:19:08 GMT'
+    'ETag': '"0x8DE5FAE5506B046"'
+    'Server': 'Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0'
+    'x-ms-request-id': 'a5e9f405-901e-006c-6a97-916e0b000000'
+    'x-ms-client-request-id': '70cccd90-fd8a-11f0-b3da-7c1e529ce9b1'
+    'x-ms-version': 'REDACTED'
+    'x-ms-content-crc64': 'REDACTED'
+    'x-ms-request-server-encrypted': 'REDACTED'
+    'Date': 'Fri, 30 Jan 2026 03:19:08 GMT'
+2026-01-29 20:19:08,877 - Triggering function for: Screenshot_20260129_112632_Uber Driver.jpg
+2026-01-29 20:19:12,943 - Error triggering function: HTTPConnectionPool(host='localhost', port=7078): Max retries exceeded with url: /api/process-blob (Caused by NewConnectionError("HTTPConnection(host='localhost', port=7078): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))
+2026-01-29 20:19:13,944 - Uploading: Screenshot_20260129_153920_Call.jpg
+2026-01-29 20:19:13,950 - Request URL: 'https://stsummitosprod.blob.core.windows.net/uploads/Screenshot_20260129_153920_Call.jpg'
+Request method: 'PUT'
+Request headers:
+    'Content-Length': '352775'
+    'x-ms-blob-type': 'REDACTED'
+    'x-ms-version': 'REDACTED'
+    'Content-Type': 'application/octet-stream'
+    'Accept': 'application/xml'
+    'User-Agent': 'azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'x-ms-date': 'REDACTED'
+    'x-ms-client-request-id': '73da69cf-fd8a-11f0-a229-7c1e529ce9b1'
+    'Authorization': 'REDACTED'
+A body is sent with the request
+2026-01-29 20:19:13,999 - Response status: 201
+Response headers:
+    'Content-Length': '0'
+    'Content-MD5': 'REDACTED'
+    'Last-Modified': 'Fri, 30 Jan 2026 03:19:13 GMT'
+    'ETag': '"0x8DE5FAE581477E1"'
+    'Server': 'Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0'
+    'x-ms-request-id': 'a5ea0b6e-901e-006c-4697-916e0b000000'
+    'x-ms-client-request-id': '73da69cf-fd8a-11f0-a229-7c1e529ce9b1'
+    'x-ms-version': 'REDACTED'
+    'x-ms-content-crc64': 'REDACTED'
+    'x-ms-request-server-encrypted': 'REDACTED'
+    'Date': 'Fri, 30 Jan 2026 03:19:13 GMT'
+2026-01-29 20:19:13,999 - Triggering function for: Screenshot_20260129_153920_Call.jpg
+2026-01-29 20:19:18,055 - Error triggering function: HTTPConnectionPool(host='localhost', port=7078): Max retries exceeded with url: /api/process-blob (Caused by NewConnectionError("HTTPConnection(host='localhost', port=7078): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))
+2026-01-29 20:19:19,055 - Uploading: Screenshot_20260129_153955_Call.jpg
+2026-01-29 20:19:19,105 - Request URL: 'https://stsummitosprod.blob.core.windows.net/uploads/Screenshot_20260129_153955_Call.jpg'
+Request method: 'PUT'
+Request headers:
+    'Content-Length': '524572'
+    'x-ms-blob-type': 'REDACTED'
+    'x-ms-version': 'REDACTED'
+    'Content-Type': 'application/octet-stream'
+    'Accept': 'application/xml'
+    'User-Agent': 'azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'x-ms-date': 'REDACTED'
+    'x-ms-client-request-id': '76ed374b-fd8a-11f0-8ded-7c1e529ce9b1'
+    'Authorization': 'REDACTED'
+A body is sent with the request
+2026-01-29 20:19:19,132 - Response status: 201
+Response headers:
+    'Content-Length': '0'
+    'Content-MD5': 'REDACTED'
+    'Last-Modified': 'Fri, 30 Jan 2026 03:19:19 GMT'
+    'ETag': '"0x8DE5FAE5B239D91"'
+    'Server': 'Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0'
+    'x-ms-request-id': 'a5ea214e-901e-006c-5197-916e0b000000'
+    'x-ms-client-request-id': '76ed374b-fd8a-11f0-8ded-7c1e529ce9b1'
+    'x-ms-version': 'REDACTED'
+    'x-ms-content-crc64': 'REDACTED'
+    'x-ms-request-server-encrypted': 'REDACTED'
+    'Date': 'Fri, 30 Jan 2026 03:19:18 GMT'
+2026-01-29 20:19:19,132 - Triggering function for: Screenshot_20260129_153955_Call.jpg
+2026-01-29 20:19:23,196 - Error triggering function: HTTPConnectionPool(host='localhost', port=7078): Max retries exceeded with url: /api/process-blob (Caused by NewConnectionError("HTTPConnection(host='localhost', port=7078): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))
+2026-01-29 20:19:24,197 - Processed 6 files for today.

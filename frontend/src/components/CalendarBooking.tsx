@@ -22,30 +22,28 @@ interface TimeSlot {
     end: string;
 }
 
-// Hours of Operation by weekday (0=Sun, 1=Mon, ... 6=Sat)
-const HOP = {
-    1: { start: '04:30', end: '22:00' }, // Mon
-    2: { start: '04:30', end: '22:00' }, // Tue
-    3: { start: '04:30', end: '22:00' }, // Wed
-    4: { start: '04:30', end: '22:00' }, // Thu
-    5: { start: '04:30', end: '23:30' }, // Fri (last slot 11:30 PM ends at midnight)
-    6: { start: '04:30', end: '23:30' }, // Sat (last slot 11:30 PM ends at midnight)
-    0: { start: '08:00', end: '17:00' }, // Sun
-};
+// Hours of Operation fetched from API
+interface HopData {
+    [key: number]: { start: string; end: string }
+}
+
+interface Outage {
+    date: string;
+    reason: string;
+    returnDate?: string;
+}
+
+interface StatusData {
+    outToday: boolean;
+    message: string;
+    returnDate?: string;
+    upcoming: Outage[];
+}
 
 // Convert HH:MM to minutes since midnight
 function toMinutes(hhmm: string): number {
     const [h, m] = hhmm.split(':').map(Number);
     return h * 60 + m;
-}
-
-// Check if a slot start time is within HOP for its weekday
-function withinHop(dateObj: Date): boolean {
-    const w = dateObj.getDay();
-    const hop = HOP[w as keyof typeof HOP];
-    if (!hop) return false; // Day is off
-    const mins = dateObj.getHours() * 60 + dateObj.getMinutes();
-    return mins >= toMinutes(hop.start) && mins <= toMinutes(hop.end);
 }
 
 export default function CalendarBooking({
@@ -66,6 +64,41 @@ export default function CalendarBooking({
     const [loadingSlots, setLoadingSlots] = useState(false);
     const [booking, setBooking] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Dynamic Data
+    const [hop, setHop] = useState<HopData | null>(null);
+    const [status, setStatus] = useState<StatusData | null>(null);
+    const [loadingConfig, setLoadingConfig] = useState(true);
+
+    // Fetch Configuration on Mount
+    useEffect(() => {
+        const fetchConfig = async () => {
+            try {
+                const [hopRes, statusRes] = await Promise.all([
+                    fetch('https://summitos-api.azurewebsites.net/api/hop').then(r => r.json()),
+                    fetch('https://summitos-api.azurewebsites.net/api/status').then(r => r.json())
+                ]);
+
+                if (hopRes.hop) setHop(hopRes.hop);
+                if (statusRes) setStatus(statusRes);
+            } catch (e) {
+                console.error("Failed to load business configuration", e);
+            } finally {
+                setLoadingConfig(false);
+            }
+        };
+        fetchConfig();
+    }, []);
+
+    // Check if a slot start time is within HOP for its weekday
+    const withinHop = (dateObj: Date): boolean => {
+        if (!hop) return false;
+        const w = dateObj.getDay();
+        const dayHop = hop[w];
+        if (!dayHop) return false; // Day is off
+        const mins = dateObj.getHours() * 60 + dateObj.getMinutes();
+        return mins >= toMinutes(dayHop.start) && mins <= toMinutes(dayHop.end);
+    }
 
     // Generate next 30 days for date selection
     const availableDates = Array.from({ length: 30 }, (_, i) => {
@@ -199,8 +232,48 @@ export default function CalendarBooking({
         }
     };
 
+    // Check if a date is blocked
+    const isDateBlocked = (date: Date) => {
+        if (!status) return false;
+
+        // Use local YYYY-MM-DD to match backend return which is YYYY-MM-DD
+        // This assumes user is browsing in a similar timezone or we just respect strict date matching
+        const ymd = date.toLocaleDateString("en-CA");
+
+        // Check upcoming
+        if (status.upcoming.some(u => u.date === ymd)) return true;
+
+        // Check today
+        const today = new Date().toLocaleDateString("en-CA");
+        if (status.outToday && ymd === today) return true;
+
+        return false;
+    }
+
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
+            {/* Status Banner */}
+            {(status?.outToday || (selectedDate && isDateBlocked(selectedDate))) && (
+                <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 mb-4">
+                    <div className="flex items-start gap-3">
+                        <div className="text-amber-500 mt-1">⚠️</div>
+                        <div>
+                            <h4 className="text-amber-200 font-bold text-sm uppercase tracking-wide">
+                                Availability Notice
+                            </h4>
+                            <p className="text-amber-100/80 text-sm mt-1">
+                                {status?.message || "Peter is unavailable on this date."}
+                            </p>
+                            {status?.returnDate && (
+                                <p className="text-amber-100/60 text-xs mt-2">
+                                    Returning: {status.returnDate}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="flex items-center gap-3 mb-4">
                 <Calendar className="text-cyan-500" size={24} />
                 <h3 className="text-xl font-bold text-white">Select Your Appointment Time</h3>
@@ -211,35 +284,51 @@ export default function CalendarBooking({
                 <label className="text-xs font-bold text-gray-400 tracking-widest uppercase mb-3 block">
                     Choose Date
                 </label>
-                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                    {availableDates.slice(0, 15).map((date) => {
-                        const isSelected =
-                            selectedDate?.toDateString() === date.toDateString();
-                        return (
-                            <button
-                                key={date.toISOString()}
-                                onClick={() => {
-                                    setSelectedDate(date);
-                                    setSelectedTime(null);
-                                }}
-                                className={`p-3 rounded-lg border transition-all text-center ${isSelected
-                                    ? "bg-cyan-600 border-cyan-600 text-white shadow-lg shadow-cyan-500/20"
-                                    : "bg-white/5 border-white/10 text-gray-300 hover:bg-white/10 hover:border-white/20"
-                                    }`}
-                            >
-                                <div className="text-xs font-bold">
-                                    {date.toLocaleDateString("en-US", { weekday: "short" })}
-                                </div>
-                                <div className="text-lg font-bold">
-                                    {date.getDate()}
-                                </div>
-                                <div className="text-[10px] text-gray-500">
-                                    {date.toLocaleDateString("en-US", { month: "short" })}
-                                </div>
-                            </button>
-                        );
-                    })}
-                </div>
+                {loadingConfig ? (
+                    <div className="text-sm text-gray-500 py-4">Checking schedule...</div>
+                ) : (
+                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                        {availableDates.slice(0, 15).map((date) => {
+                            const isSelected =
+                                selectedDate?.toDateString() === date.toDateString();
+                            const blocked = isDateBlocked(date);
+
+                            return (
+                                <button
+                                    key={date.toISOString()}
+                                    disabled={blocked}
+                                    onClick={() => {
+                                        setSelectedDate(date);
+                                        setSelectedTime(null);
+                                    }}
+                                    className={`p-3 rounded-lg border transition-all text-center relative overflow-hidden ${blocked
+                                        ? "bg-red-900/10 border-red-900/20 opacity-50 cursor-not-allowed grayscale"
+                                        : isSelected
+                                            ? "bg-cyan-600 border-cyan-600 text-white shadow-lg shadow-cyan-500/20"
+                                            : "bg-white/5 border-white/10 text-gray-300 hover:bg-white/10 hover:border-white/20"
+                                        }`}
+                                >
+                                    {blocked && (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 z-10">
+                                            <span className="text-[10px] uppercase font-bold text-red-400 rotate-[-15deg] border-2 border-red-400 px-1 rounded">
+                                                OUT
+                                            </span>
+                                        </div>
+                                    )}
+                                    <div className="text-xs font-bold">
+                                        {date.toLocaleDateString("en-US", { weekday: "short" })}
+                                    </div>
+                                    <div className="text-lg font-bold">
+                                        {date.getDate()}
+                                    </div>
+                                    <div className="text-[10px] text-gray-500">
+                                        {date.toLocaleDateString("en-US", { month: "short" })}
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
 
             {/* Time Selection */}

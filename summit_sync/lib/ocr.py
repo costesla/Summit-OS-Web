@@ -233,6 +233,115 @@ class OCRClient:
 
         return data
 
+    def parse_uber_detailed(self, text):
+        """
+        Parses the detailed Uber "Offer Details" card.
+        Extracts: Fare, Rider Payment, Uber Service Fee, Insurance/Other Fees, Tip.
+        Robust to both linear and columnar OCR layouts.
+        """
+        data = {
+            "driver_earnings": 0.0,
+            "rider_payment": 0.0,
+            "uber_service_fee": 0.0,
+            "insurance_fees": 0.0,
+            "booking_fee": 0.0,
+            "tip": 0.0,
+            "start_time": None,
+            "end_time": None,
+            "duration_minutes": 0,
+            "distance_miles": 0.0,
+            "pickup_location": None,
+            "dropoff_location": None,
+            "is_detailed": False
+        }
+
+        if not text:
+            return data
+
+        # 1. Driver Earnings (Top of card usually)
+        # Strategy: Look for "Your earnings ... $X" at the END of a block or distinct usage?
+        # Or look for "Total" or sum components?
+        # In the screenshot: "Your earnings" appears as a header, then "Fare...", then "Your earnings $17.09" at bottom.
+        # Regex finds the FIRST match.
+        # Let's try to find "Your earnings" followed by a number that is NOT followed by "Fare"? 
+        # Or better: Look for the largest dollar amount associated with "earnings"? No.
+        
+        # New Strategy: 
+        # 1. Check for "Total" or "Total earnings" or "Your earnings" with a newline before the number?
+        # 2. Iterate all matches and pick the one that seems like a total? (Hard without layout).
+        # 3. Specific fix: If "Your earnings" is followed by "Fare", ignore that match?
+        
+        # In the specific "Earnings Activity" screen:
+        # "Your earnings $17.09" is usually at the bottom or top.
+        # "Fare $11.99" is indented.
+        
+        # Let's try scanning for specific "Your earnings $X" pattern at the start of a line?
+        matches = re.findall(r"(?:Your earnings|You earned|Total).*?[\$]([0-9]+\.[0-9]{2})", text, re.IGNORECASE)
+        if matches:
+            # If multiple matches, the largest is likely the total?
+            # E.g. [$11.99, $17.09]. Max is $17.09.
+            # Risk: "Rider Payment $25.00" might trigger if regex is loose? 
+            # "Rider payment" is excluded from this regex.
+            # "Upfront fare $6.36" vs "Your earnings $6.36".
+            
+            # Simple heuristic: Max value found under "Earnings" keywords.
+            values = [float(v) for v in matches]
+            data["driver_earnings"] = max(values)
+            data["is_detailed"] = True
+        else:
+            # Fallback for "Offer" or "Upfront fare"
+            match = re.search(r"(?:Offer|Upfront fare).*?[\$]([0-9]+\.[0-9]{2})", text, re.IGNORECASE)
+            if match:
+                data["driver_earnings"] = float(match.group(1))
+                data["is_detailed"] = True
+
+        # 2. Customer Payments
+        # "Rider payment $22.45" OR "Rider payment ... $X ... $Y" (Columnar)
+        match = re.search(r"Rider payment.*?[\$]([0-9]+\.[0-9]{2})(?:\s*[\$]([0-9]+\.[0-9]{2}))?", text, re.IGNORECASE | re.DOTALL)
+        if match:
+            val1 = float(match.group(1))
+            val2 = match.group(2)
+            if val2:
+                # If two numbers found, assume columnar layout where val1 was likely 'Earnings' from left column
+                data["rider_payment"] = float(val2)
+            else:
+                data["rider_payment"] = val1
+            data["is_detailed"] = True
+
+        # 3. Uber Fees
+        # "Service fee -$5.62" or "Uber Service Fee: $1.66"
+        match = re.search(r"Service fee.*?[\$]*([0-9]+\.[0-9]{2})", text, re.IGNORECASE)
+        if match:
+            data["uber_service_fee"] = float(match.group(1))
+
+        # 4. Third Party / Insurance
+        # "Insurance", "Booking fee"
+        match = re.search(r"(?:Insurance|Booking fee|other fees).*?[\$]*([0-9]+\.[0-9]{2})", text, re.IGNORECASE)
+        if match:
+            data["insurance_fees"] += float(match.group(1))
+
+        # 5. Tip
+        match = re.search(r"Tip\s*[\$]?([0-9]+\.[0-9]{2})", text, re.IGNORECASE)
+        if match:
+            data["tip"] = float(match.group(1))
+            # If tip exists, ensure it's not double-counted in earnings (Uber usually separates them in this view)
+
+        # 6. Trip Stats
+        # Distance: "2.17 mi" (Ensure we don't match 'min' as 'mi')
+        match = re.search(r"([0-9.]+)\s*mi(?![a-z])", text, re.IGNORECASE)
+        if match:
+            data["distance_miles"] = float(match.group(1))
+            
+        # Duration: "6 min 14 sec"
+        match = re.search(r"([0-9]+)\s*min", text, re.IGNORECASE)
+        if match:
+            data["duration_minutes"] = int(match.group(1))
+
+        # 7. Locations (Street names)
+        # Placeholder for now until we see real location logic
+        
+        return data
+
     def classify_image(self, text):
         """
         Classifies the image text into a Summit Sync category:
@@ -331,4 +440,44 @@ class OCRClient:
         if match:
              data["passenger_firstname"] = match.group(1).strip()
              
+        return data
+
+    def parse_venmo(self, text):
+        """
+        Parses Venmo screenshots for transaction details.
+        """
+        data = {
+            "amount": 0.0,
+            "sender": None,
+            "recipient": None,
+            "timestamp": None
+        }
+        
+        if not text:
+            return data
+
+        # 1. Amount
+        # Look for "$100.00" or similar
+        # "Amount received" followed by "$100.00"
+        match = re.search(r"(?:Amount received|Original amount)\s*[\$]?([0-9,]+\.[0-9]{2})", text, re.IGNORECASE)
+        if match:
+             data["amount"] = float(match.group(1).replace(',', ''))
+
+        # 2. Sender/Recipient
+        # "Received from @Jacquelyn-Heslep"
+        match = re.search(r"Received from\s+@?([A-Za-z0-9\-_]+)", text, re.IGNORECASE)
+        if match:
+            data["sender"] = match.group(1).strip()
+            
+        # "Paid to @..."
+        match = re.search(r"Paid to\s+@?([A-Za-z0-9\-_]+)", text, re.IGNORECASE)
+        if match:
+            data["recipient"] = match.group(1).strip()
+
+        # 3. Timestamp
+        # "February 6, 2026 9:12 PM"
+        match = re.search(r"([A-Z][a-z]+ \d{1,2}, \d{4} \d{1,2}:\d{2} [AP]M)", text)
+        if match:
+             data["timestamp"] = match.group(1)
+
         return data

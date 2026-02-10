@@ -191,3 +191,57 @@ class GraphClient:
             raise Exception(f"Graph SendMail Error: {resp.status_code} {resp.text}")
             
         return True
+
+    def get_booking_business_hours(self):
+        """Fetches Business Hours for the main Booking Business."""
+        token = self._get_token()
+        # Use configurable ID or default
+        business_id = os.environ.get("MS_BOOKINGS_BUSINESS_ID", "SummitOS@costesla.com")
+        
+        url = f"https://graph.microsoft.com/v1.0/solutions/bookingBusinesses/{business_id}"
+        params = {
+            "$select": "businessHours"
+        }
+        
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
+        
+        resp = requests.get(url, headers=headers, params=params)
+        if not resp.ok:
+            logging.error(f"Graph Business Hours Error: {resp.text}")
+            raise Exception(f"Graph Business Hours Error: {resp.status_code} {resp.text}")
+            
+        return resp.json().get("businessHours", [])
+
+    def get_staff_time_off(self, staff_id, start_dt, end_dt):
+        """Fetches Time Off for a specific staff member within a range."""
+        token = self._get_token()
+        business_id = os.environ.get("MS_BOOKINGS_BUSINESS_ID", "SummitOS@costesla.com")
+        
+        # Ensure ISO format with Z or similar
+        start_iso = self._format_iso_z(start_dt)
+        end_iso = self._format_iso_z(end_dt)
+        
+        url = f"https://graph.microsoft.com/v1.0/solutions/bookingBusinesses/{business_id}/staffMembers/{staff_id}/calendarView"
+        params = {
+            "startDateTime": start_iso,
+            "endDateTime": end_iso
+        }
+        
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
+        
+        # NOTE: This endpoint might return bookings AND time off. 
+        # Time Off is typically characterized by serviceId being null or specific type.
+        # We will return the raw list and let the caller filter.
+        
+        resp = requests.get(url, headers=headers, params=params)
+        if not resp.ok:
+            logging.error(f"Graph Staff Calendar Error: {resp.text}")
+            raise Exception(f"Graph Staff Calendar Error: {resp.status_code} {resp.text}")
+            
+        return resp.json().get("value", [])

@@ -1,0 +1,2380 @@
+2026-02-02 23:22:27,282 - [INFO] - OCR Client initialized with API Key at endpoint: https://ai-summitos-prod.cognitiveservices.azure.com/
+2026-02-02 23:22:32,604 - [INFO] - Fetching Tessie telemetry for UTC window: 2026-02-02 11:45:00+00:00 -> 2026-02-03 03:42:00+00:00
+2026-02-02 23:22:32,604 - [INFO] - Fetching drives for VIN: 7SAYGDEEXRF075302
+2026-02-02 23:22:34,211 - [INFO] - Retrieved 49 drives from source of truth.
+2026-02-02 23:22:34,211 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_044546.jpg
+2026-02-02 23:22:34,211 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_044546.jpg
+2026-02-02 23:22:34,212 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'ba2c5abc-00c8-11f1-911c-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:22:35,326 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '9390'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '71a17f28-17fe-4e6a-9a75-09e28f63859b'
+    'x-ms-request-id': '71a17f28-17fe-4e6a-9a75-09e28f63859b'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:22:34 GMT'
+2026-02-02 23:22:35,354 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_044546.jpg
+2026-02-02 23:22:35,355 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_044546.jpg with Telemetry
+2026-02-02 23:22:35,362 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1145
+2026-02-02 23:22:35,362 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_044713_Uber Driver.jpg
+2026-02-02 23:22:35,362 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_044713_Uber Driver.jpg
+2026-02-02 23:22:35,363 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'badbc98f-00c8-11f1-af65-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:22:35,582 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '10365'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'a00c8de3-395b-4871-9bd8-5bf4e4b37061'
+    'x-ms-request-id': 'a00c8de3-395b-4871-9bd8-5bf4e4b37061'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:22:34 GMT'
+2026-02-02 23:22:35,608 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_044713_Uber Driver.jpg
+2026-02-02 23:22:35,608 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_044713_Uber Driver.jpg with Telemetry
+2026-02-02 23:22:35,610 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1147
+2026-02-02 23:22:35,610 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_050812_Uber Driver.jpg
+2026-02-02 23:22:35,610 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_050812_Uber Driver.jpg
+2026-02-02 23:22:35,611 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'bb01c9a4-00c8-11f1-bc4c-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:22:35,792 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '10921'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '8ef8ef05-8f6e-4d97-aa5c-7881821d285f'
+    'x-ms-request-id': '8ef8ef05-8f6e-4d97-aa5c-7881821d285f'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:22:34 GMT'
+2026-02-02 23:22:35,816 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_050812_Uber Driver.jpg
+2026-02-02 23:22:35,817 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_050812_Uber Driver.jpg with Telemetry
+2026-02-02 23:22:35,819 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1208
+2026-02-02 23:22:35,819 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_050819_Uber Driver.jpg
+2026-02-02 23:22:35,819 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_050819_Uber Driver.jpg
+2026-02-02 23:22:35,820 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'bb21851b-00c8-11f1-bbd4-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:22:36,002 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '9059'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '184fed98-061b-4356-a16b-c45af3546b5f'
+    'x-ms-request-id': '184fed98-061b-4356-a16b-c45af3546b5f'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:22:35 GMT'
+2026-02-02 23:22:36,020 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_050819_Uber Driver.jpg
+2026-02-02 23:22:36,021 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_050819_Uber Driver.jpg with Telemetry
+2026-02-02 23:22:36,023 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1208
+2026-02-02 23:22:36,023 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_051839_Uber Driver.jpg
+2026-02-02 23:22:36,023 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_051839_Uber Driver.jpg
+2026-02-02 23:22:36,024 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'bb40e658-00c8-11f1-a8bb-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:22:36,220 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '9320'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '2fe2c8bf-c800-4a14-8ba7-81e7c0f00874'
+    'x-ms-request-id': '2fe2c8bf-c800-4a14-8ba7-81e7c0f00874'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:22:35 GMT'
+2026-02-02 23:22:36,239 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_051839_Uber Driver.jpg
+2026-02-02 23:22:36,240 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_051839_Uber Driver.jpg with Telemetry
+2026-02-02 23:22:36,241 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1218
+2026-02-02 23:22:36,241 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_052853_Uber Driver.jpg
+2026-02-02 23:22:36,242 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_052853_Uber Driver.jpg
+2026-02-02 23:22:36,242 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'bb621cd3-00c8-11f1-ba83-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:22:36,392 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '10257'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'bfbe59cc-9ff5-4a3c-a147-4010c15e4200'
+    'x-ms-request-id': 'bfbe59cc-9ff5-4a3c-a147-4010c15e4200'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:22:35 GMT'
+2026-02-02 23:22:36,415 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_052853_Uber Driver.jpg
+2026-02-02 23:22:36,415 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_052853_Uber Driver.jpg with Telemetry
+2026-02-02 23:22:36,417 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1228
+2026-02-02 23:22:36,417 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_053016_Uber Driver.jpg
+2026-02-02 23:22:36,417 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_053016_Uber Driver.jpg
+2026-02-02 23:22:36,418 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'bb7d0af3-00c8-11f1-a5e5-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:22:36,613 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '6908'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'e3eabf7d-72ca-4c6b-a132-de36069cfd1b'
+    'x-ms-request-id': 'e3eabf7d-72ca-4c6b-a132-de36069cfd1b'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:22:35 GMT'
+2026-02-02 23:22:36,632 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_053016_Uber Driver.jpg
+2026-02-02 23:22:36,632 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_053016_Uber Driver.jpg with Telemetry
+2026-02-02 23:22:36,634 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Eragbai_1230
+2026-02-02 23:22:36,634 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_053033_Uber Driver.jpg
+2026-02-02 23:22:36,634 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_053033_Uber Driver.jpg
+2026-02-02 23:22:36,635 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'bb9df491-00c8-11f1-8da5-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:22:36,816 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '12908'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '239ec901-5eb1-48f6-b305-a2d3a3f1bca0'
+    'x-ms-request-id': '239ec901-5eb1-48f6-b305-a2d3a3f1bca0'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:22:35 GMT'
+2026-02-02 23:22:36,847 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_053033_Uber Driver.jpg
+2026-02-02 23:22:36,848 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_053033_Uber Driver.jpg with Telemetry
+2026-02-02 23:22:36,881 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1230
+2026-02-02 23:22:36,882 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_053159.jpg
+2026-02-02 23:22:36,882 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_053159.jpg
+2026-02-02 23:22:36,883 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'bbc3c99b-00c8-11f1-8242-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:22:37,141 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '14068'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '58299c9b-0c44-42a8-a586-6265af269196'
+    'x-ms-request-id': '58299c9b-0c44-42a8-a586-6265af269196'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:22:36 GMT'
+2026-02-02 23:22:37,178 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_053159.jpg
+2026-02-02 23:22:37,178 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_053159.jpg with Telemetry
+2026-02-02 23:22:37,180 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1231
+2026-02-02 23:22:37,180 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_053932_Uber Driver.jpg
+2026-02-02 23:22:37,181 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_053932_Uber Driver.jpg
+2026-02-02 23:22:37,181 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'bbf16ab6-00c8-11f1-b0de-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:22:37,371 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '7709'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '91093bd9-16bb-44bb-8ee4-af0b273ecbfc'
+    'x-ms-request-id': '91093bd9-16bb-44bb-8ee4-af0b273ecbfc'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:22:36 GMT'
+2026-02-02 23:22:37,393 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_053932_Uber Driver.jpg
+2026-02-02 23:22:37,393 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_053932_Uber Driver.jpg with Telemetry
+2026-02-02 23:22:37,395 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1239
+2026-02-02 23:22:37,395 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_061447_Uber Driver.jpg
+2026-02-02 23:22:37,395 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_061447_Uber Driver.jpg
+2026-02-02 23:22:37,396 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'bc1237ef-00c8-11f1-950e-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:22:37,589 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '12809'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'd8fb2556-d3c2-4c8b-a4eb-cae0ce581071'
+    'x-ms-request-id': 'd8fb2556-d3c2-4c8b-a4eb-cae0ce581071'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:22:36 GMT'
+2026-02-02 23:22:37,626 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_061447_Uber Driver.jpg
+2026-02-02 23:22:37,626 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_061447_Uber Driver.jpg with Telemetry
+2026-02-02 23:22:37,627 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1314
+2026-02-02 23:22:37,628 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_061527.jpg
+2026-02-02 23:22:37,628 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_061527.jpg
+2026-02-02 23:22:37,628 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'bc359ded-00c8-11f1-98dd-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:22:37,829 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '14682'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '75647842-3f46-4a60-96c9-ac10f09bf011'
+    'x-ms-request-id': '75647842-3f46-4a60-96c9-ac10f09bf011'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:22:36 GMT'
+2026-02-02 23:22:37,862 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_061527.jpg
+2026-02-02 23:22:37,863 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_061527.jpg with Telemetry
+2026-02-02 23:22:37,865 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1315
+2026-02-02 23:22:37,865 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_071206.jpg
+2026-02-02 23:22:37,865 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_071206.jpg
+2026-02-02 23:22:37,866 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'bc59e06b-00c8-11f1-a274-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:22:38,175 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '14784'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '344326ab-cd48-4cbb-9340-997b5941fb92'
+    'x-ms-request-id': '344326ab-cd48-4cbb-9340-997b5941fb92'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:22:37 GMT'
+2026-02-02 23:22:38,212 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_071206.jpg
+2026-02-02 23:22:38,212 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_071206.jpg with Telemetry
+2026-02-02 23:22:38,214 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1412
+2026-02-02 23:22:38,214 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_074637.jpg
+2026-02-02 23:22:38,214 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_074637.jpg
+2026-02-02 23:22:38,215 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'bc8f00c3-00c8-11f1-b6c9-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:22:38,488 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '15977'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '7a62794e-3170-4e5a-bf20-f21eb3e1659d'
+    'x-ms-request-id': '7a62794e-3170-4e5a-bf20-f21eb3e1659d'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:22:37 GMT'
+2026-02-02 23:22:38,537 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_074637.jpg
+2026-02-02 23:22:38,537 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_074637.jpg with Telemetry
+2026-02-02 23:22:38,540 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1446
+2026-02-02 23:22:38,540 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_080136_GitHub.jpg
+2026-02-02 23:22:38,540 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_080136_GitHub.jpg
+2026-02-02 23:22:38,541 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'bcc0ebf4-00c8-11f1-b4cf-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:22:38,779 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '23925'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '350b42ed-471c-4445-9c0b-d057589b70db'
+    'x-ms-request-id': '350b42ed-471c-4445-9c0b-d057589b70db'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:22:37 GMT'
+2026-02-02 23:22:38,834 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_080136_GitHub.jpg
+2026-02-02 23:22:38,834 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_080136_GitHub.jpg with Telemetry
+2026-02-02 23:22:38,837 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1501
+2026-02-02 23:22:38,837 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_081013_Chrome.jpg
+2026-02-02 23:22:38,837 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_081013_Chrome.jpg
+2026-02-02 23:22:38,838 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'bcee0ccf-00c8-11f1-a0d5-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:22:39,019 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '11253'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'a2acd289-befc-43fd-a955-c01b0d1f8411'
+    'x-ms-request-id': 'a2acd289-befc-43fd-a955-c01b0d1f8411'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:22:38 GMT'
+2026-02-02 23:22:39,044 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_081013_Chrome.jpg
+2026-02-02 23:22:39,045 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_081013_Chrome.jpg with Telemetry
+2026-02-02 23:22:39,047 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1510
+2026-02-02 23:22:39,047 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_082310_Chrome.jpg
+2026-02-02 23:22:39,047 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_082310_Chrome.jpg
+2026-02-02 23:22:39,048 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'bd0e358c-00c8-11f1-865d-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:22:39,213 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '9035'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '8505fec5-c5f3-4bc4-817f-52302dd157e9'
+    'x-ms-request-id': '8505fec5-c5f3-4bc4-817f-52302dd157e9'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:22:38 GMT'
+2026-02-02 23:22:39,236 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_082310_Chrome.jpg
+2026-02-02 23:22:39,236 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_082310_Chrome.jpg with Telemetry
+2026-02-02 23:22:39,238 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1523
+2026-02-02 23:22:39,238 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_082834_Uber Driver.jpg
+2026-02-02 23:22:39,238 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_082834_Uber Driver.jpg
+2026-02-02 23:22:39,239 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'bd2b7cbb-00c8-11f1-82ca-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:22:39,425 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '8979'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '8f96d9ae-717f-4d77-8bb5-934d979e2f7f'
+    'x-ms-request-id': '8f96d9ae-717f-4d77-8bb5-934d979e2f7f'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:22:38 GMT'
+2026-02-02 23:22:39,448 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_082834_Uber Driver.jpg
+2026-02-02 23:22:39,448 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_082834_Uber Driver.jpg with Telemetry
+2026-02-02 23:22:39,449 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1528
+2026-02-02 23:22:39,449 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_083306_Uber Driver.jpg
+2026-02-02 23:22:39,449 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_083306_Uber Driver.jpg
+2026-02-02 23:22:39,450 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'bd4babd6-00c8-11f1-9b03-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:22:39,613 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '9161'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'd80bb316-929b-4170-9453-f7680fccf110'
+    'x-ms-request-id': 'd80bb316-929b-4170-9453-f7680fccf110'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:22:38 GMT'
+2026-02-02 23:22:39,637 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_083306_Uber Driver.jpg
+2026-02-02 23:22:39,637 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_083306_Uber Driver.jpg with Telemetry
+2026-02-02 23:22:39,639 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1533
+2026-02-02 23:22:39,639 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_083313_Uber Driver.jpg
+2026-02-02 23:22:39,639 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_083313_Uber Driver.jpg
+2026-02-02 23:22:39,640 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'bd687be8-00c8-11f1-988b-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:22:39,801 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '6787'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'd1f1e5e8-c216-4f97-9a59-af842d8efd47'
+    'x-ms-request-id': 'd1f1e5e8-c216-4f97-9a59-af842d8efd47'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:22:38 GMT'
+2026-02-02 23:22:39,818 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_083313_Uber Driver.jpg
+2026-02-02 23:22:39,818 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_083313_Uber Driver.jpg with Telemetry
+2026-02-02 23:22:39,822 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Suraj_1533
+2026-02-02 23:22:39,822 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_083636_Uber Driver.jpg
+2026-02-02 23:22:39,822 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_083636_Uber Driver.jpg
+2026-02-02 23:22:39,822 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'bd845743-00c8-11f1-9618-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:22:39,831 - [INFO] - Response status: 429
+Response headers:
+    'Content-Length': '271'
+    'Content-Type': 'application/json'
+    'Retry-After': '56'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:22:38 GMT'
+2026-02-02 23:23:35,832 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'bd845743-00c8-11f1-9618-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:23:36,014 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '11685'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '94a2f736-ee83-45ad-b85d-c2e5eddd2624'
+    'x-ms-request-id': '94a2f736-ee83-45ad-b85d-c2e5eddd2624'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:23:35 GMT'
+2026-02-02 23:23:36,039 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_083636_Uber Driver.jpg
+2026-02-02 23:23:36,040 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_083636_Uber Driver.jpg with Telemetry
+2026-02-02 23:23:36,041 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1536
+2026-02-02 23:23:36,041 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_083716_Uber Driver.jpg
+2026-02-02 23:23:36,042 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_083716_Uber Driver.jpg
+2026-02-02 23:23:36,042 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'df06f2e8-00c8-11f1-9f8a-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:23:36,203 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '6409'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'fe533dc1-c269-4fdb-9011-1630d5ab2c3a'
+    'x-ms-request-id': 'fe533dc1-c269-4fdb-9011-1630d5ab2c3a'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:23:36 GMT'
+2026-02-02 23:23:36,216 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_083716_Uber Driver.jpg
+2026-02-02 23:23:36,219 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_083716_Uber Driver.jpg with Telemetry
+2026-02-02 23:23:36,220 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Xavier_1537
+2026-02-02 23:23:36,221 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_084057_Uber Driver.jpg
+2026-02-02 23:23:36,221 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_084057_Uber Driver.jpg
+2026-02-02 23:23:36,221 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'df221ff4-00c8-11f1-ab6c-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:23:36,407 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '13476'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '0babfc28-8550-4633-90d3-d6dc04ba9869'
+    'x-ms-request-id': '0babfc28-8550-4633-90d3-d6dc04ba9869'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:23:36 GMT'
+2026-02-02 23:23:36,435 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_084057_Uber Driver.jpg
+2026-02-02 23:23:36,437 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_084057_Uber Driver.jpg with Telemetry
+2026-02-02 23:23:36,440 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1540
+2026-02-02 23:23:36,440 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_084103_Uber Driver.jpg
+2026-02-02 23:23:36,440 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_084103_Uber Driver.jpg
+2026-02-02 23:23:36,440 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'df438d3b-00c8-11f1-ac3f-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:23:36,585 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '13108'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'a0ee5758-a493-4bb2-957d-6b86ae06c234'
+    'x-ms-request-id': 'a0ee5758-a493-4bb2-957d-6b86ae06c234'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:23:36 GMT'
+2026-02-02 23:23:36,618 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_084103_Uber Driver.jpg
+2026-02-02 23:23:36,619 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_084103_Uber Driver.jpg with Telemetry
+2026-02-02 23:23:36,621 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1541
+2026-02-02 23:23:36,622 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_085608_Uber Driver.jpg
+2026-02-02 23:23:36,622 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_085608_Uber Driver.jpg
+2026-02-02 23:23:36,625 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'df5f704a-00c8-11f1-b27a-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:23:36,826 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '12532'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '6ac0c34a-5078-4f08-80f9-123875d1bcab'
+    'x-ms-request-id': '6ac0c34a-5078-4f08-80f9-123875d1bcab'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:23:36 GMT'
+2026-02-02 23:23:36,854 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_085608_Uber Driver.jpg
+2026-02-02 23:23:36,855 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_085608_Uber Driver.jpg with Telemetry
+2026-02-02 23:23:36,857 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1556
+2026-02-02 23:23:36,857 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_085900_Uber Driver.jpg
+2026-02-02 23:23:36,857 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_085900_Uber Driver.jpg
+2026-02-02 23:23:36,858 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'df836754-00c8-11f1-8959-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:23:37,076 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '11069'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '8aebaf12-4ef2-4d9f-936b-58d6e1890bee'
+    'x-ms-request-id': '8aebaf12-4ef2-4d9f-936b-58d6e1890bee'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:23:37 GMT'
+2026-02-02 23:23:37,104 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_085900_Uber Driver.jpg
+2026-02-02 23:23:37,105 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_085900_Uber Driver.jpg with Telemetry
+2026-02-02 23:23:37,109 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1559
+2026-02-02 23:23:37,109 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_085921_Uber Driver.jpg
+2026-02-02 23:23:37,109 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_085921_Uber Driver.jpg
+2026-02-02 23:23:37,111 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'dfa9c84d-00c8-11f1-90d9-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:23:37,266 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '12429'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '0cfdb0a9-442c-4c40-ba9a-342414690f3a'
+    'x-ms-request-id': '0cfdb0a9-442c-4c40-ba9a-342414690f3a'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:23:37 GMT'
+2026-02-02 23:23:37,297 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_085921_Uber Driver.jpg
+2026-02-02 23:23:37,297 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_085921_Uber Driver.jpg with Telemetry
+2026-02-02 23:23:37,299 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1559
+2026-02-02 23:23:37,299 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_090602_Uber Driver.jpg
+2026-02-02 23:23:37,300 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_090602_Uber Driver.jpg
+2026-02-02 23:23:37,300 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'dfc6cb38-00c8-11f1-9922-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:23:37,551 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '8566'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'bcb22755-2be1-40ca-b508-816c00c62381'
+    'x-ms-request-id': 'bcb22755-2be1-40ca-b508-816c00c62381'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:23:37 GMT'
+2026-02-02 23:23:37,572 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_090602_Uber Driver.jpg
+2026-02-02 23:23:37,572 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_090602_Uber Driver.jpg with Telemetry
+2026-02-02 23:23:37,574 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1606
+2026-02-02 23:23:37,574 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_092104_Uber Driver.jpg
+2026-02-02 23:23:37,574 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_092104_Uber Driver.jpg
+2026-02-02 23:23:37,575 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'dff0a0fe-00c8-11f1-8977-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:23:37,751 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '15402'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '95969eb7-27ea-48b8-9d5b-df7f117f75f0'
+    'x-ms-request-id': '95969eb7-27ea-48b8-9d5b-df7f117f75f0'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:23:37 GMT'
+2026-02-02 23:23:37,782 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_092104_Uber Driver.jpg
+2026-02-02 23:23:37,783 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_092104_Uber Driver.jpg with Telemetry
+2026-02-02 23:23:37,786 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1621
+2026-02-02 23:23:37,786 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_092455.jpg
+2026-02-02 23:23:37,787 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_092455.jpg
+2026-02-02 23:23:37,787 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'e0112557-00c8-11f1-9433-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:23:38,156 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '14864'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'd2f85345-7605-4ff4-ac13-09ff563d75be'
+    'x-ms-request-id': 'd2f85345-7605-4ff4-ac13-09ff563d75be'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:23:38 GMT'
+2026-02-02 23:23:38,191 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_092455.jpg
+2026-02-02 23:23:38,191 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_092455.jpg with Telemetry
+2026-02-02 23:23:38,193 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1624
+2026-02-02 23:23:38,193 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_093547.jpg
+2026-02-02 23:23:38,193 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_093547.jpg
+2026-02-02 23:23:38,193 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'e04f1d36-00c8-11f1-a0cc-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:23:38,516 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '15556'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'c65838f8-06ac-4779-9444-ae8ddf5e0da6'
+    'x-ms-request-id': 'c65838f8-06ac-4779-9444-ae8ddf5e0da6'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:23:38 GMT'
+2026-02-02 23:23:38,553 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_093547.jpg
+2026-02-02 23:23:38,553 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_093547.jpg with Telemetry
+2026-02-02 23:23:38,555 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1635
+2026-02-02 23:23:38,555 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_093903_Uber Driver.jpg
+2026-02-02 23:23:38,555 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_093903_Uber Driver.jpg
+2026-02-02 23:23:38,556 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'e0867790-00c8-11f1-af0e-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:23:38,713 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '11485'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'b9c35fd6-da9c-4dbf-b8b5-9d2a0fe08f75'
+    'x-ms-request-id': 'b9c35fd6-da9c-4dbf-b8b5-9d2a0fe08f75'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:23:38 GMT'
+2026-02-02 23:23:38,742 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_093903_Uber Driver.jpg
+2026-02-02 23:23:38,742 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_093903_Uber Driver.jpg with Telemetry
+2026-02-02 23:23:38,743 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1639
+2026-02-02 23:23:38,743 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_094435_Uber Driver.jpg
+2026-02-02 23:23:38,744 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_094435_Uber Driver.jpg
+2026-02-02 23:23:38,744 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'e0a325d7-00c8-11f1-9848-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:23:38,963 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '11732'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'be01a41c-ed29-4334-adc1-d251b8433526'
+    'x-ms-request-id': 'be01a41c-ed29-4334-adc1-d251b8433526'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:23:38 GMT'
+2026-02-02 23:23:38,990 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_094435_Uber Driver.jpg
+2026-02-02 23:23:38,990 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_094435_Uber Driver.jpg with Telemetry
+2026-02-02 23:23:38,992 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1644
+2026-02-02 23:23:38,992 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_094453_Uber Driver.jpg
+2026-02-02 23:23:38,992 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_094453_Uber Driver.jpg
+2026-02-02 23:23:38,993 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'e0c91bd7-00c8-11f1-94d5-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:23:39,183 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '6826'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'b7caac78-c92e-4790-b216-89c2298c606b'
+    'x-ms-request-id': 'b7caac78-c92e-4790-b216-89c2298c606b'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:23:39 GMT'
+2026-02-02 23:23:39,201 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_094453_Uber Driver.jpg
+2026-02-02 23:23:39,201 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_094453_Uber Driver.jpg with Telemetry
+2026-02-02 23:23:39,203 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\liza_1644
+2026-02-02 23:23:39,203 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_095112_Uber Driver.jpg
+2026-02-02 23:23:39,203 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_095112_Uber Driver.jpg
+2026-02-02 23:23:39,203 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'e0e92c76-00c8-11f1-9e09-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:23:39,408 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '10030'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '3070aaf8-3fae-417f-96ab-acdb9c5dd646'
+    'x-ms-request-id': '3070aaf8-3fae-417f-96ab-acdb9c5dd646'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:23:39 GMT'
+2026-02-02 23:23:39,430 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_095112_Uber Driver.jpg
+2026-02-02 23:23:39,431 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_095112_Uber Driver.jpg with Telemetry
+2026-02-02 23:23:39,432 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1651
+2026-02-02 23:23:39,433 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_100544_Uber Driver.jpg
+2026-02-02 23:23:39,433 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_100544_Uber Driver.jpg
+2026-02-02 23:23:39,433 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'e10c4ae2-00c8-11f1-9b46-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:23:39,636 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '14463'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '86ad2b3d-d629-4b62-882c-c44fd71a9879'
+    'x-ms-request-id': '86ad2b3d-d629-4b62-882c-c44fd71a9879'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:23:39 GMT'
+2026-02-02 23:23:39,667 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_100544_Uber Driver.jpg
+2026-02-02 23:23:39,667 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_100544_Uber Driver.jpg with Telemetry
+2026-02-02 23:23:39,669 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1705
+2026-02-02 23:23:39,670 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_100919_Uber Driver.jpg
+2026-02-02 23:23:39,670 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_100919_Uber Driver.jpg
+2026-02-02 23:23:39,670 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'e13065b1-00c8-11f1-b16c-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:23:39,831 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '10275'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'a8aa005b-58f0-4afe-8230-2732d3efebae'
+    'x-ms-request-id': 'a8aa005b-58f0-4afe-8230-2732d3efebae'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:23:39 GMT'
+2026-02-02 23:23:39,858 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_100919_Uber Driver.jpg
+2026-02-02 23:23:39,858 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_100919_Uber Driver.jpg with Telemetry
+2026-02-02 23:23:39,860 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1709
+2026-02-02 23:23:39,860 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_101225_Uber Driver.jpg
+2026-02-02 23:23:39,860 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_101225_Uber Driver.jpg
+2026-02-02 23:23:39,861 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'e14d6ea6-00c8-11f1-9678-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:23:40,022 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '10462'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'd732e762-3778-4ec3-9fc4-b71f5456ad35'
+    'x-ms-request-id': 'd732e762-3778-4ec3-9fc4-b71f5456ad35'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:23:39 GMT'
+2026-02-02 23:23:40,048 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_101225_Uber Driver.jpg
+2026-02-02 23:23:40,049 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_101225_Uber Driver.jpg with Telemetry
+2026-02-02 23:23:40,050 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Jon_1712
+2026-02-02 23:23:40,050 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_102142_Uber Driver.jpg
+2026-02-02 23:23:40,051 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_102142_Uber Driver.jpg
+2026-02-02 23:23:40,068 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'e16d301d-00c8-11f1-a725-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:23:40,243 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '9853'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'e3bc083d-5be9-46f8-af0f-33dc87b45be9'
+    'x-ms-request-id': 'e3bc083d-5be9-46f8-af0f-33dc87b45be9'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:23:40 GMT'
+2026-02-02 23:23:40,266 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_102142_Uber Driver.jpg
+2026-02-02 23:23:40,266 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_102142_Uber Driver.jpg with Telemetry
+2026-02-02 23:23:40,268 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1721
+2026-02-02 23:23:40,268 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_104407_Uber Driver.jpg
+2026-02-02 23:23:40,268 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_104407_Uber Driver.jpg
+2026-02-02 23:23:40,286 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'e18e5c40-00c8-11f1-b4c5-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:23:40,447 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '12849'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'ad0f6bae-806c-4023-83d3-4ac0a9470db2'
+    'x-ms-request-id': 'ad0f6bae-806c-4023-83d3-4ac0a9470db2'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:23:40 GMT'
+2026-02-02 23:23:40,478 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_104407_Uber Driver.jpg
+2026-02-02 23:23:40,479 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_104407_Uber Driver.jpg with Telemetry
+2026-02-02 23:23:40,485 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1744
+2026-02-02 23:23:40,485 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_104434_Uber Driver.jpg
+2026-02-02 23:23:40,485 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_104434_Uber Driver.jpg
+2026-02-02 23:23:40,503 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'e1af8399-00c8-11f1-8200-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:23:40,513 - [INFO] - Response status: 429
+Response headers:
+    'Content-Length': '271'
+    'Content-Type': 'application/json'
+    'Retry-After': '56'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:23:40 GMT'
+2026-02-02 23:24:36,513 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'e1af8399-00c8-11f1-8200-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:24:36,663 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '12644'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '71f1578f-2cb1-4198-8261-9cc630421ff4'
+    'x-ms-request-id': '71f1578f-2cb1-4198-8261-9cc630421ff4'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:24:36 GMT'
+2026-02-02 23:24:36,699 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_104434_Uber Driver.jpg
+2026-02-02 23:24:36,699 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_104434_Uber Driver.jpg with Telemetry
+2026-02-02 23:24:36,701 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1744
+2026-02-02 23:24:36,701 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_104527.jpg
+2026-02-02 23:24:36,701 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_104527.jpg
+2026-02-02 23:24:36,715 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '0330de4a-00c9-11f1-b21d-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:24:36,957 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '14364'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '202fdd84-9779-452c-a3c4-fea524d23984'
+    'x-ms-request-id': '202fdd84-9779-452c-a3c4-fea524d23984'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:24:36 GMT'
+2026-02-02 23:24:36,991 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_104527.jpg
+2026-02-02 23:24:36,991 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_104527.jpg with Telemetry
+2026-02-02 23:24:36,993 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1745
+2026-02-02 23:24:36,994 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_105049.jpg
+2026-02-02 23:24:36,994 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_105049.jpg
+2026-02-02 23:24:36,995 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '035b7542-00c9-11f1-81aa-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:24:37,181 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '11146'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '11d8aa4d-b87e-4510-ad84-c3af7861aa0e'
+    'x-ms-request-id': '11d8aa4d-b87e-4510-ad84-c3af7861aa0e'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:24:37 GMT'
+2026-02-02 23:24:37,207 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_105049.jpg
+2026-02-02 23:24:37,207 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_105049.jpg with Telemetry
+2026-02-02 23:24:37,209 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1750
+2026-02-02 23:24:37,209 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_105110_Starbucks.jpg
+2026-02-02 23:24:37,209 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_105110_Starbucks.jpg
+2026-02-02 23:24:37,211 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '037c81c2-00c9-11f1-8b57-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:24:37,382 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '12905'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '7ed83c71-31b8-463f-912d-4da16bd87623'
+    'x-ms-request-id': '7ed83c71-31b8-463f-912d-4da16bd87623'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:24:37 GMT'
+2026-02-02 23:24:37,412 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_105110_Starbucks.jpg
+2026-02-02 23:24:37,412 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_105110_Starbucks.jpg with Telemetry
+2026-02-02 23:24:37,414 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1751
+2026-02-02 23:24:37,414 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_105504_Uber Driver.jpg
+2026-02-02 23:24:37,414 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_105504_Uber Driver.jpg
+2026-02-02 23:24:37,415 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '039b9ce6-00c9-11f1-b304-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:24:37,583 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '10235'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'cf0a52db-6a35-4ec7-a1a9-a3cf55a20780'
+    'x-ms-request-id': 'cf0a52db-6a35-4ec7-a1a9-a3cf55a20780'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:24:37 GMT'
+2026-02-02 23:24:37,613 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_105504_Uber Driver.jpg
+2026-02-02 23:24:37,613 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_105504_Uber Driver.jpg with Telemetry
+2026-02-02 23:24:37,615 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1755
+2026-02-02 23:24:37,615 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_105905.jpg
+2026-02-02 23:24:37,615 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_105905.jpg
+2026-02-02 23:24:37,632 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '03bcb500-00c9-11f1-b34d-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:24:37,812 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '15030'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '91332670-080a-47bf-990c-e1dbe0e280a8'
+    'x-ms-request-id': '91332670-080a-47bf-990c-e1dbe0e280a8'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:24:37 GMT'
+2026-02-02 23:24:37,844 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_105905.jpg
+2026-02-02 23:24:37,847 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_105905.jpg with Telemetry
+2026-02-02 23:24:37,849 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1759
+2026-02-02 23:24:37,849 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_110658_M365 Copilot.jpg
+2026-02-02 23:24:37,849 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_110658_M365 Copilot.jpg
+2026-02-02 23:24:37,863 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '03dffe3f-00c9-11f1-8faa-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:24:38,044 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '8882'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '3bf0edb7-b7da-4fcd-b159-6baf8f2287f9'
+    'x-ms-request-id': '3bf0edb7-b7da-4fcd-b159-6baf8f2287f9'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:24:37 GMT'
+2026-02-02 23:24:38,069 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_110658_M365 Copilot.jpg
+2026-02-02 23:24:38,070 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_110658_M365 Copilot.jpg with Telemetry
+2026-02-02 23:24:38,072 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1806
+2026-02-02 23:24:38,072 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_112628_M365 Copilot.jpg
+2026-02-02 23:24:38,072 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_112628_M365 Copilot.jpg
+2026-02-02 23:24:38,073 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '03fffe3e-00c9-11f1-993a-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:24:38,281 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '7818'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'edf4eb00-b557-4055-8184-c46a96b93e10'
+    'x-ms-request-id': 'edf4eb00-b557-4055-8184-c46a96b93e10'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:24:38 GMT'
+2026-02-02 23:24:38,297 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_112628_M365 Copilot.jpg
+2026-02-02 23:24:38,297 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_112628_M365 Copilot.jpg with Telemetry
+2026-02-02 23:24:38,299 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1826
+2026-02-02 23:24:38,299 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_112728.jpg
+2026-02-02 23:24:38,299 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_112728.jpg
+2026-02-02 23:24:38,299 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '04229b41-00c9-11f1-9ee1-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:24:38,477 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '14457'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '93ecd9a2-dce5-4cf9-b649-26de966fe19a'
+    'x-ms-request-id': '93ecd9a2-dce5-4cf9-b649-26de966fe19a'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:24:38 GMT'
+2026-02-02 23:24:38,511 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_112728.jpg
+2026-02-02 23:24:38,512 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_112728.jpg with Telemetry
+2026-02-02 23:24:38,513 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1827
+2026-02-02 23:24:38,514 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_112743.jpg
+2026-02-02 23:24:38,514 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_112743.jpg
+2026-02-02 23:24:38,515 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '044353f6-00c9-11f1-a3e5-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:24:38,651 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '6769'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '1c803ac2-395b-4c81-bb57-50771b09abbc'
+    'x-ms-request-id': '1c803ac2-395b-4c81-bb57-50771b09abbc'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:24:38 GMT'
+2026-02-02 23:24:38,667 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_112743.jpg
+2026-02-02 23:24:38,668 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_112743.jpg with Telemetry
+2026-02-02 23:24:38,669 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1827
+2026-02-02 23:24:38,669 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_115314_McDonald's.jpg
+2026-02-02 23:24:38,669 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_115314_McDonald's.jpg
+2026-02-02 23:24:38,670 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '045b38a8-00c9-11f1-acf5-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:24:38,854 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '13635'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'cf3680ed-8e11-4f14-9c9c-5e5f1719e634'
+    'x-ms-request-id': 'cf3680ed-8e11-4f14-9c9c-5e5f1719e634'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:24:38 GMT'
+2026-02-02 23:24:38,886 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_115314_McDonald's.jpg
+2026-02-02 23:24:38,886 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_115314_McDonald's.jpg with Telemetry
+2026-02-02 23:24:38,888 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1853
+2026-02-02 23:24:38,888 - [INFO] - OCR_AGENT: Extracting text for 20260202_125551.jpg
+2026-02-02 23:24:38,888 - [INFO] - Starting OCR extraction for local stream: 20260202_125551.jpg
+2026-02-02 23:24:38,889 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '047c98b6-00c9-11f1-9521-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:24:39,219 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '96'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '1226c3a9-f999-41bb-bfc1-aead530caa18'
+    'x-ms-request-id': '1226c3a9-f999-41bb-bfc1-aead530caa18'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:24:39 GMT'
+2026-02-02 23:24:39,219 - [INFO] - TIMEZONE_AGENT: Normalizing 20260202_125551.jpg
+2026-02-02 23:24:39,219 - [INFO] - MATCHING_AGENT: Aligning 20260202_125551.jpg with Telemetry
+2026-02-02 23:24:39,220 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_1955
+2026-02-02 23:24:39,220 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_155456_Uber Driver.jpg
+2026-02-02 23:24:39,220 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_155456_Uber Driver.jpg
+2026-02-02 23:24:39,222 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '04af205a-00c9-11f1-9d5c-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:24:39,394 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '9010'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '4ebda470-731e-4442-82aa-070e4222b02c'
+    'x-ms-request-id': '4ebda470-731e-4442-82aa-070e4222b02c'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:24:39 GMT'
+2026-02-02 23:24:39,415 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_155456_Uber Driver.jpg
+2026-02-02 23:24:39,415 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_155456_Uber Driver.jpg with Telemetry
+2026-02-02 23:24:39,417 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_2254
+2026-02-02 23:24:39,417 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_155721.jpg
+2026-02-02 23:24:39,417 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_155721.jpg
+2026-02-02 23:24:39,418 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '04cd4998-00c9-11f1-bc00-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:24:39,565 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '9990'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '5e37652d-f200-471a-a581-5d1b3877a3db'
+    'x-ms-request-id': '5e37652d-f200-471a-a581-5d1b3877a3db'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:24:39 GMT'
+2026-02-02 23:24:39,588 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_155721.jpg
+2026-02-02 23:24:39,589 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_155721.jpg with Telemetry
+2026-02-02 23:24:39,590 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_2257
+2026-02-02 23:24:39,590 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_161208_Uber Driver.jpg
+2026-02-02 23:24:39,590 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_161208_Uber Driver.jpg
+2026-02-02 23:24:39,590 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '04e78c34-00c9-11f1-a555-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:24:39,766 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '10658'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '05756c01-8e85-4131-bec5-4694ec68bca4'
+    'x-ms-request-id': '05756c01-8e85-4131-bec5-4694ec68bca4'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:24:39 GMT'
+2026-02-02 23:24:39,789 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_161208_Uber Driver.jpg
+2026-02-02 23:24:39,789 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_161208_Uber Driver.jpg with Telemetry
+2026-02-02 23:24:39,792 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Drew_2312
+2026-02-02 23:24:39,792 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_161827_Uber Driver.jpg
+2026-02-02 23:24:39,792 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_161827_Uber Driver.jpg
+2026-02-02 23:24:39,793 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '05067fb9-00c9-11f1-a7cb-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:24:39,968 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '9989'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '8f59b795-0e0c-4fe7-b628-e1db3d29d4b7'
+    'x-ms-request-id': '8f59b795-0e0c-4fe7-b628-e1db3d29d4b7'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:24:39 GMT'
+2026-02-02 23:24:39,989 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_161827_Uber Driver.jpg
+2026-02-02 23:24:39,989 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_161827_Uber Driver.jpg with Telemetry
+2026-02-02 23:24:39,991 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_2318
+2026-02-02 23:24:39,991 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_162311_Uber Driver.jpg
+2026-02-02 23:24:39,991 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_162311_Uber Driver.jpg
+2026-02-02 23:24:39,992 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '0524f1c0-00c9-11f1-80fc-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:24:40,181 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '11822'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '483884de-392d-49cf-b287-43a4cd188b06'
+    'x-ms-request-id': '483884de-392d-49cf-b287-43a4cd188b06'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:24:40 GMT'
+2026-02-02 23:24:40,205 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_162311_Uber Driver.jpg
+2026-02-02 23:24:40,205 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_162311_Uber Driver.jpg with Telemetry
+2026-02-02 23:24:40,206 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_2323
+2026-02-02 23:24:40,207 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_163007_Uber Driver.jpg
+2026-02-02 23:24:40,207 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_163007_Uber Driver.jpg
+2026-02-02 23:24:40,207 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '0545c060-00c9-11f1-b946-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:24:40,374 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '7348'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'a9980c68-bd58-4181-bf56-76f9efb58d29'
+    'x-ms-request-id': 'a9980c68-bd58-4181-bf56-76f9efb58d29'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:24:40 GMT'
+2026-02-02 23:24:40,389 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_163007_Uber Driver.jpg
+2026-02-02 23:24:40,390 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_163007_Uber Driver.jpg with Telemetry
+2026-02-02 23:24:40,391 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Esther_2330
+2026-02-02 23:24:40,391 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_163044_Uber Driver.jpg
+2026-02-02 23:24:40,391 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_163044_Uber Driver.jpg
+2026-02-02 23:24:40,392 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '0561e0d9-00c9-11f1-86a8-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:24:40,573 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '13809'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '3d991a40-94b6-4e4c-93b8-9b12c3f32aa5'
+    'x-ms-request-id': '3d991a40-94b6-4e4c-93b8-9b12c3f32aa5'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:24:40 GMT'
+2026-02-02 23:24:40,603 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_163044_Uber Driver.jpg
+2026-02-02 23:24:40,603 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_163044_Uber Driver.jpg with Telemetry
+2026-02-02 23:24:40,605 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_2330
+2026-02-02 23:24:40,605 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_163145.jpg
+2026-02-02 23:24:40,605 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_163145.jpg
+2026-02-02 23:24:40,606 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '05827960-00c9-11f1-add0-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:24:40,786 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '15042'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'a8c875b3-fc30-48e1-b4dd-1925f3acccc1'
+    'x-ms-request-id': 'a8c875b3-fc30-48e1-b4dd-1925f3acccc1'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:24:40 GMT'
+2026-02-02 23:24:40,823 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_163145.jpg
+2026-02-02 23:24:40,824 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_163145.jpg with Telemetry
+2026-02-02 23:24:40,825 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_2331
+2026-02-02 23:24:40,826 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_163647_Uber Driver.jpg
+2026-02-02 23:24:40,826 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_163647_Uber Driver.jpg
+2026-02-02 23:24:40,826 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '05a42ad5-00c9-11f1-8423-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:24:40,835 - [INFO] - Response status: 429
+Response headers:
+    'Content-Length': '271'
+    'Content-Type': 'application/json'
+    'Retry-After': '56'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:24:40 GMT'
+2026-02-02 23:25:36,837 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '05a42ad5-00c9-11f1-8423-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:25:37,014 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '8836'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '6ea304f6-f0fa-42ab-a9d6-311a8f60d38e'
+    'x-ms-request-id': '6ea304f6-f0fa-42ab-a9d6-311a8f60d38e'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:25:36 GMT'
+2026-02-02 23:25:37,036 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_163647_Uber Driver.jpg
+2026-02-02 23:25:37,037 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_163647_Uber Driver.jpg with Telemetry
+2026-02-02 23:25:37,039 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_2336
+2026-02-02 23:25:37,039 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_163921_Uber Driver.jpg
+2026-02-02 23:25:37,039 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_163921_Uber Driver.jpg
+2026-02-02 23:25:37,040 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '2725bcfe-00c9-11f1-8af4-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:25:37,187 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '7446'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '715a5f24-c43c-4343-84cc-71cfc30400a6'
+    'x-ms-request-id': '715a5f24-c43c-4343-84cc-71cfc30400a6'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:25:36 GMT'
+2026-02-02 23:25:37,206 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_163921_Uber Driver.jpg
+2026-02-02 23:25:37,207 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_163921_Uber Driver.jpg with Telemetry
+2026-02-02 23:25:37,208 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_2339
+2026-02-02 23:25:37,208 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_165436_Uber Driver.jpg
+2026-02-02 23:25:37,208 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_165436_Uber Driver.jpg
+2026-02-02 23:25:37,209 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '273f7467-00c9-11f1-96b8-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:25:37,219 - [INFO] - Response status: 429
+Response headers:
+    'Content-Length': '269'
+    'Content-Type': 'application/json'
+    'Retry-After': '1'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:25:37 GMT'
+2026-02-02 23:25:38,220 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '273f7467-00c9-11f1-96b8-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:25:38,368 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '12515'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '8eb58655-c8aa-4b28-ab61-ca1ccb9d7bdd'
+    'x-ms-request-id': '8eb58655-c8aa-4b28-ab61-ca1ccb9d7bdd'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:25:38 GMT'
+2026-02-02 23:25:38,398 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_165436_Uber Driver.jpg
+2026-02-02 23:25:38,398 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_165436_Uber Driver.jpg with Telemetry
+2026-02-02 23:25:38,401 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_2354
+2026-02-02 23:25:38,401 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_165534.jpg
+2026-02-02 23:25:38,401 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_165534.jpg
+2026-02-02 23:25:38,401 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '27f54da8-00c9-11f1-907a-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:25:38,618 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '12014'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'f4a11b83-2a8b-49a8-acc8-e2ceea3a3b83'
+    'x-ms-request-id': 'f4a11b83-2a8b-49a8-acc8-e2ceea3a3b83'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:25:38 GMT'
+2026-02-02 23:25:38,648 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_165534.jpg
+2026-02-02 23:25:38,649 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_165534.jpg with Telemetry
+2026-02-02 23:25:38,653 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_2355
+2026-02-02 23:25:38,653 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_165539.jpg
+2026-02-02 23:25:38,653 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_165539.jpg
+2026-02-02 23:25:38,655 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '281c2442-00c9-11f1-a7fc-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:25:39,043 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '13306'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '749fed85-8186-4307-9e6d-4ef2c89c2605'
+    'x-ms-request-id': '749fed85-8186-4307-9e6d-4ef2c89c2605'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:25:38 GMT'
+2026-02-02 23:25:39,073 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_165539.jpg
+2026-02-02 23:25:39,073 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_165539.jpg with Telemetry
+2026-02-02 23:25:39,076 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_2355
+2026-02-02 23:25:39,076 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_165823_Uber Driver.jpg
+2026-02-02 23:25:39,076 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_165823_Uber Driver.jpg
+2026-02-02 23:25:39,079 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '285cd8ba-00c9-11f1-968a-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:25:39,280 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '14807'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'b090eff9-d7c1-4b8d-b2f3-4fbfef7f6e96'
+    'x-ms-request-id': 'b090eff9-d7c1-4b8d-b2f3-4fbfef7f6e96'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:25:39 GMT'
+2026-02-02 23:25:39,314 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_165823_Uber Driver.jpg
+2026-02-02 23:25:39,314 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_165823_Uber Driver.jpg with Telemetry
+2026-02-02 23:25:39,317 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.02.26\Uber_Shift_02.02\Unknown_2358
+2026-02-02 23:25:39,317 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_180357.jpg
+2026-02-02 23:25:39,317 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_180357.jpg
+2026-02-02 23:25:39,318 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '28812013-00c9-11f1-b995-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:25:39,604 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '14766'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '6d84de22-0934-4fcd-b078-fd2587c7099a'
+    'x-ms-request-id': '6d84de22-0934-4fcd-b078-fd2587c7099a'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:25:39 GMT'
+2026-02-02 23:25:39,639 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_180357.jpg
+2026-02-02 23:25:39,639 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_180357.jpg with Telemetry
+2026-02-02 23:25:39,642 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.03.26\Uber_Shift_02.02\Unknown_0103
+2026-02-02 23:25:39,642 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_183923_Uber Driver.jpg
+2026-02-02 23:25:39,642 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_183923_Uber Driver.jpg
+2026-02-02 23:25:39,662 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '28b5c5ee-00c9-11f1-af3f-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:25:39,942 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '12178'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'c1d66956-fc4b-47da-876d-535b996b379d'
+    'x-ms-request-id': 'c1d66956-fc4b-47da-876d-535b996b379d'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:25:39 GMT'
+2026-02-02 23:25:39,970 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_183923_Uber Driver.jpg
+2026-02-02 23:25:39,970 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_183923_Uber Driver.jpg with Telemetry
+2026-02-02 23:25:39,972 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.03.26\Uber_Shift_02.02\Unknown_0139
+2026-02-02 23:25:39,972 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_184023_Uber Driver.jpg
+2026-02-02 23:25:39,972 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_184023_Uber Driver.jpg
+2026-02-02 23:25:39,973 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '28e51a7d-00c9-11f1-a0eb-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:25:40,130 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '7595'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '3e43c60c-2787-43c8-a553-c6aac94e876f'
+    'x-ms-request-id': '3e43c60c-2787-43c8-a553-c6aac94e876f'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:25:39 GMT'
+2026-02-02 23:25:40,147 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_184023_Uber Driver.jpg
+2026-02-02 23:25:40,147 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_184023_Uber Driver.jpg with Telemetry
+2026-02-02 23:25:40,149 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.03.26\Uber_Shift_02.02\James_0140
+2026-02-02 23:25:40,149 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_184744_Uber Driver.jpg
+2026-02-02 23:25:40,149 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_184744_Uber Driver.jpg
+2026-02-02 23:25:40,151 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '29005d6a-00c9-11f1-8a6a-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:25:40,292 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '8530'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '0b67b702-c9cc-4b6f-80e9-94cae8ee2245'
+    'x-ms-request-id': '0b67b702-c9cc-4b6f-80e9-94cae8ee2245'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:25:40 GMT'
+2026-02-02 23:25:40,312 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_184744_Uber Driver.jpg
+2026-02-02 23:25:40,312 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_184744_Uber Driver.jpg with Telemetry
+2026-02-02 23:25:40,315 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.03.26\Uber_Shift_02.02\Unknown_0147
+2026-02-02 23:25:40,315 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_190346_Uber Driver.jpg
+2026-02-02 23:25:40,315 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_190346_Uber Driver.jpg
+2026-02-02 23:25:40,343 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '291da616-00c9-11f1-b49f-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:25:40,517 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '8051'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '45bc034d-1f94-4e7b-9d69-3561001f3326'
+    'x-ms-request-id': '45bc034d-1f94-4e7b-9d69-3561001f3326'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:25:40 GMT'
+2026-02-02 23:25:40,536 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_190346_Uber Driver.jpg
+2026-02-02 23:25:40,537 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_190346_Uber Driver.jpg with Telemetry
+2026-02-02 23:25:40,539 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.03.26\Uber_Shift_02.02\Unknown_0203
+2026-02-02 23:25:40,539 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_203102_Venmo.jpg
+2026-02-02 23:25:40,539 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_203102_Venmo.jpg
+2026-02-02 23:25:40,554 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '293de23c-00c9-11f1-9823-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:25:40,753 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '11738'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '036ad2b1-d9da-453f-84b9-d2bb88fa78c3'
+    'x-ms-request-id': '036ad2b1-d9da-453f-84b9-d2bb88fa78c3'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:25:40 GMT'
+2026-02-02 23:25:40,776 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_203102_Venmo.jpg
+2026-02-02 23:25:40,776 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_203102_Venmo.jpg with Telemetry
+2026-02-02 23:25:40,777 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.03.26\Uber_Shift_02.02\Unknown_0331
+2026-02-02 23:25:40,781 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_203214_Uber Driver.jpg
+2026-02-02 23:25:40,781 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_203214_Uber Driver.jpg
+2026-02-02 23:25:40,782 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '2960ae75-00c9-11f1-af4c-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:25:41,018 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '14514'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'd879c68b-9ede-47d7-93c9-fe4193188272'
+    'x-ms-request-id': 'd879c68b-9ede-47d7-93c9-fe4193188272'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:25:40 GMT'
+2026-02-02 23:25:41,054 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_203214_Uber Driver.jpg
+2026-02-02 23:25:41,055 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_203214_Uber Driver.jpg with Telemetry
+2026-02-02 23:25:41,057 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.03.26\Uber_Shift_02.02\Unknown_0332
+2026-02-02 23:25:41,057 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_203256.jpg
+2026-02-02 23:25:41,057 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_203256.jpg
+2026-02-02 23:25:41,058 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '298aad62-00c9-11f1-a76a-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:25:41,070 - [INFO] - Response status: 429
+Response headers:
+    'Content-Length': '271'
+    'Content-Type': 'application/json'
+    'Retry-After': '56'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:25:40 GMT'
+2026-02-02 23:26:37,071 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '298aad62-00c9-11f1-a76a-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:26:37,358 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '15501'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'bf8c98f6-674f-4624-9f3b-9ebaf0c8fdbe'
+    'x-ms-request-id': 'bf8c98f6-674f-4624-9f3b-9ebaf0c8fdbe'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:26:36 GMT'
+2026-02-02 23:26:37,712 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_203256.jpg
+2026-02-02 23:26:37,712 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_203256.jpg with Telemetry
+2026-02-02 23:26:37,735 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.03.26\Uber_Shift_02.02\Unknown_0332
+2026-02-02 23:26:37,735 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_204106.jpg
+2026-02-02 23:26:37,735 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_204106.jpg
+2026-02-02 23:26:37,871 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '4b67b820-00c9-11f1-b553-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:26:38,210 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '14683'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '9a28e549-27ac-45dd-907b-a7c897bbb027'
+    'x-ms-request-id': '9a28e549-27ac-45dd-907b-a7c897bbb027'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:26:37 GMT'
+2026-02-02 23:26:38,950 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_204106.jpg
+2026-02-02 23:26:38,950 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_204106.jpg with Telemetry
+2026-02-02 23:26:39,022 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.03.26\Uber_Shift_02.02\Unknown_0341
+2026-02-02 23:26:39,022 - [INFO] - OCR_AGENT: Extracting text for Screenshot_20260202_204116.jpg
+2026-02-02 23:26:39,022 - [INFO] - Starting OCR extraction for local stream: Screenshot_20260202_204116.jpg
+2026-02-02 23:26:39,024 - [INFO] - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '4c177010-00c9-11f1-aec2-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:26:39,329 - [INFO] - Response status: 200
+Response headers:
+    'Content-Length': '13633'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'f84e6508-4c07-4910-ac65-36ced220a346'
+    'x-ms-request-id': 'f84e6508-4c07-4910-ac65-36ced220a346'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:26:38 GMT'
+2026-02-02 23:26:39,459 - [INFO] - TIMEZONE_AGENT: Normalizing Screenshot_20260202_204116.jpg
+2026-02-02 23:26:39,459 - [INFO] - MATCHING_AGENT: Aligning Screenshot_20260202_204116.jpg with Telemetry
+2026-02-02 23:26:39,483 - [INFO] - Artifact finalized at: 2026\February\Week 6\02.03.26\Uber_Shift_02.02\Unknown_0341
+2026-02-02 23:26:39,539 - [INFO] - Mission complete. Processed 76 artifacts.
