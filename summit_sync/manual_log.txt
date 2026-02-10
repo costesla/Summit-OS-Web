@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\summit_sync\scripts\manual_process_today.py", line 12, in <module>
+    from lib.ocr import OCRClient
+ModuleNotFoundError: No module named 'lib.ocr'

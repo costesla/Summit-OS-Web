@@ -1,0 +1,72 @@
+--- Checking Today's Trips (MST) ---
+Total Trips Found Today: 68
+Uber Trips: 16
+  - Uber_Core ($15.17) via Screenshot_20260130_192425_Uber Driver.jpg
+  - Uber_Core ($0.00) via Screenshot_20260130_185017_Uber Driver.jpg
+  - Uber_Core ($14.79) via Screenshot_20260130_185009_Uber Driver.jpg
+  - Uber_Core ($17.30) via Screenshot_20260130_184725_Uber Driver.jpg
+  - Uber_Core ($0.00) via Screenshot_20260130_181530_Uber Driver.jpg
+  - Uber_Core ($17.30) via Screenshot_20260130_181513_Uber Driver.jpg
+  - Uber_Core ($0.00) via Screenshot_20260130_110325_Uber Driver.jpg
+  - Uber_Core ($10.13) via Screenshot_20260130_110318_Uber Driver.jpg
+  - Uber_Core ($0.00) via Screenshot_20260130_104418.jpg
+  - Uber_Core ($7.80) via Screenshot_20260130_103602_Uber Driver.jpg
+  - Uber_Core ($5.27) via Screenshot_20260130_102053_Uber Driver.jpg
+  - Uber_Core ($0.00) via Screenshot_20260130_102011_Uber Driver.jpg
+  - Uber_Core ($7.80) via Screenshot_20260130_101138_Uber Driver.jpg
+  - Uber_Core ($7.80) via Screenshot_20260130_101133_Uber Driver.jpg
+  - Uber_Core ($0.00) via Screenshot_20260130_100856_Uber Driver.jpg
+  - Uber_Core ($5.27) via Screenshot_20260130_100847_Uber Driver.jpg
+Private Trips: 52
+  - Private_Trip ($0.00) | Pass: Colorado Springs
+  - Expense ($0.00) | Pass: None
+  - Expense ($0.00) | Pass: None
+  - Expense ($0.00) | Pass: None
+  - Private_Trip ($0.00) | Pass: go
+  - Unknown ($0.00) | Pass: None
+  - Private_Trip ($0.00) | Pass: last stop
+  - Private_Trip ($0.00) | Pass: first stop
+  - Private_Trip ($0.00) | Pass: first stop
+  - Unknown ($0.00) | Pass: None
+  - Unknown ($0.00) | Pass: None
+  - Expense ($0.00) | Pass: None
+  - Unknown ($0.00) | Pass: None
+  - Unknown ($0.00) | Pass: None
+  - Expense ($0.00) | Pass: None
+  - Unknown ($0.00) | Pass: None
+  - Unknown ($0.00) | Pass: None
+  - Unknown ($0.00) | Pass: None
+  - Unknown ($0.00) | Pass: None
+  - Private_Trip ($0.00) | Pass: None
+  - Private_Trip ($0.00) | Pass: have to hold off on the
+  - Unknown ($0.00) | Pass: None
+  - Private_Trip ($0.00) | Pass: Colorado Springs
+  - Unknown ($0.00) | Pass: None
+  - Private_Trip ($0.00) | Pass: Omar Stovall
+  - Private_Trip ($0.00) | Pass: to rear
+  - Unknown ($0.00) | Pass: None
+  - Unknown ($0.00) | Pass: None
+  - Unknown ($0.00) | Pass: None
+  - Unknown ($0.00) | Pass: None
+  - Unknown ($0.00) | Pass: None
+  - Expense ($0.00) | Pass: None
+  - Unknown ($0.00) | Pass: None
+  - Unknown ($0.00) | Pass: None
+  - Unknown ($0.00) | Pass: None
+  - Private_Trip ($0.00) | Pass: Colorado Springs
+  - Unknown ($0.00) | Pass: None
+  - Private_Trip ($0.00) | Pass: Colorado Springs
+  - Private_Trip ($0.00) | Pass: Fountain
+  - Unknown ($0.00) | Pass: None
+  - Expense ($0.00) | Pass: None
+  - Unknown ($0.00) | Pass: None
+  - Private_Trip ($0.00) | Pass: Peyton
+  - Private_Trip ($0.00) | Pass: Esmeralda Dsilva
+  - Unknown ($0.00) | Pass: None
+  - Expense ($0.00) | Pass: None
+  - Unknown ($0.00) | Pass: None
+  - Expense ($0.00) | Pass: None
+  - Unknown ($0.00) | Pass: None
+  - Private_Trip ($0.00) | Pass: Esmeralda
+  - Expense ($0.00) | Pass: None
+  - Unknown ($0.00) | Pass: None

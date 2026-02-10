@@ -1,0 +1,8 @@
+Total Database Rows: 132
+
+--- SUMMIT MISSION REPORT: JAN 30-31 ---
+ > UBER REVENUE   ( 7 Trips): $   80.44
+ > PRIVATE REVENUE ( 5 Trips): $   92.57
+----------------------------------------
+   GRAND TOTAL EARNED:    $  173.01
+----------------------------------------

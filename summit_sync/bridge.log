@@ -1,0 +1,12 @@
+2026-02-02 04:32:07,772 - INFO - === OneDrive Personal-to-Business Bridge Starting ===
+2026-02-02 04:32:07,772 - INFO - Source: C:\Users\PeterTeehan\OneDrive\Pictures\Camera Roll
+2026-02-02 04:32:07,772 - INFO - Destination: C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\Pictures\Camera Roll\2026
+2026-02-02 04:32:07,774 - INFO - Starting initial scan for files containing '20260201'...
+2026-02-02 04:32:07,774 - INFO - Initial sync complete. Copied 0 files.
+2026-02-02 04:32:08,045 - INFO - Watcher started. Press Ctrl+C to stop.
+2026-02-02 04:32:23,844 - INFO - === OneDrive Personal-to-Business Bridge Starting ===
+2026-02-02 04:32:23,844 - INFO - Source: C:\Users\PeterTeehan\OneDrive\Pictures\Camera Roll
+2026-02-02 04:32:23,844 - INFO - Destination: C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\Pictures\Camera Roll\2026
+2026-02-02 04:32:23,844 - INFO - Starting initial scan for files containing '20260201'...
+2026-02-02 04:32:23,844 - INFO - Initial sync complete. Copied 0 files.
+2026-02-02 04:32:23,846 - INFO - Initial sync complete. --initial-only specified, exiting.

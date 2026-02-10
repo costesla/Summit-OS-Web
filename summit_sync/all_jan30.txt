@@ -1,0 +1,70 @@
+--- All Jan 30/31 Entries (69) ---
+[PVT ] ID: M_JACKIE_JAN30 | Name: Jacuelyn | Earn: $68.57
+[PVT ] ID: T04f35a66 | Name: to rear | Earn: $0.00
+[UBER] ID: T0f04db61 | Name: None | Earn: $7.80
+[UBER] ID: T0fb2300b | Name: None | Earn: $7.80
+[PVT ] ID: T1057e56e | Name: None | Earn: $0.00
+[PVT ] ID: T128a1a8e | Name: None | Earn: $0.00
+[UBER] ID: T16135281 | Name: None | Earn: $0.00
+[PVT ] ID: T167212ee | Name: go | Earn: $0.00
+[PVT ] ID: T17b3262a | Name: None | Earn: $0.00
+[UBER] ID: T1b636795 | Name: None | Earn: $10.13
+[UBER] ID: T24237834 | Name: None | Earn: $5.27
+[PVT ] ID: T2c9d43ac | Name: None | Earn: $0.00
+[PVT ] ID: T2dbf5846 | Name: None | Earn: $0.00
+[PVT ] ID: T32553a7e | Name: Esmeralda Dsilva | Earn: $24.00
+[PVT ] ID: T357e8839 | Name: None | Earn: $0.00
+[PVT ] ID: T3879dfbe | Name: None | Earn: $0.00
+[PVT ] ID: T3a5bd444 | Name: None | Earn: $0.00
+[PVT ] ID: T3cea8395 | Name: Colorado Springs | Earn: $0.00
+[PVT ] ID: T3e179f3b | Name: Peyton | Earn: $0.00
+[PVT ] ID: T3e2dc66a | Name: None | Earn: $0.00
+[PVT ] ID: T3f993196 | Name: None | Earn: $0.00
+[PVT ] ID: T4003d881 | Name: first stop | Earn: $0.00
+[PVT ] ID: T42076557 | Name: None | Earn: $0.00
+[PVT ] ID: T44e3c878 | Name: None | Earn: $0.00
+[PVT ] ID: T485345c2 | Name: Fountain | Earn: $0.00
+[PVT ] ID: T48ab2890 | Name: Colorado Springs | Earn: $0.00
+[UBER] ID: T49928386 | Name: None | Earn: $0.00
+[PVT ] ID: T4aa40372 | Name: None | Earn: $0.00
+[UBER] ID: T4f758614 | Name: None | Earn: $14.79
+[UBER] ID: T514d1e86 | Name: None | Earn: $15.17
+[PVT ] ID: T539f9a40 | Name: None | Earn: $0.00
+[PVT ] ID: T5601055a | Name: None | Earn: $0.00
+[UBER] ID: T56c79211 | Name: None | Earn: $7.80
+[PVT ] ID: T610156fa | Name: None | Earn: $0.00
+[PVT ] ID: T65a663be | Name: None | Earn: $0.00
+[PVT ] ID: T7111f4f1 | Name: None | Earn: $0.00
+[PVT ] ID: T782231be | Name: None | Earn: $0.00
+[PVT ] ID: T799e8a87 | Name: None | Earn: $0.00
+[PVT ] ID: T7d577461 | Name: None | Earn: $0.00
+[PVT ] ID: T7d9f78d4 | Name: None | Earn: $0.00
+[PVT ] ID: T7dfbed56 | Name: None | Earn: $0.00
+[PVT ] ID: T7dfe022c | Name: first stop | Earn: $0.00
+[UBER] ID: T7f521190 | Name: None | Earn: $0.00
+[PVT ] ID: T869c5222 | Name: None | Earn: $0.00
+[PVT ] ID: T88524432 | Name: Esmeralda | Earn: $0.00
+[PVT ] ID: T91767da0 | Name: None | Earn: $0.00
+[PVT ] ID: T96ee3e82 | Name: None | Earn: $0.00
+[UBER] ID: T988bc45f | Name: None | Earn: $17.30
+[PVT ] ID: T9b13ee66 | Name: Colorado Springs | Earn: $0.00
+[PVT ] ID: T9bfd7932 | Name: None | Earn: $0.00
+[PVT ] ID: T9f1f74d5 | Name: None | Earn: $0.00
+[UBER] ID: Ta6b3a320 | Name: None | Earn: $0.00
+[UBER] ID: Ta95ec8e1 | Name: None | Earn: $5.27
+[PVT ] ID: Ta98d0e46 | Name: None | Earn: $0.00
+[UBER] ID: Ta9be982d | Name: None | Earn: $0.00
+[PVT ] ID: Tad33bae0 | Name: None | Earn: $0.00
+[UBER] ID: Tb7f5922e | Name: None | Earn: $0.00
+[PVT ] ID: Tbbb44947 | Name: None | Earn: $0.00
+[PVT ] ID: Tc3c945ef | Name: Colorado Springs | Earn: $0.00
+[PVT ] ID: Tcb5642b5 | Name: None | Earn: $0.00
+[PVT ] ID: Tcc53939d | Name: None | Earn: $0.00
+[UBER] ID: Td81693cd | Name: None | Earn: $17.30
+[PVT ] ID: Te960dd65 | Name: have to hold off on the | Earn: $0.00
+[PVT ] ID: Tebea80dc | Name: None | Earn: $0.00
+[PVT ] ID: Ted03f65c | Name: last stop | Earn: $0.00
+[PVT ] ID: Tf2b5ad53 | Name: None | Earn: $0.00
+[PVT ] ID: Tf39cb1db | Name: None | Earn: $0.00
+[PVT ] ID: Tfbfb7b94 | Name: None | Earn: $0.00
+[PVT ] ID: Tfcf1f558 | Name: Omar Stovall | Earn: $0.00

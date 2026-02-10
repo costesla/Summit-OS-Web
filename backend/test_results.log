@@ -1,0 +1,12 @@
+
+--- Testing Pricing Expiry Safety ---
+[OK] Pricing expiry check completed. Expired: False
+
+--- Testing Normalization Robustness ---
+[OK] All normalization types returned UTC-aware objects.
+
+--- Testing Availability Comparison Logic ---
+[OK] Overlap check completed safely. Overlap: True
+
+--- Testing Calendar Loop Safety ---
+[OK] Generated 36 aware slots from naive input.

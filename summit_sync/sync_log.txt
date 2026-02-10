@@ -1,0 +1,13 @@
+2026-01-29 20:50:32,264 - OCR Client initialized with API Key at endpoint: https://ai-summitos-prod.cognitiveservices.azure.com/
+2026-01-29 20:50:32,264 - --- STARTING SYNC ---
+2026-01-29 20:50:32,264 - Scanning C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\Pictures\Camera Roll\2026 for files matching 20260129...
+2026-01-29 20:50:32,614 - Skipping Screenshot_20260129_110004_Uber Driver.jpg (Already in DB)
+2026-01-29 20:50:32,647 - Skipping Screenshot_20260129_111136_Uber Driver.jpg (Already in DB)
+2026-01-29 20:50:32,679 - Skipping Screenshot_20260129_111758_Uber Driver.jpg (Already in DB)
+2026-01-29 20:50:32,716 - Skipping Screenshot_20260129_112632_Uber Driver.jpg (Already in DB)
+2026-01-29 20:50:32,741 - Skipping Screenshot_20260129_153920_Call.jpg (Already in DB)
+2026-01-29 20:50:32,757 - Skipping Screenshot_20260129_153955_Call.jpg (Already in DB)
+2026-01-29 20:50:32,757 - Syncing Tessie Data...
+2026-01-29 20:50:32,757 - Fetching drives for VIN: 7SAYGDEEXRF075302
+2026-01-29 20:50:34,117 - Sync Complete. Updated 0 trips with Tessie data.
+2026-01-29 20:50:34,117 - --- SYNC FINISHED ---

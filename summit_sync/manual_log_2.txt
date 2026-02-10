@@ -1,0 +1,349 @@
+2026-01-29 20:23:19,545 - OCR Client initialized with API Key at endpoint: https://ai-summitos-prod.cognitiveservices.azure.com/
+2026-01-29 20:23:19,545 - Processing local file: Screenshot_20260129_110004_Uber Driver.jpg
+2026-01-29 20:23:19,555 - Request URL: 'https://stsummitosprod.blob.core.windows.net/uploads/Screenshot_20260129_110004_Uber%20Driver.jpg'
+Request method: 'PUT'
+Request headers:
+    'Content-Length': '687931'
+    'x-ms-blob-type': 'REDACTED'
+    'x-ms-version': 'REDACTED'
+    'Content-Type': 'application/octet-stream'
+    'Accept': 'application/xml'
+    'User-Agent': 'azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'x-ms-date': 'REDACTED'
+    'x-ms-client-request-id': '063e4b2c-fd8b-11f0-9eda-7c1e529ce9b1'
+    'Authorization': 'REDACTED'
+A body is sent with the request
+2026-01-29 20:23:20,814 - Response status: 201
+Response headers:
+    'Content-Length': '0'
+    'Content-MD5': 'REDACTED'
+    'Last-Modified': 'Fri, 30 Jan 2026 03:23:20 GMT'
+    'ETag': '"0x8DE5FAEEB3122C9"'
+    'Server': 'Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0'
+    'x-ms-request-id': '47c14af1-601e-0078-4597-912664000000'
+    'x-ms-client-request-id': '063e4b2c-fd8b-11f0-9eda-7c1e529ce9b1'
+    'x-ms-version': 'REDACTED'
+    'x-ms-content-crc64': 'REDACTED'
+    'x-ms-request-server-encrypted': 'REDACTED'
+    'Date': 'Fri, 30 Jan 2026 03:23:20 GMT'
+2026-01-29 20:23:20,815 - Extracting text...
+2026-01-29 20:23:20,815 - Starting OCR extraction for URL: https://stsummitosprod.blob.core.windows.net/uploads/Screenshot_20260129_110004_Uber Driver.jpg
+2026-01-29 20:23:20,816 - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/json'
+    'Content-Length': '106'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '06ff5a46-fd8b-11f0-aa49-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-01-29 20:23:21,982 - Response status: 400
+Response headers:
+    'Content-Length': '109'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '48cacab5-2bfa-4fe9-83bf-4829c6953177'
+    'x-ms-request-id': '48cacab5-2bfa-4fe9-83bf-4829c6953177'
+    'x-ms-error-code': 'InvalidRequest'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Fri, 30 Jan 2026 03:23:21 GMT'
+2026-01-29 20:23:21,986 - Error during OCR extraction (URL): (InvalidRequest) The provided image url can not be accessed. status code: 409.
+Code: InvalidRequest
+Message: The provided image url can not be accessed. status code: 409.
+2026-01-29 20:23:21,986 - OCR returned empty text.
+2026-01-29 20:23:21,986 - Processing local file: Screenshot_20260129_111136_Uber Driver.jpg
+2026-01-29 20:23:21,991 - Request URL: 'https://stsummitosprod.blob.core.windows.net/uploads/Screenshot_20260129_111136_Uber%20Driver.jpg'
+Request method: 'PUT'
+Request headers:
+    'Content-Length': '629168'
+    'x-ms-blob-type': 'REDACTED'
+    'x-ms-version': 'REDACTED'
+    'Content-Type': 'application/octet-stream'
+    'Accept': 'application/xml'
+    'User-Agent': 'azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'x-ms-date': 'REDACTED'
+    'x-ms-client-request-id': '07b29555-fd8b-11f0-a1aa-7c1e529ce9b1'
+    'Authorization': 'REDACTED'
+A body is sent with the request
+2026-01-29 20:23:22,032 - Response status: 201
+Response headers:
+    'Content-Length': '0'
+    'Content-MD5': 'REDACTED'
+    'Last-Modified': 'Fri, 30 Jan 2026 03:23:22 GMT'
+    'ETag': '"0x8DE5FAEEBEB643A"'
+    'Server': 'Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0'
+    'x-ms-request-id': '47c1537a-601e-0078-7697-912664000000'
+    'x-ms-client-request-id': '07b29555-fd8b-11f0-a1aa-7c1e529ce9b1'
+    'x-ms-version': 'REDACTED'
+    'x-ms-content-crc64': 'REDACTED'
+    'x-ms-request-server-encrypted': 'REDACTED'
+    'Date': 'Fri, 30 Jan 2026 03:23:21 GMT'
+2026-01-29 20:23:22,032 - Extracting text...
+2026-01-29 20:23:22,033 - Starting OCR extraction for URL: https://stsummitosprod.blob.core.windows.net/uploads/Screenshot_20260129_111136_Uber Driver.jpg
+2026-01-29 20:23:22,033 - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/json'
+    'Content-Length': '106'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '07b91ec3-fd8b-11f0-9ed9-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-01-29 20:23:22,111 - Response status: 400
+Response headers:
+    'Content-Length': '109'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '849a6b4b-7511-4767-98ac-8156c6f721b2'
+    'x-ms-request-id': '849a6b4b-7511-4767-98ac-8156c6f721b2'
+    'x-ms-error-code': 'InvalidRequest'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Fri, 30 Jan 2026 03:23:21 GMT'
+2026-01-29 20:23:22,112 - Error during OCR extraction (URL): (InvalidRequest) The provided image url can not be accessed. status code: 409.
+Code: InvalidRequest
+Message: The provided image url can not be accessed. status code: 409.
+2026-01-29 20:23:22,112 - OCR returned empty text.
+2026-01-29 20:23:22,112 - Processing local file: Screenshot_20260129_111758_Uber Driver.jpg
+2026-01-29 20:23:22,115 - Request URL: 'https://stsummitosprod.blob.core.windows.net/uploads/Screenshot_20260129_111758_Uber%20Driver.jpg'
+Request method: 'PUT'
+Request headers:
+    'Content-Length': '640050'
+    'x-ms-blob-type': 'REDACTED'
+    'x-ms-version': 'REDACTED'
+    'Content-Type': 'application/octet-stream'
+    'Accept': 'application/xml'
+    'User-Agent': 'azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'x-ms-date': 'REDACTED'
+    'x-ms-client-request-id': '07c581b9-fd8b-11f0-bcbb-7c1e529ce9b1'
+    'Authorization': 'REDACTED'
+A body is sent with the request
+2026-01-29 20:23:22,141 - Response status: 201
+Response headers:
+    'Content-Length': '0'
+    'Content-MD5': 'REDACTED'
+    'Last-Modified': 'Fri, 30 Jan 2026 03:23:22 GMT'
+    'ETag': '"0x8DE5FAEEBFBF390"'
+    'Server': 'Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0'
+    'x-ms-request-id': '47c15418-601e-0078-1097-912664000000'
+    'x-ms-client-request-id': '07c581b9-fd8b-11f0-bcbb-7c1e529ce9b1'
+    'x-ms-version': 'REDACTED'
+    'x-ms-content-crc64': 'REDACTED'
+    'x-ms-request-server-encrypted': 'REDACTED'
+    'Date': 'Fri, 30 Jan 2026 03:23:22 GMT'
+2026-01-29 20:23:22,141 - Extracting text...
+2026-01-29 20:23:22,141 - Starting OCR extraction for URL: https://stsummitosprod.blob.core.windows.net/uploads/Screenshot_20260129_111758_Uber Driver.jpg
+2026-01-29 20:23:22,143 - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/json'
+    'Content-Length': '106'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '07c9c59c-fd8b-11f0-85df-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-01-29 20:23:22,222 - Response status: 400
+Response headers:
+    'Content-Length': '109'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '85160a9a-f8c8-4b91-b18b-53707d2b8125'
+    'x-ms-request-id': '85160a9a-f8c8-4b91-b18b-53707d2b8125'
+    'x-ms-error-code': 'InvalidRequest'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Fri, 30 Jan 2026 03:23:21 GMT'
+2026-01-29 20:23:22,222 - Error during OCR extraction (URL): (InvalidRequest) The provided image url can not be accessed. status code: 409.
+Code: InvalidRequest
+Message: The provided image url can not be accessed. status code: 409.
+2026-01-29 20:23:22,222 - OCR returned empty text.
+2026-01-29 20:23:22,222 - Processing local file: Screenshot_20260129_112632_Uber Driver.jpg
+2026-01-29 20:23:22,225 - Request URL: 'https://stsummitosprod.blob.core.windows.net/uploads/Screenshot_20260129_112632_Uber%20Driver.jpg'
+Request method: 'PUT'
+Request headers:
+    'Content-Length': '488469'
+    'x-ms-blob-type': 'REDACTED'
+    'x-ms-version': 'REDACTED'
+    'Content-Type': 'application/octet-stream'
+    'Accept': 'application/xml'
+    'User-Agent': 'azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'x-ms-date': 'REDACTED'
+    'x-ms-client-request-id': '07d64c9a-fd8b-11f0-a0cd-7c1e529ce9b1'
+    'Authorization': 'REDACTED'
+A body is sent with the request
+2026-01-29 20:23:22,256 - Response status: 201
+Response headers:
+    'Content-Length': '0'
+    'Content-MD5': 'REDACTED'
+    'Last-Modified': 'Fri, 30 Jan 2026 03:23:22 GMT'
+    'ETag': '"0x8DE5FAEEC0D6C04"'
+    'Server': 'Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0'
+    'x-ms-request-id': '47c154bd-601e-0078-3297-912664000000'
+    'x-ms-client-request-id': '07d64c9a-fd8b-11f0-a0cd-7c1e529ce9b1'
+    'x-ms-version': 'REDACTED'
+    'x-ms-content-crc64': 'REDACTED'
+    'x-ms-request-server-encrypted': 'REDACTED'
+    'Date': 'Fri, 30 Jan 2026 03:23:22 GMT'
+2026-01-29 20:23:22,256 - Extracting text...
+2026-01-29 20:23:22,256 - Starting OCR extraction for URL: https://stsummitosprod.blob.core.windows.net/uploads/Screenshot_20260129_112632_Uber Driver.jpg
+2026-01-29 20:23:22,257 - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/json'
+    'Content-Length': '106'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '07db04e1-fd8b-11f0-8179-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-01-29 20:23:22,330 - Response status: 400
+Response headers:
+    'Content-Length': '109'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '36d9055c-3224-4143-90ee-c41f744b8b9b'
+    'x-ms-request-id': '36d9055c-3224-4143-90ee-c41f744b8b9b'
+    'x-ms-error-code': 'InvalidRequest'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Fri, 30 Jan 2026 03:23:22 GMT'
+2026-01-29 20:23:22,330 - Error during OCR extraction (URL): (InvalidRequest) The provided image url can not be accessed. status code: 409.
+Code: InvalidRequest
+Message: The provided image url can not be accessed. status code: 409.
+2026-01-29 20:23:22,331 - OCR returned empty text.
+2026-01-29 20:23:22,331 - Processing local file: Screenshot_20260129_153920_Call.jpg
+2026-01-29 20:23:22,333 - Request URL: 'https://stsummitosprod.blob.core.windows.net/uploads/Screenshot_20260129_153920_Call.jpg'
+Request method: 'PUT'
+Request headers:
+    'Content-Length': '352775'
+    'x-ms-blob-type': 'REDACTED'
+    'x-ms-version': 'REDACTED'
+    'Content-Type': 'application/octet-stream'
+    'Accept': 'application/xml'
+    'User-Agent': 'azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'x-ms-date': 'REDACTED'
+    'x-ms-client-request-id': '07e6d5ec-fd8b-11f0-829e-7c1e529ce9b1'
+    'Authorization': 'REDACTED'
+A body is sent with the request
+2026-01-29 20:23:22,357 - Response status: 201
+Response headers:
+    'Content-Length': '0'
+    'Content-MD5': 'REDACTED'
+    'Last-Modified': 'Fri, 30 Jan 2026 03:23:22 GMT'
+    'ETag': '"0x8DE5FAEEC1CEB03"'
+    'Server': 'Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0'
+    'x-ms-request-id': '47c15554-601e-0078-4697-912664000000'
+    'x-ms-client-request-id': '07e6d5ec-fd8b-11f0-829e-7c1e529ce9b1'
+    'x-ms-version': 'REDACTED'
+    'x-ms-content-crc64': 'REDACTED'
+    'x-ms-request-server-encrypted': 'REDACTED'
+    'Date': 'Fri, 30 Jan 2026 03:23:22 GMT'
+2026-01-29 20:23:22,357 - Extracting text...
+2026-01-29 20:23:22,357 - Starting OCR extraction for URL: https://stsummitosprod.blob.core.windows.net/uploads/Screenshot_20260129_153920_Call.jpg
+2026-01-29 20:23:22,358 - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/json'
+    'Content-Length': '99'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '07eaaa0c-fd8b-11f0-b29e-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-01-29 20:23:22,411 - Response status: 400
+Response headers:
+    'Content-Length': '109'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '15816586-cfa5-4853-98dd-983ead33075c'
+    'x-ms-request-id': '15816586-cfa5-4853-98dd-983ead33075c'
+    'x-ms-error-code': 'InvalidRequest'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Fri, 30 Jan 2026 03:23:22 GMT'
+2026-01-29 20:23:22,412 - Error during OCR extraction (URL): (InvalidRequest) The provided image url can not be accessed. status code: 409.
+Code: InvalidRequest
+Message: The provided image url can not be accessed. status code: 409.
+2026-01-29 20:23:22,412 - OCR returned empty text.
+2026-01-29 20:23:22,412 - Processing local file: Screenshot_20260129_153955_Call.jpg
+2026-01-29 20:23:22,415 - Request URL: 'https://stsummitosprod.blob.core.windows.net/uploads/Screenshot_20260129_153955_Call.jpg'
+Request method: 'PUT'
+Request headers:
+    'Content-Length': '524572'
+    'x-ms-blob-type': 'REDACTED'
+    'x-ms-version': 'REDACTED'
+    'Content-Type': 'application/octet-stream'
+    'Accept': 'application/xml'
+    'User-Agent': 'azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'x-ms-date': 'REDACTED'
+    'x-ms-client-request-id': '07f33518-fd8b-11f0-859a-7c1e529ce9b1'
+    'Authorization': 'REDACTED'
+A body is sent with the request
+2026-01-29 20:23:22,454 - Response status: 201
+Response headers:
+    'Content-Length': '0'
+    'Content-MD5': 'REDACTED'
+    'Last-Modified': 'Fri, 30 Jan 2026 03:23:22 GMT'
+    'ETag': '"0x8DE5FAEEC2BCE63"'
+    'Server': 'Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0'
+    'x-ms-request-id': '47c155fc-601e-0078-6897-912664000000'
+    'x-ms-client-request-id': '07f33518-fd8b-11f0-859a-7c1e529ce9b1'
+    'x-ms-version': 'REDACTED'
+    'x-ms-content-crc64': 'REDACTED'
+    'x-ms-request-server-encrypted': 'REDACTED'
+    'Date': 'Fri, 30 Jan 2026 03:23:22 GMT'
+2026-01-29 20:23:22,456 - Extracting text...
+2026-01-29 20:23:22,456 - Starting OCR extraction for URL: https://stsummitosprod.blob.core.windows.net/uploads/Screenshot_20260129_153955_Call.jpg
+2026-01-29 20:23:22,456 - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/json'
+    'Content-Length': '99'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '07f995ca-fd8b-11f0-ad54-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-01-29 20:23:22,516 - Response status: 400
+Response headers:
+    'Content-Length': '109'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '22bb56d3-d735-45eb-8adf-6faddbf2079f'
+    'x-ms-request-id': '22bb56d3-d735-45eb-8adf-6faddbf2079f'
+    'x-ms-error-code': 'InvalidRequest'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Fri, 30 Jan 2026 03:23:22 GMT'
+2026-01-29 20:23:22,517 - Error during OCR extraction (URL): (InvalidRequest) The provided image url can not be accessed. status code: 409.
+Code: InvalidRequest
+Message: The provided image url can not be accessed. status code: 409.
+2026-01-29 20:23:22,517 - OCR returned empty text.

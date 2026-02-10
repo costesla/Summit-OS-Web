@@ -1,0 +1,49 @@
+2026-02-01 23:06:03 - Starting Google Photos Watcher...
+2026-02-01 23:06:03 - AZUREWEBJOBSSTORAGE loaded successfully.
+2026-02-01 23:06:03 - Request URL: 'https://stsummitosprod.blob.core.windows.net/uploads?restype=REDACTED'
+Request method: 'GET'
+Request headers:
+    'x-ms-version': 'REDACTED'
+    'Accept': 'application/xml'
+    'User-Agent': 'azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'x-ms-date': 'REDACTED'
+    'x-ms-client-request-id': '412d35c5-fffd-11f0-b5d4-7c1e529ce9b1'
+    'Authorization': 'REDACTED'
+No body was attached to the request
+2026-02-01 23:06:03 - Response status: 200
+Response headers:
+    'Content-Length': '0'
+    'Last-Modified': 'Thu, 22 Jan 2026 05:02:22 GMT'
+    'ETag': '"0x8DE59736D5F9369"'
+    'Server': 'Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0'
+    'x-ms-request-id': '9238464c-101e-005d-640a-948f18000000'
+    'x-ms-client-request-id': '412d35c5-fffd-11f0-b5d4-7c1e529ce9b1'
+    'x-ms-version': 'REDACTED'
+    'x-ms-lease-status': 'REDACTED'
+    'x-ms-lease-state': 'REDACTED'
+    'x-ms-has-immutability-policy': 'REDACTED'
+    'x-ms-has-legal-hold': 'REDACTED'
+    'x-ms-immutable-storage-with-versioning-enabled': 'REDACTED'
+    'x-ms-default-encryption-scope': 'REDACTED'
+    'x-ms-deny-encryption-scope-override': 'REDACTED'
+    'Date': 'Mon, 02 Feb 2026 06:06:03 GMT'
+2026-02-01 23:06:03 - file_cache is only supported with oauth2client<4.0.0
+2026-02-01 23:06:04 - Encountered 403 Forbidden with reason "PERMISSION_DENIED"
+2026-02-01 23:06:04 - Error in main loop: <HttpError 403 when requesting https://photoslibrary.googleapis.com/v1/mediaItems?pageSize=50&alt=json returned "Request had insufficient authentication scopes.". Details: "Request had insufficient authentication scopes.">
+2026-02-01 23:06:04 - Traceback (most recent call last):
+  File "C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\summit_sync\google_photos_watcher.py", line 177, in main
+    results = list_media_with_retries(service)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\summit_sync\google_photos_watcher.py", line 78, in list_media_with_retries
+    raise e
+  File "C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\COS Tesla - Website\Summit-OS-Web-master\summit_sync\google_photos_watcher.py", line 71, in list_media_with_retries
+    return service.mediaItems().list(pageSize=50).execute()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PeterTeehan\AppData\Local\Programs\Python\Python311\Lib\site-packages\googleapiclient\_helpers.py", line 130, in positional_wrapper
+    return wrapped(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PeterTeehan\AppData\Local\Programs\Python\Python311\Lib\site-packages\googleapiclient\http.py", line 938, in execute
+    raise HttpError(resp, content, uri=self.uri)
+googleapiclient.errors.HttpError: <HttpError 403 when requesting https://photoslibrary.googleapis.com/v1/mediaItems?pageSize=50&alt=json returned "Request had insufficient authentication scopes.". Details: "Request had insufficient authentication scopes.">
+
+2026-02-01 23:07:04 - Sleeping for 300 seconds...

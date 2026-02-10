@@ -1,0 +1,362 @@
+2026-02-06 23:58:37,903 - INFO - OCR Client initialized with API Key at endpoint: https://ai-summitos-prod.cognitiveservices.azure.com/
+2026-02-06 23:58:37,904 - INFO - --- Starting Feb 6 Processing V2 (Clustering) ---
+2026-02-06 23:58:37,904 - INFO - Step 1: Cleaning up existing Feb 6 data...
+2026-02-06 23:58:38,015 - INFO - Deleted 23 existing records.
+2026-02-06 23:58:38,016 - INFO - Step 2: Scanning and Sorting Files...
+2026-02-06 23:58:38,061 - INFO - Found 60 images for 2026-02-06.
+2026-02-06 23:58:38,061 - INFO - Step 3: Clustering Images...
+2026-02-06 23:58:38,061 - INFO - Created 29 clusters/trips.
+2026-02-06 23:58:38,062 - INFO - Step 4: Processing Clusters...
+2026-02-06 23:58:38,062 - INFO - --- Processing Cluster 1/29 (1 images) ---
+2026-02-06 23:58:38,062 - INFO -    OCR Scanning: Screenshot_20260206_060123.jpg
+2026-02-06 23:58:38,063 - ERROR - Error processing Screenshot_20260206_060123.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:38,063 - INFO -    Validating with Tessie (Epoch: 1770382883.0)...
+2026-02-06 23:58:38,971 - INFO - Searching 10 drives for match near 2026-02-06 06:01:23
+2026-02-06 23:58:38,971 - INFO - No matching drive found.
+2026-02-06 23:58:38,973 - WARNING -    No Tessie match.
+2026-02-06 23:58:38,974 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:58:38,974 - INFO - Saving Uber Trip: Te3dcbba7
+2026-02-06 23:58:39,003 - INFO - Successfully saved trip Te3dcbba7 to database.
+2026-02-06 23:58:39,005 - INFO - --- Processing Cluster 2/29 (1 images) ---
+2026-02-06 23:58:39,005 - INFO -    OCR Scanning: Screenshot_20260206_060810.jpg
+2026-02-06 23:58:39,006 - ERROR - Error processing Screenshot_20260206_060810.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:39,006 - INFO -    Validating with Tessie (Epoch: 1770383290.0)...
+2026-02-06 23:58:40,005 - INFO - Searching 10 drives for match near 2026-02-06 06:08:10
+2026-02-06 23:58:40,006 - INFO - No matching drive found.
+2026-02-06 23:58:40,008 - WARNING -    No Tessie match.
+2026-02-06 23:58:40,008 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:58:40,008 - INFO - Saving Uber Trip: Td1d80487
+2026-02-06 23:58:40,020 - INFO - Successfully saved trip Td1d80487 to database.
+2026-02-06 23:58:40,022 - INFO - --- Processing Cluster 3/29 (1 images) ---
+2026-02-06 23:58:40,022 - INFO -    OCR Scanning: Screenshot_20260206_065003.jpg
+2026-02-06 23:58:40,023 - ERROR - Error processing Screenshot_20260206_065003.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:40,023 - INFO -    Validating with Tessie (Epoch: 1770385803.0)...
+2026-02-06 23:58:40,907 - INFO - Searching 10 drives for match near 2026-02-06 06:50:03
+2026-02-06 23:58:40,907 - INFO - No matching drive found.
+2026-02-06 23:58:40,909 - WARNING -    No Tessie match.
+2026-02-06 23:58:40,909 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:58:40,909 - INFO - Saving Uber Trip: T766c3374
+2026-02-06 23:58:40,922 - INFO - Successfully saved trip T766c3374 to database.
+2026-02-06 23:58:40,924 - INFO - --- Processing Cluster 4/29 (1 images) ---
+2026-02-06 23:58:40,924 - INFO -    OCR Scanning: Screenshot_20260206_072736_Chrome.jpg
+2026-02-06 23:58:40,928 - ERROR - Error processing Screenshot_20260206_072736_Chrome.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:40,928 - INFO -    Validating with Tessie (Epoch: 1770388056.0)...
+2026-02-06 23:58:41,874 - INFO - Searching 10 drives for match near 2026-02-06 07:27:36
+2026-02-06 23:58:41,874 - INFO - No matching drive found.
+2026-02-06 23:58:41,876 - WARNING -    No Tessie match.
+2026-02-06 23:58:41,876 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:58:41,876 - INFO - Saving Uber Trip: Tf59afeef
+2026-02-06 23:58:42,063 - INFO - Successfully saved trip Tf59afeef to database.
+2026-02-06 23:58:42,065 - INFO - --- Processing Cluster 5/29 (3 images) ---
+2026-02-06 23:58:42,065 - INFO -    OCR Scanning: Screenshot_20260206_080135_Venmo.jpg
+2026-02-06 23:58:42,067 - ERROR - Error processing Screenshot_20260206_080135_Venmo.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:42,067 - INFO -    OCR Scanning: Screenshot_20260206_080328_Uber Driver.jpg
+2026-02-06 23:58:42,068 - ERROR - Error processing Screenshot_20260206_080328_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:42,068 - INFO -    OCR Scanning: Screenshot_20260206_080436_Venmo.jpg
+2026-02-06 23:58:42,069 - ERROR - Error processing Screenshot_20260206_080436_Venmo.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:42,070 - INFO -    Validating with Tessie (Epoch: 1770390095.0)...
+2026-02-06 23:58:43,087 - INFO - Searching 10 drives for match near 2026-02-06 08:01:35
+2026-02-06 23:58:43,087 - INFO - No matching drive found.
+2026-02-06 23:58:43,089 - WARNING -    No Tessie match.
+2026-02-06 23:58:43,089 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:58:43,089 - INFO - Saving Private Trip: T791818d9
+2026-02-06 23:58:43,123 - INFO - Successfully saved trip T791818d9 to database.
+2026-02-06 23:58:43,125 - INFO - --- Processing Cluster 6/29 (1 images) ---
+2026-02-06 23:58:43,125 - INFO -    OCR Scanning: Screenshot_20260206_080942_M365 Copilot.jpg
+2026-02-06 23:58:43,126 - ERROR - Error processing Screenshot_20260206_080942_M365 Copilot.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:43,126 - INFO -    Validating with Tessie (Epoch: 1770390582.0)...
+2026-02-06 23:58:44,415 - INFO - Searching 10 drives for match near 2026-02-06 08:09:42
+2026-02-06 23:58:44,415 - INFO - No matching drive found.
+2026-02-06 23:58:44,417 - WARNING -    No Tessie match.
+2026-02-06 23:58:44,418 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:58:44,418 - INFO - Saving Uber Trip: T89846b29
+2026-02-06 23:58:44,451 - INFO - Successfully saved trip T89846b29 to database.
+2026-02-06 23:58:44,453 - INFO - --- Processing Cluster 7/29 (3 images) ---
+2026-02-06 23:58:44,453 - INFO -    OCR Scanning: Screenshot_20260206_084253.jpg
+2026-02-06 23:58:44,455 - ERROR - Error processing Screenshot_20260206_084253.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:44,455 - INFO -    OCR Scanning: Screenshot_20260206_084431.jpg
+2026-02-06 23:58:44,457 - ERROR - Error processing Screenshot_20260206_084431.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:44,457 - INFO -    OCR Scanning: Screenshot_20260206_084754_Uber Driver.jpg
+2026-02-06 23:58:44,459 - ERROR - Error processing Screenshot_20260206_084754_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:44,459 - INFO -    Validating with Tessie (Epoch: 1770392573.0)...
+2026-02-06 23:58:45,751 - INFO - Searching 10 drives for match near 2026-02-06 08:42:53
+2026-02-06 23:58:45,752 - INFO - No matching drive found.
+2026-02-06 23:58:45,754 - WARNING -    No Tessie match.
+2026-02-06 23:58:45,754 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:58:45,754 - INFO - Saving Private Trip: T449028c9
+2026-02-06 23:58:45,783 - INFO - Successfully saved trip T449028c9 to database.
+2026-02-06 23:58:45,785 - INFO - --- Processing Cluster 8/29 (2 images) ---
+2026-02-06 23:58:45,785 - INFO -    OCR Scanning: Screenshot_20260206_090525_Uber Driver.jpg
+2026-02-06 23:58:45,787 - ERROR - Error processing Screenshot_20260206_090525_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:45,787 - INFO -    OCR Scanning: Screenshot_20260206_090532_Uber Driver.jpg
+2026-02-06 23:58:45,788 - ERROR - Error processing Screenshot_20260206_090532_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:45,789 - INFO -    Validating with Tessie (Epoch: 1770393925.0)...
+2026-02-06 23:58:47,310 - INFO - Searching 10 drives for match near 2026-02-06 09:05:25
+2026-02-06 23:58:47,310 - INFO - No matching drive found.
+2026-02-06 23:58:47,312 - WARNING -    No Tessie match.
+2026-02-06 23:58:47,312 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:58:47,312 - INFO - Saving Uber Trip: T138cdd0a
+2026-02-06 23:58:47,341 - INFO - Successfully saved trip T138cdd0a to database.
+2026-02-06 23:58:47,343 - INFO - --- Processing Cluster 9/29 (1 images) ---
+2026-02-06 23:58:47,344 - INFO -    OCR Scanning: Screenshot_20260206_091258_Uber Driver.jpg
+2026-02-06 23:58:47,349 - ERROR - Error processing Screenshot_20260206_091258_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:47,349 - INFO -    Validating with Tessie (Epoch: 1770394378.0)...
+2026-02-06 23:58:49,015 - INFO - Searching 10 drives for match near 2026-02-06 09:12:58
+2026-02-06 23:58:49,015 - INFO - No matching drive found.
+2026-02-06 23:58:49,017 - WARNING -    No Tessie match.
+2026-02-06 23:58:49,017 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:58:49,018 - INFO - Saving Uber Trip: Tb23336fd
+2026-02-06 23:58:49,032 - INFO - Successfully saved trip Tb23336fd to database.
+2026-02-06 23:58:49,033 - INFO - --- Processing Cluster 10/29 (3 images) ---
+2026-02-06 23:58:49,033 - INFO -    OCR Scanning: Screenshot_20260206_093616_Uber Driver.jpg
+2026-02-06 23:58:49,035 - ERROR - Error processing Screenshot_20260206_093616_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:49,035 - INFO -    OCR Scanning: Screenshot_20260206_093628_Uber Driver.jpg
+2026-02-06 23:58:49,036 - ERROR - Error processing Screenshot_20260206_093628_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:49,037 - INFO -    OCR Scanning: Screenshot_20260206_093734.jpg
+2026-02-06 23:58:49,039 - ERROR - Error processing Screenshot_20260206_093734.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:49,039 - INFO -    Validating with Tessie (Epoch: 1770395776.0)...
+2026-02-06 23:58:50,119 - INFO - Searching 10 drives for match near 2026-02-06 09:36:16
+2026-02-06 23:58:50,120 - INFO - No matching drive found.
+2026-02-06 23:58:50,121 - WARNING -    No Tessie match.
+2026-02-06 23:58:50,122 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:58:50,122 - INFO - Saving Private Trip: T521b0ac9
+2026-02-06 23:58:50,155 - INFO - Successfully saved trip T521b0ac9 to database.
+2026-02-06 23:58:50,157 - INFO - --- Processing Cluster 11/29 (2 images) ---
+2026-02-06 23:58:50,157 - INFO -    OCR Scanning: Screenshot_20260206_102119.jpg
+2026-02-06 23:58:50,159 - ERROR - Error processing Screenshot_20260206_102119.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:50,159 - INFO -    OCR Scanning: Screenshot_20260206_102140_Venmo.jpg
+2026-02-06 23:58:50,160 - ERROR - Error processing Screenshot_20260206_102140_Venmo.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:50,161 - INFO -    Validating with Tessie (Epoch: 1770398479.0)...
+2026-02-06 23:58:51,205 - INFO - Searching 10 drives for match near 2026-02-06 10:21:19
+2026-02-06 23:58:51,206 - INFO - No matching drive found.
+2026-02-06 23:58:51,208 - WARNING -    No Tessie match.
+2026-02-06 23:58:51,209 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:58:51,209 - INFO - Saving Private Trip: T84858077
+2026-02-06 23:58:51,221 - INFO - Successfully saved trip T84858077 to database.
+2026-02-06 23:58:51,223 - INFO - --- Processing Cluster 12/29 (3 images) ---
+2026-02-06 23:58:51,223 - INFO -    OCR Scanning: Screenshot_20260206_103744_Uber Driver.jpg
+2026-02-06 23:58:51,224 - ERROR - Error processing Screenshot_20260206_103744_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:51,224 - INFO -    OCR Scanning: Screenshot_20260206_103806_Uber Driver.jpg
+2026-02-06 23:58:51,226 - ERROR - Error processing Screenshot_20260206_103806_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:51,226 - INFO -    OCR Scanning: Screenshot_20260206_104223_Uber Driver.jpg
+2026-02-06 23:58:51,227 - ERROR - Error processing Screenshot_20260206_104223_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:51,228 - INFO -    Validating with Tessie (Epoch: 1770399464.0)...
+2026-02-06 23:58:52,460 - INFO - Searching 10 drives for match near 2026-02-06 10:37:44
+2026-02-06 23:58:52,460 - INFO - No matching drive found.
+2026-02-06 23:58:52,462 - WARNING -    No Tessie match.
+2026-02-06 23:58:52,462 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:58:52,462 - INFO - Saving Private Trip: T1a48ffb5
+2026-02-06 23:58:52,474 - INFO - Successfully saved trip T1a48ffb5 to database.
+2026-02-06 23:58:52,476 - INFO - --- Processing Cluster 13/29 (4 images) ---
+2026-02-06 23:58:52,476 - INFO -    OCR Scanning: Screenshot_20260206_105012.jpg
+2026-02-06 23:58:52,478 - ERROR - Error processing Screenshot_20260206_105012.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:52,478 - INFO -    OCR Scanning: Screenshot_20260206_105027_Uber Driver.jpg
+2026-02-06 23:58:52,480 - ERROR - Error processing Screenshot_20260206_105027_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:52,480 - INFO -    OCR Scanning: Screenshot_20260206_105140_Uber Driver.jpg
+2026-02-06 23:58:52,481 - ERROR - Error processing Screenshot_20260206_105140_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:52,481 - INFO -    OCR Scanning: Screenshot_20260206_105151_Uber Driver.jpg
+2026-02-06 23:58:52,483 - ERROR - Error processing Screenshot_20260206_105151_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:52,483 - INFO -    Validating with Tessie (Epoch: 1770400212.0)...
+2026-02-06 23:58:53,553 - INFO - Searching 10 drives for match near 2026-02-06 10:50:12
+2026-02-06 23:58:53,553 - INFO - No matching drive found.
+2026-02-06 23:58:53,555 - WARNING -    No Tessie match.
+2026-02-06 23:58:53,555 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:58:53,555 - INFO - Saving Private Trip: T398f2794
+2026-02-06 23:58:53,568 - INFO - Successfully saved trip T398f2794 to database.
+2026-02-06 23:58:53,570 - INFO - --- Processing Cluster 14/29 (5 images) ---
+2026-02-06 23:58:53,570 - INFO -    OCR Scanning: Screenshot_20260206_105701_Uber Driver.jpg
+2026-02-06 23:58:53,571 - ERROR - Error processing Screenshot_20260206_105701_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:53,572 - INFO -    OCR Scanning: Screenshot_20260206_110138_Uber Driver.jpg
+2026-02-06 23:58:53,591 - ERROR - Error processing Screenshot_20260206_110138_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:53,591 - INFO -    OCR Scanning: Screenshot_20260206_110226.jpg
+2026-02-06 23:58:53,603 - ERROR - Error processing Screenshot_20260206_110226.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:53,603 - INFO -    OCR Scanning: Screenshot_20260206_110639_Uber Driver.jpg
+2026-02-06 23:58:53,616 - ERROR - Error processing Screenshot_20260206_110639_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:53,616 - INFO -    OCR Scanning: Screenshot_20260206_110650_Uber Driver.jpg
+2026-02-06 23:58:53,628 - ERROR - Error processing Screenshot_20260206_110650_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:53,628 - INFO -    Validating with Tessie (Epoch: 1770400621.0)...
+2026-02-06 23:58:54,791 - INFO - Searching 10 drives for match near 2026-02-06 10:57:01
+2026-02-06 23:58:54,791 - INFO - No matching drive found.
+2026-02-06 23:58:54,793 - WARNING -    No Tessie match.
+2026-02-06 23:58:54,793 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:58:54,793 - INFO - Saving Private Trip: Te2d397a3
+2026-02-06 23:58:54,805 - INFO - Successfully saved trip Te2d397a3 to database.
+2026-02-06 23:58:54,807 - INFO - --- Processing Cluster 15/29 (1 images) ---
+2026-02-06 23:58:54,807 - INFO -    OCR Scanning: Screenshot_20260206_111330_Uber Driver.jpg
+2026-02-06 23:58:54,811 - ERROR - Error processing Screenshot_20260206_111330_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:54,811 - INFO -    Validating with Tessie (Epoch: 1770401610.0)...
+2026-02-06 23:58:55,840 - INFO - Searching 10 drives for match near 2026-02-06 11:13:30
+2026-02-06 23:58:55,840 - INFO - No matching drive found.
+2026-02-06 23:58:55,842 - WARNING -    No Tessie match.
+2026-02-06 23:58:55,842 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:58:55,842 - INFO - Saving Uber Trip: Tbb894c33
+2026-02-06 23:58:55,854 - INFO - Successfully saved trip Tbb894c33 to database.
+2026-02-06 23:58:55,856 - INFO - --- Processing Cluster 16/29 (2 images) ---
+2026-02-06 23:58:55,857 - INFO -    OCR Scanning: Screenshot_20260206_112443_Uber Driver.jpg
+2026-02-06 23:58:55,858 - ERROR - Error processing Screenshot_20260206_112443_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:55,859 - INFO -    OCR Scanning: Screenshot_20260206_112536.jpg
+2026-02-06 23:58:55,860 - ERROR - Error processing Screenshot_20260206_112536.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:55,860 - INFO -    Validating with Tessie (Epoch: 1770402283.0)...
+2026-02-06 23:58:57,252 - INFO - Searching 10 drives for match near 2026-02-06 11:24:43
+2026-02-06 23:58:57,252 - INFO - No matching drive found.
+2026-02-06 23:58:57,254 - WARNING -    No Tessie match.
+2026-02-06 23:58:57,254 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:58:57,255 - INFO - Saving Uber Trip: T24e31dcb
+2026-02-06 23:58:57,268 - INFO - Successfully saved trip T24e31dcb to database.
+2026-02-06 23:58:57,270 - INFO - --- Processing Cluster 17/29 (2 images) ---
+2026-02-06 23:58:57,270 - INFO -    OCR Scanning: Screenshot_20260206_113547_Uber Driver.jpg
+2026-02-06 23:58:57,271 - ERROR - Error processing Screenshot_20260206_113547_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:57,272 - INFO -    OCR Scanning: Screenshot_20260206_113637_Uber Driver.jpg
+2026-02-06 23:58:57,274 - ERROR - Error processing Screenshot_20260206_113637_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:57,275 - INFO -    Validating with Tessie (Epoch: 1770402947.0)...
+2026-02-06 23:58:59,086 - INFO - Searching 10 drives for match near 2026-02-06 11:35:47
+2026-02-06 23:58:59,086 - INFO - No matching drive found.
+2026-02-06 23:58:59,088 - WARNING -    No Tessie match.
+2026-02-06 23:58:59,088 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:58:59,088 - INFO - Saving Uber Trip: T92ec2ae3
+2026-02-06 23:58:59,100 - INFO - Successfully saved trip T92ec2ae3 to database.
+2026-02-06 23:58:59,102 - INFO - --- Processing Cluster 18/29 (1 images) ---
+2026-02-06 23:58:59,102 - INFO -    OCR Scanning: Screenshot_20260206_114359_Uber Driver.jpg
+2026-02-06 23:58:59,119 - ERROR - Error processing Screenshot_20260206_114359_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:58:59,119 - INFO -    Validating with Tessie (Epoch: 1770403439.0)...
+2026-02-06 23:59:00,733 - INFO - Searching 10 drives for match near 2026-02-06 11:43:59
+2026-02-06 23:59:00,733 - INFO - No matching drive found.
+2026-02-06 23:59:00,735 - WARNING -    No Tessie match.
+2026-02-06 23:59:00,735 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:59:00,735 - INFO - Saving Uber Trip: T5761316d
+2026-02-06 23:59:00,749 - INFO - Successfully saved trip T5761316d to database.
+2026-02-06 23:59:00,751 - INFO - --- Processing Cluster 19/29 (4 images) ---
+2026-02-06 23:59:00,751 - INFO -    OCR Scanning: Screenshot_20260206_120441_Uber Driver.jpg
+2026-02-06 23:59:00,768 - ERROR - Error processing Screenshot_20260206_120441_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:00,768 - INFO -    OCR Scanning: Screenshot_20260206_120450_Uber Driver.jpg
+2026-02-06 23:59:00,781 - ERROR - Error processing Screenshot_20260206_120450_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:00,781 - INFO -    OCR Scanning: Screenshot_20260206_120458_Uber Driver.jpg
+2026-02-06 23:59:00,798 - ERROR - Error processing Screenshot_20260206_120458_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:00,798 - INFO -    OCR Scanning: Screenshot_20260206_120852_Uber Driver.jpg
+2026-02-06 23:59:00,813 - ERROR - Error processing Screenshot_20260206_120852_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:00,813 - INFO -    Validating with Tessie (Epoch: 1770404681.0)...
+2026-02-06 23:59:02,363 - INFO - Searching 10 drives for match near 2026-02-06 12:04:41
+2026-02-06 23:59:02,363 - INFO - No matching drive found.
+2026-02-06 23:59:02,365 - WARNING -    No Tessie match.
+2026-02-06 23:59:02,365 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:59:02,365 - INFO - Saving Private Trip: T04812798
+2026-02-06 23:59:02,378 - INFO - Successfully saved trip T04812798 to database.
+2026-02-06 23:59:02,380 - INFO - --- Processing Cluster 20/29 (4 images) ---
+2026-02-06 23:59:02,380 - INFO -    OCR Scanning: Screenshot_20260206_121948_Uber Driver.jpg
+2026-02-06 23:59:02,397 - ERROR - Error processing Screenshot_20260206_121948_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:02,397 - INFO -    OCR Scanning: Screenshot_20260206_122127_Uber Driver.jpg
+2026-02-06 23:59:02,411 - ERROR - Error processing Screenshot_20260206_122127_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:02,411 - INFO -    OCR Scanning: Screenshot_20260206_122451.jpg
+2026-02-06 23:59:02,423 - ERROR - Error processing Screenshot_20260206_122451.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:02,423 - INFO -    OCR Scanning: Screenshot_20260206_122459.jpg
+2026-02-06 23:59:02,435 - ERROR - Error processing Screenshot_20260206_122459.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:02,436 - INFO -    Validating with Tessie (Epoch: 1770405588.0)...
+2026-02-06 23:59:03,544 - INFO - Searching 10 drives for match near 2026-02-06 12:19:48
+2026-02-06 23:59:03,545 - INFO - No matching drive found.
+2026-02-06 23:59:03,547 - WARNING -    No Tessie match.
+2026-02-06 23:59:03,547 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:59:03,547 - INFO - Saving Private Trip: Tde1dfd28
+2026-02-06 23:59:03,559 - INFO - Successfully saved trip Tde1dfd28 to database.
+2026-02-06 23:59:03,561 - INFO - --- Processing Cluster 21/29 (1 images) ---
+2026-02-06 23:59:03,561 - INFO -    OCR Scanning: Screenshot_20260206_124114_Samsung Wallet.jpg
+2026-02-06 23:59:03,578 - ERROR - Error processing Screenshot_20260206_124114_Samsung Wallet.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:03,579 - INFO -    Validating with Tessie (Epoch: 1770406874.0)...
+2026-02-06 23:59:04,712 - INFO - Searching 10 drives for match near 2026-02-06 12:41:14
+2026-02-06 23:59:04,712 - INFO - No matching drive found.
+2026-02-06 23:59:04,714 - WARNING -    No Tessie match.
+2026-02-06 23:59:04,714 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:59:04,714 - INFO - Saving Private Trip: T038b4f46
+2026-02-06 23:59:04,743 - INFO - Successfully saved trip T038b4f46 to database.
+2026-02-06 23:59:04,745 - INFO - --- Processing Cluster 22/29 (1 images) ---
+2026-02-06 23:59:04,745 - INFO -    OCR Scanning: Screenshot_20260206_125240_Uber Driver.jpg
+2026-02-06 23:59:04,761 - ERROR - Error processing Screenshot_20260206_125240_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:04,761 - INFO -    Validating with Tessie (Epoch: 1770407560.0)...
+2026-02-06 23:59:05,861 - INFO - Searching 10 drives for match near 2026-02-06 12:52:40
+2026-02-06 23:59:05,861 - INFO - No matching drive found.
+2026-02-06 23:59:05,863 - WARNING -    No Tessie match.
+2026-02-06 23:59:05,864 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:59:05,864 - INFO - Saving Uber Trip: T28756d7a
+2026-02-06 23:59:05,876 - INFO - Successfully saved trip T28756d7a to database.
+2026-02-06 23:59:05,878 - INFO - --- Processing Cluster 23/29 (2 images) ---
+2026-02-06 23:59:05,878 - INFO -    OCR Scanning: Screenshot_20260206_125753_Starbucks.jpg
+2026-02-06 23:59:05,895 - ERROR - Error processing Screenshot_20260206_125753_Starbucks.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:05,895 - INFO -    OCR Scanning: Screenshot_20260206_125759_Starbucks.jpg
+2026-02-06 23:59:05,911 - ERROR - Error processing Screenshot_20260206_125759_Starbucks.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:05,911 - INFO -    Validating with Tessie (Epoch: 1770407873.0)...
+2026-02-06 23:59:07,021 - INFO - Searching 10 drives for match near 2026-02-06 12:57:53
+2026-02-06 23:59:07,021 - INFO - No matching drive found.
+2026-02-06 23:59:07,023 - WARNING -    No Tessie match.
+2026-02-06 23:59:07,023 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:59:07,023 - INFO - Saving Uber Trip: T3fb10e6b
+2026-02-06 23:59:07,058 - INFO - Successfully saved trip T3fb10e6b to database.
+2026-02-06 23:59:07,060 - INFO - --- Processing Cluster 24/29 (2 images) ---
+2026-02-06 23:59:07,060 - INFO -    OCR Scanning: Screenshot_20260206_144047_Uber Driver.jpg
+2026-02-06 23:59:07,061 - ERROR - Error processing Screenshot_20260206_144047_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:07,061 - INFO -    OCR Scanning: Screenshot_20260206_144100_Uber Driver.jpg
+2026-02-06 23:59:07,081 - ERROR - Error processing Screenshot_20260206_144100_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:07,081 - INFO -    Validating with Tessie (Epoch: 1770414047.0)...
+2026-02-06 23:59:08,097 - INFO - Searching 10 drives for match near 2026-02-06 14:40:47
+2026-02-06 23:59:08,098 - INFO - No matching drive found.
+2026-02-06 23:59:08,100 - WARNING -    No Tessie match.
+2026-02-06 23:59:08,100 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:59:08,100 - INFO - Saving Uber Trip: T46a7cc79
+2026-02-06 23:59:08,112 - INFO - Successfully saved trip T46a7cc79 to database.
+2026-02-06 23:59:08,114 - INFO - --- Processing Cluster 25/29 (1 images) ---
+2026-02-06 23:59:08,114 - INFO -    OCR Scanning: Screenshot_20260206_144616_Uber Driver.jpg
+2026-02-06 23:59:08,130 - ERROR - Error processing Screenshot_20260206_144616_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:08,130 - INFO -    Validating with Tessie (Epoch: 1770414376.0)...
+2026-02-06 23:59:09,183 - INFO - Searching 10 drives for match near 2026-02-06 14:46:16
+2026-02-06 23:59:09,183 - INFO - No matching drive found.
+2026-02-06 23:59:09,185 - WARNING -    No Tessie match.
+2026-02-06 23:59:09,185 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:59:09,186 - INFO - Saving Uber Trip: T2020022e
+2026-02-06 23:59:09,198 - INFO - Successfully saved trip T2020022e to database.
+2026-02-06 23:59:09,200 - INFO - --- Processing Cluster 26/29 (1 images) ---
+2026-02-06 23:59:09,200 - INFO -    OCR Scanning: Screenshot_20260206_145306_Uber Driver.jpg
+2026-02-06 23:59:09,220 - ERROR - Error processing Screenshot_20260206_145306_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:09,220 - INFO -    Validating with Tessie (Epoch: 1770414786.0)...
+2026-02-06 23:59:10,577 - INFO - Searching 10 drives for match near 2026-02-06 14:53:06
+2026-02-06 23:59:10,577 - INFO - No matching drive found.
+2026-02-06 23:59:10,579 - WARNING -    No Tessie match.
+2026-02-06 23:59:10,579 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:59:10,579 - INFO - Saving Uber Trip: T5c461fe8
+2026-02-06 23:59:10,592 - INFO - Successfully saved trip T5c461fe8 to database.
+2026-02-06 23:59:10,595 - INFO - --- Processing Cluster 27/29 (2 images) ---
+2026-02-06 23:59:10,595 - INFO -    OCR Scanning: Screenshot_20260206_150648_Uber Driver.jpg
+2026-02-06 23:59:10,611 - ERROR - Error processing Screenshot_20260206_150648_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:10,611 - INFO -    OCR Scanning: Screenshot_20260206_151052_Uber Driver.jpg
+2026-02-06 23:59:10,623 - ERROR - Error processing Screenshot_20260206_151052_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:10,623 - INFO -    Validating with Tessie (Epoch: 1770415608.0)...
+2026-02-06 23:59:11,744 - INFO - Searching 10 drives for match near 2026-02-06 15:06:48
+2026-02-06 23:59:11,745 - INFO - No matching drive found.
+2026-02-06 23:59:11,746 - WARNING -    No Tessie match.
+2026-02-06 23:59:11,746 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:59:11,747 - INFO - Saving Uber Trip: T84fda681
+2026-02-06 23:59:11,758 - INFO - Successfully saved trip T84fda681 to database.
+2026-02-06 23:59:11,760 - INFO - --- Processing Cluster 28/29 (3 images) ---
+2026-02-06 23:59:11,760 - INFO -    OCR Scanning: Screenshot_20260206_152642_Uber Driver.jpg
+2026-02-06 23:59:11,778 - ERROR - Error processing Screenshot_20260206_152642_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:11,778 - INFO -    OCR Scanning: Screenshot_20260206_152747_Uber Driver.jpg
+2026-02-06 23:59:11,781 - ERROR - Error processing Screenshot_20260206_152747_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:11,782 - INFO -    OCR Scanning: Screenshot_20260206_152753_Uber Driver.jpg
+2026-02-06 23:59:11,794 - ERROR - Error processing Screenshot_20260206_152753_Uber Driver.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:11,794 - INFO -    Validating with Tessie (Epoch: 1770416802.0)...
+2026-02-06 23:59:13,085 - INFO - Searching 10 drives for match near 2026-02-06 15:26:42
+2026-02-06 23:59:13,086 - INFO - No matching drive found.
+2026-02-06 23:59:13,087 - WARNING -    No Tessie match.
+2026-02-06 23:59:13,088 - INFO -    Saving Trip: Private_Trip - $0.0
+2026-02-06 23:59:13,088 - INFO - Saving Private Trip: T97c83998
+2026-02-06 23:59:13,099 - INFO - Successfully saved trip T97c83998 to database.
+2026-02-06 23:59:13,101 - INFO - --- Processing Cluster 29/29 (2 images) ---
+2026-02-06 23:59:13,101 - INFO -    OCR Scanning: Screenshot_20260206_153333.jpg
+2026-02-06 23:59:14,713 - ERROR - Error processing Screenshot_20260206_153333.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:14,715 - INFO -    OCR Scanning: Screenshot_20260206_153350.jpg
+2026-02-06 23:59:14,728 - ERROR - Error processing Screenshot_20260206_153350.jpg: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+2026-02-06 23:59:14,728 - INFO -    Validating with Tessie (Epoch: 1770417213.0)...
+2026-02-06 23:59:16,140 - INFO - Searching 10 drives for match near 2026-02-06 15:33:33
+2026-02-06 23:59:16,141 - INFO - No matching drive found.
+2026-02-06 23:59:16,142 - WARNING -    No Tessie match.
+2026-02-06 23:59:16,143 - INFO -    Saving Trip: Uber_Core - $0.0
+2026-02-06 23:59:16,143 - INFO - Saving Uber Trip: T3a9450b9
+2026-02-06 23:59:16,161 - INFO - Successfully saved trip T3a9450b9 to database.
+2026-02-06 23:59:16,163 - INFO - --- Processing Complete ---

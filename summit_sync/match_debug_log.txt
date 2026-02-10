@@ -1,0 +1,1489 @@
+2026-02-02 23:08:24,578 - INFO - OCR Client initialized with API Key at endpoint: https://ai-summitos-prod.cognitiveservices.azure.com/
+2026-02-02 23:08:24,578 - INFO - Fetching drives for VIN: 7SAYGDEEXRF075302
+2026-02-02 23:08:26,088 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_044713_Uber Driver.jpg
+2026-02-02 23:08:26,090 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'c0a732d2-00c6-11f1-b71e-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:08:27,186 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '10365'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'c50e1e74-a668-4dd5-8dde-2f23199ea170'
+    'x-ms-request-id': 'c50e1e74-a668-4dd5-8dde-2f23199ea170'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:08:26 GMT'
+2026-02-02 23:08:27,211 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_050812_Uber Driver.jpg
+2026-02-02 23:08:27,211 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'c1523aab-00c6-11f1-b980-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:08:27,487 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '10921'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'a57f2b7c-e1d5-428e-83cb-c6876ae944ce'
+    'x-ms-request-id': 'a57f2b7c-e1d5-428e-83cb-c6876ae944ce'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:08:27 GMT'
+2026-02-02 23:08:27,514 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_050819_Uber Driver.jpg
+2026-02-02 23:08:27,515 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'c1807a4f-00c6-11f1-998c-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:08:27,672 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '9059'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '23b1be63-684a-48e1-8e97-9efba293912a'
+    'x-ms-request-id': '23b1be63-684a-48e1-8e97-9efba293912a'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:08:27 GMT'
+2026-02-02 23:08:27,690 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_051839_Uber Driver.jpg
+2026-02-02 23:08:27,690 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'c19b4c43-00c6-11f1-a7ab-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:08:27,824 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '9320'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'a4212717-014d-497b-b6c7-3c8fad3a82d5'
+    'x-ms-request-id': 'a4212717-014d-497b-b6c7-3c8fad3a82d5'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:08:27 GMT'
+2026-02-02 23:08:27,844 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_052853_Uber Driver.jpg
+2026-02-02 23:08:27,846 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'c1b2d57c-00c6-11f1-8117-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:08:28,050 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '10257'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '68c7f7c8-67cc-438d-a003-592b3eb2c4ed'
+    'x-ms-request-id': '68c7f7c8-67cc-438d-a003-592b3eb2c4ed'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:08:27 GMT'
+2026-02-02 23:08:28,072 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_053016_Uber Driver.jpg
+2026-02-02 23:08:28,074 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'c1d5a47d-00c6-11f1-9e64-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:08:28,260 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '6908'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '2503adde-57ea-4dbf-a8c0-f50196c7aa45'
+    'x-ms-request-id': '2503adde-57ea-4dbf-a8c0-f50196c7aa45'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:08:27 GMT'
+2026-02-02 23:08:28,274 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_053033_Uber Driver.jpg
+2026-02-02 23:08:28,274 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'c1f46b9a-00c6-11f1-86ff-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:08:28,283 - INFO - Response status: 429
+Response headers:
+    'Content-Length': '270'
+    'Content-Type': 'application/json'
+    'Retry-After': '9'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:08:27 GMT'
+2026-02-02 23:08:37,285 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'c1f46b9a-00c6-11f1-86ff-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:08:37,471 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '12908'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'da3b6826-5a09-456a-ab81-ad1e2b5d98e7'
+    'x-ms-request-id': 'da3b6826-5a09-456a-ab81-ad1e2b5d98e7'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:08:37 GMT'
+2026-02-02 23:08:37,498 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_053932_Uber Driver.jpg
+2026-02-02 23:08:37,499 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'c7742388-00c6-11f1-bef0-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:08:37,654 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '7709'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '85541fbb-4870-4899-b879-95e49d9b1c7c'
+    'x-ms-request-id': '85541fbb-4870-4899-b879-95e49d9b1c7c'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:08:37 GMT'
+2026-02-02 23:08:37,670 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_061447_Uber Driver.jpg
+2026-02-02 23:08:37,672 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'c78e83d5-00c6-11f1-ace1-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:08:37,682 - INFO - Response status: 429
+Response headers:
+    'Content-Length': '269'
+    'Content-Type': 'application/json'
+    'Retry-After': '1'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:08:37 GMT'
+2026-02-02 23:08:38,682 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'c78e83d5-00c6-11f1-ace1-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:08:38,893 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '12809'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '879beef2-e668-4631-bec4-8fe1de961ee5'
+    'x-ms-request-id': '879beef2-e668-4631-bec4-8fe1de961ee5'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:08:38 GMT'
+2026-02-02 23:08:38,920 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_082834_Uber Driver.jpg
+2026-02-02 23:08:38,920 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'c84cd8d3-00c6-11f1-a610-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:08:39,076 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '8979'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '01d59d9f-72b5-4cba-a4bc-0f90b15ad8b0'
+    'x-ms-request-id': '01d59d9f-72b5-4cba-a4bc-0f90b15ad8b0'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:08:38 GMT'
+2026-02-02 23:08:39,097 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_083306_Uber Driver.jpg
+2026-02-02 23:08:39,098 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'c867f83e-00c6-11f1-9ef2-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:08:39,304 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '9161'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '30a6962a-3051-4713-a7f2-e51712a70e5e'
+    'x-ms-request-id': '30a6962a-3051-4713-a7f2-e51712a70e5e'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:08:38 GMT'
+2026-02-02 23:08:39,324 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_083313_Uber Driver.jpg
+2026-02-02 23:08:39,325 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'c88aac05-00c6-11f1-9e19-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:08:39,484 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '6787'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '36443709-7d92-498d-9b10-6c2dde0c2235'
+    'x-ms-request-id': '36443709-7d92-498d-9b10-6c2dde0c2235'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:08:39 GMT'
+2026-02-02 23:08:39,498 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_083636_Uber Driver.jpg
+2026-02-02 23:08:39,498 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'c8a51c3e-00c6-11f1-9700-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:08:39,683 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '11685'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'fa9e6991-d8a4-4f68-b5aa-53cc10bdc5f7'
+    'x-ms-request-id': 'fa9e6991-d8a4-4f68-b5aa-53cc10bdc5f7'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:08:39 GMT'
+2026-02-02 23:08:39,706 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_083716_Uber Driver.jpg
+2026-02-02 23:08:39,707 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'c8c50ee8-00c6-11f1-bc19-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:08:39,717 - INFO - Response status: 429
+Response headers:
+    'Content-Length': '271'
+    'Content-Type': 'application/json'
+    'Retry-After': '29'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:08:39 GMT'
+2026-02-02 23:09:08,718 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'c8c50ee8-00c6-11f1-bc19-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:09:08,910 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '6409'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'e56037bb-9bdf-46eb-abe7-ef3e1fff626d'
+    'x-ms-request-id': 'e56037bb-9bdf-46eb-abe7-ef3e1fff626d'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:09:08 GMT'
+2026-02-02 23:09:08,924 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_084057_Uber Driver.jpg
+2026-02-02 23:09:08,926 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'da2f1fce-00c6-11f1-b1c5-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:09:09,134 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '13476'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'dd3e11fa-862a-4b9c-98a9-33ddc4c2b7a4'
+    'x-ms-request-id': 'dd3e11fa-862a-4b9c-98a9-33ddc4c2b7a4'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:09:08 GMT'
+2026-02-02 23:09:09,160 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_084103_Uber Driver.jpg
+2026-02-02 23:09:09,162 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'da5375f8-00c6-11f1-9d82-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:09:09,170 - INFO - Response status: 429
+Response headers:
+    'Content-Length': '269'
+    'Content-Type': 'application/json'
+    'Retry-After': '1'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:09:08 GMT'
+2026-02-02 23:09:10,172 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'da5375f8-00c6-11f1-9d82-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:09:10,373 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '13108'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'b6e858da-c43c-4c6e-8f67-2f68f821a212'
+    'x-ms-request-id': 'b6e858da-c43c-4c6e-8f67-2f68f821a212'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:09:09 GMT'
+2026-02-02 23:09:10,399 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_085608_Uber Driver.jpg
+2026-02-02 23:09:10,401 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'db1087dc-00c6-11f1-9d23-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:09:10,607 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '12532'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'bb752da6-bc03-4621-a681-61f7b9bf0c20'
+    'x-ms-request-id': 'bb752da6-bc03-4621-a681-61f7b9bf0c20'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:09:10 GMT'
+2026-02-02 23:09:10,633 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_085900_Uber Driver.jpg
+2026-02-02 23:09:10,634 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'db33e4da-00c6-11f1-b1e4-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:09:10,875 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '11069'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'c7795ba9-56d5-4422-b6ac-8b46ec0b57e3'
+    'x-ms-request-id': 'c7795ba9-56d5-4422-b6ac-8b46ec0b57e3'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:09:10 GMT'
+2026-02-02 23:09:10,916 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_085921_Uber Driver.jpg
+2026-02-02 23:09:10,916 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'db5f1991-00c6-11f1-a6a0-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:09:11,169 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '12429'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '35666dee-49bb-4732-b7bb-5ce8253b28a1'
+    'x-ms-request-id': '35666dee-49bb-4732-b7bb-5ce8253b28a1'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:09:10 GMT'
+2026-02-02 23:09:11,195 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_090602_Uber Driver.jpg
+2026-02-02 23:09:11,195 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'db89a401-00c6-11f1-a825-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:09:11,394 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '8566'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'b3a4b6e0-5331-4feb-9ad2-b1bd3fe2ee60'
+    'x-ms-request-id': 'b3a4b6e0-5331-4feb-9ad2-b1bd3fe2ee60'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:09:10 GMT'
+2026-02-02 23:09:11,413 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_092104_Uber Driver.jpg
+2026-02-02 23:09:11,414 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'dbab0278-00c6-11f1-bf6d-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:09:11,423 - INFO - Response status: 429
+Response headers:
+    'Content-Length': '271'
+    'Content-Type': 'application/json'
+    'Retry-After': '16'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:09:11 GMT'
+2026-02-02 23:09:27,424 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'dbab0278-00c6-11f1-bf6d-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:09:27,633 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '15402'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'd9f351a5-9963-48bc-ae7c-8e5a0ecf2299'
+    'x-ms-request-id': 'd9f351a5-9963-48bc-ae7c-8e5a0ecf2299'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:09:27 GMT'
+2026-02-02 23:09:27,664 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_093903_Uber Driver.jpg
+2026-02-02 23:09:27,666 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'e55aa340-00c6-11f1-ba28-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:09:27,895 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '11485'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '8742163b-0162-49c3-929b-8335e963b75e'
+    'x-ms-request-id': '8742163b-0162-49c3-929b-8335e963b75e'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:09:27 GMT'
+2026-02-02 23:09:27,920 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_094435_Uber Driver.jpg
+2026-02-02 23:09:27,920 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'e581c6f1-00c6-11f1-9a1a-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:09:28,081 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '11732'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'c4f8a1d1-f17c-4991-8425-d1d356671ab0'
+    'x-ms-request-id': 'c4f8a1d1-f17c-4991-8425-d1d356671ab0'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:09:27 GMT'
+2026-02-02 23:09:28,104 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_094453_Uber Driver.jpg
+2026-02-02 23:09:28,105 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'e59de83a-00c6-11f1-b268-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:09:28,279 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '6826'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'da890ad7-4eb2-47bf-9389-705aa4c46d05'
+    'x-ms-request-id': 'da890ad7-4eb2-47bf-9389-705aa4c46d05'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:09:27 GMT'
+2026-02-02 23:09:28,292 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_095112_Uber Driver.jpg
+2026-02-02 23:09:28,294 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'e5bad01c-00c6-11f1-9818-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:09:28,452 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '10030'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '0e1cb9ef-5dcb-4bfa-8a04-67c8a77724e5'
+    'x-ms-request-id': '0e1cb9ef-5dcb-4bfa-8a04-67c8a77724e5'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:09:28 GMT'
+2026-02-02 23:09:28,472 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_100544_Uber Driver.jpg
+2026-02-02 23:09:28,474 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'e5d63f88-00c6-11f1-9e87-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:09:28,682 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '14463'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '52a06cf9-6c2d-47b1-8116-bf245f42d011'
+    'x-ms-request-id': '52a06cf9-6c2d-47b1-8116-bf245f42d011'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:09:28 GMT'
+2026-02-02 23:09:28,716 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_100919_Uber Driver.jpg
+2026-02-02 23:09:28,718 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'e5fb7f63-00c6-11f1-84ab-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:09:28,727 - INFO - Response status: 429
+Response headers:
+    'Content-Length': '270'
+    'Content-Type': 'application/json'
+    'Retry-After': '9'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:09:28 GMT'
+2026-02-02 23:09:37,728 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'e5fb7f63-00c6-11f1-84ab-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:09:37,884 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '10275'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'e228ad66-0e26-4d2f-bfe2-dc45fee3a6d6'
+    'x-ms-request-id': 'e228ad66-0e26-4d2f-bfe2-dc45fee3a6d6'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:09:37 GMT'
+2026-02-02 23:09:37,904 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_101225_Uber Driver.jpg
+2026-02-02 23:09:37,905 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'eb755214-00c6-11f1-a4a9-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:09:38,076 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '10462'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '0443064f-1154-4baf-929a-ee42d6381b98'
+    'x-ms-request-id': '0443064f-1154-4baf-929a-ee42d6381b98'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:09:37 GMT'
+2026-02-02 23:09:38,099 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_102142_Uber Driver.jpg
+2026-02-02 23:09:38,100 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'eb931bcf-00c6-11f1-bc55-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:09:38,109 - INFO - Response status: 429
+Response headers:
+    'Content-Length': '269'
+    'Content-Type': 'application/json'
+    'Retry-After': '1'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:09:37 GMT'
+2026-02-02 23:09:39,110 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'eb931bcf-00c6-11f1-bc55-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:09:39,339 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '9853'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '035405ae-1fee-4456-a07b-bcc1b846a12b'
+    'x-ms-request-id': '035405ae-1fee-4456-a07b-bcc1b846a12b'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:09:38 GMT'
+2026-02-02 23:09:39,361 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_104407_Uber Driver.jpg
+2026-02-02 23:09:39,361 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'ec536b71-00c6-11f1-a843-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:09:39,509 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '12849'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '7539ab12-1133-4e58-be4b-96f3d5b1924d'
+    'x-ms-request-id': '7539ab12-1133-4e58-be4b-96f3d5b1924d'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:09:39 GMT'
+2026-02-02 23:09:39,537 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_104434_Uber Driver.jpg
+2026-02-02 23:09:39,539 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'ec6e4a21-00c6-11f1-a217-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:09:40,179 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '12644'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '83812263-bdef-41a8-87bc-e7a6d681fd5d'
+    'x-ms-request-id': '83812263-bdef-41a8-87bc-e7a6d681fd5d'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:09:39 GMT'
+2026-02-02 23:09:40,203 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_105504_Uber Driver.jpg
+2026-02-02 23:09:40,203 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'ecd40530-00c6-11f1-bfc9-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:09:40,372 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '10235'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '89a8612b-c804-4ac4-8aad-338455747143'
+    'x-ms-request-id': '89a8612b-c804-4ac4-8aad-338455747143'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:09:39 GMT'
+2026-02-02 23:09:40,393 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_155456_Uber Driver.jpg
+2026-02-02 23:09:40,395 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'ecf0ef06-00c6-11f1-ad01-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:09:40,586 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '9010'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '2c541d55-797a-4f5d-99a6-f9ad31192889'
+    'x-ms-request-id': '2c541d55-797a-4f5d-99a6-f9ad31192889'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:09:40 GMT'
+2026-02-02 23:09:40,606 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_161208_Uber Driver.jpg
+2026-02-02 23:09:40,607 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'ed117976-00c6-11f1-a05d-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:09:40,616 - INFO - Response status: 429
+Response headers:
+    'Content-Length': '271'
+    'Content-Type': 'application/json'
+    'Retry-After': '29'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:09:40 GMT'
+2026-02-02 23:10:09,616 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'ed117976-00c6-11f1-a05d-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:10:09,814 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '10658'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '430f8b65-234c-4284-9942-960a12c7a148'
+    'x-ms-request-id': '430f8b65-234c-4284-9942-960a12c7a148'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:10:09 GMT'
+2026-02-02 23:10:09,836 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_161827_Uber Driver.jpg
+2026-02-02 23:10:09,838 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'fe7d9804-00c6-11f1-afd5-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:10:10,010 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '9989'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'b58e1b57-e266-471c-88a9-a23a8bec561c'
+    'x-ms-request-id': 'b58e1b57-e266-471c-88a9-a23a8bec561c'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:10:09 GMT'
+2026-02-02 23:10:10,031 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_162311_Uber Driver.jpg
+2026-02-02 23:10:10,032 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'fe9b8534-00c6-11f1-9c61-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:10:10,041 - INFO - Response status: 429
+Response headers:
+    'Content-Length': '269'
+    'Content-Type': 'application/json'
+    'Retry-After': '1'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:10:09 GMT'
+2026-02-02 23:10:11,042 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'fe9b8534-00c6-11f1-9c61-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:10:11,195 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '11822'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '45096362-70a7-4d26-9af5-a371ff1a0d17'
+    'x-ms-request-id': '45096362-70a7-4d26-9af5-a371ff1a0d17'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:10:10 GMT'
+2026-02-02 23:10:11,217 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_163007_Uber Driver.jpg
+2026-02-02 23:10:11,219 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'ff5090e5-00c6-11f1-947e-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:10:11,406 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '7348'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '64deb2be-5767-4513-bd48-7877647a4c2d'
+    'x-ms-request-id': '64deb2be-5767-4513-bd48-7877647a4c2d'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:10:10 GMT'
+2026-02-02 23:10:11,423 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_163044_Uber Driver.jpg
+2026-02-02 23:10:11,423 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'ff6fbc28-00c6-11f1-a4ad-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:10:11,607 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '13809'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '852247c5-94d9-4210-ae5d-b5139d26b755'
+    'x-ms-request-id': '852247c5-94d9-4210-ae5d-b5139d26b755'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:10:11 GMT'
+2026-02-02 23:10:11,636 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_163647_Uber Driver.jpg
+2026-02-02 23:10:11,637 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'ff906037-00c6-11f1-a195-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:10:11,841 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '8836'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '0584b54e-f828-46c3-a769-f5d7a7b7b01b'
+    'x-ms-request-id': '0584b54e-f828-46c3-a769-f5d7a7b7b01b'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:10:11 GMT'
+2026-02-02 23:10:11,859 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_163921_Uber Driver.jpg
+2026-02-02 23:10:11,859 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'ffb25b5f-00c6-11f1-99df-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:10:12,032 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '7446'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'e6e7c324-1a4b-4dd6-bf4f-a2e8d616d398'
+    'x-ms-request-id': 'e6e7c324-1a4b-4dd6-bf4f-a2e8d616d398'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:10:11 GMT'
+2026-02-02 23:10:12,047 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_165436_Uber Driver.jpg
+2026-02-02 23:10:12,049 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'ffcf529b-00c6-11f1-a493-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:10:12,058 - INFO - Response status: 429
+Response headers:
+    'Content-Length': '271'
+    'Content-Type': 'application/json'
+    'Retry-After': '16'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:10:11 GMT'
+2026-02-02 23:10:28,059 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'ffcf529b-00c6-11f1-a493-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:10:28,208 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '12515'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '410e9177-2d90-409f-a29c-1cedda6bcb7d'
+    'x-ms-request-id': '410e9177-2d90-409f-a29c-1cedda6bcb7d'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:10:27 GMT'
+2026-02-02 23:10:28,235 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_165823_Uber Driver.jpg
+2026-02-02 23:10:28,236 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '09753397-00c7-11f1-8314-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:10:28,529 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '14807'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'd4b9acb2-e7aa-4c2f-a704-10516808cc8e'
+    'x-ms-request-id': 'd4b9acb2-e7aa-4c2f-a704-10516808cc8e'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:10:28 GMT'
+2026-02-02 23:10:28,561 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_183923_Uber Driver.jpg
+2026-02-02 23:10:28,562 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '09a6c3b6-00c7-11f1-a43a-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:10:28,889 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '12178'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '435063f4-cd18-4df4-b7d8-b954b508f602'
+    'x-ms-request-id': '435063f4-cd18-4df4-b7d8-b954b508f602'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:10:28 GMT'
+2026-02-02 23:10:28,913 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_184023_Uber Driver.jpg
+2026-02-02 23:10:28,914 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '09dc8ee3-00c7-11f1-9c78-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:10:29,444 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '7595'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'cde81af8-c8d0-4213-8de7-0f5815a88899'
+    'x-ms-request-id': 'cde81af8-c8d0-4213-8de7-0f5815a88899'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:10:28 GMT'
+2026-02-02 23:10:29,460 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_184744_Uber Driver.jpg
+2026-02-02 23:10:29,460 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '0a2ffe33-00c7-11f1-a2d8-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:10:29,622 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '8530'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '57f515c5-9471-431e-9525-7ea2e40c3da0'
+    'x-ms-request-id': '57f515c5-9471-431e-9525-7ea2e40c3da0'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:10:29 GMT'
+2026-02-02 23:10:29,639 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_190346_Uber Driver.jpg
+2026-02-02 23:10:29,640 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '0a4b5869-00c7-11f1-8038-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:10:29,777 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '8051'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '07d15ac7-9532-4386-b3ae-b9c615116ae6'
+    'x-ms-request-id': '07d15ac7-9532-4386-b3ae-b9c615116ae6'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:10:29 GMT'
+2026-02-02 23:10:29,794 - INFO - Starting OCR extraction for local stream: Screenshot_20260202_203214_Uber Driver.jpg
+2026-02-02 23:10:29,795 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '0a6304d3-00c7-11f1-be5d-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:10:29,804 - INFO - Response status: 429
+Response headers:
+    'Content-Length': '270'
+    'Content-Type': 'application/json'
+    'Retry-After': '8'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:10:29 GMT'
+2026-02-02 23:10:37,805 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '0a6304d3-00c7-11f1-be5d-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-02 23:10:38,008 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '14514'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '48cc7869-98a8-4941-b1a9-3aa512d07744'
+    'x-ms-request-id': '48cc7869-98a8-4941-b1a9-3aa512d07744'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Tue, 03 Feb 2026 06:10:37 GMT'
+Fetching Tessie drives from 2026-02-02 04:00:00 to 2026-02-02 22:00:00...
+Found 49 Tessie drives.
+Processing 47 Uber screenshots for matching...
+Running OCR on Screenshot_20260202_044713_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_050812_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_050819_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_051839_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_052853_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_053016_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_053033_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_053932_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_061447_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_082834_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_083306_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_083313_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_083636_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_083716_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_084057_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_084103_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_085608_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_085900_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_085921_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_090602_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_092104_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_093903_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_094435_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_094453_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_095112_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_100544_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_100919_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_101225_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_102142_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_104407_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_104434_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_105504_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_155456_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_161208_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_161827_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_162311_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_163007_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_163044_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_163647_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_163921_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_165436_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_165823_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_183923_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_184023_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_184744_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_190346_Uber Driver.jpg...
+Running OCR on Screenshot_20260202_203214_Uber Driver.jpg...
+
+--- MATCHING SUMMARY ---
+Matched: 0
+Unmatched: 47
+Uber Miles (Matched): 0.00
+Tessie Miles (Matched): 0.00

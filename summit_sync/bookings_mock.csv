@@ -1,0 +1,11 @@
+BookingID,ServiceName,StaffMember,CustomerName,StartDateTime,EndDateTime,Status,Price,Currency
+BKG-001,Private Trip (Hourly),Peter Teehan,John Smith,2026-01-26 14:00:00,2026-01-26 16:00:00,Confirmed,150.00,USD
+BKG-002,Airport Transfer (DEN),Driver 2,Jane Doe,2026-01-27 08:30:00,2026-01-27 09:30:00,Completed,120.00,USD
+BKG-003,Private Trip (Hourly),Peter Teehan,Tech Corp Inc,2026-01-27 10:00:00,2026-01-27 13:00:00,Confirmed,225.00,USD
+BKG-004,Mountain Tour,Peter Teehan,Tourist Group A,2026-01-28 09:00:00,2026-01-28 14:00:00,Tentative,450.00,USD
+BKG-005,Airport Transfer (COS),Driver 2,Local Resident,2026-01-28 15:00:00,2026-01-28 15:45:00,Confirmed,45.00,USD
+BKG-006,Private Trip (Hourly),Peter Teehan,VIP Client,2026-01-29 18:00:00,2026-01-29 23:00:00,Confirmed,375.00,USD
+BKG-007,Wedding Transport,Driver 2,Wedding Planner,2026-01-30 12:00:00,2026-01-30 18:00:00,Cancelled,0.00,USD
+BKG-008,Private Trip (Hourly),Peter Teehan,John Smith,2026-01-31 09:00:00,2026-01-31 11:00:00,Confirmed,150.00,USD
+BKG-009,Airport Transfer (DEN),Peter Teehan,Business Exec,2026-02-01 05:00:00,2026-02-01 06:15:00,Confirmed,135.00,USD
+BKG-010,Private Trip (Hourly),Driver 2,Family Trip,2026-02-01 10:00:00,2026-02-01 14:00:00,Confirmed,300.00,USD

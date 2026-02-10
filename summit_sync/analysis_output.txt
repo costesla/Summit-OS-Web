@@ -1,0 +1,141 @@
+Scanning C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\Pictures\Camera Roll\2026...
+
+Found 60 images for Feb 6.
+------------------------------------------------------------
+Cluster 1: 06:01:23 (Dur: 0.0s) - 1 images - Uber (Likely)
+   - Screenshot_20260206_060123.jpg
+
+Cluster 2: 06:08:10 (Dur: 0.0s) - 1 images - Uber (Likely)
+   - Screenshot_20260206_060810.jpg
+
+Cluster 3: 06:50:03 (Dur: 0.0s) - 1 images - Uber (Likely)
+   - Screenshot_20260206_065003.jpg
+
+Cluster 4: 07:27:36 (Dur: 0.0s) - 1 images - Uber (Likely)
+   - Screenshot_20260206_072736_Chrome.jpg
+
+Cluster 5: 08:01:35 (Dur: 181.0s) - 3 images - Ambiguous
+   - Screenshot_20260206_080135_Venmo.jpg
+   - Screenshot_20260206_080328_Uber Driver.jpg
+   - Screenshot_20260206_080436_Venmo.jpg
+
+Cluster 6: 08:09:42 (Dur: 0.0s) - 1 images - Uber (Likely)
+   - Screenshot_20260206_080942_M365 Copilot.jpg
+
+Cluster 7: 08:42:53 (Dur: 98.0s) - 2 images - Ambiguous
+   - Screenshot_20260206_084253.jpg
+   - Screenshot_20260206_084431.jpg
+
+Cluster 8: 08:47:54 (Dur: 0.0s) - 1 images - Uber (Likely)
+   - Screenshot_20260206_084754_Uber Driver.jpg
+
+Cluster 9: 09:05:25 (Dur: 7.0s) - 2 images - Ambiguous
+   - Screenshot_20260206_090525_Uber Driver.jpg
+   - Screenshot_20260206_090532_Uber Driver.jpg
+
+Cluster 10: 09:12:58 (Dur: 0.0s) - 1 images - Uber (Likely)
+   - Screenshot_20260206_091258_Uber Driver.jpg
+
+Cluster 11: 09:36:16 (Dur: 78.0s) - 3 images - Ambiguous
+   - Screenshot_20260206_093616_Uber Driver.jpg
+   - Screenshot_20260206_093628_Uber Driver.jpg
+   - Screenshot_20260206_093734.jpg
+
+Cluster 12: 10:21:19 (Dur: 21.0s) - 2 images - Ambiguous
+   - Screenshot_20260206_102119.jpg
+   - Screenshot_20260206_102140_Venmo.jpg
+
+Cluster 13: 10:37:44 (Dur: 22.0s) - 2 images - Ambiguous
+   - Screenshot_20260206_103744_Uber Driver.jpg
+   - Screenshot_20260206_103806_Uber Driver.jpg
+
+Cluster 14: 10:42:23 (Dur: 0.0s) - 1 images - Uber (Likely)
+   - Screenshot_20260206_104223_Uber Driver.jpg
+
+Cluster 15: 10:50:12 (Dur: 99.0s) - 4 images - Private (Likely - ~5 cards)
+   - Screenshot_20260206_105012.jpg
+   - Screenshot_20260206_105027_Uber Driver.jpg
+   - Screenshot_20260206_105140_Uber Driver.jpg
+   - Screenshot_20260206_105151_Uber Driver.jpg
+
+Cluster 16: 10:57:01 (Dur: 0.0s) - 1 images - Uber (Likely)
+   - Screenshot_20260206_105701_Uber Driver.jpg
+
+Cluster 17: 11:01:38 (Dur: 48.0s) - 2 images - Ambiguous
+   - Screenshot_20260206_110138_Uber Driver.jpg
+   - Screenshot_20260206_110226.jpg
+
+Cluster 18: 11:06:39 (Dur: 11.0s) - 2 images - Ambiguous
+   - Screenshot_20260206_110639_Uber Driver.jpg
+   - Screenshot_20260206_110650_Uber Driver.jpg
+
+Cluster 19: 11:13:30 (Dur: 0.0s) - 1 images - Uber (Likely)
+   - Screenshot_20260206_111330_Uber Driver.jpg
+
+Cluster 20: 11:24:43 (Dur: 53.0s) - 2 images - Ambiguous
+   - Screenshot_20260206_112443_Uber Driver.jpg
+   - Screenshot_20260206_112536.jpg
+
+Cluster 21: 11:35:47 (Dur: 50.0s) - 2 images - Ambiguous
+   - Screenshot_20260206_113547_Uber Driver.jpg
+   - Screenshot_20260206_113637_Uber Driver.jpg
+
+Cluster 22: 11:43:59 (Dur: 0.0s) - 1 images - Uber (Likely)
+   - Screenshot_20260206_114359_Uber Driver.jpg
+
+Cluster 23: 12:04:41 (Dur: 17.0s) - 3 images - Ambiguous
+   - Screenshot_20260206_120441_Uber Driver.jpg
+   - Screenshot_20260206_120450_Uber Driver.jpg
+   - Screenshot_20260206_120458_Uber Driver.jpg
+
+Cluster 24: 12:08:52 (Dur: 0.0s) - 1 images - Uber (Likely)
+   - Screenshot_20260206_120852_Uber Driver.jpg
+
+Cluster 25: 12:19:48 (Dur: 99.0s) - 2 images - Ambiguous
+   - Screenshot_20260206_121948_Uber Driver.jpg
+   - Screenshot_20260206_122127_Uber Driver.jpg
+
+Cluster 26: 12:24:51 (Dur: 8.0s) - 2 images - Ambiguous
+   - Screenshot_20260206_122451.jpg
+   - Screenshot_20260206_122459.jpg
+
+Cluster 27: 12:41:14 (Dur: 0.0s) - 1 images - Uber (Likely)
+   - Screenshot_20260206_124114_Samsung Wallet.jpg
+
+Cluster 28: 12:52:40 (Dur: 0.0s) - 1 images - Uber (Likely)
+   - Screenshot_20260206_125240_Uber Driver.jpg
+
+Cluster 29: 12:57:53 (Dur: 6.0s) - 2 images - Ambiguous
+   - Screenshot_20260206_125753_Starbucks.jpg
+   - Screenshot_20260206_125759_Starbucks.jpg
+
+Cluster 30: 14:40:47 (Dur: 13.0s) - 2 images - Ambiguous
+   - Screenshot_20260206_144047_Uber Driver.jpg
+   - Screenshot_20260206_144100_Uber Driver.jpg
+
+Cluster 31: 14:46:16 (Dur: 0.0s) - 1 images - Uber (Likely)
+   - Screenshot_20260206_144616_Uber Driver.jpg
+
+Cluster 32: 14:53:06 (Dur: 0.0s) - 1 images - Uber (Likely)
+   - Screenshot_20260206_145306_Uber Driver.jpg
+
+Cluster 33: 15:06:48 (Dur: 0.0s) - 1 images - Uber (Likely)
+   - Screenshot_20260206_150648_Uber Driver.jpg
+
+Cluster 34: 15:10:52 (Dur: 0.0s) - 1 images - Uber (Likely)
+   - Screenshot_20260206_151052_Uber Driver.jpg
+
+Cluster 35: 15:26:42 (Dur: 71.0s) - 3 images - Ambiguous
+   - Screenshot_20260206_152642_Uber Driver.jpg
+   - Screenshot_20260206_152747_Uber Driver.jpg
+   - Screenshot_20260206_152753_Uber Driver.jpg
+
+Cluster 36: 15:33:33 (Dur: 17.0s) - 2 images - Ambiguous
+   - Screenshot_20260206_153333.jpg
+   - Screenshot_20260206_153350.jpg
+
+------------------------------------------------------------
+Total Clusters: 36
+Estimated Private Trips: 1
+Estimated Uber Trips: 18
+Total Images: 60

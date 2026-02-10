@@ -1,0 +1,343 @@
+2026-01-29 20:40:05,690 - OCR Client initialized with API Key at endpoint: https://ai-summitos-prod.cognitiveservices.azure.com/
+2026-01-29 20:40:05,690 - Processing local file: Screenshot_20260129_110004_Uber Driver.jpg
+2026-01-29 20:40:05,694 - Request URL: 'https://stsummitosprod.blob.core.windows.net/uploads/Screenshot_20260129_110004_Uber%20Driver.jpg'
+Request method: 'PUT'
+Request headers:
+    'Content-Length': '687931'
+    'x-ms-blob-type': 'REDACTED'
+    'x-ms-version': 'REDACTED'
+    'Content-Type': 'application/octet-stream'
+    'Accept': 'application/xml'
+    'User-Agent': 'azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'x-ms-date': 'REDACTED'
+    'x-ms-client-request-id': '5df3582d-fd8d-11f0-9046-7c1e529ce9b1'
+    'Authorization': 'REDACTED'
+A body is sent with the request
+2026-01-29 20:40:07,237 - Response status: 201
+Response headers:
+    'Content-Length': '0'
+    'Content-MD5': 'REDACTED'
+    'Last-Modified': 'Fri, 30 Jan 2026 03:40:07 GMT'
+    'ETag': '"0x8DE5FB143114FD6"'
+    'Server': 'Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0'
+    'x-ms-request-id': 'e7baceac-b01e-0054-519a-91cacb000000'
+    'x-ms-client-request-id': '5df3582d-fd8d-11f0-9046-7c1e529ce9b1'
+    'x-ms-version': 'REDACTED'
+    'x-ms-content-crc64': 'REDACTED'
+    'x-ms-request-server-encrypted': 'REDACTED'
+    'Date': 'Fri, 30 Jan 2026 03:40:07 GMT'
+2026-01-29 20:40:07,238 - Extracting text from stream...
+2026-01-29 20:40:07,238 - Starting OCR extraction for local stream: Screenshot_20260129_110004_Uber Driver.jpg
+2026-01-29 20:40:07,239 - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '5edf3476-fd8d-11f0-8cff-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-01-29 20:40:08,392 - Response status: 200
+Response headers:
+    'Content-Length': '8559'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '74e296da-5666-4cb6-9171-89e457305346'
+    'x-ms-request-id': '74e296da-5666-4cb6-9171-89e457305346'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Fri, 30 Jan 2026 03:40:07 GMT'
+2026-01-29 20:40:08,417 - Saving Trip: Uber_Core - None
+2026-01-29 20:40:08,417 - Saving Uber Trip: M_1769744408_7f56c360be
+2026-01-29 20:40:08,854 - Successfully saved trip M_1769744408_7f56c360be to database.
+2026-01-29 20:40:08,856 - Processing local file: Screenshot_20260129_111136_Uber Driver.jpg
+2026-01-29 20:40:08,871 - Request URL: 'https://stsummitosprod.blob.core.windows.net/uploads/Screenshot_20260129_111136_Uber%20Driver.jpg'
+Request method: 'PUT'
+Request headers:
+    'Content-Length': '629168'
+    'x-ms-blob-type': 'REDACTED'
+    'x-ms-version': 'REDACTED'
+    'Content-Type': 'application/octet-stream'
+    'Accept': 'application/xml'
+    'User-Agent': 'azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'x-ms-date': 'REDACTED'
+    'x-ms-client-request-id': '5fd8380b-fd8d-11f0-a448-7c1e529ce9b1'
+    'Authorization': 'REDACTED'
+A body is sent with the request
+2026-01-29 20:40:08,901 - Response status: 201
+Response headers:
+    'Content-Length': '0'
+    'Content-MD5': 'REDACTED'
+    'Last-Modified': 'Fri, 30 Jan 2026 03:40:08 GMT'
+    'ETag': '"0x8DE5FB1440F79F3"'
+    'Server': 'Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0'
+    'x-ms-request-id': 'e7bad3fa-b01e-0054-429a-91cacb000000'
+    'x-ms-client-request-id': '5fd8380b-fd8d-11f0-a448-7c1e529ce9b1'
+    'x-ms-version': 'REDACTED'
+    'x-ms-content-crc64': 'REDACTED'
+    'x-ms-request-server-encrypted': 'REDACTED'
+    'Date': 'Fri, 30 Jan 2026 03:40:08 GMT'
+2026-01-29 20:40:08,902 - Extracting text from stream...
+2026-01-29 20:40:08,903 - Starting OCR extraction for local stream: Screenshot_20260129_111136_Uber Driver.jpg
+2026-01-29 20:40:08,903 - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '5fdd26c9-fd8d-11f0-87ad-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-01-29 20:40:09,150 - Response status: 200
+Response headers:
+    'Content-Length': '11057'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '2bcc1ac3-e6bd-4b6b-897b-240b0dc348a5'
+    'x-ms-request-id': '2bcc1ac3-e6bd-4b6b-897b-240b0dc348a5'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Fri, 30 Jan 2026 03:40:08 GMT'
+2026-01-29 20:40:09,207 - Saving Trip: Uber_Core - None
+2026-01-29 20:40:09,207 - Saving Uber Trip: M_1769744409_72a807200b
+2026-01-29 20:40:09,237 - Successfully saved trip M_1769744409_72a807200b to database.
+2026-01-29 20:40:09,239 - Processing local file: Screenshot_20260129_111758_Uber Driver.jpg
+2026-01-29 20:40:09,275 - Request URL: 'https://stsummitosprod.blob.core.windows.net/uploads/Screenshot_20260129_111758_Uber%20Driver.jpg'
+Request method: 'PUT'
+Request headers:
+    'Content-Length': '640050'
+    'x-ms-blob-type': 'REDACTED'
+    'x-ms-version': 'REDACTED'
+    'Content-Type': 'application/octet-stream'
+    'Accept': 'application/xml'
+    'User-Agent': 'azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'x-ms-date': 'REDACTED'
+    'x-ms-client-request-id': '6015f3a7-fd8d-11f0-a509-7c1e529ce9b1'
+    'Authorization': 'REDACTED'
+A body is sent with the request
+2026-01-29 20:40:09,305 - Response status: 201
+Response headers:
+    'Content-Length': '0'
+    'Content-MD5': 'REDACTED'
+    'Last-Modified': 'Fri, 30 Jan 2026 03:40:09 GMT'
+    'ETag': '"0x8DE5FB1444D0134"'
+    'Server': 'Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0'
+    'x-ms-request-id': 'e7bad548-b01e-0054-7b9a-91cacb000000'
+    'x-ms-client-request-id': '6015f3a7-fd8d-11f0-a509-7c1e529ce9b1'
+    'x-ms-version': 'REDACTED'
+    'x-ms-content-crc64': 'REDACTED'
+    'x-ms-request-server-encrypted': 'REDACTED'
+    'Date': 'Fri, 30 Jan 2026 03:40:09 GMT'
+2026-01-29 20:40:09,306 - Extracting text from stream...
+2026-01-29 20:40:09,306 - Starting OCR extraction for local stream: Screenshot_20260129_111758_Uber Driver.jpg
+2026-01-29 20:40:09,307 - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '601ad9e4-fd8d-11f0-baf1-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-01-29 20:40:09,539 - Response status: 200
+Response headers:
+    'Content-Length': '11215'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'ab482884-da9b-4aa4-970f-da9d31c0e8b6'
+    'x-ms-request-id': 'ab482884-da9b-4aa4-970f-da9d31c0e8b6'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Fri, 30 Jan 2026 03:40:08 GMT'
+2026-01-29 20:40:09,565 - Saving Trip: Uber_Core - None
+2026-01-29 20:40:09,565 - Saving Uber Trip: M_1769744409_65abcf9f56
+2026-01-29 20:40:09,816 - Successfully saved trip M_1769744409_65abcf9f56 to database.
+2026-01-29 20:40:09,819 - Processing local file: Screenshot_20260129_112632_Uber Driver.jpg
+2026-01-29 20:40:09,867 - Request URL: 'https://stsummitosprod.blob.core.windows.net/uploads/Screenshot_20260129_112632_Uber%20Driver.jpg'
+Request method: 'PUT'
+Request headers:
+    'Content-Length': '488469'
+    'x-ms-blob-type': 'REDACTED'
+    'x-ms-version': 'REDACTED'
+    'Content-Type': 'application/octet-stream'
+    'Accept': 'application/xml'
+    'User-Agent': 'azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'x-ms-date': 'REDACTED'
+    'x-ms-client-request-id': '60705ea5-fd8d-11f0-b0bd-7c1e529ce9b1'
+    'Authorization': 'REDACTED'
+A body is sent with the request
+2026-01-29 20:40:09,896 - Response status: 201
+Response headers:
+    'Content-Length': '0'
+    'Content-MD5': 'REDACTED'
+    'Last-Modified': 'Fri, 30 Jan 2026 03:40:09 GMT'
+    'ETag': '"0x8DE5FB144A71810"'
+    'Server': 'Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0'
+    'x-ms-request-id': 'e7bad726-b01e-0054-2f9a-91cacb000000'
+    'x-ms-client-request-id': '60705ea5-fd8d-11f0-b0bd-7c1e529ce9b1'
+    'x-ms-version': 'REDACTED'
+    'x-ms-content-crc64': 'REDACTED'
+    'x-ms-request-server-encrypted': 'REDACTED'
+    'Date': 'Fri, 30 Jan 2026 03:40:09 GMT'
+2026-01-29 20:40:09,896 - Extracting text from stream...
+2026-01-29 20:40:09,896 - Starting OCR extraction for local stream: Screenshot_20260129_112632_Uber Driver.jpg
+2026-01-29 20:40:09,897 - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '6074e437-fd8d-11f0-9b12-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-01-29 20:40:10,199 - Response status: 200
+Response headers:
+    'Content-Length': '15249'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '0dd88a8d-4f52-44ed-b008-751355e8b43b'
+    'x-ms-request-id': '0dd88a8d-4f52-44ed-b008-751355e8b43b'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Fri, 30 Jan 2026 03:40:09 GMT'
+2026-01-29 20:40:10,234 - Saving Trip: Uber_Core - None
+2026-01-29 20:40:10,234 - Saving Uber Trip: M_1769744410_1982f0b22e
+2026-01-29 20:40:10,269 - Successfully saved trip M_1769744410_1982f0b22e to database.
+2026-01-29 20:40:10,271 - Processing local file: Screenshot_20260129_153920_Call.jpg
+2026-01-29 20:40:10,274 - Request URL: 'https://stsummitosprod.blob.core.windows.net/uploads/Screenshot_20260129_153920_Call.jpg'
+Request method: 'PUT'
+Request headers:
+    'Content-Length': '352775'
+    'x-ms-blob-type': 'REDACTED'
+    'x-ms-version': 'REDACTED'
+    'Content-Type': 'application/octet-stream'
+    'Accept': 'application/xml'
+    'User-Agent': 'azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'x-ms-date': 'REDACTED'
+    'x-ms-client-request-id': '60ae6489-fd8d-11f0-8377-7c1e529ce9b1'
+    'Authorization': 'REDACTED'
+A body is sent with the request
+2026-01-29 20:40:10,296 - Response status: 201
+Response headers:
+    'Content-Length': '0'
+    'Content-MD5': 'REDACTED'
+    'Last-Modified': 'Fri, 30 Jan 2026 03:40:10 GMT'
+    'ETag': '"0x8DE5FB144E4786E"'
+    'Server': 'Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0'
+    'x-ms-request-id': 'e7bad88d-b01e-0054-649a-91cacb000000'
+    'x-ms-client-request-id': '60ae6489-fd8d-11f0-8377-7c1e529ce9b1'
+    'x-ms-version': 'REDACTED'
+    'x-ms-content-crc64': 'REDACTED'
+    'x-ms-request-server-encrypted': 'REDACTED'
+    'Date': 'Fri, 30 Jan 2026 03:40:10 GMT'
+2026-01-29 20:40:10,297 - Extracting text from stream...
+2026-01-29 20:40:10,297 - Starting OCR extraction for local stream: Screenshot_20260129_153920_Call.jpg
+2026-01-29 20:40:10,298 - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '60b1ff0f-fd8d-11f0-b82f-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-01-29 20:40:10,406 - Response status: 200
+Response headers:
+    'Content-Length': '354'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'e1413cb4-0551-42d8-bb0f-43457ddc95e7'
+    'x-ms-request-id': 'e1413cb4-0551-42d8-bb0f-43457ddc95e7'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Fri, 30 Jan 2026 03:40:09 GMT'
+2026-01-29 20:40:10,408 - Saving Trip: Private_Trip - None
+2026-01-29 20:40:10,409 - Saving Private Trip: M_1769744410_db5939914d
+2026-01-29 20:40:10,438 - Successfully saved trip M_1769744410_db5939914d to database.
+2026-01-29 20:40:10,441 - Processing local file: Screenshot_20260129_153955_Call.jpg
+2026-01-29 20:40:10,443 - Request URL: 'https://stsummitosprod.blob.core.windows.net/uploads/Screenshot_20260129_153955_Call.jpg'
+Request method: 'PUT'
+Request headers:
+    'Content-Length': '524572'
+    'x-ms-blob-type': 'REDACTED'
+    'x-ms-version': 'REDACTED'
+    'Content-Type': 'application/octet-stream'
+    'Accept': 'application/xml'
+    'User-Agent': 'azsdk-python-storage-blob/12.19.1 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'x-ms-date': 'REDACTED'
+    'x-ms-client-request-id': '60c8393d-fd8d-11f0-96e9-7c1e529ce9b1'
+    'Authorization': 'REDACTED'
+A body is sent with the request
+2026-01-29 20:40:10,468 - Response status: 201
+Response headers:
+    'Content-Length': '0'
+    'Content-MD5': 'REDACTED'
+    'Last-Modified': 'Fri, 30 Jan 2026 03:40:10 GMT'
+    'ETag': '"0x8DE5FB144FE72EC"'
+    'Server': 'Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0'
+    'x-ms-request-id': 'e7bad916-b01e-0054-5a9a-91cacb000000'
+    'x-ms-client-request-id': '60c8393d-fd8d-11f0-96e9-7c1e529ce9b1'
+    'x-ms-version': 'REDACTED'
+    'x-ms-content-crc64': 'REDACTED'
+    'x-ms-request-server-encrypted': 'REDACTED'
+    'Date': 'Fri, 30 Jan 2026 03:40:10 GMT'
+2026-01-29 20:40:10,469 - Extracting text from stream...
+2026-01-29 20:40:10,469 - Starting OCR extraction for local stream: Screenshot_20260129_153955_Call.jpg
+2026-01-29 20:40:10,470 - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '60cc2778-fd8d-11f0-8e0b-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-01-29 20:40:10,598 - Response status: 200
+Response headers:
+    'Content-Length': '735'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'e15e1113-a301-40eb-91f0-ccd85595a7e9'
+    'x-ms-request-id': 'e15e1113-a301-40eb-91f0-ccd85595a7e9'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Fri, 30 Jan 2026 03:40:09 GMT'
+2026-01-29 20:40:10,601 - Saving Trip: Private_Trip - None
+2026-01-29 20:40:10,601 - Saving Private Trip: M_1769744410_61d5e2eeb1
+2026-01-29 20:40:10,833 - Successfully saved trip M_1769744410_61d5e2eeb1 to database.

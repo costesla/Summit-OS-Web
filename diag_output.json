@@ -1,0 +1,72 @@
+{
+  "api_files": [
+    "__init__.py",
+    "__pycache__",
+    "bookings.py",
+    "copilot.py",
+    "health.py",
+    "ocr.py",
+    "openapi.yaml",
+    "pricing.py",
+    "reports.py",
+    "tessie.py"
+  ],
+  "cwd": "/home/site/wwwroot",
+  "env_vars": {
+    "APPLICATIONINSIGHTS_CONNECTION_STRING": "SET",
+    "APPSETTING_APPLICATIONINSIGHTS_CONNECTION_STRING": "SET",
+    "APPSETTING_AVIATIONSTACK_API_KEY": "SET",
+    "APPSETTING_AZURE_VISION_KEY": "SET",
+    "APPSETTING_GOOGLE_MAPS_API_KEY": "SET",
+    "APPSETTING_OAUTH_CLIENT_SECRET": "SET",
+    "APPSETTING_SQL_CONNECTION_STRING": "SET",
+    "APPSETTING_TESSIE_API_KEY": "SET",
+    "AVIATIONSTACK_API_KEY": "SET",
+    "AZURE_VISION_KEY": "SET",
+    "CONTAINER_ENCRYPTION_KEY": "SET",
+    "GOOGLE_MAPS_API_KEY": "SET",
+    "MSI_SECRET": "SET",
+    "OAUTH_CLIENT_SECRET": "SET",
+    "SQL_CONNECTION_STRING": "SET",
+    "TESSIE_API_KEY": "SET",
+    "WEBSITE_AUTH_ENCRYPTION_KEY": "SET",
+    "WEBSITE_AUTH_SIGNING_KEY": "SET"
+  },
+  "files": [
+    ".funcignore",
+    ".ostype",
+    ".python_packages",
+    "__pycache__",
+    "api",
+    "config",
+    "deploy.ps1",
+    "deploy.zip",
+    "diagnostic_registration.py",
+    "function_app.py",
+    "host.json",
+    "models",
+    "oryx-manifest.toml",
+    "requirements.txt",
+    "scripts",
+    "services"
+  ],
+  "registration_logs": [
+    "SUCCESS: api.pricing",
+    "SUCCESS: api.ocr",
+    "SUCCESS: api.bookings",
+    "SUCCESS: api.tessie",
+    "SUCCESS: api.reports",
+    "SUCCESS: api.copilot",
+    "SUCCESS: api.health"
+  ],
+  "sys.path": [
+    "/tmp/functions/standby/wwwroot",
+    "/home/site/wwwroot/.python_packages/lib/site-packages",
+    "/azure-functions-host/workers/python/3.11/LINUX/X64",
+    "/usr/local/lib/python311.zip",
+    "/usr/local/lib/python3.11",
+    "/usr/local/lib/python3.11/lib-dynload",
+    "/usr/local/lib/python3.11/site-packages",
+    "/home/site/wwwroot"
+  ]
+}

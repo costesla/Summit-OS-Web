@@ -71,15 +71,17 @@ class DatabaseClient:
                 TripType = ?, Timestamp_Start = ?, Pickup_Location = ?, Dropoff_Location = ?,
                 Distance_mi = ?, Duration_min = ?, Tessie_DriveID = ?, Tessie_Distance = ?,
                 Fare = ?, Tip = ?, Driver_Earnings = ?, Platform_Cut = ?,
+                Start_SOC = ?, End_SOC = ?, Energy_Used_kWh = ?, Efficiency_Wh_mi = ?,
                 Source_URL = ?, Classification = ?, Sidecar_Artifact_JSON = ?, LastUpdated = GETDATE()
         WHEN NOT MATCHED THEN
             INSERT (
                 RideID, TripType, Timestamp_Start, Pickup_Location, Dropoff_Location,
                 Distance_mi, Duration_min, Tessie_DriveID, Tessie_Distance,
                 Fare, Tip, Driver_Earnings, Platform_Cut,
+                Start_SOC, End_SOC, Energy_Used_kWh, Efficiency_Wh_mi,
                 Source_URL, Classification, Sidecar_Artifact_JSON, CreatedAt
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE());
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE());
         """
         
         t_start = trip_data.get('timestamp_epoch')
@@ -99,6 +101,10 @@ class DatabaseClient:
             trip_data.get('tip', 0),
             trip_data.get('driver_total', 0),
             trip_data.get('uber_cut', 0),
+            trip_data.get('start_soc'),
+            trip_data.get('end_soc'),
+            trip_data.get('energy_used'),
+            trip_data.get('efficiency_wh_mi'),
             source_url,
             trip_data.get('classification'),
             json.dumps(trip_data) if trip_data else None,
@@ -116,6 +122,10 @@ class DatabaseClient:
             trip_data.get('tip', 0),
             trip_data.get('driver_total', 0),
             trip_data.get('uber_cut', 0),
+            trip_data.get('start_soc'),
+            trip_data.get('end_soc'),
+            trip_data.get('energy_used'),
+            trip_data.get('efficiency_wh_mi'),
             source_url,
             trip_data.get('classification'),
             json.dumps(trip_data) if trip_data else None

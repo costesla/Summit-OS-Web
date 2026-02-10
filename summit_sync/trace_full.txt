@@ -1,0 +1,48 @@
+Total drives in window: 9
+Drive 362581054: 20:06:02 -> 20:25:42 MST
+  Start Loc: 535 Wuthering Height Drive, Colorado Springs, Colorado 80921, United States
+  End Loc:   2630 Grand Vista Circle, Colorado Springs, Colorado 80904, United States
+  Distance:  15.35 mi
+------------------------------
+Drive 362578634: 19:56:42 -> 20:03:00 MST
+  Start Loc: 229 Gleneagle Gate View, Colorado Springs, Colorado 80921, United States
+  End Loc:   535 Wuthering Height Drive, Colorado Springs, Colorado 80921, United States
+  Distance:  2.55 mi
+------------------------------
+Drive 362574046: 19:11:53 -> 19:27:37 MST
+  Start Loc: 2005 Spirerock Path, Colorado Springs, Colorado 80919, United States
+  End Loc:   229 Gleneagle Gate View, Colorado Springs, Colorado 80921, United States
+  Distance:  10.93 mi
+------------------------------
+Drive 362571750: 19:04:17 -> 19:11:30 MST
+  Start Loc: 7055 Commerce Center Drive, Colorado Springs, Colorado 80919, United States
+  End Loc:   2005 Spirerock Path, Colorado Springs, Colorado 80919, United States
+  Distance:  3.22 mi
+------------------------------
+Drive 362570059: 18:47:49 -> 19:00:03 MST
+  Start Loc: 1889 Silversmith Road, Colorado Springs, Colorado 80921, United States
+  End Loc:   7055 Commerce Center Drive, Colorado Springs, Colorado 80919, United States
+  Distance:  9.18 mi
+------------------------------
+Drive 362568096: 18:40:40 -> 18:47:27 MST
+  Start Loc: 229 Gleneagle Gate View, Colorado Springs, Colorado 80921, United States
+  End Loc:   1889 Silversmith Road, Colorado Springs, Colorado 80921, United States
+  Distance:  2.74 mi
+------------------------------
+Drive 362561300: 18:00:01 -> 18:06:55 MST
+  Start Loc: 535 Wuthering Height Drive, Colorado Springs, Colorado 80921, United States
+  End Loc:   229 Gleneagle Gate View, Colorado Springs, Colorado 80921, United States
+  Distance:  2.48 mi
+------------------------------
+Drive 362559840: 17:40:57 -> 17:59:52 MST
+  Start Loc: 2630 Grand Vista Circle, Colorado Springs, Colorado 80904, United States
+  End Loc:   535 Wuthering Height Drive, Colorado Springs, Colorado 80921, United States
+  Distance:  15.13 mi
+------------------------------
+Drive 362555825: 17:28:07 -> 17:38:56 MST
+  Start Loc: 170 West Fillmore Street, Colorado Springs, Colorado 80907, United States
+  End Loc:   2630 Grand Vista Circle, Colorado Springs, Colorado 80904, United States
+  Distance:  1.73 mi
+------------------------------
+
+Screenshots in 18:00-19:30 MST window:

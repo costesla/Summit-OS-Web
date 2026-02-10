@@ -1,0 +1,1482 @@
+2026-02-07 23:38:38,564 - INFO - OCR Client initialized with API Key at endpoint: https://ai-summitos-prod.cognitiveservices.azure.com/
+2026-02-07 23:38:38,566 - INFO - --- Starting Trip Processing V2 (Tessie Anchor) for 2026-02-07 ---
+2026-02-07 23:38:38,572 - INFO - Fetching Tessie drives for 2026-02-07...
+2026-02-07 23:38:38,572 - INFO - Fetching drives for VIN: 7SAYGDEEXRF075302
+2026-02-07 23:38:39,939 - INFO - Found 29 drives.
+2026-02-07 23:38:39,941 - INFO - Indexing local images...
+2026-02-07 23:38:40,080 - INFO - Found 51 potential images.
+2026-02-07 23:38:40,080 - INFO - Sample Image: Screenshot_20260207_063940_Chrome.jpg @ 2026-02-07 06:39:40
+2026-02-07 23:38:40,080 - INFO - Sample Image (Last): Screenshot_20260207_232502_Venmo.jpg @ 2026-02-07 23:25:02
+2026-02-07 23:38:40,182 - INFO - 
+[Drive #1] ID: 363908586 | None | 05:50 - 06:10
+2026-02-07 23:38:40,183 - INFO -    Candidates for Drive 363908586 (Window 05:30 - 06:40): 1
+2026-02-07 23:38:40,183 - INFO -    Matched 0 images (deduplicated).
+2026-02-07 23:38:40,185 - INFO -    Saving Trip 363908586: Uber_Unknown_Financials | Dist: 11.21 mi | Earn: $0.0
+2026-02-07 23:38:40,185 - INFO - Saving Private Trip: 363908586
+2026-02-07 23:38:40,209 - INFO - Successfully saved trip 363908586 to database.
+2026-02-07 23:38:40,215 - INFO - 
+[Drive #2] ID: 363917040 | None | 06:49 - 06:49
+2026-02-07 23:38:40,216 - INFO -    Candidates for Drive 363917040 (Window 06:29 - 07:19): 4
+2026-02-07 23:38:40,216 - INFO -    Matched Screenshot_20260207_063940_Chrome.jpg to Drive 363917040 (Diff: 579.0s)
+2026-02-07 23:38:40,217 - INFO -    Matched Screenshot_20260207_065319.jpg to Drive 363917040 (Diff: 240.0s)
+2026-02-07 23:38:40,217 - INFO -    Matched Screenshot_20260207_065447_Starbucks.jpg to Drive 363917040 (Diff: 328.0s)
+2026-02-07 23:38:40,217 - INFO -    Matched 3 images (deduplicated).
+2026-02-07 23:38:40,220 - INFO -    OCR Scanning: Screenshot_20260207_065447_Starbucks.jpg
+2026-02-07 23:38:40,245 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '316878'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'ce09f0e8-04b8-11f1-8435-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:38:41,339 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '12995'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '00f2dfb4-b8e1-48fb-8454-8fb2418a06ae'
+    'x-ms-request-id': '00f2dfb4-b8e1-48fb-8454-8fb2418a06ae'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:38:40 GMT'
+2026-02-07 23:38:44,453 - INFO -    Found Detailed Uber Data: $7.79
+2026-02-07 23:38:44,455 - INFO -    OCR Scanning: Screenshot_20260207_065319.jpg
+2026-02-07 23:38:44,491 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '327614'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'd091e392-04b8-11f1-be5c-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:38:44,838 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '11630'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '7de8b993-0940-4890-bf2b-f912e1b467f5'
+    'x-ms-request-id': '7de8b993-0940-4890-bf2b-f912e1b467f5'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:38:44 GMT'
+2026-02-07 23:38:47,873 - INFO -    OCR Scanning: Screenshot_20260207_063940_Chrome.jpg
+2026-02-07 23:38:47,889 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '214307'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'd2985f52-04b8-11f1-8d87-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:38:48,025 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '5060'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '0922c17d-5c88-4bc1-b14c-e04f544a8d2e'
+    'x-ms-request-id': '0922c17d-5c88-4bc1-b14c-e04f544a8d2e'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:38:47 GMT'
+2026-02-07 23:38:51,043 - INFO -    Saving Trip 363917040: Uber_Core | Dist: 0.01 mi | Earn: $7.79
+2026-02-07 23:38:51,043 - INFO - Saving Uber Trip: 363917040
+2026-02-07 23:38:51,056 - INFO - Successfully saved trip 363917040 to database.
+2026-02-07 23:38:51,060 - INFO - 
+[Drive #3] ID: 363921927 | None | 06:55 - 07:09
+2026-02-07 23:38:51,060 - INFO -    Candidates for Drive 363921927 (Window 06:35 - 07:39): 4
+2026-02-07 23:38:51,062 - INFO -    Matched Screenshot_20260207_070105.jpg to Drive 363921927 (Diff: 511.0s)
+2026-02-07 23:38:51,062 - INFO -    Matched 1 images (deduplicated).
+2026-02-07 23:38:51,062 - INFO -    OCR Scanning: Screenshot_20260207_070105.jpg
+2026-02-07 23:38:51,092 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '571813'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'd4813a71-04b8-11f1-a351-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:38:51,302 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '11589'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '16a82170-03fc-427c-a872-f76918d946cf'
+    'x-ms-request-id': '16a82170-03fc-427c-a872-f76918d946cf'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:38:50 GMT'
+2026-02-07 23:38:54,347 - INFO -    Found Basic Uber Financials: $0.06
+2026-02-07 23:38:54,347 - WARNING -    [Audit Alert] Unpaid Miles: 1.54 mi
+2026-02-07 23:38:54,347 - INFO -    Saving Trip 363921927: Uber_Core | Dist: 9.44 mi | Earn: $0.06
+2026-02-07 23:38:54,348 - INFO - Saving Uber Trip: 363921927
+2026-02-07 23:38:54,360 - INFO - Successfully saved trip 363921927 to database.
+2026-02-07 23:38:54,364 - INFO - 
+[Drive #4] ID: 363935071 | Jackie | 07:42 - 07:59
+2026-02-07 23:38:54,364 - INFO -    Candidates for Drive 363935071 (Window 07:22 - 08:29): 2
+2026-02-07 23:38:54,364 - INFO -    Matched 0 images (deduplicated).
+2026-02-07 23:38:54,365 - INFO -    Identified Client: Jackie
+2026-02-07 23:38:54,365 - INFO -    Saving Trip 363935071: Private_Trip | Dist: 15.9 mi | Earn: $0.0
+2026-02-07 23:38:54,365 - INFO - Saving Private Trip: 363935071
+2026-02-07 23:38:54,376 - INFO - Successfully saved trip 363935071 to database.
+2026-02-07 23:38:54,380 - INFO - 
+[Drive #5] ID: 363935988 | None | 07:59 - 08:03
+2026-02-07 23:38:54,380 - INFO -    Candidates for Drive 363935988 (Window 07:39 - 08:33): 2
+2026-02-07 23:38:54,380 - INFO -    Matched Screenshot_20260207_081011.jpg to Drive 363935988 (Diff: 382.0s)
+2026-02-07 23:38:54,380 - INFO -    Matched Screenshot_20260207_081437_Uber Driver.jpg to Drive 363935988 (Diff: 648.0s)
+2026-02-07 23:38:54,380 - INFO -    Matched 2 images (deduplicated).
+2026-02-07 23:38:54,381 - INFO -    OCR Scanning: Screenshot_20260207_081437_Uber Driver.jpg
+2026-02-07 23:38:54,391 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '544128'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'd6788e0b-04b8-11f1-8fe1-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:38:54,567 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '6924'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '2439fce2-cc2a-4ee8-afb1-124e36e28b5a'
+    'x-ms-request-id': '2439fce2-cc2a-4ee8-afb1-124e36e28b5a'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:38:53 GMT'
+2026-02-07 23:38:57,595 - INFO -    OCR Scanning: Screenshot_20260207_081011.jpg
+2026-02-07 23:38:57,643 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '572441'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'd868b83d-04b8-11f1-9c76-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:38:57,893 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '15506'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '3e1022f9-801f-47e0-9be2-7196cfdde674'
+    'x-ms-request-id': '3e1022f9-801f-47e0-9be2-7196cfdde674'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:38:57 GMT'
+2026-02-07 23:39:01,039 - INFO -    Found Basic Uber Financials: $0.78
+2026-02-07 23:39:01,040 - INFO -    Saving Trip 363935988: Uber_Core | Dist: 0.17 mi | Earn: $0.78
+2026-02-07 23:39:01,040 - INFO - Saving Uber Trip: 363935988
+2026-02-07 23:39:01,051 - INFO - Successfully saved trip 363935988 to database.
+2026-02-07 23:39:01,056 - INFO - 
+[Drive #6] ID: 363943741 | None | 08:17 - 08:33
+2026-02-07 23:39:01,056 - INFO -    Candidates for Drive 363943741 (Window 07:57 - 09:03): 2
+2026-02-07 23:39:01,057 - INFO -    Matched 0 images (deduplicated).
+2026-02-07 23:39:01,057 - INFO -    Saving Trip 363943741: Uber_Unknown_Financials | Dist: 9.06 mi | Earn: $0.0
+2026-02-07 23:39:01,057 - INFO - Saving Private Trip: 363943741
+2026-02-07 23:39:01,069 - INFO - Successfully saved trip 363943741 to database.
+2026-02-07 23:39:01,072 - INFO - 
+[Drive #7] ID: 363965700 | None | 09:31 - 09:50
+2026-02-07 23:39:01,073 - INFO -    Candidates for Drive 363965700 (Window 09:11 - 10:20): 5
+2026-02-07 23:39:01,073 - INFO -    Matched Screenshot_20260207_094535_Uber Driver.jpg to Drive 363965700 (Diff: 306.0s)
+2026-02-07 23:39:01,073 - INFO -    Matched Screenshot_20260207_094611_Uber Driver.jpg to Drive 363965700 (Diff: 270.0s)
+2026-02-07 23:39:01,074 - INFO -    Matched Screenshot_20260207_095122_Uber Driver.jpg to Drive 363965700 (Diff: 41.0s)
+2026-02-07 23:39:01,074 - INFO -    Matched 3 images (deduplicated).
+2026-02-07 23:39:01,075 - INFO -    OCR Scanning: Screenshot_20260207_095122_Uber Driver.jpg
+2026-02-07 23:39:01,088 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '596861'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'da765101-04b8-11f1-be43-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:39:01,291 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '11159'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'bcf2c5d3-4248-4f7a-b595-d2ccd8f702bf'
+    'x-ms-request-id': 'bcf2c5d3-4248-4f7a-b595-d2ccd8f702bf'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:39:00 GMT'
+2026-02-07 23:39:04,324 - INFO -    OCR Scanning: Screenshot_20260207_094611_Uber Driver.jpg
+2026-02-07 23:39:04,339 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '541508'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'dc66871a-04b8-11f1-b519-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:39:04,525 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '7847'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '0b2b0054-5497-4679-b193-5adaea23c710'
+    'x-ms-request-id': '0b2b0054-5497-4679-b193-5adaea23c710'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:39:03 GMT'
+2026-02-07 23:39:07,550 - INFO -    OCR Scanning: Screenshot_20260207_094535_Uber Driver.jpg
+2026-02-07 23:39:07,591 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '469062'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'de56c428-04b8-11f1-aee4-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:39:07,751 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '12730'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '6749053e-345c-4aee-9068-6b6b0d638fff'
+    'x-ms-request-id': '6749053e-345c-4aee-9068-6b6b0d638fff'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:39:06 GMT'
+2026-02-07 23:39:10,807 - INFO -    Found Basic Uber Financials: $9.25
+2026-02-07 23:39:10,808 - INFO -    Saving Trip 363965700: Uber_Core | Dist: 9.68 mi | Earn: $9.25
+2026-02-07 23:39:10,809 - INFO - Saving Uber Trip: 363965700
+2026-02-07 23:39:10,821 - INFO - Successfully saved trip 363965700 to database.
+2026-02-07 23:39:10,825 - INFO - 
+[Drive #8] ID: 363970610 | Uber Trip 1 | 09:50 - 10:06
+2026-02-07 23:39:10,825 - INFO -    Candidates for Drive 363970610 (Window 09:30 - 10:36): 6
+2026-02-07 23:39:10,826 - INFO -    Matched Screenshot_20260207_100722_Uber Driver.jpg to Drive 363970610 (Diff: 72.0s)
+2026-02-07 23:39:10,827 - INFO -    Matched Screenshot_20260207_100849.jpg to Drive 363970610 (Diff: 159.0s)
+2026-02-07 23:39:10,827 - INFO -    Matched 2 images (deduplicated).
+2026-02-07 23:39:10,827 - INFO -    OCR Scanning: Screenshot_20260207_100849.jpg
+2026-02-07 23:39:10,842 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '491555'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'e046b900-04b8-11f1-9f50-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:39:11,068 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '13567'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '241722b3-ed8d-4ee9-a537-f539846995f7'
+    'x-ms-request-id': '241722b3-ed8d-4ee9-a537-f539846995f7'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:39:10 GMT'
+2026-02-07 23:39:14,112 - INFO -    Found Basic Uber Financials: $0.68
+2026-02-07 23:39:14,113 - INFO -    OCR Scanning: Screenshot_20260207_100722_Uber Driver.jpg
+2026-02-07 23:39:14,115 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '485298'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'e23a430b-04b8-11f1-aebe-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:39:14,305 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '14735'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'c453bc39-4fdb-4e44-9439-32ecf8455425'
+    'x-ms-request-id': 'c453bc39-4fdb-4e44-9439-32ecf8455425'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:39:13 GMT'
+2026-02-07 23:39:17,353 - INFO -    Found Detailed Uber Data: $9.25
+2026-02-07 23:39:17,353 - INFO -    Saving Trip 363970610: Uber_Core | Dist: 7.81 mi | Earn: $9.25
+2026-02-07 23:39:17,353 - INFO - Saving Uber Trip: 363970610
+2026-02-07 23:39:17,368 - INFO - Successfully saved trip 363970610 to database.
+2026-02-07 23:39:17,375 - INFO - 
+[Drive #9] ID: 363977866 | None | 10:06 - 10:30
+2026-02-07 23:39:17,376 - INFO -    Candidates for Drive 363977866 (Window 09:46 - 11:00): 5
+2026-02-07 23:39:17,377 - INFO -    Matched Screenshot_20260207_103220_Chrome.jpg to Drive 363977866 (Diff: 119.0s)
+2026-02-07 23:39:17,377 - INFO -    Matched 1 images (deduplicated).
+2026-02-07 23:39:17,377 - INFO -    OCR Scanning: Screenshot_20260207_103220_Chrome.jpg
+2026-02-07 23:39:17,388 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '473421'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'e42d6baf-04b8-11f1-8606-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:39:17,936 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '14358'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'c8db10af-69a0-493f-9a5c-1defc1896001'
+    'x-ms-request-id': 'c8db10af-69a0-493f-9a5c-1defc1896001'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:39:17 GMT'
+2026-02-07 23:39:20,979 - INFO -    Found Basic Uber Financials: $15.0
+2026-02-07 23:39:20,984 - INFO -    Saving Trip 363977866: Uber_Core | Dist: 13.36 mi | Earn: $15.0
+2026-02-07 23:39:20,984 - INFO - Saving Uber Trip: 363977866
+2026-02-07 23:39:20,998 - INFO - Successfully saved trip 363977866 to database.
+2026-02-07 23:39:21,001 - INFO - 
+[Drive #10] ID: 363988008 | Jackie | 10:33 - 11:05
+2026-02-07 23:39:21,002 - INFO -    Candidates for Drive 363988008 (Window 10:13 - 11:35): 3
+2026-02-07 23:39:21,002 - INFO -    Matched Screenshot_20260207_110943.jpg to Drive 363988008 (Diff: 232.0s)
+2026-02-07 23:39:21,003 - INFO -    Matched 20260207_111708.jpg to Drive 363988008 (Diff: 677.0s)
+2026-02-07 23:39:21,003 - INFO -    Matched 2 images (deduplicated).
+2026-02-07 23:39:21,003 - INFO -    Identified Client: Jackie
+2026-02-07 23:39:21,003 - INFO -    OCR Scanning: 20260207_111708.jpg
+2026-02-07 23:39:21,029 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '1632472'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'e659352f-04b8-11f1-90c2-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:39:21,470 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '888'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'b5b05972-3c6c-4d84-b61a-02dea6c28fa6'
+    'x-ms-request-id': 'b5b05972-3c6c-4d84-b61a-02dea6c28fa6'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:39:20 GMT'
+2026-02-07 23:39:24,473 - INFO -    OCR Scanning: Screenshot_20260207_110943.jpg
+2026-02-07 23:39:24,486 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '548483'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'e86879b2-04b8-11f1-8e27-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:39:24,709 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '15291'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '6eb608a6-dae0-4829-b073-5d376042d90b'
+    'x-ms-request-id': '6eb608a6-dae0-4829-b073-5d376042d90b'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:39:23 GMT'
+2026-02-07 23:39:27,764 - INFO -    Found Basic Uber Financials: $3.05
+2026-02-07 23:39:27,764 - INFO -    Saving Trip 363988008: Uber_Core | Dist: 28.43 mi | Earn: $3.05
+2026-02-07 23:39:27,765 - INFO - Saving Uber Trip: 363988008
+2026-02-07 23:39:27,778 - INFO - Successfully saved trip 363988008 to database.
+2026-02-07 23:39:27,781 - INFO - 
+[Drive #11] ID: 363997158 | None | 11:06 - 11:37
+2026-02-07 23:39:27,781 - INFO -    Candidates for Drive 363997158 (Window 10:46 - 12:07): 2
+2026-02-07 23:39:27,782 - INFO -    Matched 0 images (deduplicated).
+2026-02-07 23:39:27,782 - INFO -    Saving Trip 363997158: Uber_Unknown_Financials | Dist: 21.89 mi | Earn: $0.0
+2026-02-07 23:39:27,782 - INFO - Saving Private Trip: 363997158
+2026-02-07 23:39:27,802 - INFO - Successfully saved trip 363997158 to database.
+2026-02-07 23:39:27,807 - INFO - 
+[Drive #12] ID: 364006617 | None | 12:02 - 12:13
+2026-02-07 23:39:27,807 - INFO -    Candidates for Drive 364006617 (Window 11:42 - 12:43): 1
+2026-02-07 23:39:27,808 - INFO -    Matched 0 images (deduplicated).
+2026-02-07 23:39:27,808 - INFO -    Saving Trip 364006617: Uber_Unknown_Financials | Dist: 2.98 mi | Earn: $0.0
+2026-02-07 23:39:27,808 - INFO - Saving Private Trip: 364006617
+2026-02-07 23:39:27,821 - INFO - Successfully saved trip 364006617 to database.
+2026-02-07 23:39:27,825 - INFO - 
+[Drive #13] ID: 364011513 | None | 12:24 - 12:32
+2026-02-07 23:39:27,825 - INFO -    Candidates for Drive 364011513 (Window 12:04 - 13:02): 4
+2026-02-07 23:39:27,826 - INFO -    Matched Screenshot_20260207_123818_McDonald's.jpg to Drive 364011513 (Diff: 373.0s)
+2026-02-07 23:39:27,827 - INFO -    Matched 1 images (deduplicated).
+2026-02-07 23:39:27,827 - INFO -    OCR Scanning: Screenshot_20260207_123818_McDonald's.jpg
+2026-02-07 23:39:27,836 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '315899'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'ea678f43-04b8-11f1-a351-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:39:28,033 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '14150'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '654b068e-a250-4e6c-8947-50127bdc9011'
+    'x-ms-request-id': '654b068e-a250-4e6c-8947-50127bdc9011'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:39:27 GMT'
+2026-02-07 23:39:31,107 - INFO -    Found Basic Uber Financials: $1.39
+2026-02-07 23:39:31,107 - WARNING -    [Audit Alert] Unpaid Miles: 2.47 mi
+2026-02-07 23:39:31,107 - INFO -    Saving Trip 364011513: Uber_Core | Dist: 2.47 mi | Earn: $1.39
+2026-02-07 23:39:31,107 - INFO - Saving Uber Trip: 364011513
+2026-02-07 23:39:31,122 - INFO - Successfully saved trip 364011513 to database.
+2026-02-07 23:39:31,126 - INFO - 
+[Drive #14] ID: 364016024 | None | 12:47 - 12:50
+2026-02-07 23:39:31,126 - INFO -    Candidates for Drive 364016024 (Window 12:27 - 13:20): 6
+2026-02-07 23:39:31,126 - INFO -    Matched Screenshot_20260207_124435_Uber Driver.jpg to Drive 364016024 (Diff: 328.0s)
+2026-02-07 23:39:31,127 - INFO -    Matched 20260207_125419.jpg to Drive 364016024 (Diff: 256.0s)
+2026-02-07 23:39:31,128 - INFO -    Matched 2 images (deduplicated).
+2026-02-07 23:39:31,128 - INFO -    OCR Scanning: 20260207_125419.jpg
+2026-02-07 23:39:31,134 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '2734035'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'ec5f0ad1-04b8-11f1-b5fa-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:39:31,598 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '23271'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '886b9a99-60c3-4c65-bda2-5a815d2a9cc1'
+    'x-ms-request-id': '886b9a99-60c3-4c65-bda2-5a815d2a9cc1'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:39:30 GMT'
+2026-02-07 23:39:34,722 - INFO -    Found Basic Uber Financials: $25.75
+2026-02-07 23:39:34,722 - INFO -    OCR Scanning: Screenshot_20260207_124435_Uber Driver.jpg
+2026-02-07 23:39:37,829 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '819643'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'f05c69ae-04b8-11f1-b26f-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:39:38,140 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '9301'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '84ac074b-f234-4efa-bfe1-31ce5f71c7d0'
+    'x-ms-request-id': '84ac074b-f234-4efa-bfe1-31ce5f71c7d0'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:39:37 GMT'
+2026-02-07 23:39:41,203 - INFO -    Saving Trip 364016024: Uber_Core | Dist: 0.69 mi | Earn: $25.75
+2026-02-07 23:39:41,205 - INFO - Saving Uber Trip: 364016024
+2026-02-07 23:39:41,240 - INFO - Successfully saved trip 364016024 to database.
+2026-02-07 23:39:41,246 - INFO - 
+[Drive #15] ID: 364020066 | None | 12:59 - 13:05
+2026-02-07 23:39:41,246 - INFO -    Candidates for Drive 364020066 (Window 12:39 - 13:35): 5
+2026-02-07 23:39:41,247 - INFO -    Matched Screenshot_20260207_125837_Uber Driver.jpg to Drive 364020066 (Diff: 433.0s)
+2026-02-07 23:39:41,247 - INFO -    Matched Screenshot_20260207_130639_Uber Driver.jpg to Drive 364020066 (Diff: 49.0s)
+2026-02-07 23:39:41,248 - INFO -    Matched 2 images (deduplicated).
+2026-02-07 23:39:41,248 - INFO -    OCR Scanning: Screenshot_20260207_130639_Uber Driver.jpg
+2026-02-07 23:39:41,251 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '562902'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'f266ca14-04b8-11f1-9971-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:39:41,413 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '7976'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'fbb0784c-8241-4087-a5b3-bbc9b61089f4'
+    'x-ms-request-id': 'fbb0784c-8241-4087-a5b3-bbc9b61089f4'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:39:40 GMT'
+2026-02-07 23:39:44,440 - INFO -    OCR Scanning: Screenshot_20260207_125837_Uber Driver.jpg
+2026-02-07 23:39:44,444 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '447999'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'f44e05e9-04b8-11f1-9cd4-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:39:44,666 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '13194'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '3c6540c3-8c76-4f84-924a-372b00eb0bee'
+    'x-ms-request-id': '3c6540c3-8c76-4f84-924a-372b00eb0bee'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:39:43 GMT'
+2026-02-07 23:39:47,814 - INFO -    Found Basic Uber Financials: $11.33
+2026-02-07 23:39:47,816 - INFO -    Saving Trip 364020066: Uber_Core | Dist: 1.41 mi | Earn: $11.33
+2026-02-07 23:39:47,816 - INFO - Saving Uber Trip: 364020066
+2026-02-07 23:39:47,830 - INFO - Successfully saved trip 364020066 to database.
+2026-02-07 23:39:47,834 - INFO - 
+[Drive #16] ID: 364022263 | Uber Trip 2 | 13:05 - 13:14
+2026-02-07 23:39:47,834 - INFO -    Candidates for Drive 364022263 (Window 12:45 - 13:44): 4
+2026-02-07 23:39:47,835 - INFO -    Matched Screenshot_20260207_131531_Uber Driver.jpg to Drive 364022263 (Diff: 59.0s)
+2026-02-07 23:39:47,835 - INFO -    Matched 1 images (deduplicated).
+2026-02-07 23:39:47,836 - INFO -    OCR Scanning: Screenshot_20260207_131531_Uber Driver.jpg
+2026-02-07 23:39:47,839 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '599105'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'f653e405-04b8-11f1-a476-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:39:48,011 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '11762'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '061847bf-6a63-473c-8e54-3362268a3011'
+    'x-ms-request-id': '061847bf-6a63-473c-8e54-3362268a3011'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:39:47 GMT'
+2026-02-07 23:39:51,129 - INFO -    Saving Trip 364022263: Uber_Unknown_Financials | Dist: 1.88 mi | Earn: $0.0
+2026-02-07 23:39:51,131 - INFO - Saving Private Trip: 364022263
+2026-02-07 23:39:51,147 - INFO - Successfully saved trip 364022263 to database.
+2026-02-07 23:39:51,152 - INFO - 
+[Drive #17] ID: 364025485 | Uber Trip 2 Final | 13:14 - 13:28
+2026-02-07 23:39:51,152 - INFO -    Candidates for Drive 364025485 (Window 12:54 - 13:58): 5
+2026-02-07 23:39:51,153 - INFO -    Matched 0 images (deduplicated).
+2026-02-07 23:39:51,154 - INFO -    Saving Trip 364025485: Uber_Unknown_Financials | Dist: 4.49 mi | Earn: $0.0
+2026-02-07 23:39:51,154 - INFO - Saving Private Trip: 364025485
+2026-02-07 23:39:51,168 - INFO - Successfully saved trip 364025485 to database.
+2026-02-07 23:39:51,171 - INFO - 
+[Drive #18] ID: 364030462 | None | 13:28 - 13:49
+2026-02-07 23:39:51,171 - INFO -    Candidates for Drive 364030462 (Window 13:08 - 14:19): 3
+2026-02-07 23:39:51,172 - INFO -    Matched Screenshot_20260207_134656_Uber Driver.jpg to Drive 364030462 (Diff: 148.0s)
+2026-02-07 23:39:51,172 - INFO -    Matched Screenshot_20260207_134707_Uber Driver.jpg to Drive 364030462 (Diff: 137.0s)
+2026-02-07 23:39:51,173 - INFO -    Matched 2 images (deduplicated).
+2026-02-07 23:39:51,173 - INFO -    OCR Scanning: Screenshot_20260207_134707_Uber Driver.jpg
+2026-02-07 23:39:51,184 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '415754'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'f8526586-04b8-11f1-b5a7-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:39:51,381 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '9151'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'a6cffda9-392c-4013-ae3c-9453c0d9c415'
+    'x-ms-request-id': 'a6cffda9-392c-4013-ae3c-9453c0d9c415'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:39:50 GMT'
+2026-02-07 23:39:54,560 - INFO -    OCR Scanning: Screenshot_20260207_134656_Uber Driver.jpg
+2026-02-07 23:39:54,563 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '395897'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'fa56062b-04b8-11f1-8d0f-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:39:55,068 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '11350'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '0bb454f7-a78c-42bb-a576-b58e0093d40a'
+    'x-ms-request-id': '0bb454f7-a78c-42bb-a576-b58e0093d40a'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:39:54 GMT'
+2026-02-07 23:39:58,169 - INFO -    Found Basic Uber Financials: $23.67
+2026-02-07 23:39:58,170 - INFO -    Saving Trip 364030462: Uber_Core | Dist: 13.09 mi | Earn: $23.67
+2026-02-07 23:39:58,170 - INFO - Saving Uber Trip: 364030462
+2026-02-07 23:39:58,184 - INFO - Successfully saved trip 364030462 to database.
+2026-02-07 23:39:58,188 - INFO - 
+[Drive #19] ID: 364031116 | None | 13:49 - 13:51
+2026-02-07 23:39:58,188 - INFO -    Candidates for Drive 364031116 (Window 13:29 - 14:21): 2
+2026-02-07 23:39:58,189 - INFO -    Matched 0 images (deduplicated).
+2026-02-07 23:39:58,189 - INFO -    Saving Trip 364031116: Personal_Movement | Dist: 0.01 mi | Earn: $0.0
+2026-02-07 23:39:58,190 - INFO - Saving Private Trip: 364031116
+2026-02-07 23:39:58,208 - INFO - Successfully saved trip 364031116 to database.
+2026-02-07 23:39:58,216 - INFO - 
+[Drive #20] ID: 364038794 | None | 14:24 - 14:25
+2026-02-07 23:39:58,217 - INFO -    Candidates for Drive 364038794 (Window 14:04 - 14:55): 1
+2026-02-07 23:39:58,217 - INFO -    Matched Screenshot_20260207_142351.jpg to Drive 364038794 (Diff: 109.0s)
+2026-02-07 23:39:58,217 - INFO -    Matched 1 images (deduplicated).
+2026-02-07 23:39:58,218 - INFO -    OCR Scanning: Screenshot_20260207_142351.jpg
+2026-02-07 23:39:58,220 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '329387'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'fc84016d-04b8-11f1-b928-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:39:58,396 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '12375'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '04272824-97fc-4524-a5c8-1672043efe99'
+    'x-ms-request-id': '04272824-97fc-4524-a5c8-1672043efe99'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:39:57 GMT'
+2026-02-07 23:40:01,458 - INFO -    Found Basic Uber Financials: $14.49
+2026-02-07 23:40:01,459 - INFO -    Saving Trip 364038794: Uber_Core | Dist: 0.07 mi | Earn: $14.49
+2026-02-07 23:40:01,459 - INFO - Saving Uber Trip: 364038794
+2026-02-07 23:40:01,475 - INFO - Successfully saved trip 364038794 to database.
+2026-02-07 23:40:01,482 - INFO - 
+[Drive #21] ID: 364045588 | None | 14:41 - 14:54
+2026-02-07 23:40:01,482 - INFO -    Candidates for Drive 364045588 (Window 14:21 - 15:24): 1
+2026-02-07 23:40:01,482 - INFO -    Matched 0 images (deduplicated).
+2026-02-07 23:40:01,482 - INFO -    Saving Trip 364045588: Uber_Unknown_Financials | Dist: 8.07 mi | Earn: $0.0
+2026-02-07 23:40:01,482 - INFO - Saving Private Trip: 364045588
+2026-02-07 23:40:01,495 - INFO - Successfully saved trip 364045588 to database.
+2026-02-07 23:40:01,500 - INFO - 
+[Drive #22] ID: 364052106 | Jackie | 15:02 - 15:23
+2026-02-07 23:40:01,500 - INFO -    Candidates for Drive 364052106 (Window 14:42 - 15:53): 7
+2026-02-07 23:40:01,502 - INFO -    Matched 0 images (deduplicated).
+2026-02-07 23:40:01,502 - INFO -    Identified Client: Jackie
+2026-02-07 23:40:01,502 - INFO -    [Bundle] Last trip for Jackie - Scanning for late payment...
+2026-02-07 23:40:01,503 - INFO -    Saving Trip 364052106: Private_Trip | Dist: 15.26 mi | Earn: $0.0
+2026-02-07 23:40:01,503 - INFO - Saving Private Trip: 364052106
+2026-02-07 23:40:01,514 - INFO - Successfully saved trip 364052106 to database.
+2026-02-07 23:40:01,518 - INFO - 
+[Drive #23] ID: 364052980 | None | 15:23 - 15:27
+2026-02-07 23:40:01,518 - INFO -    Candidates for Drive 364052980 (Window 15:03 - 15:57): 8
+2026-02-07 23:40:01,518 - INFO -    Matched Screenshot_20260207_152805.jpg to Drive 364052980 (Diff: 22.0s)
+2026-02-07 23:40:01,519 - INFO -    Matched Screenshot_20260207_153446_Uber Driver.jpg to Drive 364052980 (Diff: 423.0s)
+2026-02-07 23:40:01,519 - INFO -    Matched Screenshot_20260207_153707.jpg to Drive 364052980 (Diff: 564.0s)
+2026-02-07 23:40:01,520 - INFO -    Matched Screenshot_20260207_153716.jpg to Drive 364052980 (Diff: 573.0s)
+2026-02-07 23:40:01,520 - INFO -    Matched Screenshot_20260207_154015_Uber Driver.jpg to Drive 364052980 (Diff: 752.0s)
+2026-02-07 23:40:01,520 - INFO -    Matched Screenshot_20260207_154059.jpg to Drive 364052980 (Diff: 796.0s)
+2026-02-07 23:40:01,521 - INFO -    Matched 6 images (deduplicated).
+2026-02-07 23:40:01,521 - INFO -    OCR Scanning: Screenshot_20260207_154059.jpg
+2026-02-07 23:40:01,526 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '415617'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': 'fe7c5968-04b8-11f1-a37f-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:40:01,973 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '9506'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '5ba8a55f-2799-44c2-b7de-c637709f36dd'
+    'x-ms-request-id': '5ba8a55f-2799-44c2-b7de-c637709f36dd'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:40:01 GMT'
+2026-02-07 23:40:05,100 - INFO -    OCR Scanning: Screenshot_20260207_154015_Uber Driver.jpg
+2026-02-07 23:40:05,136 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '666581'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '00a3397d-04b9-11f1-a6e8-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:40:05,376 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '8264'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '927954d7-21bb-471b-9afc-ae1eeb2bd47f'
+    'x-ms-request-id': '927954d7-21bb-471b-9afc-ae1eeb2bd47f'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:40:04 GMT'
+2026-02-07 23:40:08,446 - INFO -    Found Basic Uber Financials: $20.58
+2026-02-07 23:40:08,448 - INFO -    OCR Scanning: Screenshot_20260207_153716.jpg
+2026-02-07 23:40:08,451 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '626220'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '029d0a15-04b9-11f1-8f7f-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:40:09,260 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '18556'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '119cbc59-5f25-4713-a040-dd6110218f77'
+    'x-ms-request-id': '119cbc59-5f25-4713-a040-dd6110218f77'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:40:08 GMT'
+2026-02-07 23:40:12,427 - INFO -    OCR Scanning: Screenshot_20260207_153707.jpg
+2026-02-07 23:40:12,443 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '672124'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '04fe4e21-04b9-11f1-b6f4-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:40:13,379 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '15629'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '490f602d-42ee-4522-bf17-b0559a84213b'
+    'x-ms-request-id': '490f602d-42ee-4522-bf17-b0559a84213b'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:40:12 GMT'
+2026-02-07 23:40:16,464 - INFO -    OCR Scanning: Screenshot_20260207_153446_Uber Driver.jpg
+2026-02-07 23:40:16,484 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '497919'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '0766e1fa-04b9-11f1-898a-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:40:16,651 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '14473'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '6b188fc9-28ed-480b-a75c-bdfafd69b28c'
+    'x-ms-request-id': '6b188fc9-28ed-480b-a75c-bdfafd69b28c'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:40:15 GMT'
+2026-02-07 23:40:19,772 - INFO -    Found Detailed Uber Data: $11.33
+2026-02-07 23:40:19,776 - INFO -    Saving Trip 364052980: Uber_Core | Dist: 0.79 mi | Earn: $11.33
+2026-02-07 23:40:19,776 - INFO - Saving Uber Trip: 364052980
+2026-02-07 23:40:19,795 - INFO - Successfully saved trip 364052980 to database.
+2026-02-07 23:40:19,798 - INFO - 
+[Drive #24] ID: 364060785 | None | 15:54 - 16:02
+2026-02-07 23:40:19,799 - INFO -    Candidates for Drive 364060785 (Window 15:34 - 16:32): 12
+2026-02-07 23:40:19,800 - INFO -    Matched Screenshot_20260207_154626_Uber Driver.jpg to Drive 364060785 (Diff: 946.0s)
+2026-02-07 23:40:19,800 - INFO -    Matched Screenshot_20260207_155409_Uber Driver.jpg to Drive 364060785 (Diff: 483.0s)
+2026-02-07 23:40:19,801 - INFO -    Matched Screenshot_20260207_160235_Uber Driver.jpg to Drive 364060785 (Diff: 23.0s)
+2026-02-07 23:40:19,802 - INFO -    Matched 3 images (deduplicated).
+2026-02-07 23:40:19,803 - INFO -    OCR Scanning: Screenshot_20260207_160235_Uber Driver.jpg
+2026-02-07 23:40:19,807 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '739490'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '0961e821-04b9-11f1-aa57-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:40:20,005 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '9844'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '296f35bd-ccaf-4057-99b9-abb7837bcae6'
+    'x-ms-request-id': '296f35bd-ccaf-4057-99b9-abb7837bcae6'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:40:19 GMT'
+2026-02-07 23:40:23,037 - INFO -    OCR Scanning: Screenshot_20260207_155409_Uber Driver.jpg
+2026-02-07 23:40:23,042 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '466820'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '0b4f7a89-04b9-11f1-adb5-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:40:23,240 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '11761'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '9cdadb10-3eb7-47e0-a48d-b7b8fa902571'
+    'x-ms-request-id': '9cdadb10-3eb7-47e0-a48d-b7b8fa902571'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:40:22 GMT'
+2026-02-07 23:40:26,330 - INFO -    Found Basic Uber Financials: $6.36
+2026-02-07 23:40:26,331 - INFO -    OCR Scanning: Screenshot_20260207_154626_Uber Driver.jpg
+2026-02-07 23:40:26,333 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '380505'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '0d45bbea-04b9-11f1-84dd-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:40:26,468 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '10813'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '68eec1de-2011-477b-bf0d-3d02dbc7e0d0'
+    'x-ms-request-id': '68eec1de-2011-477b-bf0d-3d02dbc7e0d0'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:40:25 GMT'
+2026-02-07 23:40:29,513 - INFO -    Saving Trip 364060785: Uber_Core | Dist: 2.6 mi | Earn: $6.36
+2026-02-07 23:40:29,514 - INFO - Saving Uber Trip: 364060785
+2026-02-07 23:40:29,528 - INFO - Successfully saved trip 364060785 to database.
+2026-02-07 23:40:29,532 - INFO - 
+[Drive #25] ID: 364062225 | Uber Trip 3 | 16:02 - 16:08
+2026-02-07 23:40:29,533 - INFO -    Candidates for Drive 364062225 (Window 15:42 - 16:38): 15
+2026-02-07 23:40:29,534 - INFO -    Matched Screenshot_20260207_160951_Uber Driver.jpg to Drive 364062225 (Diff: 70.0s)
+2026-02-07 23:40:29,534 - INFO -    Matched Screenshot_20260207_161018.jpg to Drive 364062225 (Diff: 97.0s)
+2026-02-07 23:40:29,534 - INFO -    Matched Screenshot_20260207_161205_Uber Driver.jpg to Drive 364062225 (Diff: 204.0s)
+2026-02-07 23:40:29,535 - INFO -    Matched Screenshot_20260207_161216_Uber Driver.jpg to Drive 364062225 (Diff: 215.0s)
+2026-02-07 23:40:29,536 - INFO -    Matched 4 images (deduplicated).
+2026-02-07 23:40:29,537 - INFO -    OCR Scanning: Screenshot_20260207_161216_Uber Driver.jpg
+2026-02-07 23:40:29,540 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '594778'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '0f2efdba-04b9-11f1-8b1f-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:40:29,903 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '9342'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '3c8ab6c8-7f7b-452b-8c3d-fc343c446d5d'
+    'x-ms-request-id': '3c8ab6c8-7f7b-452b-8c3d-fc343c446d5d'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:40:29 GMT'
+2026-02-07 23:40:32,940 - INFO -    OCR Scanning: Screenshot_20260207_161205_Uber Driver.jpg
+2026-02-07 23:40:32,993 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '458399'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '113da291-04b9-11f1-91c6-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:40:33,917 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '11468'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '8fb4c697-66d2-4fd1-92c0-e0bcf7ae6dbc'
+    'x-ms-request-id': '8fb4c697-66d2-4fd1-92c0-e0bcf7ae6dbc'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:40:33 GMT'
+2026-02-07 23:40:36,950 - INFO -    Found Basic Uber Financials: $7.96
+2026-02-07 23:40:36,950 - INFO -    OCR Scanning: Screenshot_20260207_161018.jpg
+2026-02-07 23:40:36,980 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '647020'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '139e6264-04b9-11f1-807e-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:40:37,211 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '15574'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'c84cfd1c-1c0f-4ad7-8042-5ae0be050a08'
+    'x-ms-request-id': 'c84cfd1c-1c0f-4ad7-8042-5ae0be050a08'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:40:36 GMT'
+2026-02-07 23:40:40,281 - INFO -    OCR Scanning: Screenshot_20260207_160951_Uber Driver.jpg
+2026-02-07 23:40:40,284 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '461648'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '15968a80-04b9-11f1-9461-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:40:40,666 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '14460'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'd85c18d2-a5c1-441d-882b-bcee5909e3b4'
+    'x-ms-request-id': 'd85c18d2-a5c1-441d-882b-bcee5909e3b4'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:40:39 GMT'
+2026-02-07 23:40:43,716 - INFO -    Found Detailed Uber Data: $6.36
+2026-02-07 23:40:43,716 - INFO -    Saving Trip 364062225: Uber_Core | Dist: 2.11 mi | Earn: $6.36
+2026-02-07 23:40:43,716 - INFO - Saving Uber Trip: 364062225
+2026-02-07 23:40:43,727 - INFO - Successfully saved trip 364062225 to database.
+2026-02-07 23:40:43,737 - INFO - 
+[Drive #26] ID: 364065835 | None | 16:08 - 16:24
+2026-02-07 23:40:43,737 - INFO -    Candidates for Drive 364065835 (Window 15:48 - 16:54): 17
+2026-02-07 23:40:43,744 - INFO -    Matched 0 images (deduplicated).
+2026-02-07 23:40:43,744 - INFO -    Saving Trip 364065835: Uber_Unknown_Financials | Dist: 5.89 mi | Earn: $0.0
+2026-02-07 23:40:43,744 - INFO - Saving Private Trip: 364065835
+2026-02-07 23:40:43,756 - INFO - Successfully saved trip 364065835 to database.
+2026-02-07 23:40:43,759 - INFO - 
+[Drive #27] ID: 364066580 | Uber Trip 4 | 16:25 - 16:27
+2026-02-07 23:40:43,759 - INFO -    Candidates for Drive 364066580 (Window 16:05 - 16:57): 15
+2026-02-07 23:40:43,763 - INFO -    Matched 0 images (deduplicated).
+2026-02-07 23:40:43,763 - INFO -    Saving Trip 364066580: Personal_Movement | Dist: 0.25 mi | Earn: $0.0
+2026-02-07 23:40:43,763 - INFO - Saving Private Trip: 364066580
+2026-02-07 23:40:43,776 - INFO - Successfully saved trip 364066580 to database.
+2026-02-07 23:40:43,780 - INFO - 
+[Drive #28] ID: 364067817 | Uber Trip 4 Final | 16:31 - 16:33
+2026-02-07 23:40:43,780 - INFO -    Candidates for Drive 364067817 (Window 16:11 - 17:03): 13
+2026-02-07 23:40:43,781 - INFO -    Matched Screenshot_20260207_163058_Uber Driver.jpg to Drive 364067817 (Diff: 177.0s)
+2026-02-07 23:40:43,782 - INFO -    Matched 20260207_163301.jpg to Drive 364067817 (Diff: 54.0s)
+2026-02-07 23:40:43,782 - INFO -    Matched 20260207_163302.jpg to Drive 364067817 (Diff: 53.0s)
+2026-02-07 23:40:43,783 - INFO -    Matched 20260207_163303.jpg to Drive 364067817 (Diff: 52.0s)
+2026-02-07 23:40:43,783 - INFO -    Matched 20260207_163304.jpg to Drive 364067817 (Diff: 51.0s)
+2026-02-07 23:40:43,784 - INFO -    Matched 20260207_163305.jpg to Drive 364067817 (Diff: 50.0s)
+2026-02-07 23:40:43,784 - INFO -    Matched Screenshot_20260207_163734_Uber Driver.jpg to Drive 364067817 (Diff: 219.0s)
+2026-02-07 23:40:43,785 - INFO -    Matched Screenshot_20260207_163816_Uber Driver.jpg to Drive 364067817 (Diff: 261.0s)
+2026-02-07 23:40:43,785 - INFO -    Matched Screenshot_20260207_164143_Uber Driver.jpg to Drive 364067817 (Diff: 468.0s)
+2026-02-07 23:40:43,786 - INFO -    Matched Screenshot_20260207_164339.jpg to Drive 364067817 (Diff: 584.0s)
+2026-02-07 23:40:43,786 - INFO -    Matched Screenshot_20260207_164401.jpg to Drive 364067817 (Diff: 606.0s)
+2026-02-07 23:40:43,786 - INFO -    Matched 11 images (deduplicated).
+2026-02-07 23:40:43,787 - INFO -    OCR Scanning: Screenshot_20260207_164401.jpg
+2026-02-07 23:40:43,789 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '493021'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '17ad6161-04b9-11f1-a0f8-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:40:44,293 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '13482'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'f3a23f6a-08ce-45fb-bd60-9149a20c8b1f'
+    'x-ms-request-id': 'f3a23f6a-08ce-45fb-bd60-9149a20c8b1f'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:40:43 GMT'
+2026-02-07 23:40:47,763 - INFO -    Found Basic Uber Financials: $0.08
+2026-02-07 23:40:47,765 - INFO -    OCR Scanning: Screenshot_20260207_164339.jpg
+2026-02-07 23:40:47,769 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '433683'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '1a0caa6b-04b9-11f1-8800-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:40:48,056 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '13349'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '06f95188-0a55-4987-895c-5e7dbf6d6869'
+    'x-ms-request-id': '06f95188-0a55-4987-895c-5e7dbf6d6869'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:40:47 GMT'
+2026-02-07 23:40:51,122 - INFO -    OCR Scanning: Screenshot_20260207_164143_Uber Driver.jpg
+2026-02-07 23:40:51,125 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '243809'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '1c0ca546-04b9-11f1-ba14-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:40:51,327 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '11612'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'bfabeba1-3597-4b15-ac3b-36704d754c33'
+    'x-ms-request-id': 'bfabeba1-3597-4b15-ac3b-36704d754c33'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:40:50 GMT'
+2026-02-07 23:40:54,374 - INFO -    OCR Scanning: Screenshot_20260207_163816_Uber Driver.jpg
+2026-02-07 23:40:54,378 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '302201'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '1dfd1d5f-04b9-11f1-89ee-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:40:54,579 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '13204'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'cbec322e-ab0b-4648-b59e-81c7ed0c318f'
+    'x-ms-request-id': 'cbec322e-ab0b-4648-b59e-81c7ed0c318f'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:40:53 GMT'
+2026-02-07 23:40:57,638 - INFO -    Found Detailed Uber Data: $11.5
+2026-02-07 23:40:57,638 - INFO -    OCR Scanning: Screenshot_20260207_163734_Uber Driver.jpg
+2026-02-07 23:40:57,685 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'Content-Length': '450124'
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '1ff58699-04b9-11f1-9bbf-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:40:57,906 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '17040'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '755fd7c3-e9ed-467d-b021-e8ae5a2350b9'
+    'x-ms-request-id': '755fd7c3-e9ed-467d-b021-e8ae5a2350b9'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:40:57 GMT'
+2026-02-07 23:41:00,985 - INFO -    Found Detailed Uber Data: $11.5
+2026-02-07 23:41:00,987 - INFO -    Saving Trip 364067817: Uber_Core | Dist: 0.39 mi | Earn: $11.5
+2026-02-07 23:41:00,987 - INFO - Saving Uber Trip: 364067817
+2026-02-07 23:41:01,003 - INFO - Successfully saved trip 364067817 to database.
+2026-02-07 23:41:01,006 - INFO - 
+[Drive #29] ID: 364072777 | None | 16:33 - 16:56
+2026-02-07 23:41:01,007 - INFO -    Candidates for Drive 364072777 (Window 16:13 - 17:26): 11
+2026-02-07 23:41:01,010 - INFO -    Matched 0 images (deduplicated).
+2026-02-07 23:41:01,010 - INFO -    Saving Trip 364072777: Uber_Unknown_Financials | Dist: 7.9 mi | Earn: $0.0
+2026-02-07 23:41:01,010 - INFO - Saving Private Trip: 364072777
+2026-02-07 23:41:01,024 - INFO - Successfully saved trip 364072777 to database.
+2026-02-07 23:41:01,027 - INFO - 
+--- Processing Bundle Payments (Venmo) ---
+2026-02-07 23:41:01,027 - INFO - Found 3 drives for Jackie
+2026-02-07 23:41:01,027 - INFO - Starting OCR extraction for local stream: Screenshot_20260207_231051_Venmo.jpg
+2026-02-07 23:41:01,028 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '21f3ab14-04b9-11f1-85a3-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:41:01,314 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '10883'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'a5cf6e35-1c90-4bb7-b904-acfe9263660c'
+    'x-ms-request-id': 'a5cf6e35-1c90-4bb7-b904-acfe9263660c'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:41:00 GMT'
+2026-02-07 23:41:01,358 - INFO -    Found Venmo payment: $45.0 from Jacquelyn-Heslep
+2026-02-07 23:41:01,359 - INFO - Starting OCR extraction for local stream: Screenshot_20260207_231101_Venmo.jpg
+2026-02-07 23:41:01,361 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '22267d59-04b9-11f1-9c66-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:41:01,543 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '10871'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'dbaacbbf-8faa-4377-bce2-48d2c30482c7'
+    'x-ms-request-id': 'dbaacbbf-8faa-4377-bce2-48d2c30482c7'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:41:00 GMT'
+2026-02-07 23:41:01,598 - INFO -    Found Venmo payment: $25.0 from Jacquelyn-Heslep
+2026-02-07 23:41:01,598 - INFO - Starting OCR extraction for local stream: Screenshot_20260207_232449_Venmo.jpg
+2026-02-07 23:41:01,600 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '224b18c1-04b9-11f1-832a-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:41:01,889 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '11485'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': 'a0e7ef60-05e1-4ac0-be75-b1ccd5ff9c38'
+    'x-ms-request-id': 'a0e7ef60-05e1-4ac0-be75-b1ccd5ff9c38'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:41:01 GMT'
+2026-02-07 23:41:01,927 - INFO - Starting OCR extraction for local stream: Screenshot_20260207_232502_Venmo.jpg
+2026-02-07 23:41:01,932 - INFO - Request URL: 'https://ai-summitos-prod.cognitiveservices.azure.com//computervision/imageanalysis:analyze?api-version=REDACTED&features=REDACTED'
+Request method: 'POST'
+Request headers:
+    'content-type': 'application/octet-stream'
+    'Accept': 'application/json'
+    'x-ms-client-request-id': '227db5a9-04b9-11f1-85cf-7c1e529ce9b1'
+    'User-Agent': 'azsdk-python-ai-vision-imageanalysis/1.0.0 Python/3.11.9 (Windows-10-10.0.26200-SP0)'
+    'Ocp-Apim-Subscription-Key': 'REDACTED'
+A body is sent with the request
+2026-02-07 23:41:02,396 - INFO - Response status: 200
+Response headers:
+    'Content-Length': '10758'
+    'Content-Type': 'application/json; charset=utf-8'
+    'request-id': '6bff0b85-1753-4c8b-83dd-b795fd976901'
+    'x-ms-request-id': '6bff0b85-1753-4c8b-83dd-b795fd976901'
+    'ms-vision-response-time-input-received': 'REDACTED'
+    'ms-vision-response-time-input-processed': 'REDACTED'
+    'api-supported-versions': 'REDACTED'
+    'x-envoy-upstream-service-time': 'REDACTED'
+    'CSP-Billing-Usage': 'REDACTED'
+    'apim-request-id': 'REDACTED'
+    'Strict-Transport-Security': 'REDACTED'
+    'x-content-type-options': 'REDACTED'
+    'x-ms-region': 'REDACTED'
+    'Date': 'Sun, 08 Feb 2026 06:41:01 GMT'
+2026-02-07 23:41:02,454 - INFO - Allocating $70.00 across 3 trips:
+2026-02-07 23:41:02,454 - INFO -   Fare per trip: $20.00
+2026-02-07 23:41:02,455 - INFO -   Tip per trip: $3.33
+2026-02-07 23:41:02,469 - INFO -    Updated Trip 363935071 with Venmo payment
+2026-02-07 23:41:02,477 - INFO -    Updated Trip 363988008 with Venmo payment
+2026-02-07 23:41:02,484 - INFO -    Updated Trip 364052106 with Venmo payment
+2026-02-07 23:41:02,487 - INFO - --- Processing Complete ---

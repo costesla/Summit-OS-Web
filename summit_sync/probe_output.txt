@@ -1,0 +1,12 @@
+Total drives found: 50
+Sample Drive Keys: ['id', 'import_id', 'started_at', 'ended_at', 'created_at', 'updated_at', 'starting_location', 'starting_latitude', 'starting_longitude', 'starting_odometer', 'ending_location', 'ending_saved_location', 'ending_latitude', 'ending_longitude', 'ending_odometer', 'starting_battery', 'ending_battery', 'average_inside_temperature', 'average_outside_temperature', 'average_speed', 'max_speed', 'rated_range_used', 'ideal_range_used', 'odometer_distance', 'autopilot_distance', 'energy_used', 'tag']
+Drive 362582486: N/A -> N/A (0.00 mi)
+Drive 362581054: N/A -> N/A (0.00 mi)
+Drive 362578634: N/A -> N/A (0.00 mi)
+Drive 362574046: N/A -> N/A (0.00 mi)
+Drive 362571750: N/A -> N/A (0.00 mi)
+Drive 362570059: N/A -> N/A (0.00 mi)
+Drive 362568096: N/A -> N/A (0.00 mi)
+Drive 362561300: N/A -> N/A (0.00 mi)
+Drive 362559840: N/A -> N/A (0.00 mi)
+Drive 362555825: N/A -> N/A (0.00 mi)
