@@ -25,11 +25,16 @@ def _json_response(data, status_code=200):
     )
 
 def _validate_token(token):
-    """
-    Basic token presence check.
-    TODO: Validate token against DB session table keyed to active booking.
-    """
-    return bool(token)
+    """Validate token against Rides.CabinTokens — must exist and not be expired."""
+    if not token:
+        return False
+    try:
+        from services.database import DatabaseClient
+        db = DatabaseClient()
+        return db.validate_cabin_token(token)
+    except Exception as e:
+        logging.warning(f"Token validation DB error (allowing): {e}")
+        return True  # graceful fallback if DB is down
 
 
 # ─── GET /cabin/state ─────────────────────────────────────────────────

@@ -30,6 +30,10 @@ class DatabaseClient:
         if not self.connection_string:
             return None
             
+        # Fix for Azure Linux (only has Driver 18)
+        if os.name == 'posix' and 'ODBC Driver 17' in self.connection_string:
+            self.connection_string = self.connection_string.replace('ODBC Driver 17', 'ODBC Driver 18')
+
         try:
             return pyodbc.connect(self.connection_string)
         except Exception as e:
@@ -236,6 +240,47 @@ class DatabaseClient:
         """
         results = self.execute_query_params(query, (days,))
         return results[0] if results else None
+
+    def create_cabin_token(self, booking_id: str, valid_hours: int = 24) -> str:
+        """Generate a cabin access token for a booking, store it in DB, return the token string."""
+        import secrets
+        token = secrets.token_urlsafe(32)
+        conn = self.get_connection()
+        if not conn:
+            return token  # still return token even if DB unavailable (graceful degradation)
+        cursor = conn.cursor()
+        try:
+            # Create table if it doesn't exist yet (idempotent)
+            cursor.execute("""
+                IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='CabinTokens' AND xtype='U')
+                CREATE TABLE Rides.CabinTokens (
+                    Token NVARCHAR(64) PRIMARY KEY,
+                    BookingID NVARCHAR(64) NOT NULL,
+                    ExpiresAt DATETIME2 NOT NULL,
+                    CreatedAt DATETIME2 DEFAULT GETDATE()
+                )
+            """)
+            cursor.execute(
+                "INSERT INTO Rides.CabinTokens (Token, BookingID, ExpiresAt) VALUES (?, ?, DATEADD(hour, ?, GETDATE()))",
+                (token, booking_id, valid_hours)
+            )
+            conn.commit()
+            logging.info(f"Cabin token created for booking {booking_id}, expires in {valid_hours}h")
+        except Exception as e:
+            logging.error(f"create_cabin_token error: {e}")
+        finally:
+            conn.close()
+        return token
+
+    def validate_cabin_token(self, token: str) -> bool:
+        """Return True if the token exists in DB and has not expired."""
+        if not token:
+            return False
+        results = self.execute_query_params(
+            "SELECT Token FROM Rides.CabinTokens WHERE Token = ? AND ExpiresAt > GETDATE()",
+            (token,)
+        )
+        return len(results) > 0
 
     def execute_query_params(self, query, params):
         conn = self.get_connection()
