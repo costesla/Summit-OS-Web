@@ -368,11 +368,9 @@ function CabinContent() {
 
                 {/* ─── Footer ─────────────────────────────────────────────── */}
                 <div className="pt-4 text-center">
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[.03] border border-white/[.06]">
-                        <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.5)]" />
-                        <span className="text-[10px] text-gray-500 font-bold tracking-[0.2em] uppercase">
-                            Powered by SummitOS
-                        </span>
+                    {/* ─── Footer ─────────────────────────────────────────────── */}
+                    <div className="pt-4 text-center">
+                        {/* Footer removed per request */}
                     </div>
                 </div>
             </main>
