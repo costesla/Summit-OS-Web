@@ -3,7 +3,7 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import WeatherWidget from "../components/WeatherWidget";
+import WeatherWatch from "../components/WeatherWatch";
 import FlightTracker from "../components/FlightTracker";
 import DashboardStatus from "../components/DashboardStatus";
 import BookingEngine from "../components/BookingEngine";
@@ -238,6 +238,9 @@ export default function Home() {
             <h3 className="text-3xl font-bold mb-2">Live Status</h3>
             <p className="text-gray-400 mb-8">Monitoring conditions for a smooth ascent.</p>
 
+            <div className="opacity-90 hover:opacity-100 transition-opacity">
+              <WeatherWatch />
+            </div>
             <div className="opacity-90 hover:opacity-100 transition-opacity">
               <DashboardStatus />
             </div>
