@@ -63,12 +63,22 @@ const HEAT_COLORS = [
 // ─── Component ───────────────────────────────────────────────────────
 function CabinContent() {
     const searchParams = useSearchParams();
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const router = require("next/navigation").useRouter();
     const token = searchParams.get("token");
 
     const [authorized, setAuthorized] = useState<boolean | null>(null);
+    const [manualToken, setManualToken] = useState("");
     const [state, setState] = useState<CabinState>(INITIAL_STATE);
     const [connected, setConnected] = useState(false);
     const [sending, setSending] = useState<string | null>(null);
+
+    const handleLogin = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (manualToken.trim()) {
+            router.push(`/cabin?token=${manualToken.trim()}`);
+        }
+    };
 
     // ── Fetch State ──────────────────────────────────────────────────
     const fetchState = useCallback(async () => {
@@ -144,17 +154,49 @@ function CabinContent() {
     };
 
     // ── Unauthorized ─────────────────────────────────────────────────
+    // ─── Enter Key Screen (Unauthorized) ─────────────────────────────
     if (authorized === false) {
         return (
-            <div className="min-h-screen bg-black text-white flex items-center justify-center p-8">
-                <div className="text-center space-y-4">
-                    <div className="w-20 h-20 mx-auto rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
-                        <Lock size={32} className="text-cyan-500" />
+            <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
+                <div className="w-full max-w-sm space-y-8">
+                    <div className="text-center space-y-4">
+                        <div className="w-20 h-20 mx-auto rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-[0_0_30px_rgba(6,182,212,0.1)]">
+                            <Lock size={32} className="text-cyan-400" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-bold tracking-tight">Cabin Console</h1>
+                            <p className="text-gray-500 text-sm mt-2">
+                                Enter your trip's secure access key to connect.
+                            </p>
+                        </div>
                     </div>
-                    <h1 className="text-2xl font-bold">Session Required</h1>
-                    <p className="text-gray-500 text-sm max-w-xs mx-auto">
-                        This cabin link requires a valid session token. Please use the link provided by your driver.
-                    </p>
+
+                    <form onSubmit={handleLogin} className="space-y-4">
+                        <div className="space-y-2">
+                            <input
+                                type="text"
+                                value={manualToken}
+                                onChange={(e) => setManualToken(e.target.value)}
+                                placeholder="Paste Access Key..."
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-center text-white placeholder:text-gray-600 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all font-mono text-sm"
+                                autoFocus
+                            />
+                        </div>
+                        <button
+                            type="submit"
+                            disabled={!manualToken}
+                            className="w-full bg-cyan-500 hover:bg-cyan-400 text-black font-bold py-4 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                            <Power size={18} />
+                            Connect to Vehicle
+                        </button>
+                    </form>
+
+                    <div className="text-center">
+                        <p className="text-[10px] text-gray-700 uppercase tracking-widest">
+                            Authorized Passengers Only
+                        </p>
+                    </div>
                 </div>
             </div>
         );
