@@ -242,12 +242,14 @@ class DatabaseClient:
         return results[0] if results else None
 
     def create_cabin_token(self, booking_id: str, valid_hours: int = 24) -> str:
-        """Generate a cabin access token for a booking, store it in DB, return the token string."""
+        """Generate a 6-digit cabin access code for a booking, store it in DB."""
         import secrets
-        token = secrets.token_urlsafe(32)
+        # Generate a 6-digit code (100000-999999) for easier manual entry
+        token = str(secrets.randbelow(900000) + 100000)
+        
         conn = self.get_connection()
         if not conn:
-            return token  # still return token even if DB unavailable (graceful degradation)
+            return token  # still return code even if DB unavailable (graceful degradation)
         cursor = conn.cursor()
         try:
             # Create table if it doesn't exist yet (idempotent)
@@ -265,7 +267,7 @@ class DatabaseClient:
                 (token, booking_id, valid_hours)
             )
             conn.commit()
-            logging.info(f"Cabin token created for booking {booking_id}, expires in {valid_hours}h")
+            logging.info(f"Cabin code {token} created for booking {booking_id}")
         except Exception as e:
             logging.error(f"create_cabin_token error: {e}")
         finally:

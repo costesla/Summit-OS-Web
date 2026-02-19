@@ -182,7 +182,7 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
             cabin_token = db_early.create_cabin_token(booking_id, valid_hours=24)
         except Exception:
             import secrets
-            cabin_token = secrets.token_urlsafe(32)  # fallback: still functional, just not DB-backed
+            cabin_token = str(secrets.randbelow(900000) + 100000)  # fallback: 6-digit code
 
         site_url = os.environ.get("SITE_URL", "https://gentle-plant-0f873710f.4.azurestaticapps.net")
         cabin_url = f"{site_url}/cabin?token={cabin_token}"
@@ -274,9 +274,10 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
                                     <!-- Cabin Controls -->
                                     <div style="background: #000000; padding: 20px; border-radius: 8px; margin: 0 0 25px; text-align: center;">
                                         <p style="margin: 0 0 8px; font-size: 16px; font-weight: bold; color: #ffffff;">🚗 Cabin Controls</p>
-                                        <p style="margin: 0 0 14px; font-size: 13px; color: #aaaaaa;">Control the climate, seat heaters, and windows during your ride.</p>
+                                        <p style="margin: 0 0 14px; font-size: 13px; color: #aaaaaa;">Control the climate, seat heaters, and trunk.</p>
                                         <a href="{cabin_url}" style="display: inline-block; padding: 12px 28px; background: #ffffff; color: #000000; font-weight: bold; font-size: 14px; border-radius: 6px; text-decoration: none;">Open Cabin Controls →</a>
-                                        <p style="margin: 10px 0 0; font-size: 11px; color: #666666;">Link expires 24 hours after booking</p>
+                                        <p style="margin: 15px 0 0; font-size: 11px; color: #666666;">Or enter access code:</p>
+                                        <p style="margin: 5px 0 0; font-size: 24px; font-weight: bold; color: #ffffff; letter-spacing: 2px;">{cabin_token}</p>
                                     </div>
 
                                     <!-- Next Steps -->
