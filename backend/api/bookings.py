@@ -175,8 +175,17 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
             pickup_time = "To be scheduled"
             
         booking_id = f"R-{int(time.time())}"
-        
-        # Build HTML with enhanced receipt
+
+        # Generate cabin access token (valid 24h)
+        try:
+            db_early = DatabaseClient()
+            cabin_token = db_early.create_cabin_token(booking_id, valid_hours=24)
+        except Exception:
+            import secrets
+            cabin_token = secrets.token_urlsafe(32)  # fallback: still functional, just not DB-backed
+
+        site_url = os.environ.get("SITE_URL", "https://gentle-plant-0f873710f.4.azurestaticapps.net")
+        cabin_url = f"{site_url}/cabin?token={cabin_token}"
         html = f"""
         <html>
         <head>
@@ -262,6 +271,14 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
                                         </tr>
                                     </table>
                                     
+                                    <!-- Cabin Controls -->
+                                    <div style="background: #000000; padding: 20px; border-radius: 8px; margin: 0 0 25px; text-align: center;">
+                                        <p style="margin: 0 0 8px; font-size: 16px; font-weight: bold; color: #ffffff;">🚗 Cabin Controls</p>
+                                        <p style="margin: 0 0 14px; font-size: 13px; color: #aaaaaa;">Control the climate, seat heaters, and windows during your ride.</p>
+                                        <a href="{cabin_url}" style="display: inline-block; padding: 12px 28px; background: #ffffff; color: #000000; font-weight: bold; font-size: 14px; border-radius: 6px; text-decoration: none;">Open Cabin Controls →</a>
+                                        <p style="margin: 10px 0 0; font-size: 11px; color: #666666;">Link expires 24 hours after booking</p>
+                                    </div>
+
                                     <!-- Next Steps -->
                                     <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; border-left: 4px solid #06b6d4;">
                                         <p style="margin: 0 0 10px; font-size: 14px; font-weight: bold; color: #0e7490;">📅 Next Steps</p>
