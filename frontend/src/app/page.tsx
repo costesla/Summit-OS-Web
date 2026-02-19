@@ -55,24 +55,12 @@ export default function Home() {
               Driven by <strong>Technology</strong>.
             </p>
 
-            <div className="flex flex-wrap gap-6 pt-4">
-              <Link href="/cabin" className="group px-8 py-4 border border-white/20 text-white font-medium rounded-full hover:bg-white/10 transition-all backdrop-blur-md flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
-                Passenger Cabin
-              </Link>
-            </div>
+
           </div>
 
           {/* Right: Car Image (Floating) */}
-          <div className="lg:col-span-6 relative h-[500px] lg:h-[700px] w-full animate-in fade-in scale-in duration-1000 delay-300 translate-x-12 lg:translate-x-20">
-            <Image
-              src="/hero-car.png"
-              alt="SummitOS Luxury Fleet"
-              fill
-              className="object-contain drop-shadow-2xl scale-110 mix-blend-screen"
-              priority
-            />
-          </div>
+          {/* Right: Car Image - Removed per request */}
+          <div className="lg:col-span-6 hidden lg:block"></div>
         </div>
 
         {/* Scroll Indicator */}
@@ -293,10 +281,7 @@ export default function Home() {
             <p className="text-xs text-gray-600">
               &copy; {new Date().getFullYear()} SummitOS LLC.
             </p>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10">
-              <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.5)]"></div>
-              <span className="text-[10px] text-gray-400 font-bold tracking-widest uppercase">Powered by SummitOS</span>
-            </div>
+
           </div>
         </div>
       </footer>
