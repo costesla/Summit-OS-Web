@@ -161,9 +161,15 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
         pickup = data.get('pickup', "N/A")
         dropoff = data.get('dropoff', "N/A")
         price = data.get('price', "$0.00")
+        phone = data.get('phone') or data.get('customerPhone') or "N/A"
         
         # Handle Pickup Time formatting
         from services.datetime_utils import format_local_time, normalize_to_utc
+        from datetime import datetime
+        
+        # Capture booking time
+        booking_time = format_local_time(datetime.utcnow())
+
         raw_time = data.get('pickupTime') or data.get('appointmentStart')
         if raw_time:
             try:
@@ -224,6 +230,14 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
                                             <td style="padding: 6px 0; font-size: 14px; color: #333333; text-align: right; font-weight: 600;">#{booking_id}</td>
                                         </tr>
                                         <tr>
+                                            <td style="padding: 6px 0; font-size: 14px; color: #666666;">Booking Date</td>
+                                            <td style="padding: 6px 0; font-size: 14px; color: #333333; text-align: right; font-weight: 600;">{booking_time}</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 6px 0; font-size: 14px; color: #666666;">Customer Phone</td>
+                                            <td style="padding: 6px 0; font-size: 14px; color: #333333; text-align: right; font-weight: 600;">{phone}</td>
+                                        </tr>
+                                        <tr>
                                             <td style="padding: 6px 0; font-size: 14px; color: #666666;">Pickup Time</td>
                                             <td style="padding: 6px 0; font-size: 14px; color: #333333; text-align: right; font-weight: 600;">{pickup_time}</td>
                                         </tr>
@@ -274,9 +288,11 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
                                     <!-- Cabin Controls -->
                                     <div style="background: #000000; padding: 20px; border-radius: 8px; margin: 0 0 25px; text-align: center;">
                                         <p style="margin: 0 0 8px; font-size: 16px; font-weight: bold; color: #ffffff;">🚗 Cabin Controls</p>
-                                        <p style="margin: 0 0 14px; font-size: 13px; color: #aaaaaa;">Control the climate, seat heaters, and trunk.</p>
+                                        <p style="margin: 0 0 14px; font-size: 13px; color: #aaaaaa;">
+                                            Control the climate, seat heaters, and trunk. Use the secure link below or enter your personal access code manually.
+                                        </p>
                                         <a href="{cabin_url}" style="display: inline-block; padding: 12px 28px; background: #ffffff; color: #000000; font-weight: bold; font-size: 14px; border-radius: 6px; text-decoration: none;">Open Cabin Controls →</a>
-                                        <p style="margin: 15px 0 0; font-size: 11px; color: #666666;">Or enter access code:</p>
+                                        <p style="margin: 15px 0 0; font-size: 11px; color: #666666;">Your Personal Access Code:</p>
                                         <p style="margin: 5px 0 0; font-size: 24px; font-weight: bold; color: #ffffff; letter-spacing: 2px;">{cabin_token}</p>
                                     </div>
 
