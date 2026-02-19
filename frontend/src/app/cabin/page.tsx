@@ -320,24 +320,14 @@ function CabinContent() {
                     <h2 className="text-xs font-bold text-gray-500 uppercase tracking-[0.2em] flex items-center gap-2">
                         <Lock size={14} /> Access
                     </h2>
-                    <div className="grid grid-cols-2 gap-3">
-                        <button
-                            onClick={() => sendCommand({ command: "open_trunk" })}
-                            disabled={sending === "open_trunk"}
-                            className="h-16 rounded-2xl border border-white/[.06] bg-white/[.03] hover:bg-white/[.06] active:scale-95 transition-all flex flex-col items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            <span className="text-sm font-semibold text-white">Open Trunk</span>
-                            <span className="text-[10px] text-gray-500 uppercase tracking-wider">Rear</span>
-                        </button>
-                        <button
-                            onClick={() => sendCommand({ command: "open_frunk" })}
-                            disabled={sending === "open_frunk"}
-                            className="h-16 rounded-2xl border border-white/[.06] bg-white/[.03] hover:bg-white/[.06] active:scale-95 transition-all flex flex-col items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            <span className="text-sm font-semibold text-white">Open Frunk</span>
-                            <span className="text-[10px] text-gray-500 uppercase tracking-wider">Front</span>
-                        </button>
-                    </div>
+                    <button
+                        onClick={() => sendCommand({ command: "open_trunk" })}
+                        disabled={sending === "open_trunk"}
+                        className="w-full h-16 rounded-2xl border border-white/[.06] bg-white/[.03] hover:bg-white/[.06] active:scale-95 transition-all flex flex-col items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <span className="text-sm font-semibold text-white">Open Trunk</span>
+                        <span className="text-[10px] text-gray-500 uppercase tracking-wider">Tap to toggle</span>
+                    </button>
                 </section>
 
                 {/* ─── Battery ────────────────────────────────────────────── */}
