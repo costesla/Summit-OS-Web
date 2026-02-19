@@ -247,169 +247,134 @@ function CabinContent() {
                 </div>
             </header>
 
-            <main className="pt-24 pb-16 px-5 max-w-md mx-auto space-y-6">
-                {/* ─── Telemetry Cards ────────────────────────────────────── */}
-                <div className="grid grid-cols-3 gap-3">
-                    <TelemetryCard
-                        icon={<Gauge size={16} className="text-cyan-400" />}
-                        label="Speed"
-                        value={state.speed != null ? Math.round(state.speed) : "--"}
-                        unit="mph"
-                    />
-                    <TelemetryCard
-                        icon={<Mountain size={16} className="text-blue-400" />}
-                        label="Elevation"
-                        value={state.elevation ? state.elevation.toLocaleString() : "--"}
-                        unit="ft"
-                    />
-                    <TelemetryCard
-                        icon={<Thermometer size={16} className="text-orange-400" />}
-                        label="Outside"
-                        value={state.outside_temp_f != null ? `${state.outside_temp_f}°` : "--"}
-                        unit=""
-                    />
-                </div>
-
-                {/* ─── Climate Control ────────────────────────────────────── */}
-                <section className="rounded-3xl border border-white/[.06] bg-gradient-to-b from-white/[.03] to-transparent p-5 space-y-5">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-xs font-bold text-gray-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                            <Thermometer size={14} /> Climate
-                        </h2>
-                        <button
-                            onClick={toggleClimate}
-                            disabled={sending === "start_climate" || sending === "stop_climate"}
-                            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all ${state.climate_on
-                                ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
-                                : "bg-white/5 text-gray-500 border border-white/10 hover:bg-white/10"
-                                }`}
-                        >
-                            <Power size={12} />
-                            {state.climate_on ? "On" : "Off"}
-                        </button>
-                    </div>
-
-                    {/* Temperature Dial */}
-                    <div className="flex items-center justify-center gap-6">
-                        <button
-                            onClick={() => adjustTemp(-1)}
-                            className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-blue-500/10 hover:border-blue-500/30 transition-all active:scale-90"
-                        >
-                            <ChevronDown size={20} className="text-blue-400" />
-                        </button>
-
-                        <div className="text-center">
-                            <div className="text-5xl font-bold font-mono tabular-nums tracking-tight">
-                                {state.target_temp_f}
-                                <span className="text-lg text-gray-600 font-normal">°F</span>
+            <main className="pt-24 pb-12 px-5 max-w-md mx-auto space-y-5">
+                {/* ─── Vehicle Status & Telemetry ─────────────────────────── */}
+                <section className="space-y-3">
+                    {/* Battery Bar */}
+                    {state.battery_level != null && (
+                        <div className="bg-white/[.03] rounded-xl p-3 border border-white/[.06] flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                {isCharging ? (
+                                    <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
+                                        <BatteryCharging size={16} className="text-green-400" />
+                                    </div>
+                                ) : (
+                                    <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
+                                        <Battery size={16} className="text-gray-400" />
+                                    </div>
+                                )}
+                                <div>
+                                    <div className="text-sm font-bold font-mono tracking-tight flex items-baseline gap-1.5">
+                                        {batteryPct}%
+                                        {state.battery_range_mi != null && (
+                                            <span className="text-xs text-gray-500 font-sans font-medium">
+                                                {Math.round(state.battery_range_mi)} mi
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="w-32 h-1 bg-white/10 rounded-full mt-1.5 overflow-hidden">
+                                        <div
+                                            className={`h-full rounded-full transition-all duration-700 ease-out ${batteryColor}`}
+                                            style={{ width: `${batteryPct}%` }}
+                                        />
+                                    </div>
+                                </div>
                             </div>
-                            {state.inside_temp_f != null && (
-                                <p className="text-[11px] text-gray-500 mt-1">
-                                    Cabin: {state.inside_temp_f}°F
-                                </p>
-                            )}
+                            <div className="text-right space-y-0.5">
+                                <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">OUTSIDE</div>
+                                <div className="text-sm font-mono font-bold text-white">
+                                    {state.outside_temp_f != null ? `${state.outside_temp_f}°` : "--"}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Compact Telemetry Grid */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-white/[.02] border border-white/[.04] rounded-xl py-2 px-4 flex items-center justify-between">
+                            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Speed</span>
+                            <span className="font-mono font-bold text-sm">{state.speed != null ? Math.round(state.speed) : "0"} <span className="text-[10px] text-gray-600 font-sans">mph</span></span>
+                        </div>
+                        <div className="bg-white/[.02] border border-white/[.04] rounded-xl py-2 px-4 flex items-center justify-between">
+                            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Elevation</span>
+                            <span className="font-mono font-bold text-sm">{state.elevation ? state.elevation.toLocaleString() : "0"} <span className="text-[10px] text-gray-600 font-sans">ft</span></span>
+                        </div>
+                    </div>
+                </section>
+
+                {/* ─── Climate & Comfort ──────────────────────────────────── */}
+                <section className="bg-gradient-to-b from-white/[.03] to-transparent border border-white/[.06] rounded-3xl p-1 overflow-hidden">
+                    <div className="p-5 pb-2">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-2">
+                                <div className={`w-2 h-2 rounded-full ${state.climate_on ? "bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" : "bg-gray-600"}`} />
+                                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">Climate</h2>
+                            </div>
+                            <button
+                                onClick={toggleClimate}
+                                disabled={sending === "start_climate" || sending === "stop_climate"}
+                                className={`h-8 px-4 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${state.climate_on
+                                    ? "bg-cyan-500 text-black hover:bg-cyan-400"
+                                    : "bg-white/10 text-gray-400 hover:bg-white/20"
+                                    }`}
+                            >
+                                <Power size={12} />
+                                {state.climate_on ? "ON" : "OFF"}
+                            </button>
                         </div>
 
-                        <button
-                            onClick={() => adjustTemp(1)}
-                            className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-red-500/10 hover:border-red-500/30 transition-all active:scale-90"
-                        >
-                            <ChevronUp size={20} className="text-red-400" />
-                        </button>
+                        {/* Temp Control */}
+                        <div className="flex items-center justify-between px-2 mb-8">
+                            <button onClick={() => adjustTemp(-1)} className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-blue-400 hover:bg-blue-500/10 active:scale-90 transition-all">
+                                <ChevronDown size={24} />
+                            </button>
+                            <div className="text-center">
+                                <div className="text-6xl font-bold font-mono tracking-tighter text-white drop-shadow-xl">{state.target_temp_f}°</div>
+                                <div className="text-[11px] text-gray-500 font-medium mt-1">Cabin: {state.inside_temp_f ?? "--"}°</div>
+                            </div>
+                            <button onClick={() => adjustTemp(1)} className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-red-400 hover:bg-red-500/10 active:scale-90 transition-all">
+                                <ChevronUp size={24} />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Integrated Seat Heaters */}
+                    <div className="bg-black/20 border-t border-white/[.04] p-3 grid grid-cols-3 gap-2">
+                        <SeatButton label="L" level={state.seats.rl} onClick={() => toggleSeat("rear_left")} />
+                        <SeatButton label="C" level={state.seats.rc} onClick={() => toggleSeat("rear_center")} />
+                        <SeatButton label="R" level={state.seats.rr} onClick={() => toggleSeat("rear_right")} />
                     </div>
                 </section>
 
-                {/* ─── Seat Heaters ───────────────────────────────────────── */}
-                <section className="space-y-3">
-                    <h2 className="text-xs font-bold text-gray-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                        <Flame size={14} /> Seat Heaters
-                    </h2>
-                    <div className="grid grid-cols-3 gap-3">
-                        <SeatButton label="Rear Left" level={state.seats.rl} onClick={() => toggleSeat("rear_left")} />
-                        <SeatButton label="Center" level={state.seats.rc} onClick={() => toggleSeat("rear_center")} />
-                        <SeatButton label="Rear Right" level={state.seats.rr} onClick={() => toggleSeat("rear_right")} />
-                    </div>
-                </section>
-
-                {/* ─── Atmosphere ─────────────────────────────────────────── */}
-                <section className="space-y-3">
-                    <h2 className="text-xs font-bold text-gray-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                        <Wind size={14} /> Atmosphere
-                    </h2>
+                {/* ─── Controls Grid ──────────────────────────────────────── */}
+                <div className="grid grid-cols-2 gap-3">
+                    {/* Windows */}
                     <button
                         onClick={toggleWindows}
-                        className="w-full rounded-2xl border border-white/[.06] bg-white/[.02] p-4 flex justify-between items-center hover:bg-white/[.04] transition-all active:scale-[0.98]"
+                        className={`h-24 rounded-2xl border flex flex-col items-center justify-center gap-2 transition-all active:scale-95 ${state.windows_vented
+                            ? "bg-cyan-500/10 border-cyan-500/30"
+                            : "bg-white/[.03] border-white/[.06] hover:bg-white/[.05]"}`}
                     >
-                        <div className="text-left">
-                            <span className="block text-sm font-semibold text-white">
-                                {state.windows_vented ? "Windows Vented" : "Windows Closed"}
-                            </span>
-                            <span className="text-[11px] text-gray-500">
-                                {state.windows_vented ? "Tap to close" : "Tap for fresh air"}
-                            </span>
-                        </div>
-                        <div
-                            className={`w-11 h-6 rounded-full p-0.5 transition-colors duration-300 ${state.windows_vented ? "bg-cyan-500" : "bg-gray-700"
-                                }`}
-                        >
-                            <div
-                                className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-300 ${state.windows_vented ? "translate-x-5" : "translate-x-0"
-                                    }`}
-                            />
+                        <Wind size={20} className={state.windows_vented ? "text-cyan-400" : "text-gray-400"} />
+                        <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">Windows</span>
+                        <div className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${state.windows_vented ? "bg-cyan-500 text-black" : "bg-white/10 text-gray-500"}`}>
+                            {state.windows_vented ? "VENTED" : "CLOSED"}
                         </div>
                     </button>
-                </section>
 
-                {/* ─── Trunk Access ───────────────────────────────────────── */}
-                <section className="space-y-3">
-                    <h2 className="text-xs font-bold text-gray-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                        <Lock size={14} /> Access
-                    </h2>
+                    {/* Trunk */}
                     <button
                         onClick={() => sendCommand({ command: "open_trunk" })}
                         disabled={sending === "open_trunk"}
-                        className="w-full h-16 rounded-2xl border border-white/[.06] bg-white/[.03] hover:bg-white/[.06] active:scale-95 transition-all flex flex-col items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="h-24 rounded-2xl border border-white/[.06] bg-white/[.03] hover:bg-white/[.05] flex flex-col items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
                     >
-                        <span className="text-sm font-semibold text-white">Open Trunk</span>
-                        <span className="text-[10px] text-gray-500 uppercase tracking-wider">Tap to toggle</span>
+                        <Lock size={20} className="text-gray-400" />
+                        <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">Trunk</span>
+                        <div className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-gray-500 font-bold">
+                            OPEN
+                        </div>
                     </button>
-                </section>
-
-                {/* ─── Battery ────────────────────────────────────────────── */}
-                {state.battery_level != null && (
-                    <section className="rounded-2xl border border-white/[.06] bg-white/[.02] p-4 space-y-3">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-xs font-bold text-gray-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                                {isCharging ? (
-                                    <BatteryCharging size={14} className="text-green-400" />
-                                ) : (
-                                    <Battery size={14} />
-                                )}
-                                Battery
-                            </h2>
-                            <span className="text-sm font-bold font-mono">
-                                {batteryPct}%
-                                {state.battery_range_mi != null && (
-                                    <span className="text-gray-500 font-normal ml-1.5">
-                                        · {Math.round(state.battery_range_mi)} mi
-                                    </span>
-                                )}
-                            </span>
-                        </div>
-                        <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
-                            <div
-                                className={`h-full rounded-full transition-all duration-700 ease-out ${batteryColor}`}
-                                style={{ width: `${batteryPct}%` }}
-                            />
-                        </div>
-                        {isCharging && (
-                            <p className="text-[11px] text-green-400 font-mono flex items-center gap-1.5">
-                                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                                Charging in progress
-                            </p>
-                        )}
-                    </section>
-                )}
+                </div>
 
                 {/* ─── Footer ─────────────────────────────────────────────── */}
                 <div className="pt-4 text-center">
@@ -425,28 +390,7 @@ function CabinContent() {
 
 // ─── Sub-components ──────────────────────────────────────────────────
 
-function TelemetryCard({
-    icon,
-    label,
-    value,
-    unit,
-}: {
-    icon: React.ReactNode;
-    label: string;
-    value: string | number;
-    unit: string;
-}) {
-    return (
-        <div className="rounded-2xl border border-white/[.06] bg-white/[.02] p-3 flex flex-col items-center justify-center text-center min-h-[88px]">
-            <div className="mb-1">{icon}</div>
-            <span className="text-[10px] text-gray-500 uppercase tracking-wider">{label}</span>
-            <div className="flex items-baseline gap-0.5 mt-0.5">
-                <span className="text-xl font-bold font-mono tabular-nums">{value}</span>
-                {unit && <span className="text-[10px] text-gray-600">{unit}</span>}
-            </div>
-        </div>
-    );
-}
+
 
 function SeatButton({
     label,
