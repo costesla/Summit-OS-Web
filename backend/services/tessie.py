@@ -381,3 +381,31 @@ class TessieClient:
         except Exception as e:
             logging.error(f"Error setting climate temp: {e}")
             return None
+
+    def open_trunk(self, vin):
+        """Opens the rear trunk."""
+        if not self.api_key:
+            return None
+        try:
+            url = f"{self.base_url}/{vin}/command/open_trunk"
+            headers = {"Authorization": f"Bearer {self.api_key}"}
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            logging.error(f"Error opening trunk: {e}")
+            return None
+
+    def open_frunk(self, vin):
+        """Opens the front trunk (frunk)."""
+        if not self.api_key:
+            return None
+        try:
+            url = f"{self.base_url}/{vin}/command/open_frunk"
+            headers = {"Authorization": f"Bearer {self.api_key}"}
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            logging.error(f"Error opening frunk: {e}")
+            return None

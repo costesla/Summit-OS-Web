@@ -125,7 +125,8 @@ def cabin_command(req: func.HttpRequest) -> func.HttpResponse:
 
     ALLOWED_COMMANDS = {
         "seat_heater", "vent_windows", "close_windows",
-        "start_climate", "stop_climate", "set_temp"
+        "start_climate", "stop_climate", "set_temp",
+        "open_trunk", "open_frunk"
     }
     if command not in ALLOWED_COMMANDS:
         return _json_response({"error": f"Unknown command: {command}"}, 400)
@@ -160,7 +161,12 @@ def cabin_command(req: func.HttpRequest) -> func.HttpResponse:
             temp_f = max(60, min(85, int(temp_f)))
             result = tessie.set_climate_temp(vin, temp_f)
 
-        if result:
+        elif command == "open_trunk":
+            result = tessie.open_trunk(vin)
+
+        elif command == "open_frunk":
+            result = tessie.open_frunk(vin)
+
             return _json_response({"success": True, "command": command})
         else:
             return _json_response({"error": "Command failed or vehicle unreachable"}, 502)
