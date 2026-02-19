@@ -261,3 +261,123 @@ class TessieClient:
             "ignition": drive_state.get('shift_state') is not None,
             "updatedAt": datetime.now().isoformat()
         }
+
+    def get_live_charging_state(self, vin):
+        """
+        Fetches specific live charging metrics from vehicle state.
+        """
+        state = self.get_vehicle_state(vin)
+        if not state:
+            return None
+            
+        charge_state = state.get('charge_state', {})
+        drive_state = state.get('drive_state', {})
+        
+        # Determine charging state
+        is_charging = charge_state.get('charging_state') in ['Charging', 'Starting']
+        
+        return {
+            "is_charging": is_charging,
+            "charging_state": charge_state.get('charging_state'),
+            "current_soc": charge_state.get('battery_level'),
+            "charge_power_kw": charge_state.get('charger_power') or 0,
+            "charge_rate_mph": charge_state.get('charge_rate'),
+            "minutes_to_full": charge_state.get('minutes_to_full_charge'),
+            "battery_range_mi": charge_state.get('battery_range'),
+            "location": self._resolve_address(drive_state.get('latitude'), drive_state.get('longitude')),
+            "timestamp": datetime.now().isoformat()
+        }
+
+    # ─── Cabin Controls ───────────────────────────────────────────────
+
+    def set_seat_heater(self, vin, seat, level):
+        """
+        Controls seat heaters.
+        seat: 'front_left', 'front_right', 'rear_left', 'rear_right', 'rear_center'
+        level: 0-3
+        """
+        if not self.api_key:
+            return None
+
+        logging.info(f"Setting seat heater {seat} to {level} for {vin}")
+        try:
+            url = f"{self.base_url}/{vin}/command/set_seat_heater"
+            headers = {"Authorization": f"Bearer {self.api_key}"}
+            params = {"seat": seat, "level": level}
+
+            response = requests.get(url, headers=headers, params=params)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            logging.error(f"Error setting seat heater: {e}")
+            return None
+
+    def control_windows(self, vin, command):
+        """
+        Controls windows.
+        command: 'vent' or 'close'
+        """
+        if not self.api_key:
+            return None
+
+        logging.info(f"Window control: {command} for {vin}")
+        try:
+            action = "vent_windows" if command == "vent" else "close_windows"
+            url = f"{self.base_url}/{vin}/command/{action}"
+            headers = {"Authorization": f"Bearer {self.api_key}"}
+
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            logging.error(f"Error controlling windows: {e}")
+            return None
+
+    def start_climate(self, vin):
+        """Starts HVAC pre-conditioning."""
+        if not self.api_key:
+            return None
+        try:
+            url = f"{self.base_url}/{vin}/command/start_climate"
+            headers = {"Authorization": f"Bearer {self.api_key}"}
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            logging.error(f"Error starting climate: {e}")
+            return None
+
+    def stop_climate(self, vin):
+        """Stops HVAC."""
+        if not self.api_key:
+            return None
+        try:
+            url = f"{self.base_url}/{vin}/command/stop_climate"
+            headers = {"Authorization": f"Bearer {self.api_key}"}
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            logging.error(f"Error stopping climate: {e}")
+            return None
+
+    def set_climate_temp(self, vin, temp_f):
+        """
+        Sets cabin target temperature.
+        temp_f: temperature in Fahrenheit (converted to Celsius for API).
+        """
+        if not self.api_key:
+            return None
+
+        temp_c = round((temp_f - 32) * 5 / 9, 1)
+        logging.info(f"Setting climate temp to {temp_f}°F ({temp_c}°C) for {vin}")
+        try:
+            url = f"{self.base_url}/{vin}/command/set_temperature"
+            headers = {"Authorization": f"Bearer {self.api_key}"}
+            params = {"temperature": temp_c}
+            response = requests.get(url, headers=headers, params=params)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            logging.error(f"Error setting climate temp: {e}")
+            return None

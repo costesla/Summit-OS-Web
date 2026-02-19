@@ -32,8 +32,16 @@
             "rewrite": "https://summitos-api.azurewebsites.net/api/book"
         },
         {
+            "route": "/api/cabin/state",
+            "rewrite": "https://summitos-api.azurewebsites.net/api/cabin/state"
+        },
+        {
+            "route": "/api/cabin/command",
+            "rewrite": "https://summitos-api.azurewebsites.net/api/cabin/command"
+        },
+        {
             "route": "/api/cabin",
-            "rewrite": "https://summitsyncfuncus23436.azurewebsites.net/api/cabin-api"
+            "rewrite": "https://summitos-api.azurewebsites.net/api/cabin/state"
         },
         {
             "route": "/api/update-payment",

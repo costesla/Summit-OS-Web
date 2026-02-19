@@ -12,14 +12,11 @@ if app_root not in sys.path:
     sys.path.append(app_root)
     logging.info(f"Added {app_root} to sys.path")
 
-# Also add 'api' and 'services' to path explicitly if needed, but app_root should cover them
-# as api.pricing etc.
-
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 @app.route(route="ping", methods=["GET"])
 def ping_root(req: func.HttpRequest) -> func.HttpResponse:
-    return func.HttpResponse("pong from root", status_code=200)
+    return func.HttpResponse("pong from root - LIVE", status_code=200)
 
 # Robust Blueprint Registration
 blueprints = [
@@ -29,8 +26,12 @@ blueprints = [
     "api.tessie",
     "api.reports",
     "api.copilot",
+    "api.copilot_openapi",
     "api.health",
-    "api.operations"
+    "api.operations",
+    "api.diag_drivers",
+    "api.timer_reports",
+    "api.cabin"
 ]
 
 registration_logs = []
@@ -49,40 +50,6 @@ for module_path in blueprints:
         err_msg = f"ERROR: {module_path}: {str(e)}"
         registration_logs.append(err_msg)
         logging.error(err_msg)
-        import traceback
-        logging.error(traceback.format_exc())
-
-@app.route(route="test_graph_auth", methods=["GET"])
-def test_graph_auth(req: func.HttpRequest) -> func.HttpResponse:
-    try:
-        from services.graph import GraphClient
-        client = GraphClient()
-        token = client._get_token()
-        # Validate by calling bookingBusinesses as requested
-        headers = {"Authorization": f"Bearer {token}"}
-        resp = requests.get("https://graph.microsoft.com/v1.0/solutions/bookingBusinesses", headers=headers)
-        
-        return func.HttpResponse(
-            json.dumps({
-                "success": True, 
-                "token_acquired": True,
-                "booking_businesses_status": resp.status_code,
-                "booking_businesses_data": resp.json() if resp.ok else resp.text
-            }, indent=2), 
-            status_code=200, 
-            mimetype="application/json"
-        )
-    except Exception as e:
-        import traceback
-        return func.HttpResponse(
-            json.dumps({
-                "success": False, 
-                "error": str(e),
-                "traceback": traceback.format_exc()
-            }, indent=2), 
-            status_code=500, 
-            mimetype="application/json"
-        )
 
 @app.route(route="diag", methods=["GET"])
 def diag(req: func.HttpRequest) -> func.HttpResponse:
