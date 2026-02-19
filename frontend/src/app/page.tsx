@@ -5,7 +5,6 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import WeatherWatch from "../components/WeatherWatch";
 import FlightTracker from "../components/FlightTracker";
-import DashboardStatus from "../components/DashboardStatus";
 import BookingEngine from "../components/BookingEngine";
 
 const LiveMap = dynamic(() => import("../components/LiveMap"), {
@@ -241,9 +240,7 @@ export default function Home() {
             <div className="opacity-90 hover:opacity-100 transition-opacity">
               <WeatherWatch />
             </div>
-            <div className="opacity-90 hover:opacity-100 transition-opacity">
-              <DashboardStatus />
-            </div>
+
             <div className="opacity-90 hover:opacity-100 transition-opacity">
               <FlightTracker />
             </div>
