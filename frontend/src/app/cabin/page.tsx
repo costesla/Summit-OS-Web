@@ -24,8 +24,10 @@ import {
 interface CabinState {
     speed: number;
     elevation: number;
+    heading?: number;
     inside_temp_f: number | null;
     outside_temp_f: number | null;
+    condition_text?: string;
     climate_on: boolean;
     target_temp_f: number;
     seats: { rl: number; rr: number; rc: number };
@@ -42,6 +44,7 @@ const INITIAL_STATE: CabinState = {
     elevation: 0,
     inside_temp_f: null,
     outside_temp_f: null,
+    condition_text: "N/A",
     climate_on: false,
     target_temp_f: 72,
     seats: { rl: 0, rr: 0, rc: 0 },
@@ -281,7 +284,9 @@ function CabinContent() {
                                 </div>
                             </div>
                             <div className="text-right space-y-0.5">
-                                <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">OUTSIDE</div>
+                                <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold truncate max-w-[100px]">
+                                    {state.condition_text && state.condition_text !== "N/A" ? state.condition_text : "OUTSIDE"}
+                                </div>
                                 <div className="text-sm font-mono font-bold text-white">
                                     {state.outside_temp_f != null ? `${state.outside_temp_f}°` : "--"}
                                 </div>

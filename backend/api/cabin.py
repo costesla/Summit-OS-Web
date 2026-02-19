@@ -51,31 +51,75 @@ def cabin_state(req: func.HttpRequest) -> func.HttpResponse:
         return _json_response({"error": "Unauthorized"}, 401)
 
     try:
+        import requests
         tessie = TessieClient()
         vin = os.environ.get("TESSIE_VIN")
         if not vin:
             return _json_response({"error": "No VIN configured"}, 500)
 
         state = tessie.get_vehicle_state(vin)
-        if not state:
-            return _json_response({"error": "Vehicle unreachable"}, 502)
-
-        drive = state.get("drive_state", {})
-        vehicle = state.get("vehicle_state", {})
-        climate = state.get("climate_state", {})
-        charge = state.get("charge_state", {})
-
+        # Fallback to empty context if Tessie fails (but try to get location from DB or defaults if desperate?)
+        # For now, if vehicle unreachable, we can't get location, so minimal return.
+        
+        drive = {}
+        vehicle = {}
+        climate = {}
+        charge = {}
+        
+        if state:
+            drive = state.get("drive_state", {})
+            vehicle = state.get("vehicle_state", {})
+            climate = state.get("climate_state", {})
+            charge = state.get("charge_state", {})
+        
         # Convert Celsius temps to Fahrenheit for US display
         inside_c = climate.get("inside_temp")
         outside_c = climate.get("outside_temp")
         driver_temp_c = climate.get("driver_temp_setting")
+        
+        outside_f = round(outside_c * 9/5 + 32) if outside_c is not None else None
+        
+        # Enhanced Weather (Open-Meteo) if we have location
+        condition_text = "N/A"
+        lat = drive.get("latitude")
+        lon = drive.get("longitude")
+        
+        if lat and lon:
+            try:
+                # WMO Weather Codes
+                wmo_map = {
+                    0: "Clear Sky", 1: "Mainly Clear", 2: "Partly Cloudy", 3: "Overcast",
+                    45: "Fog", 48: "Fog",
+                    51: "Drizzle", 53: "Drizzle", 55: "Drizzle",
+                    61: "Rain", 63: "Rain", 65: "Heavy Rain",
+                    71: "Snow", 73: "Snow", 75: "Heavy Snow",
+                    80: "Showers", 81: "Showers", 82: "Showers",
+                    95: "Thunderstorm", 96: "Thunderstorm", 99: "Thunderstorm"
+                }
+                
+                url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,weather_code&temperature_unit=fahrenheit"
+                r = requests.get(url, timeout=2) # Fast timeout to not block UI
+                if r.ok:
+                    wdata = r.json()
+                    curr = wdata.get('current', {})
+                    api_temp = curr.get('temperature_2m')
+                    code = curr.get('weather_code')
+                    
+                    if outside_f is None and api_temp is not None:
+                        outside_f = round(api_temp)
+                    
+                    if code is not None:
+                        condition_text = wmo_map.get(code, "Conditions")
+            except Exception as e:
+                logging.warning(f"Weather fetch failed: {e}")
 
         payload = {
             "speed": drive.get("speed") or 0,
             "elevation": drive.get("elevation") or 0,
             "heading": drive.get("heading"),
             "inside_temp_f": round(inside_c * 9/5 + 32) if inside_c is not None else None,
-            "outside_temp_f": round(outside_c * 9/5 + 32) if outside_c is not None else None,
+            "outside_temp_f": outside_f,
+            "condition_text": condition_text,
             "climate_on": climate.get("is_climate_on", False),
             "target_temp_f": round(driver_temp_c * 9/5 + 32) if driver_temp_c is not None else 72,
             "seats": {
