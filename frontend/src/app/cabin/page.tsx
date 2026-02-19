@@ -166,7 +166,7 @@ function CabinContent() {
                         <div>
                             <h1 className="text-2xl font-bold tracking-tight">Cabin Console</h1>
                             <p className="text-gray-500 text-sm mt-2">
-                                Enter your trip's secure access key to connect.
+                                Enter your 6-digit access code to connect.
                             </p>
                         </div>
                     </div>
@@ -175,10 +175,13 @@ function CabinContent() {
                         <div className="space-y-2">
                             <input
                                 type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                maxLength={6}
                                 value={manualToken}
-                                onChange={(e) => setManualToken(e.target.value)}
-                                placeholder="Paste Access Key..."
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-center text-white placeholder:text-gray-600 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all font-mono text-sm"
+                                onChange={(e) => setManualToken(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                placeholder="000000"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-center text-white placeholder:text-gray-600 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all font-mono text-2xl tracking-[0.5em]"
                                 autoFocus
                             />
                         </div>
