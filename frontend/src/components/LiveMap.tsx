@@ -89,7 +89,7 @@ export default function LiveMap({ className = "h-[600px]", overridePos }: { clas
     }, []);
 
     if (error && !pos) return <div className="text-red-400 text-center p-10">Tracker Offline</div>;
-    if (!pos) return <div className="text-cyan-400 text-center p-10 animate-pulse">Connecting to SummitOS Fleet GPS...</div>;
+    if (!pos) return <div className="text-cyan-400 text-center p-10 animate-pulse">Connecting to COS Tesla Fleet GPS...</div>;
 
     // Privacy Shield Mode
     if (pos.privacy) {

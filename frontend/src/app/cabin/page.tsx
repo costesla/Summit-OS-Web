@@ -230,7 +230,7 @@ function CabinContent() {
                 <div className="flex justify-between items-center max-w-md mx-auto px-5 py-4">
                     <div>
                         <h1 className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.3em]">
-                            Summit OS
+                            COS Tesla
                         </h1>
                         <p className="text-base font-semibold text-white mt-0.5">Cabin Console</p>
                     </div>

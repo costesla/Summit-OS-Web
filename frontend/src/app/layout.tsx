@@ -11,7 +11,7 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: 'SummitOS | Premium Private Transport',
+  title: 'COS Tesla | Premium Private Transport',
   description: 'The executive standard for private transport in Colorado Springs.',
 }
 
