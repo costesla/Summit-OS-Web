@@ -43,9 +43,10 @@ export default function Home() {
                 El Paso County • Colorado
               </h2>
               <h1 className="text-6xl lg:text-8xl font-bold leading-tight tracking-tighter">
-                Summit <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500">OS.</span>
+                COS <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500">TESLA.</span>
               </h1>
+              <p className="font-mono text-cyan-400/80 tracking-[0.3em] text-xs mt-4 uppercase">Powered by SummitOS</p>
             </div>
 
             <p className="text-2xl text-gray-300 font-light max-w-lg leading-relaxed border-l-2 border-white/20 pl-6">
@@ -111,7 +112,7 @@ export default function Home() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-xs font-mono text-cyan-400 mb-1">LIVE TELEMETRY</div>
-                    <div className="text-2xl font-bold">SummitOS Fleet Location</div>
+                    <div className="text-2xl font-bold">COS Tesla Fleet Location</div>
                   </div>
                   <div className="w-12 h-12 rounded-full border border-white/20 flex items-center justify-center bg-white/5 backdrop-blur-md">
                     <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]"></span>
@@ -253,7 +254,8 @@ export default function Home() {
         <div className="container mx-auto px-6">
           <div className="grid md:grid-cols-4 gap-12 mb-20">
             <div className="col-span-2">
-              <h2 className="text-2xl font-bold tracking-tighter mb-6">SUMMIT OS.</h2>
+              <h2 className="text-2xl font-bold tracking-tighter mb-1">COS TESLA.</h2>
+              <p className="font-mono text-cyan-400/80 tracking-[0.2em] text-[10px] uppercase mb-6">Powered by SummitOS</p>
               <p className="text-gray-500 max-w-sm">
                 Executive transport redefined for the modern era.
                 Locally owned in Colorado Springs.
@@ -279,7 +281,7 @@ export default function Home() {
 
           <div className="border-t border-white/10 pt-10 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-xs text-gray-600">
-              &copy; {new Date().getFullYear()} SummitOS LLC.
+              &copy; {new Date().getFullYear()} COS Tesla LLC.
             </p>
 
           </div>

@@ -171,7 +171,8 @@ export default function BookingEngine() {
             <div className="flex justify-between items-center mb-8 border-b border-white/10 pb-6">
                 <div>
                     <h2 className="text-3xl font-bold text-white tracking-tight">Trip Configuration</h2>
-                    <p className="text-gray-400 text-sm mt-1 tracking-wide uppercase">SummitOS Engine v2.1</p>
+                    <p className="text-gray-400 text-sm mt-1 tracking-wide uppercase">COS Tesla Booking v2.1</p>
+                    <p className="text-cyan-600/60 text-[10px] tracking-widest uppercase font-mono mt-1">Powered by SummitOS</p>
                 </div>
 
                 {/* Trip Type Toggle */}

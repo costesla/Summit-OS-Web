@@ -4,9 +4,10 @@ export default function Footer() {
             <div className="container mx-auto px-6 text-center">
                 <div className="mb-8">
                     <div className="flex justify-center mb-4">
-                        <img src="/logo.png" alt="SummitOS" className="w-12 h-12 rounded-xl" />
+                        <img src="/logo.png" alt="COS Tesla" className="w-12 h-12 rounded-xl" />
                     </div>
-                    <h4 className="font-bold text-lg mb-2 text-white italic tracking-tighter">SUMMITOS</h4>
+                    <h4 className="font-bold text-lg text-white italic tracking-tighter">COS TESLA</h4>
+                    <span className="block text-[0.6rem] text-gray-500 font-mono tracking-widest uppercase mb-2">Powered by SummitOS</span>
                     <p className="text-gray-500 text-sm">The Executive Standard for Transport.</p>
                 </div>
 
@@ -16,7 +17,7 @@ export default function Footer() {
                 </div>
 
                 <div className="pt-8 border-t border-white/5 text-gray-600 text-xs">
-                    © {new Date().getFullYear()} SummitOS LLC. All rights reserved.
+                    © {new Date().getFullYear()} COS Tesla LLC. All rights reserved.
                 </div>
             </div>
         </footer>
