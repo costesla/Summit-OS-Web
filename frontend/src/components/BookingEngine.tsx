@@ -62,7 +62,7 @@ export default function BookingEngine() {
 
     // Auto-Calculate Quote when inputs change
     useEffect(() => {
-        if (!pickup || !dropoff) {
+        if (!pickup || !dropoff || pickup.length < 10 || dropoff.length < 10) {
             setQuote(null);
             return;
         }

@@ -136,9 +136,9 @@ export default function RouteMap({
         const destStr = typeof destination === 'string' ? destination : '';
 
         // If using object literals (lat/lng), we skip this check. 
-        // But if using strings, we need at least 3 chars to avoid "NOT_FOUND" spam.
-        if (typeof origin === 'string' && origin.length < 3) return null;
-        if (typeof destination === 'string' && destination.length < 3) return null;
+        // But if using strings, we need at least 10 chars to avoid "NOT_FOUND" spam while typing.
+        if (typeof origin === 'string' && origin.length < 10) return null;
+        if (typeof destination === 'string' && destination.length < 10) return null;
 
         return {
             destination: destination,
