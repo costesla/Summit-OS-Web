@@ -2,9 +2,10 @@ from typing import Dict, Any, Optional
 
 class PricingEngine:
     """
-    SummitOS Pricing Engine v2.0
-    Python port of the high-precision tiered pricing logic.
-    Now supports customer-specific pricing overrides.
+    SummitOS Pricing Engine v3.0
+    Python port of the high-precision pricing logic.
+    $30 base. First 5 miles free. $1.75/mi flat after that.
+    Supports customer-specific pricing overrides.
     """
     
     @staticmethod
@@ -52,16 +53,16 @@ class PricingEngine:
                 
                 # Use custom tiered pricing if available
                 if "base_fare" in custom_pricing:
-                    base_fare = custom_pricing.get("base_fare", 15.00)
-                    tier1_rate = custom_pricing.get("tier1_rate", 1.75)
-                    tier2_rate = custom_pricing.get("tier2_rate", 1.25)
+                    base_fare = custom_pricing.get("base_fare", 30.00)
+                    rate_per_mile = custom_pricing.get("rate_per_mile", custom_pricing.get("tier1_rate", 1.75))
+                    free_miles = custom_pricing.get("free_miles", 5.0)
                     
                     # Calculate with custom rates
                     return PricingEngine._calculate_tiered_price(
                         distance_miles=distance_miles,
                         base_fare=base_fare,
-                        tier1_rate=tier1_rate,
-                        tier2_rate=tier2_rate,
+                        rate_per_mile=rate_per_mile,
+                        free_miles=free_miles,
                         stops_count=stops_count,
                         is_teller_county=is_teller_county,
                         wait_time_hours=wait_time_hours,
@@ -72,22 +73,22 @@ class PricingEngine:
         # Standard pricing (no custom pricing found or no email provided)
         return PricingEngine._calculate_tiered_price(
             distance_miles=distance_miles,
-            base_fare=15.00,
-            tier1_rate=1.75,
-            tier2_rate=1.25,
+            base_fare=30.00,
+            rate_per_mile=1.75,
+            free_miles=5.0,
             stops_count=stops_count,
             is_teller_county=is_teller_county,
             wait_time_hours=wait_time_hours,
             pricing_type="standard",
-            customer_tier="Standard pricing (2026)"
+            customer_tier="Standard pricing v3.0 (2026)"
         )
     
     @staticmethod
     def _calculate_tiered_price(
         distance_miles: float,
         base_fare: float,
-        tier1_rate: float,
-        tier2_rate: float,
+        rate_per_mile: float = 1.75,
+        free_miles: float = 5.0,
         stops_count: int = 0,
         is_teller_county: bool = False,
         wait_time_hours: float = 0.0,
@@ -95,40 +96,18 @@ class PricingEngine:
         customer_tier: str = "Standard"
     ) -> Dict[str, Any]:
         """
-        Internal method to calculate tiered pricing
+        Internal method: flat rate after free_miles window.
         """
-        
-        # 1. Calculate Base & Distance Fare (Tiered)
         fixed_base = base_fare
-        tier1_charge = 0.0
-        tier2_charge = 0.0
+        billable_miles = max(0.0, distance_miles - free_miles)
+        mileage_charge = billable_miles * rate_per_mile
 
-        if distance_miles <= 5.0:
-            # FLAT BASE
-            mileage_charge = 0.0
-        elif distance_miles <= 20.0:
-            # TIER 1 ZONE
-            tier1_miles = distance_miles - 5.0
-            tier1_charge = tier1_miles * tier1_rate
-            mileage_charge = tier1_charge
-        else:
-            # TIER 2 ZONE (Long Haul)
-            tier1_miles = 15.0  # Full 15 miles of Tier 1 (5.0 to 20.0)
-            tier1_charge = tier1_miles * tier1_rate
-            
-            tier2_miles = distance_miles - 20.0
-            tier2_charge = tier2_miles * tier2_rate
-            mileage_charge = tier1_charge + tier2_charge
-
-        # 2. Extra Fees
+        # Extra Fees
         stop_fee = stops_count * 5.00
         teller_fee = 15.00 if is_teller_county else 0.0
         wait_fee = wait_time_hours * 20.00
-        
-        # Deadhead is deprecated (0.0)
-        deadhead_fee = 0.0
+        deadhead_fee = 0.0  # Deprecated
 
-        # 3. Total
         total = fixed_base + mileage_charge + deadhead_fee + stop_fee + teller_fee + wait_fee
 
         return {

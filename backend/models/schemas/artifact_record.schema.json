@@ -1,0 +1,69 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "ArtifactRecord",
+    "description": "Raw capture of an ingested file, OCR result, and provenance.",
+    "type": "object",
+    "properties": {
+        "artifact_id": {
+            "type": "string",
+            "description": "Unique stable identifier (UUID or SHA-256 hash)"
+        },
+        "filename": {
+            "type": "string"
+        },
+        "source_url": {
+            "type": "string",
+            "format": "uri"
+        },
+        "integrity_hash": {
+            "type": "string",
+            "description": "SHA-256 of the original binary file"
+        },
+        "ocr_output": {
+            "type": "object",
+            "properties": {
+                "raw_text": {
+                    "type": "string"
+                },
+                "confidence": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100
+                },
+                "engine": {
+                    "type": "string",
+                    "default": "AzureVision_1.0"
+                }
+            },
+            "required": [
+                "raw_text",
+                "confidence"
+            ]
+        },
+        "provenance": {
+            "type": "object",
+            "properties": {
+                "ingestion_timestamp": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "device_id": {
+                    "type": "string"
+                },
+                "tenant_id": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "ingestion_timestamp"
+            ]
+        }
+    },
+    "required": [
+        "artifact_id",
+        "filename",
+        "integrity_hash",
+        "ocr_output",
+        "provenance"
+    ]
+}

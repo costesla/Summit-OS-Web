@@ -2,6 +2,7 @@ import os
 import requests
 import logging
 from datetime import datetime
+import pytz
 
 class GraphClient:
     def __init__(self):
@@ -36,15 +37,11 @@ class GraphClient:
         return resp.json().get("access_token")
 
     def _format_iso_z(self, dt: datetime) -> str:
-        """Helper to safely format datetime to ISO 8601 with Z suffix if UTC/naive."""
-        if dt.tzinfo is None:
-            # Assume UTC if naive, per typical Graph API usage or just standard ISO
-            return dt.isoformat() + "Z"
-        
-        # If it has a timezone, isoformat() includes offset. 
-        # CAUTION: Graph API might behave differently depending on endpoint.
-        # But '2026-01-27T12:00:00-07:00Z' is INVALID.
-        return dt.isoformat()
+        """Helper to format datetime to ISO 8601 with Z suffix (UTC)."""
+        # Convert to UTC first to ensure 'Z' is accurate
+        if dt.tzinfo is not None:
+            dt = dt.astimezone(pytz.UTC)
+        return dt.strftime('%Y-%m-%dT%H:%M:%SZ')
 
     def get_calendar_events(self, date_obj: datetime):
         token = self._get_token()
@@ -88,10 +85,15 @@ class GraphClient:
         # Prepare DateTimes for Graph
         # Logic: If we send timeZone="America/Denver", the dateTime string MUST be naive (no offset).
         # We ensure start_dt and end_dt are converted to the target timezone's wall clock time, then stripped of tzinfo.
+        from services.datetime_utils import get_timezone
+        denver_tz = get_timezone("CO")
         
-        # NOTE: This assumes start_dt/end_dt are correctly zoned or intended for that zone.
-        # For robustness, we just format them as simple strings if they have tzinfo.
-        
+        # Convert to Denver time if it's aware of timezones
+        if start_dt.tzinfo:
+            start_dt = start_dt.astimezone(denver_tz)
+        if end_dt.tzinfo:
+            end_dt = end_dt.astimezone(denver_tz)
+
         start_str = start_dt.strftime('%Y-%m-%dT%H:%M:%S')
         end_str = end_dt.strftime('%Y-%m-%dT%H:%M:%S')
         
@@ -112,19 +114,22 @@ class GraphClient:
             "location": {
                 "displayName": location
             },
-            "attendees": [
+            "categories": ["Private Trip", "SummitOS"],
+            "showAs": "busy",
+            "isReminderOn": True,
+            "reminderMinutesBeforeStart": 30
+        }
+        
+        # Only add attendee if email is provided (prevents duplicate calendar invites to customer)
+        if attendee_email:
+            payload["attendees"] = [
                 {
                     "emailAddress": {
                         "address": attendee_email
                     },
                     "type": "required"
                 }
-            ],
-            "categories": ["Private Trip", "SummitOS"],
-            "showAs": "busy",
-            "isReminderOn": True,
-            "reminderMinutesBeforeStart": 30
-        }
+            ]
         
         headers = {
             "Authorization": f"Bearer {token}",
@@ -224,7 +229,7 @@ class GraphClient:
         start_iso = self._format_iso_z(start_dt)
         end_iso = self._format_iso_z(end_dt)
         
-        url = f"https://graph.microsoft.com/v1.0/solutions/bookingBusinesses/{business_id}/staffMembers/{staff_id}/calendarView"
+        url = f"https://graph.microsoft.com/v1.0/users/{self.user_email}/calendar/calendarView"
         params = {
             "startDateTime": start_iso,
             "endDateTime": end_iso
@@ -245,3 +250,74 @@ class GraphClient:
             raise Exception(f"Graph Staff Calendar Error: {resp.status_code} {resp.text}")
             
         return resp.json().get("value", [])
+
+    # --- ADMINISTRATION METHDOS FOR BOOKINGS ---
+
+    def publish_booking_page(self, business_id=None):
+        """Publishes the Booking Business page so it can be accessed externally."""
+        token = self._get_token()
+        biz_id = business_id or os.environ.get("MS_BOOKINGS_BUSINESS_ID", "SummitOS@costesla.com")
+        
+        url = f"https://graph.microsoft.com/v1.0/solutions/bookingBusinesses/{biz_id}"
+        
+        # We use PATCH to update the business properties.
+        payload = {
+            "schedulingPolicy": {
+                "allowStaffSelection": True
+            },
+            "isPublished": True
+        }
+        
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
+        
+        logging.info(f"Publishing Booking Page for {biz_id}...")
+        resp = requests.patch(url, headers=headers, json=payload)
+        
+        if not resp.ok:
+            logging.error(f"Graph Publish Error: {resp.text}")
+            raise Exception(f"Graph Publish Error: {resp.status_code} {resp.text}")
+            
+        # Optional: Getting the public url if available from the response
+        try:
+             # Typically it returns the full object on PATCH, or empty. If empty, we can just GET it.
+             return self.get_booking_business_details(biz_id)
+        except:
+             return True
+
+    def get_booking_business_details(self, business_id=None):
+        """Helper to get general details like the public URL"""
+        token = self._get_token()
+        biz_id = business_id or os.environ.get("MS_BOOKINGS_BUSINESS_ID", "SummitOS@costesla.com")
+        url = f"https://graph.microsoft.com/v1.0/solutions/bookingBusinesses/{biz_id}"
+        headers = {
+            "Authorization": f"Bearer {token}"
+        }
+        resp = requests.get(url, headers=headers)
+        if resp.ok:
+            return resp.json()
+        return None
+
+    def create_booking_service(self, service_payload, business_id=None):
+        """Creates a new service for the Booking Business."""
+        token = self._get_token()
+        biz_id = business_id or os.environ.get("MS_BOOKINGS_BUSINESS_ID", "SummitOS@costesla.com")
+        
+        url = f"https://graph.microsoft.com/v1.0/solutions/bookingBusinesses/{biz_id}/services"
+        
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
+        
+        logging.info(f"Creating new Booking Service in {biz_id}: {service_payload.get('displayName')}...")
+        resp = requests.post(url, headers=headers, json=service_payload)
+        
+        if not resp.ok:
+            logging.error(f"Graph Create Service Error: {resp.text}")
+            raise Exception(f"Graph Create Service Error: {resp.status_code} {resp.text}")
+            
+        return resp.json()
+

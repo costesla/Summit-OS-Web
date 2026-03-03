@@ -86,7 +86,7 @@ class BookingsClient:
                 start_dt=start_dt,
                 end_dt=end_dt,
                 location=location,
-                attendee_email=email
+                attendee_email=None # Prevent Graph from sending a duplicate basic calendar invite
             )
             return resp
         except Exception as e:
