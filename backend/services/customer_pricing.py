@@ -33,10 +33,10 @@ class CustomerPricingProfile:
     # Define pricing tiers
     PRICING_TIERS = {
         "current": {
-            "base_fare": 15.00,
-            "tier1_rate": 1.75,
-            "tier2_rate": 1.25,
-            "description": "Current standard pricing (2026)"
+            "base_fare": 30.00,
+            "rate_per_mile": 1.75,
+            "free_miles": 5.0,
+            "description": "Standard pricing v3.0 (2026)"
         },
         "legacy_flat_20": {
             "flat_rate": 20.00,

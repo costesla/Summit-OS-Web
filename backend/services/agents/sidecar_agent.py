@@ -6,8 +6,17 @@ from datetime import datetime
 from typing import Dict, Any
 
 class SidecarAgent:
-    def __init__(self, root_dir: str = r"C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\SummitOS_Data"):
-        self.root_dir = root_dir
+    def __init__(self, root_dir: str = None):
+        if root_dir is None:
+            # Platform-aware fallback
+            if os.name != 'nt':
+                # Linux (Azure Functions)
+                self.root_dir = os.environ.get("SUMMITOS_DATA_DIR", "/tmp/SummitOS_Data")
+            else:
+                # Windows (Local Development)
+                self.root_dir = os.environ.get("SUMMITOS_DATA_DIR", r"C:\Users\PeterTeehan\OneDrive - COS Tesla LLC\SummitOS_Data")
+        else:
+            self.root_dir = root_dir
 
     def process(self, verified_data: Dict[str, Any]) -> str:
         """

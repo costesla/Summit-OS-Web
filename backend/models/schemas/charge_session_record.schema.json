@@ -1,0 +1,60 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "ChargeSessionRecord",
+    "description": "EV charging events matching Tesla/Tessie telemetry.",
+    "type": "object",
+    "properties": {
+        "session_id": {
+            "type": "string"
+        },
+        "vin": {
+            "type": "string"
+        },
+        "location": {
+            "type": "string"
+        },
+        "timestamps": {
+            "type": "object",
+            "properties": {
+                "start": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "end": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            },
+            "required": [
+                "start",
+                "end"
+            ]
+        },
+        "energy": {
+            "type": "object",
+            "properties": {
+                "kwh_added": {
+                    "type": "number"
+                },
+                "cost": {
+                    "type": "number"
+                },
+                "start_soc": {
+                    "type": "number"
+                },
+                "end_soc": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "kwh_added"
+            ]
+        }
+    },
+    "required": [
+        "session_id",
+        "vin",
+        "timestamps",
+        "energy"
+    ]
+}

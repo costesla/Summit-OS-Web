@@ -1,0 +1,115 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "UberTripRecord",
+    "description": "Paid segment data including financials, efficiency, and mobility semantics.",
+    "type": "object",
+    "properties": {
+        "trip_id": {
+            "type": "string"
+        },
+        "artifact_id": {
+            "type": "string"
+        },
+        "status": {
+            "enum": [
+                "Proposed",
+                "Executed",
+                "Intelligence"
+            ]
+        },
+        "classification": {
+            "enum": [
+                "Uber_Core",
+                "Uber_Reserved",
+                "Uber_Package",
+                "Expense"
+            ]
+        },
+        "financials": {
+            "type": "object",
+            "properties": {
+                "rider_payment": {
+                    "type": "number"
+                },
+                "driver_earnings": {
+                    "type": "number"
+                },
+                "platform_cut_raw": {
+                    "type": "number"
+                },
+                "tip_amount": {
+                    "type": "number"
+                },
+                "net_profitability": {
+                    "type": "number"
+                },
+                "currency": {
+                    "type": "string",
+                    "default": "USD"
+                }
+            },
+            "required": [
+                "rider_payment",
+                "driver_earnings",
+                "platform_cut_raw"
+            ]
+        },
+        "mobility_semantics": {
+            "type": "object",
+            "properties": {
+                "pickup_label": {
+                    "type": "string",
+                    "description": "e.g., _Pickup/PHX-T3"
+                },
+                "dropoff_label": {
+                    "type": "string",
+                    "description": "e.g., _Dropoff/Scottsdale-Resid"
+                },
+                "city": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "pickup_label",
+                "dropoff_label"
+            ]
+        },
+        "efficiency_metrics": {
+            "type": "object",
+            "properties": {
+                "distance_miles": {
+                    "type": "number"
+                },
+                "duration_minutes": {
+                    "type": "integer"
+                },
+                "energy_kwh": {
+                    "type": "number"
+                },
+                "wh_mi": {
+                    "type": "number"
+                },
+                "fsd_percentage": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100
+                }
+            }
+        },
+        "confidence_score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+        }
+    },
+    "required": [
+        "trip_id",
+        "artifact_id",
+        "status",
+        "financials",
+        "mobility_semantics"
+    ]
+}

@@ -180,6 +180,34 @@ class TessieClient:
             logging.error(f"Error matching Tessie drive: {str(e)}")
             return None
 
+    def get_tagged_drives(self, vin, from_ts, to_ts, limit=200):
+        """
+        Fetches all drives in a time range from the Tessie API.
+        Returns raw drive objects including the 'tag' field.
+        Filtering by tag keyword is done in the caller for flexibility.
+        """
+        if not self.api_key:
+            return []
+
+        logging.info(f"Fetching tagged drives for VIN: {vin}, from={from_ts}, to={to_ts}")
+        try:
+            url = f"{self.base_url}/{vin}/drives"
+            headers = {"Authorization": f"Bearer {self.api_key}"}
+            params = {
+                "from": from_ts,
+                "to": to_ts,
+                "limit": limit
+            }
+
+            response = requests.get(url, headers=headers, params=params)
+            response.raise_for_status()
+
+            data = response.json()
+            return data.get("results", [])
+        except Exception as e:
+            logging.error(f"Error fetching tagged drives: {str(e)}")
+            return []
+
     def get_charges(self, vin, from_ts, to_ts):
         """
         Fetches charging sessions for the specified VIN within a time range.

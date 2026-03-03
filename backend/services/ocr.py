@@ -6,6 +6,8 @@ from azure.identity import DefaultAzureCredential
 from azure.ai.vision.imageanalysis import ImageAnalysisClient
 from azure.ai.vision.imageanalysis.models import VisualFeatures
 from azure.core.credentials import AzureKeyCredential
+from openai import OpenAI
+import json
 
 class OCRClient:
     def __init__(self):
@@ -13,6 +15,7 @@ class OCRClient:
         self.key = os.environ.get("AZURE_VISION_KEY")
         
         self.client = None
+        self.openai_client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
         # Try API Key first if available
         if self.key:
@@ -48,7 +51,7 @@ class OCRClient:
 
         logging.info(f"Starting OCR extraction for URL: {image_url}")
         try:
-            result = self.client.analyze(
+            result = self.client.analyze_from_url(
                 image_url=image_url,
                 visual_features=[VisualFeatures.READ]
             )
@@ -246,3 +249,82 @@ class OCRClient:
                 break
         
         return data
+
+    def classify_image_llm(self, text):
+        """
+        Uses OpenAI to classify the image based on OCR text into a granular category.
+        """
+        if not text:
+            return "Unknown"
+            
+        prompt = f"""
+        Classify the following OCR text from an image into one of these categories:
+        - Uber_Core (Uber trip details, earnings, or offers)
+        - Private_Trip (Venmo or private ride notifications)
+        - Meal_Receipt (Lunch, Starbucks, restaurants)
+        - ATM_Receipt (Cash deposits or withdrawals)
+        - Fuel_Receipt (Gas stations like Shell, Chevron)
+        - Aviation_Context (FlightRadar24, flight paths)
+        - Environmental_Context (Weather, radar)
+        - General_Expense (Any other business related receipt)
+        - Unknown (If it doesn't fit any of these)
+
+        OCR Text:
+        \"\"\"{text[:2000]}\"\"\"
+
+        Return ONLY the category name.
+        """
+        
+        try:
+            response = self.openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=20,
+                temperature=0
+            )
+            classification = response.choices[0].message.content.strip()
+            # Basic validation
+            valid_categories = [
+                "Uber_Core", "Private_Trip", "Meal_Receipt", "ATM_Receipt", 
+                "Fuel_Receipt", "Aviation_Context", "Environmental_Context", 
+                "General_Expense", "Unknown"
+            ]
+            if classification in valid_categories:
+                return classification
+            return "Unknown"
+        except Exception as e:
+            logging.error(f"LLM Classification Error: {e}")
+            return self.classify_image(text) # Fallback to rule-based
+
+    def extract_receipt_data_llm(self, text):
+        """
+        Uses OpenAI to extract structured data from a receipt.
+        """
+        if not text:
+            return {}
+            
+        prompt = f"""
+        Extract the following fields from the OCR text of this receipt:
+        - merchant (Name of the business)
+        - amount (Total amount as a number)
+        - currency (e.g. USD)
+        - date (Expected format: YYYY-MM-DD if found)
+
+        OCR Text:
+        \"\"\"{text[:2000]}\"\"\"
+
+        Return as a valid JSON object.
+        """
+        
+        try:
+            response = self.openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": prompt}],
+                response_format={ "type": "json_object" },
+                max_tokens=150,
+                temperature=0
+            )
+            return json.loads(response.choices[0].message.content)
+        except Exception as e:
+            logging.error(f"LLM Extraction Error: {e}")
+            return {}
