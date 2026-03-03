@@ -5,6 +5,8 @@ import os
 import datetime
 from services.database import DatabaseClient
 from services.tessie import TessieClient
+from services.vector_store import VectorStore
+from services.agent_orchestrator import SystemOrchestrator
 
 bp = func.Blueprint()
 
@@ -32,17 +34,20 @@ def check_rate_limit(req):
     _request_counts[key] = current + 1
     return True
 
+CORS_HEADERS = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, x-functions-key"
+}
+
 def copilot_response(payload):
+    response_body = {"success": True}
+    if isinstance(payload, dict):
+        response_body.update(payload)
     return func.HttpResponse(
-        json.dumps({
-            "success": True,
-            "data": payload,
-            "metadata": {
-                "source": "Summit Sync",
-                "generated_at": datetime.datetime.utcnow().isoformat() + "Z"
-            }
-        }),
-        mimetype="application/json"
+        json.dumps(response_body),
+        mimetype="application/json",
+        headers=CORS_HEADERS
     )
 
 def to_iso(ts):
@@ -85,8 +90,8 @@ def copilot_trips_latest(req: func.HttpRequest) -> func.HttpResponse:
                 "dropoff": sanitize_location(t.get("Dropoff_Place")),
                 "fare": format_currency(t.get("Fare")),
                 "tip": format_currency(t.get("Tip")),
-                "distance_miles": t.get("Distance_mi"),
-                "duration_minutes": t.get("Duration_min")
+                "distance_miles": float(t.get("Distance_mi")) if t.get("Distance_mi") is not None else 0.0,
+                "duration_minutes": float(t.get("Duration_min")) if t.get("Duration_min") is not None else 0.0
             })
             
         return copilot_response({"count": len(formatted_trips), "trips": formatted_trips})
@@ -116,8 +121,8 @@ def copilot_trip_detail(req: func.HttpRequest) -> func.HttpResponse:
             "fare": format_currency(trip.get("Fare")),
             "tip": format_currency(trip.get("Tip")),
             "driver_earnings": format_currency(trip.get("Earnings_Driver")),
-            "distance_miles": trip.get("Distance_mi"),
-            "duration_minutes": trip.get("Duration_min"),
+            "distance_miles": float(trip.get("Distance_mi")) if trip.get("Distance_mi") is not None else 0.0,
+            "duration_minutes": float(trip.get("Duration_min")) if trip.get("Duration_min") is not None else 0.0,
             "payment_method": trip.get("Payment_Method"),
             "notes": trip.get("Notes")
         }
@@ -183,8 +188,10 @@ def copilot_metrics_summary(req: func.HttpRequest) -> func.HttpResponse:
         logging.error(f"Copilot API Error: {e}")
         return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500)
 
-@bp.route(route="copilot/vehicle/status", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+@bp.route(route="copilot/vehicle/status", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def copilot_vehicle_status(req: func.HttpRequest) -> func.HttpResponse:
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
     if not check_rate_limit(req):
         return func.HttpResponse(json.dumps({"error": "Rate limit exceeded"}), status_code=429)
 
@@ -199,4 +206,398 @@ def copilot_vehicle_status(req: func.HttpRequest) -> func.HttpResponse:
         return copilot_response({"vehicle": state})
     except Exception as e:
         logging.error(f"Copilot API Error: {e}")
+        return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500)
+
+@bp.route(route="copilot/search", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+def copilot_search(req: func.HttpRequest) -> func.HttpResponse:
+    if not check_rate_limit(req):
+        return func.HttpResponse(json.dumps({"error": "Rate limit exceeded"}), status_code=429)
+
+    query_text = req.params.get("q")
+    keyword_text = req.params.get("keyword")
+    classification = req.params.get("classification")
+    
+    if not query_text and not keyword_text and not classification:
+        return func.HttpResponse(json.dumps({"error": "Missing search parameters (q, keyword, or classification)"}), status_code=400)
+
+    try:
+        n_results = int(req.params.get("limit", 5))
+        vs = VectorStore()
+        # Fallback to evidence mode for basic search
+        results = vs.query_evidence_mode(
+            query_text=query_text or keyword_text or classification, 
+            n_results=n_results
+        )
+        
+        # Map DB columns to OpenAPI SemanticSearchResponse schema
+        formatted_results = []
+        for r in results:
+            ts = r.get('timestamp_utc')
+            date_str = ts.isoformat() if isinstance(ts, datetime.datetime) else str(ts) if ts else None
+            
+            formatted_results.append({
+                "score": float(r.get("search_confidence", 0)),
+                "summary": r.get("derivation_reason", ""),
+                "date": date_str,
+                "amount": 0.0,
+                "classification": r.get("source_type", "Unknown"),
+                "source": r.get("source_pointer", "")
+            })
+        
+        return copilot_response({
+            "count": len(formatted_results),
+            "results": formatted_results
+        })
+    except Exception as e:
+        logging.error(f"Search API Error: {e}")
+        return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500)
+
+@bp.route(route="copilot/charging/live", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+def copilot_charging_live(req: func.HttpRequest) -> func.HttpResponse:
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
+    if not check_rate_limit(req):
+        return func.HttpResponse(json.dumps({"error": "Rate limit exceeded"}), status_code=429)
+
+    try:
+        vin = os.environ.get("TESSIE_VIN")
+        if not vin:
+            return func.HttpResponse(json.dumps({"error": "Vehicle VIN not configured"}), status_code=500)
+
+        tessie = TessieClient()
+        charging_state = tessie.get_live_charging_state(vin)
+        
+        if not charging_state:
+            return func.HttpResponse(json.dumps({"error": "Live charging data is not available right now"}), status_code=404)
+
+        return copilot_response(charging_state)
+    except Exception as e:
+        logging.error(f"Live Charging API Error: {e}")
+        return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500)
+
+@bp.route(route="copilot/tessie/drives", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
+    """
+    Query live Tessie API drives filtered by tag keyword (e.g. 'Jackie', 'Esmeralda').
+    Supports:
+      - tag=Jackie (keyword match anywhere in the tag field)
+      - days=30    (look-back window, default 30)
+      - month=2026-02 (target a specific month, overrides days)
+    """
+    if not check_rate_limit(req):
+        return func.HttpResponse(json.dumps({"error": "Rate limit exceeded"}), status_code=429)
+
+    try:
+        vin = os.environ.get("TESSIE_VIN")
+        if not vin:
+            return func.HttpResponse(json.dumps({"error": "Vehicle VIN not configured"}), status_code=500)
+
+        tag_filter = req.params.get("tag", "").strip()
+        month_param = req.params.get("month", "").strip()   # e.g. "2026-02"
+
+        # Determine time range
+        now = datetime.datetime.utcnow()
+        if month_param:
+            try:
+                year, month = int(month_param.split("-")[0]), int(month_param.split("-")[1])
+                from_dt = datetime.datetime(year, month, 1)
+                # First day of the NEXT month
+                if month == 12:
+                    to_dt = datetime.datetime(year + 1, 1, 1)
+                else:
+                    to_dt = datetime.datetime(year, month + 1, 1)
+            except Exception:
+                return func.HttpResponse(json.dumps({"error": "Invalid month format. Use YYYY-MM."}), status_code=400)
+        else:
+            days = int(req.params.get("days", 30))
+            if days > 365: days = 365
+            from_dt = now - datetime.timedelta(days=days)
+            to_dt = now
+
+        from_ts = int(from_dt.timestamp())
+        to_ts = int(to_dt.timestamp())
+
+        tessie = TessieClient()
+        raw_drives = tessie.get_tagged_drives(vin, from_ts, to_ts)
+
+        # Filter by tag keyword (case-insensitive)
+        tag_lower = tag_filter.lower()
+        filtered = []
+        for d in raw_drives:
+            drive_tag = str(d.get("tag") or "")
+            if not tag_filter or tag_lower in drive_tag.lower():
+                start_ts = d.get("started_at", 0)
+                start_dt_mst = (datetime.datetime.utcfromtimestamp(start_ts) - datetime.timedelta(hours=7)) if start_ts else None
+                dist = round(float(d.get("odometer_distance") or 0), 2)
+                energy = round(float(d.get("energy_used") or 0), 2)
+                # Wh/mi efficiency (energy_used is kWh, convert to Wh)
+                efficiency = round((energy * 1000) / dist, 1) if dist > 0 else None
+                # Average speed in tessie is km/h — convert to mph
+                avg_speed_kph = d.get("average_speed") or 0
+                max_speed_kph = d.get("max_speed") or 0
+                filtered.append({
+                    "date": start_dt_mst.strftime("%Y-%m-%d") if start_dt_mst else None,
+                    "time_mst": start_dt_mst.strftime("%H:%M") if start_dt_mst else None,
+                    "tag": drive_tag or None,
+                    "distance_miles": dist,
+                    "average_speed_mph": round(avg_speed_kph * 0.621371, 1),
+                    "max_speed_mph": round(max_speed_kph * 0.621371, 1),
+                    "energy_used_kwh": energy,
+                    "efficiency_wh_mi": efficiency,
+                    "autopilot_miles": round(float(d.get("autopilot_distance") or 0), 2),
+                    "start": d.get("starting_location"),
+                    "end": d.get("ending_location"),
+                    "starting_battery": d.get("starting_battery"),
+                    "ending_battery": d.get("ending_battery"),
+                    "tessie_drive_id": d.get("id")
+                })
+
+        return copilot_response({
+            "tag_filter": tag_filter or None,
+            "count": len(filtered),
+            "drives": filtered
+        })
+
+    except Exception as e:
+        logging.error(f"Tessie Drives API Error: {e}")
+        return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500)
+
+
+@bp.route(route="copilot/tessie/charges", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+def copilot_tessie_charges(req: func.HttpRequest) -> func.HttpResponse:
+    """
+    Returns historical charging sessions from the Tessie API.
+    Supports: days=30, month=2026-02
+    """
+    if not check_rate_limit(req):
+        return func.HttpResponse(json.dumps({"error": "Rate limit exceeded"}), status_code=429)
+
+    try:
+        vin = os.environ.get("TESSIE_VIN")
+        if not vin:
+            return func.HttpResponse(json.dumps({"error": "Vehicle VIN not configured"}), status_code=500)
+
+        month_param = req.params.get("month", "").strip()
+        now = datetime.datetime.utcnow()
+        if month_param:
+            try:
+                year, month = int(month_param.split("-")[0]), int(month_param.split("-")[1])
+                from_dt = datetime.datetime(year, month, 1)
+                to_dt = datetime.datetime(year + 1, 1, 1) if month == 12 else datetime.datetime(year, month + 1, 1)
+            except Exception:
+                return func.HttpResponse(json.dumps({"error": "Invalid month format. Use YYYY-MM."}), status_code=400)
+        else:
+            days = int(req.params.get("days", 30))
+            if days > 365: days = 365
+            from_dt = now - datetime.timedelta(days=days)
+            to_dt = now
+
+        from_ts = int(from_dt.timestamp())
+        to_ts = int(to_dt.timestamp())
+
+        tessie = TessieClient()
+        raw_charges = tessie.get_charges(vin, from_ts, to_ts)
+
+        sessions = []
+        for c in (raw_charges or []):
+            start_ts = c.get("started_at") or c.get("start_time") or 0
+            start_dt_mst = (datetime.datetime.utcfromtimestamp(start_ts) - datetime.timedelta(hours=7)) if start_ts else None
+            sessions.append({
+                "date": start_dt_mst.strftime("%Y-%m-%d") if start_dt_mst else None,
+                "time_mst": start_dt_mst.strftime("%H:%M") if start_dt_mst else None,
+                "energy_added_kwh": round(float(c.get("energy_added") or 0), 2),
+                "starting_soc": c.get("starting_battery_level") or c.get("battery_level"),
+                "ending_soc": c.get("ending_battery_level") or c.get("battery_level_end"),
+                "duration_minutes": round(float(c.get("duration") or 0) / 60, 1) if c.get("duration") else None,
+                "location": c.get("location") or c.get("charging_location"),
+                "charge_type": c.get("charger_type") or c.get("connector_type"),
+                "tessie_charge_id": c.get("id")
+            })
+
+        return copilot_response({
+            "count": len(sessions),
+            "sessions": sessions
+        })
+
+    except Exception as e:
+        logging.error(f"Tessie Charges API Error: {e}")
+        return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500)
+
+
+@bp.route(route="copilot/tessie/summary", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+def copilot_tessie_summary(req: func.HttpRequest) -> func.HttpResponse:
+    """
+    Returns aggregated driving stats from the Tessie API for a period.
+    Supports: days=30, month=2026-02
+    Great for: 'Give me my driving stats for February'
+    """
+    if not check_rate_limit(req):
+        return func.HttpResponse(json.dumps({"error": "Rate limit exceeded"}), status_code=429)
+
+    try:
+        vin = os.environ.get("TESSIE_VIN")
+        if not vin:
+            return func.HttpResponse(json.dumps({"error": "Vehicle VIN not configured"}), status_code=500)
+
+        month_param = req.params.get("month", "").strip()
+        now = datetime.datetime.utcnow()
+        if month_param:
+            try:
+                year, month = int(month_param.split("-")[0]), int(month_param.split("-")[1])
+                from_dt = datetime.datetime(year, month, 1)
+                to_dt = datetime.datetime(year + 1, 1, 1) if month == 12 else datetime.datetime(year, month + 1, 1)
+                period_label = month_param
+            except Exception:
+                return func.HttpResponse(json.dumps({"error": "Invalid month format. Use YYYY-MM."}), status_code=400)
+        else:
+            days = int(req.params.get("days", 30))
+            if days > 365: days = 365
+            from_dt = now - datetime.timedelta(days=days)
+            to_dt = now
+            period_label = f"Last {days} days"
+
+        from_ts = int(from_dt.timestamp())
+        to_ts = int(to_dt.timestamp())
+
+        tessie = TessieClient()
+        raw_drives = tessie.get_tagged_drives(vin, from_ts, to_ts)
+        raw_charges = tessie.get_charges(vin, from_ts, to_ts) or []
+
+        # Aggregate drives
+        total_miles = 0.0
+        total_energy_kwh = 0.0
+        total_autopilot_miles = 0.0
+        speed_sum = 0.0
+        speed_count = 0
+        max_speed_mph = 0.0
+
+        for d in raw_drives:
+            dist = float(d.get("odometer_distance") or 0)
+            total_miles += dist
+            total_energy_kwh += float(d.get("energy_used") or 0)
+            total_autopilot_miles += float(d.get("autopilot_distance") or 0)
+            avg_kph = d.get("average_speed") or 0
+            max_kph = d.get("max_speed") or 0
+            if avg_kph:
+                speed_sum += avg_kph * 0.621371
+                speed_count += 1
+            if max_kph:
+                mph = max_kph * 0.621371
+                if mph > max_speed_mph:
+                    max_speed_mph = mph
+
+        # Aggregate charges
+        total_energy_charged_kwh = sum(float(c.get("energy_added") or 0) for c in raw_charges)
+
+        avg_speed_mph = round(speed_sum / speed_count, 1) if speed_count else None
+        overall_efficiency = round((total_energy_kwh * 1000) / total_miles, 1) if total_miles > 0 else None
+        autopilot_pct = round((total_autopilot_miles / total_miles) * 100, 1) if total_miles > 0 else None
+
+        return copilot_response({
+            "period": period_label,
+            "total_drives": len(raw_drives),
+            "total_miles": round(total_miles, 2),
+            "total_energy_used_kwh": round(total_energy_kwh, 2),
+            "total_energy_charged_kwh": round(total_energy_charged_kwh, 2),
+            "charge_sessions": len(raw_charges),
+            "average_speed_mph": avg_speed_mph,
+            "max_speed_mph": round(max_speed_mph, 1),
+            "autopilot_miles": round(total_autopilot_miles, 2),
+            "autopilot_pct": autopilot_pct,
+            "efficiency_wh_mi": overall_efficiency
+        })
+
+    except Exception as e:
+        logging.error(f"Tessie Summary API Error: {e}")
+        return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500)
+
+@bp.route(route="copilot/agentic-query", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+def copilot_agentic_query(req: func.HttpRequest) -> func.HttpResponse:
+    if not check_rate_limit(req):
+        return func.HttpResponse(json.dumps({"error": "Rate limit exceeded"}), status_code=429)
+
+    query_text = req.params.get("q")
+    mode = req.params.get("mode", "evidence").lower()
+    
+    if not query_text:
+        return func.HttpResponse(json.dumps({"error": "Missing 'q' query parameter"}), status_code=400)
+
+    if mode not in ["evidence", "insight", "narrative"]:
+        return func.HttpResponse(json.dumps({"error": "Invalid mode. Use 'evidence', 'insight', or 'narrative'."}), status_code=400)
+
+    try:
+        orchestrator = SystemOrchestrator()
+        
+        # Enforce Prime Directive via the Orchestrator
+        response_text = orchestrator.process_query(query_text, mode=mode)
+        
+        return copilot_response({
+            "query": query_text,
+            "mode": mode,
+            "agentic_response": response_text
+        })
+    except Exception as e:
+        logging.error(f"Agentic Query API Error: {e}")
+        return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500)
+
+@bp.route(route="copilot/artifacts/{artifact_id}/raw", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+def copilot_artifact_raw(req: func.HttpRequest) -> func.HttpResponse:
+    """Rehydration API: Retrieve raw archived bytes via deterministic SharePoint resolution."""
+    if not check_rate_limit(req):
+        return func.HttpResponse(json.dumps({"error": "Rate limit exceeded"}), status_code=429)
+
+    artifact_id = req.route_params.get("artifact_id")
+    if not artifact_id:
+        return func.HttpResponse(json.dumps({"error": "Missing artifact_id"}), status_code=400)
+
+    try:
+        from services.sharepoint import SharePointClient
+        import requests
+        sp = SharePointClient()
+        sp.resolve_ids()
+        
+        if not sp.drive_id:
+            return func.HttpResponse(json.dumps({"error": "SharePoint drive not configured"}), status_code=500)
+            
+        # Target filename format used in archival
+        filename = f"{artifact_id[:12]}.jpg"
+        
+        headers = sp._get_headers()
+        # Fast search scoped specifically to the drive
+        search_url = f"https://graph.microsoft.com/v1.0/drives/{sp.drive_id}/root/search(q='{filename}')"
+        res = requests.get(search_url, headers=headers)
+        
+        if res.ok:
+            items = res.json().get('value', [])
+            if not items:
+                return func.HttpResponse(json.dumps({"error": "Artifact archived, expired, or not found."}), status_code=404)
+                
+            item = items[0]
+            item_id = item.get('id')
+            
+            # The search endpoint doesn't always return the downloadUrl
+            # We must fetch the specific item to get the short-lived URL
+            item_url = f"https://graph.microsoft.com/v1.0/drives/{sp.drive_id}/items/{item_id}"
+            item_res = requests.get(item_url, headers=headers)
+            
+            if item_res.ok:
+                full_item = item_res.json()
+                download_url = full_item.get('@microsoft.graph.downloadUrl')
+                
+                if download_url:
+                    # Issue HTTP 302 Redirect to the temporary Azure/SharePoint download URL
+                    return func.HttpResponse(status_code=302, headers={"Location": download_url})
+                else:
+                    return func.HttpResponse(json.dumps({"error": "Download URL not available on item"}), status_code=500)
+            else:
+                 return func.HttpResponse(json.dumps({"error": "Failed to retrieve item details"}), status_code=500)
+        else:
+
+            logging.error(f"Graph Search Failed: {res.text}")
+            return func.HttpResponse(json.dumps({"error": "Upstream resolution failed"}), status_code=502)
+            
+    except Exception as e:
+        logging.error(f"Rehydration API Error: {e}")
         return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500)
