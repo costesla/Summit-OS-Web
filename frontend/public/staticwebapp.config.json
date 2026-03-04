@@ -1,6 +1,33 @@
 {
-    "navigationFallback": {
-        "rewrite": "/index.html"
+    "auth": {
+        "identityProviders": {
+            "azureActiveDirectory": {
+                "userDetailsClaim": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name",
+                "registration": {
+                    "openIdIssuer": "https://login.microsoftonline.com/common/v2.0",
+                    "clientIdSettingName": "AAD_CLIENT_ID",
+                    "clientSecretSettingName": "AAD_CLIENT_SECRET"
+                }
+            }
+        }
+    },
+    "routes": [
+        {
+            "route": "/driver-login",
+            "redirect": "/.auth/login/aad?post_login_redirect_uri=/driver-dashboard/"
+        },
+        {
+            "route": "/driver-dashboard*",
+            "allowedRoles": [
+                "authenticated"
+            ]
+        }
+    ],
+    "responseOverrides": {
+        "401": {
+            "redirect": "/.auth/login/aad?post_login_redirect_uri=/driver-dashboard/",
+            "statusCode": 302
+        }
     },
     "rewrites": [
         {
@@ -47,5 +74,19 @@
             "route": "/api/update-payment",
             "rewrite": "https://summitsyncfuncus23436.azurewebsites.net/api/update-payment"
         }
-    ]
+    ],
+    "navigationFallback": {
+        "rewrite": "/index.html",
+        "exclude": [
+            "/_next/*",
+            "/driver-dashboard/*",
+            "/images/*",
+            "/*.{css,scss,js,json,png,gif,ico,jpg,svg,woff,woff2}"
+        ]
+    },
+    "globalHeaders": {
+        "X-Frame-Options": "DENY",
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "strict-origin-when-cross-origin"
+    }
 }
