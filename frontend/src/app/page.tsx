@@ -6,6 +6,7 @@ import Image from "next/image";
 import WeatherWatch from "../components/WeatherWatch";
 import FlightTracker from "../components/FlightTracker";
 import BookingEngine from "../components/BookingEngine";
+import { useEffect } from "react";
 
 const LiveMap = dynamic(() => import("../components/LiveMap"), {
   ssr: false,
@@ -13,6 +14,19 @@ const LiveMap = dynamic(() => import("../components/LiveMap"), {
 });
 
 export default function Home() {
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const host = window.location.hostname.toLowerCase();
+      if (
+        host.includes("dashboard") ||
+        host.includes("driver") ||
+        host === "summit-os.com"
+      ) {
+        window.location.replace("/driver-dashboard");
+      }
+    }
+  }, []);
+
   return (
     <main className="min-h-screen bg-[var(--background)] text-white overflow-x-hidden selection:bg-cyan-500 selection:text-white">
 
@@ -212,19 +226,19 @@ export default function Home() {
           <div className="bg-[#0f0f0f] rounded-[3rem] p-12 border border-white/10 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 blur-[100px] rounded-full pointer-events-none" />
 
-            <h3 className="text-3xl font-bold mb-8">Fairness Engine v2.0</h3>
+            <h3 className="text-3xl font-bold mb-8">Fairness Engine v3.0</h3>
             <div className="space-y-8">
               <div className="flex items-center justify-between border-b border-white/5 pb-4">
                 <span className="text-gray-400">Base Engagement</span>
-                <span className="text-2xl font-bold">$15.00</span>
+                <span className="text-2xl font-bold">$30.00</span>
               </div>
               <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                <span className="text-gray-400">Local Mile (5-20mi)</span>
+                <span className="text-gray-400">First 5 Miles</span>
+                <span className="text-2xl font-bold text-cyan-400">FREE</span>
+              </div>
+              <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                <span className="text-gray-400">Every Mile After</span>
                 <span className="text-2xl font-bold">$1.75<span className="text-sm text-gray-600 font-normal">/mi</span></span>
-              </div>
-              <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                <span className="text-gray-400">Long Haul (20mi+)</span>
-                <span className="text-2xl font-bold">$1.25<span className="text-sm text-gray-600 font-normal">/mi</span></span>
               </div>
             </div>
             <p className="mt-8 text-xs text-gray-500 font-mono">
