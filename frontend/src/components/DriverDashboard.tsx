@@ -5,7 +5,7 @@ import {
     TrendingUp, Car, Zap, Utensils, Plus, Trash2,
     Navigation, Receipt, RotateCcw, Clock,
     Battery, BatteryCharging, WifiOff, Download,
-    MapPin, Gauge
+    MapPin, Gauge, LogOut
 } from 'lucide-react';
 
 // ─── Constants ─────────────────────────────────────────────────────────────
@@ -524,6 +524,18 @@ const DriverDashboard = () => {
 
     const inputCls = 'w-full p-2.5 text-sm bg-black/30 border border-white/10 rounded-xl text-white placeholder-gray-600 font-mono focus:outline-none focus:border-cyan-500/50 focus:shadow-[0_0_15px_rgba(0,242,255,0.15)] transition-all';
 
+    // ── Azure auth user ──────────────────────────────────────────────────────
+    const [azureUser, setAzureUser] = useState<string | null>(null);
+    useEffect(() => {
+        fetch('/.auth/me')
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                const name = data?.clientPrincipal?.userDetails;
+                if (name) setAzureUser(name);
+            })
+            .catch(() => { });
+    }, []);
+
     return (
         <div className="min-h-screen text-white p-4 md:p-8"
             style={{
@@ -548,6 +560,7 @@ const DriverDashboard = () => {
                         </h1>
                         <p className="text-gray-500 font-mono text-xs mt-1 tracking-wider">
                             SESSION · {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                            {azureUser && <span className="ml-3 text-cyan-400/60">· {azureUser}</span>}
                         </p>
                     </div>
 
@@ -568,6 +581,11 @@ const DriverDashboard = () => {
                             title="Reset Day">
                             <RotateCcw className="w-4 h-4" />
                         </button>
+                        <a href="/.auth/logout?post_logout_redirect_uri=/"
+                            className="p-2 rounded-xl border border-white/10 text-gray-600 hover:text-rose-400 hover:border-rose-500/30 transition-all flex items-center gap-1.5 text-xs font-mono"
+                            title="Sign Out">
+                            <LogOut className="w-4 h-4" />
+                        </a>
                     </div>
                 </header>
 
