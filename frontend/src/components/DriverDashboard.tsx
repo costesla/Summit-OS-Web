@@ -17,6 +17,7 @@ interface Trip {
     id: number;
     type: 'Uber' | 'Private';
     fare: number;
+    tip?: number;
     fees: number;
     insurance: number;
     otherFees: number;
@@ -40,6 +41,7 @@ interface Expenses {
 interface TripForm {
     type: 'Uber' | 'Private';
     fare: string;
+    tip: string;
     fees: string;
     insurance: string;
     otherFees: string;
@@ -448,7 +450,7 @@ const DriverDashboard = () => {
     const [trips, setTrips] = useState<Trip[]>([]);
     const [expenses, setExpenses] = useState<Expenses>({ fastfood: [], charging: [] });
     const [tripForm, setTripForm] = useState<TripForm>({
-        type: 'Uber', fare: '', fees: '', insurance: '', otherFees: '',
+        type: 'Uber', fare: '', tip: '', fees: '', insurance: '', otherFees: '',
     });
     const [expenseForm, setExpenseForm] = useState<ExpenseForm>({
         category: 'fastfood', amount: '', note: '',
@@ -458,7 +460,7 @@ const DriverDashboard = () => {
     const tripFormRef = useRef<HTMLDivElement>(null);
 
     const stats = useMemo(() => {
-        const totalEarnings = trips.reduce((sum, t) => sum + t.fare, 0);
+        const totalEarnings = trips.reduce((sum, t) => sum + t.fare + (t.tip || 0), 0);
         const totalFees = trips.reduce((sum, t) => sum + t.fees + t.insurance + t.otherFees, 0);
         const netEarnings = totalEarnings - totalFees;
         const foodTotal = expenses.fastfood.reduce((sum, e) => sum + e.amount, 0);
@@ -482,12 +484,13 @@ const DriverDashboard = () => {
             id: Date.now(),
             type: tripForm.type,
             fare: parseFloat(tripForm.fare) || 0,
+            tip: tripForm.type === 'Uber' ? (parseFloat(tripForm.tip) || 0) : undefined,
             fees: parseFloat(tripForm.fees) || 0,
             insurance: parseFloat(tripForm.insurance) || 0,
             otherFees: parseFloat(tripForm.otherFees) || 0,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         }, ...trips]);
-        setTripForm({ type: 'Uber', fare: '', fees: '', insurance: '', otherFees: '' });
+        setTripForm({ type: 'Uber', fare: '', tip: '', fees: '', insurance: '', otherFees: '' });
     };
 
     const addExpense = (e: React.FormEvent) => {
@@ -649,6 +652,13 @@ const DriverDashboard = () => {
                                     <input type="number" step="0.01" className={inputCls} value={tripForm.fare}
                                         onChange={(e) => setTripForm({ ...tripForm, fare: e.target.value })} placeholder="0.00" />
                                 </div>
+                                {tripForm.type === 'Uber' && (
+                                    <div>
+                                        <label className="text-[10px] font-bold text-emerald-500/80 uppercase tracking-[0.2em] font-mono mb-1 block">Tip ($) <span className="text-gray-600 normal-case tracking-normal">optional</span></label>
+                                        <input type="number" step="0.01" className={inputCls + ' focus:border-emerald-500/50 focus:shadow-[0_0_15px_rgba(16,185,129,0.15)]'} value={tripForm.tip}
+                                            onChange={(e) => setTripForm({ ...tripForm, tip: e.target.value })} placeholder="0.00" />
+                                    </div>
+                                )}
                                 <div className="grid grid-cols-3 gap-2">
                                     {[{ key: 'fees', label: 'Fees' }, { key: 'insurance', label: 'Insur.' }, { key: 'otherFees', label: 'Other' }].map(({ key, label }) => (
                                         <div key={key}>
@@ -746,7 +756,10 @@ const DriverDashboard = () => {
                                                                 </div>
                                                             </div>
                                                         </td>
-                                                        <td className="px-5 py-4 text-right font-mono text-gray-300">${trip.fare.toFixed(2)}</td>
+                                                        <td className="px-5 py-4 text-right font-mono text-gray-300">
+                                                            ${trip.fare.toFixed(2)}
+                                                            {trip.tip ? <span className="ml-1.5 text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">+${trip.tip.toFixed(2)} tip</span> : null}
+                                                        </td>
                                                         <td className="px-5 py-4 text-right font-mono text-rose-400 text-xs">{deducted > 0 ? `-$${deducted.toFixed(2)}` : '—'}</td>
                                                         <td className="px-5 py-4 text-right">
                                                             <span className="text-sm font-black text-cyan-400" style={{ textShadow: '0 0 10px rgba(0,242,255,0.4)' }}>${net.toFixed(2)}</span>
