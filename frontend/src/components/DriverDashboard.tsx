@@ -531,18 +531,30 @@ const TessieChargesPanel = ({ onImport }: { onImport: (charge: TessieCharge) => 
 };
 
 const DriverDashboard = () => {
-    const [trips, setTrips] = useState<Trip[]>([]);
-    const [expenses, setExpenses] = useState<Expenses>({ fastfood: [], charging: [] });
+    const [trips, setTrips] = useState<Trip[]>(() => {
+        try { return JSON.parse(localStorage.getItem('cos_trips') ?? '[]'); } catch { return []; }
+    });
+    const [expenses, setExpenses] = useState<Expenses>(() => {
+        try { return JSON.parse(localStorage.getItem('cos_expenses') ?? 'null') ?? { fastfood: [], charging: [] }; } catch { return { fastfood: [], charging: [] }; }
+    });
     const [tripForm, setTripForm] = useState<TripForm>({
         type: 'Uber', fare: '', tip: '', fees: '', insurance: '', otherFees: '',
     });
     const [expenseForm, setExpenseForm] = useState<ExpenseForm>({
         category: 'fastfood', amount: '', note: '',
     });
-    const [sessionStart] = useState<Date>(new Date());
+    const [sessionStart] = useState<Date>(() => {
+        const saved = localStorage.getItem('cos_session_start');
+        if (!saved) { const d = new Date(); localStorage.setItem('cos_session_start', d.toISOString()); return d; }
+        return new Date(saved);
+    });
     const [showResetConfirm, setShowResetConfirm] = useState(false);
     const tripFormRef = useRef<HTMLDivElement>(null);
     const expenseFormRef = useRef<HTMLDivElement>(null);
+
+    // ── Persist to localStorage on every change ──────────────────────────────
+    useEffect(() => { localStorage.setItem('cos_trips', JSON.stringify(trips)); }, [trips]);
+    useEffect(() => { localStorage.setItem('cos_expenses', JSON.stringify(expenses)); }, [expenses]);
 
     const stats = useMemo(() => {
         const totalEarnings = trips.reduce((sum, t) => sum + t.fare + (t.tip || 0), 0);
@@ -596,7 +608,12 @@ const DriverDashboard = () => {
     const deleteTrip = (id: number) => setTrips(trips.filter((t) => t.id !== id));
     const deleteExpense = (cat: keyof Expenses, id: number) =>
         setExpenses((prev) => ({ ...prev, [cat]: prev[cat].filter((e) => e.id !== id) }));
-    const resetSession = () => { setTrips([]); setExpenses({ fastfood: [], charging: [] }); setShowResetConfirm(false); };
+    const resetSession = () => {
+        localStorage.removeItem('cos_trips');
+        localStorage.removeItem('cos_expenses');
+        localStorage.removeItem('cos_session_start');
+        setTrips([]); setExpenses({ fastfood: [], charging: [] }); setShowResetConfirm(false);
+    };
 
     /** Called from TessieDrivesPanel — pre-fill the trip form and scroll to it */
     const handleImportDrive = (drive: TessieDrive) => {
