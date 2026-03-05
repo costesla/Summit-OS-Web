@@ -458,27 +458,33 @@ const TessieDrivesPanel = ({
 };
 
 // ─── Main Component ──────────────────────────────────────────────────────────
-const TessieChargesPanel = ({ onImport }: { onImport: (charge: TessieCharge) => void }) => {
-    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Denver' });
+const TessieChargesPanel = ({ onImport, selectedDate }: { onImport: (charge: TessieCharge) => void, selectedDate: string }) => {
     const [charges, setCharges] = useState<TessieCharge[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
     const [importedIds, setImportedIds] = useState<Set<string>>(new Set());
 
     useEffect(() => {
+        setLoading(true);
         const fetchCharges = async () => {
             try {
-                const resp = await fetch(`${AZURE_BASE}/copilot/tessie/charges?days=2`, {
+                // Calculate days to fetch based on selectedDate vs today
+                const todayDate = new Date();
+                const targetDate = new Date(selectedDate + 'T12:00:00');
+                const diffMs = todayDate.getTime() - targetDate.getTime();
+                const daysBack = Math.max(1, Math.ceil(diffMs / 86_400_000) + 1);
+
+                const resp = await fetch(`${AZURE_BASE}/copilot/tessie/charges?days=${daysBack}`, {
                     signal: AbortSignal.timeout(12_000),
                 });
                 const data = resp.ok ? await resp.json() : { sessions: [] };
-                const filtered = ((data.sessions ?? []) as TessieCharge[]).filter((c) => c.date === today);
+                const filtered = ((data.sessions ?? []) as TessieCharge[]).filter((c) => c.date === selectedDate);
                 setCharges(filtered);
                 setError(false);
             } catch { setError(true); } finally { setLoading(false); }
         };
         fetchCharges();
-    }, [today]);
+    }, [selectedDate]);
 
     const handleImport = (charge: TessieCharge) => {
         onImport(charge);
@@ -492,12 +498,12 @@ const TessieChargesPanel = ({ onImport }: { onImport: (charge: TessieCharge) => 
             <div className="p-5 border-b border-white/8 flex items-center gap-2">
                 <Zap className="w-4 h-4 text-amber-400" />
                 <h2 className="font-bold text-white">Tessie Charging Sessions</h2>
-                <span className="text-[10px] font-mono text-gray-600 ml-2 uppercase tracking-wider">{today}</span>
+                <span className="text-[10px] font-mono text-gray-600 ml-2 uppercase tracking-wider">{selectedDate}</span>
             </div>
             <div className="divide-y divide-white/5">
                 {loading && <div className="p-10 text-center animate-pulse"><div className="h-2 w-48 bg-gray-800 rounded-full mx-auto mb-3" /><div className="h-2 w-32 bg-gray-800 rounded-full mx-auto" /></div>}
                 {!loading && error && <div className="p-8 text-center text-gray-600 font-mono text-xs flex items-center justify-center gap-2"><WifiOff className="w-4 h-4" /> Unable to load charging sessions</div>}
-                {!loading && !error && charges.length === 0 && <div className="p-8 text-center text-gray-700 font-mono text-xs italic">// no charging sessions found for today</div>}
+                {!loading && !error && charges.length === 0 && <div className="p-8 text-center text-gray-700 font-mono text-xs italic">// no charging sessions found for {selectedDate}</div>}
                 {!loading && !error && charges.map((charge) => {
                     const key = charge.tessie_charge_id ?? `${charge.date}-${charge.time_mst}`;
                     const imported = importedIds.has(key ?? '');
@@ -576,6 +582,11 @@ const DriverDashboard = () => {
             profit, uberCount: uberTrips, privateCount: privateTrips, hourlyRate,
         };
     }, [trips, expenses, sessionStart]);
+
+    const [selectedDate, setSelectedDate] = useState(() => {
+        if (typeof window === 'undefined') return '2026-03-05';
+        return new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Denver' });
+    });
 
     const addTrip = (e: React.FormEvent) => {
         e.preventDefault();
@@ -676,9 +687,15 @@ const DriverDashboard = () => {
                             <Navigation className="text-cyan-400 w-7 h-7" />
                             Driver Dashboard
                         </h1>
-                        <p className="text-gray-500 font-mono text-xs mt-1 tracking-wider">
-                            SESSION · {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                            {azureUser && <span className="ml-3 text-cyan-400/60">· {azureUser}</span>}
+                        <p className="text-gray-500 font-mono text-xs mt-1 tracking-wider flex items-center gap-3">
+                            <span>SESSION</span>
+                            <input
+                                type="date"
+                                value={selectedDate}
+                                onChange={(e) => { if (e.target.value) setSelectedDate(e.target.value); }}
+                                className="bg-transparent border-none text-cyan-400 font-bold focus:outline-none cursor-pointer"
+                            />
+                            {azureUser && <span className="text-cyan-400/60">· {azureUser}</span>}
                         </p>
                     </div>
 
@@ -931,14 +948,14 @@ const DriverDashboard = () => {
                                     onDelete={(id) => deleteExpense('charging', id)} accentColor="text-amber-400" />
 
                                 {/* ── Tessie Charging Sessions ── */}
-                                <TessieChargesPanel onImport={handleImportCharge} />
+                                <TessieChargesPanel onImport={handleImportCharge} selectedDate={selectedDate} />
                             </div>
                         </div>
                     </div>
                 </div>
 
                 {/* ── Tessie Drives Panel (full width) ── */}
-                <TessieDrivesPanel onImport={handleImportDrive} />
+                <TessieDrivesPanel onImport={handleImportDrive} selectedDate={selectedDate} />
 
                 {/* Footer */}
                 <div className="text-center pt-2 pb-6">
