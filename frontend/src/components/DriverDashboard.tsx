@@ -77,6 +77,18 @@ interface TessieDrive {
     ending_battery: number | null;
 }
 
+interface TessieCharge {
+    tessie_charge_id: string | null;
+    date: string | null;
+    time_mst: string | null;
+    energy_added_kwh: number;
+    starting_soc: number | null;
+    ending_soc: number | null;
+    duration_minutes: number | null;
+    location: string | null;
+    charge_type: string | null;
+}
+
 // ─── Sub-components ─────────────────────────────────────────────────────────
 
 const StatCard = ({
@@ -446,6 +458,78 @@ const TessieDrivesPanel = ({
 };
 
 // ─── Main Component ──────────────────────────────────────────────────────────
+const TessieChargesPanel = ({ onImport }: { onImport: (charge: TessieCharge) => void }) => {
+    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Denver' });
+    const [charges, setCharges] = useState<TessieCharge[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
+    const [importedIds, setImportedIds] = useState<Set<string>>(new Set());
+
+    useEffect(() => {
+        const fetchCharges = async () => {
+            try {
+                const resp = await fetch(`${AZURE_BASE}/copilot/tessie/charges?days=2`, {
+                    signal: AbortSignal.timeout(12_000),
+                });
+                const data = resp.ok ? await resp.json() : { sessions: [] };
+                const filtered = ((data.sessions ?? []) as TessieCharge[]).filter((c) => c.date === today);
+                setCharges(filtered);
+                setError(false);
+            } catch { setError(true); } finally { setLoading(false); }
+        };
+        fetchCharges();
+    }, [today]);
+
+    const handleImport = (charge: TessieCharge) => {
+        onImport(charge);
+        const key = charge.tessie_charge_id ?? `${charge.date}-${charge.time_mst}`;
+        setImportedIds((prev) => new Set(prev).add(key ?? ''));
+    };
+
+    return (
+        <div className="rounded-2xl border border-white/8 overflow-hidden"
+            style={{ background: 'rgba(255,255,255,0.02)', backdropFilter: 'blur(16px)' }}>
+            <div className="p-5 border-b border-white/8 flex items-center gap-2">
+                <Zap className="w-4 h-4 text-amber-400" />
+                <h2 className="font-bold text-white">Tessie Charging Sessions</h2>
+                <span className="text-[10px] font-mono text-gray-600 ml-2 uppercase tracking-wider">{today}</span>
+            </div>
+            <div className="divide-y divide-white/5">
+                {loading && <div className="p-10 text-center animate-pulse"><div className="h-2 w-48 bg-gray-800 rounded-full mx-auto mb-3" /><div className="h-2 w-32 bg-gray-800 rounded-full mx-auto" /></div>}
+                {!loading && error && <div className="p-8 text-center text-gray-600 font-mono text-xs flex items-center justify-center gap-2"><WifiOff className="w-4 h-4" /> Unable to load charging sessions</div>}
+                {!loading && !error && charges.length === 0 && <div className="p-8 text-center text-gray-700 font-mono text-xs italic">// no charging sessions found for today</div>}
+                {!loading && !error && charges.map((charge) => {
+                    const key = charge.tessie_charge_id ?? `${charge.date}-${charge.time_mst}`;
+                    const imported = importedIds.has(key ?? '');
+                    return (
+                        <div key={key} className="flex items-center justify-between p-4 hover:bg-white/3 transition-colors">
+                            <div className="flex items-center gap-4">
+                                <div className="p-2 rounded-xl bg-amber-500/10"><BatteryCharging className="w-4 h-4 text-amber-400" /></div>
+                                <div>
+                                    <p className="text-sm font-bold text-white">
+                                        {charge.energy_added_kwh.toFixed(1)} kWh added
+                                        {charge.duration_minutes ? <span className="font-normal text-gray-500 text-xs ml-2">· {charge.duration_minutes.toFixed(0)} min</span> : null}
+                                    </p>
+                                    <p className="text-[10px] text-gray-600 font-mono">
+                                        {charge.time_mst ?? '—'}{charge.location ? ` · ${charge.location}` : ''}{charge.charge_type ? ` · ${charge.charge_type}` : ''}
+                                    </p>
+                                    {charge.starting_soc != null && charge.ending_soc != null && (
+                                        <p className="text-[10px] font-mono text-amber-500/60 mt-0.5">🔋 {charge.starting_soc}% → {charge.ending_soc}%</p>
+                                    )}
+                                </div>
+                            </div>
+                            <button onClick={() => handleImport(charge)} disabled={imported}
+                                className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition-all ${imported ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10 cursor-default' : 'border-amber-500/30 text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 hover:border-amber-500/50'}`}>
+                                {imported ? <><span className="text-emerald-400">✓</span> Imported</> : <><Download className="w-3 h-3 inline mr-1" />Import</>}
+                            </button>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+
 const DriverDashboard = () => {
     const [trips, setTrips] = useState<Trip[]>([]);
     const [expenses, setExpenses] = useState<Expenses>({ fastfood: [], charging: [] });
@@ -458,6 +542,7 @@ const DriverDashboard = () => {
     const [sessionStart] = useState<Date>(new Date());
     const [showResetConfirm, setShowResetConfirm] = useState(false);
     const tripFormRef = useRef<HTMLDivElement>(null);
+    const expenseFormRef = useRef<HTMLDivElement>(null);
 
     const stats = useMemo(() => {
         const totalEarnings = trips.reduce((sum, t) => sum + t.fare + (t.tip || 0), 0);
@@ -518,11 +603,21 @@ const DriverDashboard = () => {
         setTripForm({
             type: tagTripType(drive.tag),
             fare: '',
+            tip: '',
             fees: '',
             insurance: '',
             otherFees: '',
         });
         tripFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
+    const handleImportCharge = (charge: TessieCharge) => {
+        setExpenseForm({
+            category: 'charging',
+            amount: '',
+            note: `Tesla EV Charging – ${charge.energy_added_kwh.toFixed(1)} kWh${charge.location ? ` @ ${charge.location}` : ''}${charge.time_mst ? ` (${charge.time_mst})` : ''}`,
+        });
+        expenseFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
 
     const inputCls = 'w-full p-2.5 text-sm bg-black/30 border border-white/10 rounded-xl text-white placeholder-gray-600 font-mono focus:outline-none focus:border-cyan-500/50 focus:shadow-[0_0_15px_rgba(0,242,255,0.15)] transition-all';
@@ -678,7 +773,8 @@ const DriverDashboard = () => {
                         </div>
 
                         {/* Expense Entry */}
-                        <div className="p-6 rounded-2xl border border-white/8"
+                        <div ref={expenseFormRef}
+                            className="p-6 rounded-2xl border border-white/8"
                             style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(16px)' }}>
                             <h2 className="text-base font-bold mb-4 flex items-center gap-2 text-white">
                                 <Receipt className="w-4 h-4 text-rose-400" /> Log Expense
@@ -816,6 +912,9 @@ const DriverDashboard = () => {
 
                 {/* ── Tessie Drives Panel (full width) ── */}
                 <TessieDrivesPanel onImport={handleImportDrive} />
+
+                {/* ── Tessie Charges Panel (full width) ── */}
+                <TessieChargesPanel onImport={handleImportCharge} />
 
                 {/* Footer */}
                 <div className="text-center pt-2 pb-6">
