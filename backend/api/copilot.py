@@ -67,8 +67,9 @@ def sanitize_location(location_name):
     if not location_name: return "Unknown"
     return location_name
 
-@bp.route(route="copilot/trips/latest", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+@bp.route(route="copilot/trips/latest", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def copilot_trips_latest(req: func.HttpRequest) -> func.HttpResponse:
+    if req.method == "OPTIONS": return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
     if not check_rate_limit(req):
         return func.HttpResponse(json.dumps({"error": "Rate limit exceeded"}), status_code=429)
 
@@ -131,8 +132,9 @@ def copilot_trip_detail(req: func.HttpRequest) -> func.HttpResponse:
         logging.error(f"Copilot API Error: {e}")
         return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500)
 
-@bp.route(route="copilot/metrics/daily", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+@bp.route(route="copilot/metrics/daily", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def copilot_metrics_daily(req: func.HttpRequest) -> func.HttpResponse:
+    if req.method == "OPTIONS": return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
     if not check_rate_limit(req):
         return func.HttpResponse(json.dumps({"error": "Rate limit exceeded"}), status_code=429)
 
@@ -162,8 +164,9 @@ def copilot_metrics_daily(req: func.HttpRequest) -> func.HttpResponse:
         logging.error(f"Copilot API Error: {e}")
         return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500)
 
-@bp.route(route="copilot/metrics/summary", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+@bp.route(route="copilot/metrics/summary", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def copilot_metrics_summary(req: func.HttpRequest) -> func.HttpResponse:
+    if req.method == "OPTIONS": return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
     if not check_rate_limit(req):
         return func.HttpResponse(json.dumps({"error": "Rate limit exceeded"}), status_code=429)
 
@@ -365,8 +368,9 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500)
 
 
-@bp.route(route="copilot/tessie/charges", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+@bp.route(route="copilot/tessie/charges", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def copilot_tessie_charges(req: func.HttpRequest) -> func.HttpResponse:
+    if req.method == "OPTIONS": return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
     """
     Returns historical charging sessions from the Tessie API.
     Supports: days=30, month=2026-02
@@ -426,8 +430,9 @@ def copilot_tessie_charges(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500)
 
 
-@bp.route(route="copilot/tessie/summary", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+@bp.route(route="copilot/tessie/summary", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def copilot_tessie_summary(req: func.HttpRequest) -> func.HttpResponse:
+    if req.method == "OPTIONS": return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
     """
     Returns aggregated driving stats from the Tessie API for a period.
     Supports: days=30, month=2026-02

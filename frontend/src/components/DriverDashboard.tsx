@@ -299,8 +299,9 @@ const TessieDrivesPanel = ({
                 const daysBack = Math.max(1, Math.ceil(diffMs / 86_400_000) + 1);
                 const results = await Promise.all(
                     TAG_FILTERS.map((tag) =>
-                        fetch(`${AZURE_BASE}/copilot/tessie/drives?tag=${tag}&days=${daysBack}`, {
+                        fetch(`${AZURE_BASE}/copilot/tessie/drives?tag=${tag}&days=${daysBack}&t=${Date.now()}`, {
                             signal: AbortSignal.timeout(12_000),
+                            cache: 'no-store'
                         })
                             .then((r) => (r.ok ? r.json() : { drives: [] }))
                             .then((d) => (d.drives ?? []) as TessieDrive[])
@@ -471,8 +472,9 @@ const TessieChargesPanel = ({ onImport, selectedDate }: { onImport: (charge: Tes
                 const diffMs = todayDate.getTime() - targetDate.getTime();
                 const daysBack = Math.max(1, Math.ceil(diffMs / 86_400_000) + 1);
 
-                const resp = await fetch(`${AZURE_BASE}/copilot/tessie/charges?days=${daysBack}`, {
+                const resp = await fetch(`${AZURE_BASE}/copilot/tessie/charges?days=${daysBack}&t=${Date.now()}`, {
                     signal: AbortSignal.timeout(12_000),
+                    cache: 'no-store'
                 });
                 const data = resp.ok ? await resp.json() : { sessions: [] };
                 const filtered = ((data.sessions ?? []) as TessieCharge[]).filter((c) => c.date === selectedDate);
