@@ -278,14 +278,15 @@ const tagTripType = (tag: string | null): 'Uber' | 'Private' => {
 // ─── Tessie Drives Panel ─────────────────────────────────────────────────────
 const TessieDrivesPanel = ({
     onImport,
+    selectedDate
 }: {
     onImport: (drive: TessieDrive) => void;
+    selectedDate: string;
 }) => {
     const [drives, setDrives] = useState<TessieDrive[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
     const [importedIds, setImportedIds] = useState<Set<string>>(new Set());
-    const [selectedDate, setSelectedDate] = useState('2026-03-02');
 
     useEffect(() => {
         setLoading(true);
@@ -351,12 +352,8 @@ const TessieDrivesPanel = ({
                     <h2 className="font-bold text-white">Tessie Drives</h2>
                 </div>
                 <div className="flex items-center gap-3 flex-wrap">
-                    <input
-                        type="date"
-                        value={selectedDate}
-                        onChange={(e) => { if (e.target.value) setSelectedDate(e.target.value); }}
-                        className="text-xs font-mono bg-black/40 border border-white/12 text-cyan-400 rounded-xl px-3 py-1.5 focus:outline-none focus:border-cyan-500/50 cursor-pointer"
-                    />
+                    {/* The date picker is now managed globally in the header */}
+                    <span className="text-[10px] font-mono text-gray-600 uppercase tracking-wider">{selectedDate}</span>
                     {TAG_FILTERS.map((t) => (
                         <span key={t} className={`text-[10px] font-bold px-2 py-0.5 rounded-full border font-mono uppercase tracking-wider ${tagStyle(t)}`}>
                             {t}
