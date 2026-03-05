@@ -532,9 +532,11 @@ const TessieChargesPanel = ({ onImport }: { onImport: (charge: TessieCharge) => 
 
 const DriverDashboard = () => {
     const [trips, setTrips] = useState<Trip[]>(() => {
+        if (typeof window === 'undefined') return [];
         try { return JSON.parse(localStorage.getItem('cos_trips') ?? '[]'); } catch { return []; }
     });
     const [expenses, setExpenses] = useState<Expenses>(() => {
+        if (typeof window === 'undefined') return { fastfood: [], charging: [] };
         try { return JSON.parse(localStorage.getItem('cos_expenses') ?? 'null') ?? { fastfood: [], charging: [] }; } catch { return { fastfood: [], charging: [] }; }
     });
     const [tripForm, setTripForm] = useState<TripForm>({
@@ -544,6 +546,7 @@ const DriverDashboard = () => {
         category: 'fastfood', amount: '', note: '',
     });
     const [sessionStart] = useState<Date>(() => {
+        if (typeof window === 'undefined') return new Date();
         const saved = localStorage.getItem('cos_session_start');
         if (!saved) { const d = new Date(); localStorage.setItem('cos_session_start', d.toISOString()); return d; }
         return new Date(saved);
@@ -920,18 +923,22 @@ const DriverDashboard = () => {
                             <ExpenseList title="Food Expenses" data={expenses.fastfood}
                                 icon={<Utensils className="w-4 h-4 text-rose-400" />}
                                 onDelete={(id) => deleteExpense('fastfood', id)} accentColor="text-rose-400" />
-                            <ExpenseList title="Charging Log" data={expenses.charging}
-                                icon={<Zap className="w-4 h-4 text-amber-400" />}
-                                onDelete={(id) => deleteExpense('charging', id)} accentColor="text-amber-400" />
+
+                            {/* Charging Records Column */}
+                            <div className="space-y-5">
+                                <ExpenseList title="Charging Log" data={expenses.charging}
+                                    icon={<Zap className="w-4 h-4 text-amber-400" />}
+                                    onDelete={(id) => deleteExpense('charging', id)} accentColor="text-amber-400" />
+
+                                {/* ── Tessie Charging Sessions ── */}
+                                <TessieChargesPanel onImport={handleImportCharge} />
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 {/* ── Tessie Drives Panel (full width) ── */}
                 <TessieDrivesPanel onImport={handleImportDrive} />
-
-                {/* ── Tessie Charges Panel (full width) ── */}
-                <TessieChargesPanel onImport={handleImportCharge} />
 
                 {/* Footer */}
                 <div className="text-center pt-2 pb-6">
