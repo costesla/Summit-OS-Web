@@ -157,8 +157,8 @@ export default function CalendarBooking({
         setError(null);
 
         try {
-            // 1. Call custom NextJS route to generate Stripe Checkout URL
-            const bookingResponse = await fetch("/api/create-checkout-session", {
+            // 1. Call Python Azure Function to generate Stripe Checkout URL
+            const bookingResponse = await fetch("https://summitos-api.azurewebsites.net/api/create-checkout-session", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -172,6 +172,8 @@ export default function CalendarBooking({
                     passengers,
                     tripDistance,
                     tripDuration,
+                    successUrl: `${window.location.origin}/book/success?session_id={CHECKOUT_SESSION_ID}`,
+                    cancelUrl: `${window.location.origin}/book?payment_cancelled=true`
                 }),
             });
 
