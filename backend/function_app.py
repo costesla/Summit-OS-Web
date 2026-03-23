@@ -21,6 +21,7 @@ def ping_root(req: func.HttpRequest) -> func.HttpResponse:
 # Robust Blueprint Registration
 blueprints = [
     "api.pricing",
+    "api.checkout",
     "api.ocr",
     "api.bookings",
     "api.tessie",

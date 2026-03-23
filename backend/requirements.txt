@@ -11,3 +11,4 @@ googlemaps>=4.10.0
 pytz
 openai
 pydantic
+stripe>=8.6.0
