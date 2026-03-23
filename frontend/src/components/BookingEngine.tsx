@@ -63,7 +63,10 @@ export default function BookingEngine() {
 
     // Auto-Calculate Quote when inputs change
     useEffect(() => {
-        if (!pickup || !dropoff || pickup.length < 10 || dropoff.length < 10) {
+        const isSingleInvalid = quoteType === 'single' && (!pickup || !dropoff || pickup.length < 10 || dropoff.length < 10);
+        const isBundleInvalid = quoteType === 'bundle' && (!pickup || pickup.length < 10);
+
+        if (isSingleInvalid || isBundleInvalid) {
             setQuote(null);
             return;
         }
@@ -72,9 +75,22 @@ export default function BookingEngine() {
             setLoading(true);
             setToastMessage(null); // Clear previous errors
             try {
-
-
-
+                // If it's a bundle and they didn't provide a dropoff, default to $100 flat rate locally
+                if (quoteType === 'bundle' && (!dropoff || dropoff.length < 10)) {
+                    setQuote({
+                        baseFare: 100.0,
+                        overage: 0,
+                        deadheadFee: 0,
+                        stopFee: 0,
+                        tellerFee: 0,
+                        waitFee: 0,
+                        total: 100.0,
+                        distance: 0,
+                        time: 0
+                    });
+                    setLoading(false);
+                    return;
+                }
 
                 // Direct fetch to Azure Function Backend
                 const res = await fetch('https://summitos-api.azurewebsites.net/api/quote', {
@@ -287,8 +303,11 @@ export default function BookingEngine() {
                         </button>
                     )}
 
-                    <div className="relative group pt-2">
-                        <label className="text-xs font-bold text-gray-500 tracking-widest uppercase mb-2 block">Destination</label>
+                    {quoteType === 'single' && (
+                        <div className="relative group pt-2">
+                        <label className="text-xs font-bold text-gray-500 tracking-widest uppercase mb-2 block">
+                            {quoteType === 'bundle' ? "Destination (Optional)" : "Destination"}
+                        </label>
                         {isLoaded ? (
                             <Autocomplete
                                 onLoad={(autocomplete: google.maps.places.Autocomplete) => { dropoffAutocompleteRef.current = autocomplete; }}
@@ -306,7 +325,7 @@ export default function BookingEngine() {
                                     type="text"
                                     value={dropoff}
                                     onChange={e => setDropoff(e.target.value)}
-                                    placeholder="e.g., 1 Lake Ave, Colorado Springs"
+                                    placeholder={quoteType === 'bundle' ? "e.g., As Directed (Optional)" : "e.g., 1 Lake Ave, Colorado Springs"}
                                     className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-cyan-500 transition-colors text-lg"
                                 />
                             </Autocomplete>
@@ -315,11 +334,12 @@ export default function BookingEngine() {
                                 type="text"
                                 value={dropoff}
                                 onChange={e => setDropoff(e.target.value)}
-                                placeholder="e.g., 1194 Magnolia St"
+                                placeholder={quoteType === 'bundle' ? "e.g., As Directed (Optional)" : "e.g., 1194 Magnolia St"}
                                 className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-cyan-500 transition-colors text-lg"
                             />
-                        )}
-                    </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* --- LAYOVER / WAIT TIME --- */}
                     <div className="pt-6 border-t border-white/10">
@@ -554,7 +574,7 @@ export default function BookingEngine() {
                                     customerPhone={phone}
                                     passengers={passengers}
                                     pickup={quote?.debug?.origin || pickup}
-                                    dropoff={quote?.debug?.destination || dropoff}
+                                    dropoff={(quote?.debug?.destination || dropoff) || "As Directed (All-Day Bundle)"}
                                     price={quote ? `$${quote.total.toFixed(2)}` : '$0.00'}
                                     tripDistance={quote?.distance?.toFixed(1) || undefined}
                                     tripDuration={quote?.time?.toString() || undefined}
