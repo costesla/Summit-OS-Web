@@ -306,7 +306,7 @@ export default function BookingEngine() {
                     {quoteType === 'single' && (
                         <div className="relative group pt-2">
                         <label className="text-xs font-bold text-gray-500 tracking-widest uppercase mb-2 block">
-                            {quoteType === 'bundle' ? "Destination (Optional)" : "Destination"}
+                            Destination
                         </label>
                         {isLoaded ? (
                             <Autocomplete
@@ -325,7 +325,7 @@ export default function BookingEngine() {
                                     type="text"
                                     value={dropoff}
                                     onChange={e => setDropoff(e.target.value)}
-                                    placeholder={quoteType === 'bundle' ? "e.g., As Directed (Optional)" : "e.g., 1 Lake Ave, Colorado Springs"}
+                                    placeholder="e.g., 1 Lake Ave, Colorado Springs"
                                     className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-cyan-500 transition-colors text-lg"
                                 />
                             </Autocomplete>
@@ -334,7 +334,7 @@ export default function BookingEngine() {
                                 type="text"
                                 value={dropoff}
                                 onChange={e => setDropoff(e.target.value)}
-                                placeholder={quoteType === 'bundle' ? "e.g., As Directed (Optional)" : "e.g., 1194 Magnolia St"}
+                                placeholder="e.g., 1194 Magnolia St"
                                 className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-cyan-500 transition-colors text-lg"
                             />
                             )}
