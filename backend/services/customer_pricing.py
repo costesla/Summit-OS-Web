@@ -13,12 +13,11 @@ class CustomerPricingProfile:
     
     # Grandfathered customers with custom pricing
     GRANDFATHERED_CUSTOMERS = {
-        # Esmeralda - Flat $20/trip until March 1, 2026
+        # Esmeralda - Flat $30/trip permanently grandfathered
         "esmii.lopez@hotmail.com": {
             "name": "Esmeralda",
-            "pricing_tier": "legacy_flat_20",
-            "expires": "2026-03-01",
-            "notes": "Flat $20/trip - migrates to regular pricing March 1, 2026"
+            "pricing_tier": "flat_30",
+            "notes": "Flat $30/trip - grandfathered"
         },
         
         # Jacquelyn - Flat $20/trip until March 1, 2026
@@ -37,6 +36,10 @@ class CustomerPricingProfile:
             "rate_per_mile": 1.75,
             "free_miles": 5.0,
             "description": "Standard pricing v3.0 (2026)"
+        },
+        "flat_30": {
+            "flat_rate": 30.00,
+            "description": "Legacy flat $30/trip (Grandfathered)"
         },
         "legacy_flat_20": {
             "flat_rate": 20.00,

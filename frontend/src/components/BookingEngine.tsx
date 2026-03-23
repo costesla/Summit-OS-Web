@@ -106,7 +106,8 @@ export default function BookingEngine() {
                         returnStops: returnStops.filter(s => s.trim()),
                         layoverHours: parseFloat(layoverHours.toString()) || 0,
                         waitTimeHours: parseFloat(waitTimeHours.toString()) || 0,
-                        quoteType
+                        quoteType,
+                        email: email.trim()
                     })
                 });
                 if (!res.ok) {
@@ -149,7 +150,7 @@ export default function BookingEngine() {
         const timeout = setTimeout(fetchQuote, 500); // Debounce
         return () => clearTimeout(timeout);
 
-    }, [pickup, dropoff, stops, returnStops, tripType, layoverHours, waitTimeHours, quoteType]);
+    }, [pickup, dropoff, stops, returnStops, tripType, layoverHours, waitTimeHours, quoteType, email]);
 
     const addStop = () => { if (stops.length < 5) setStops([...stops, ""]); };
     const updateStop = (index: number, val: string) => { const newStops = [...stops]; newStops[index] = val; setStops(newStops); };
