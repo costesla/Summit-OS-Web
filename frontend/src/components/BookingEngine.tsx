@@ -362,10 +362,17 @@ export default function BookingEngine() {
                                 </div>
                             </div>
                         ) : (
-                            <div className="p-4 rounded-xl bg-cyan-900/20 border border-cyan-500/20">
-                                <span className="text-cyan-200 text-sm font-bold flex items-center gap-2">
-                                    <Clock size={16} /> Dedicated On-Call status included (up to 8 hours)
-                                </span>
+                            <div className="flex flex-col gap-2">
+                                <div className="p-4 rounded-xl bg-cyan-900/20 border border-cyan-500/20">
+                                    <span className="text-cyan-200 text-sm font-bold flex items-center gap-2">
+                                        <Clock size={16} /> Dedicated On-Call status included (up to 8 hours)
+                                    </span>
+                                </div>
+                                <div className="p-3 rounded-lg border border-red-500/30 bg-red-500/10">
+                                    <span className="text-red-200 text-xs font-medium">
+                                        <strong>⚠️ Disclaimer:</strong> Valid ONLY within El Paso County. For trips extending beyond county lines, please select the Single Trip (À La Carte) option.
+                                    </span>
+                                </div>
                             </div>
                         )}
                     </div>
