@@ -1,0 +1,57 @@
+import os
+import sys
+import requests
+import json
+from dotenv import load_dotenv
+
+env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../.env'))
+load_dotenv(env_path)
+
+def patch_lead_time():
+    tenant_id = os.environ.get("OAUTH_TENANT_ID")
+    client_id = os.environ.get("OAUTH_CLIENT_ID")
+    client_secret = os.environ.get("OAUTH_CLIENT_SECRET")
+    business_id = os.environ.get("MS_BOOKINGS_BUSINESS_ID", "SummitOS@costesla.com")
+
+    # Get Token
+    token_url = f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
+    token_data = {
+        "client_id": client_id,
+        "scope": "https://graph.microsoft.com/.default",
+        "client_secret": client_secret,
+        "grant_type": "client_credentials"
+    }
+    token = requests.post(token_url, data=token_data).json().get("access_token")
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+
+    # Fetch Services
+    s_url = f"https://graph.microsoft.com/v1.0/solutions/bookingBusinesses/{business_id}/services"
+    services = requests.get(s_url, headers=headers).json().get("value", [])
+    polaris = next((s for s in services if "Polaris" in s.get("displayName", "")), None)
+    
+    if not polaris:
+        print("Service not found.")
+        return
+
+    service_id = polaris['id']
+    print(f"Patching Service ID: {service_id}")
+
+    update_payload = {
+        "schedulingPolicy": {
+            "timeSlotInterval": "PT30M",
+            "minimumLeadTime": "PT0S",
+            "maximumAdvance": "P365D",
+            "allowStaffSelection": False
+        }
+    }
+    
+    update_url = f"https://graph.microsoft.com/v1.0/solutions/bookingBusinesses/{business_id}/services/{service_id}"
+    patch_resp = requests.patch(update_url, headers=headers, json=update_payload)
+    
+    if patch_resp.ok:
+        print("SUCCESS! Lead time set to 0 seconds.")
+    else:
+        print(f"FAILED: {patch_resp.text}")
+
+if __name__ == "__main__":
+    patch_lead_time()

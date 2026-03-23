@@ -68,3 +68,40 @@ export function calculateTripPrice(params: TripParams): PriceBreakdown {
     };
 }
 
+/**
+ * Daily Exclusivity Bundle
+ * Option to add a $100 flat-rate bundle that includes the first 50 miles.
+ */
+export function calculateBundlePrice(params: TripParams): PriceBreakdown {
+    const { distanceMiles, stops, isTellerCounty } = params;
+
+    // 1. Base & Distance Fare
+    const BUNDLE_PRICE = 100.00;
+    const RATE_PER_MILE = 1.75;
+    const FREE_MILES = 50.0;
+
+    const billableMiles = Math.max(0, distanceMiles - FREE_MILES);
+    const mileageCharge = billableMiles * RATE_PER_MILE;
+
+    // 2. Extra Fees
+    // Teller fee still applies? I'll assume standard routing rules apply but base is 100.
+    const tellerFee = isTellerCounty ? 15.00 : 0;
+    // Disabling stop fees since local trips are unlimited on-call for 8 hours
+    const stopFee = 0; 
+    const deadheadFee = 0;
+    const waitFee = 0; // Wait time is included up to 8 hours
+
+    // 3. Total
+    const total = BUNDLE_PRICE + mileageCharge + tellerFee;
+
+    return {
+        baseFare: Number(BUNDLE_PRICE.toFixed(2)),
+        overage: Number(mileageCharge.toFixed(2)),
+        deadheadFee: Number(deadheadFee.toFixed(2)),
+        stopFee: Number(stopFee.toFixed(2)),
+        tellerFee: Number(tellerFee.toFixed(2)),
+        waitFee: Number(waitFee.toFixed(2)),
+        total: Number(total.toFixed(2))
+    };
+}
+

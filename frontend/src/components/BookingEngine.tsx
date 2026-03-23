@@ -26,6 +26,7 @@ export default function BookingEngine() {
         libraries
     });
 
+    const [quoteType, setQuoteType] = useState<'single' | 'bundle'>('single');
     const [tripType, setTripType] = useState<'one-way' | 'round-trip'>('one-way');
 
     const [pickup, setPickup] = useState("");
@@ -45,8 +46,8 @@ export default function BookingEngine() {
     const [returnStops, setReturnStops] = useState<string[]>([]);
     const [layoverHours, setLayoverHours] = useState(0);
 
-    // Old Wait Time Toggle (Keep for One-Way, disable for Round Trip if Layover used)
-    const [waitTime, setWaitTime] = useState(false);
+    // Wait Time (Single Trip)
+    const [waitTimeHours, setWaitTimeHours] = useState(0);
 
     const [quote, setQuote] = useState<PriceBreakdown | null>(null);
     const [loading, setLoading] = useState(false);
@@ -88,7 +89,8 @@ export default function BookingEngine() {
                         stops: stops.filter(s => s.trim()),
                         returnStops: returnStops.filter(s => s.trim()),
                         layoverHours: parseFloat(layoverHours.toString()) || 0,
-                        simpleWaitTime: waitTime // For one-way
+                        waitTimeHours: parseFloat(waitTimeHours.toString()) || 0,
+                        quoteType
                     })
                 });
                 if (!res.ok) {
@@ -131,7 +133,7 @@ export default function BookingEngine() {
         const timeout = setTimeout(fetchQuote, 500); // Debounce
         return () => clearTimeout(timeout);
 
-    }, [pickup, dropoff, stops, returnStops, tripType, layoverHours, waitTime]);
+    }, [pickup, dropoff, stops, returnStops, tripType, layoverHours, waitTimeHours, quoteType]);
 
     const addStop = () => { if (stops.length < 5) setStops([...stops, ""]); };
     const updateStop = (index: number, val: string) => { const newStops = [...stops]; newStops[index] = val; setStops(newStops); };
@@ -175,22 +177,51 @@ export default function BookingEngine() {
                     <p className="text-cyan-600/60 text-[10px] tracking-widest uppercase font-mono mt-1">Powered by SummitOS</p>
                 </div>
 
-                {/* Trip Type Toggle */}
-                <div className="bg-white/10 p-1 rounded-xl flex">
-                    <button
-                        onClick={() => setTripType('one-way')}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${tripType === 'one-way' ? 'bg-white text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
-                    >
-                        One Way
-                    </button>
-                    <button
-                        onClick={() => setTripType('round-trip')}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${tripType === 'round-trip' ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-500/20' : 'text-gray-400 hover:text-white'}`}
-                    >
-                        Round Trip
-                    </button>
+                {/* Pricing Type Toggle */}
+                <div className="flex flex-col items-end gap-2">
+                    <div className="bg-white/10 p-1 rounded-xl flex">
+                        <button
+                            onClick={() => setQuoteType('single')}
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${quoteType === 'single' ? 'bg-white text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            Single Trip (Fairness Engine)
+                        </button>
+                        <button
+                            onClick={() => setQuoteType('bundle')}
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${quoteType === 'bundle' ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-500/20' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            All-Day Bundle ($100)
+                        </button>
+                    </div>
                 </div>
             </div>
+
+            {/* Disclaimer Messaging */}
+            <div className="mb-6 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg text-center">
+                <p className="text-blue-200 text-xs font-medium tracking-wide">
+                    Standardized rates for State Regulation compliance. No surge pricing. Ever.
+                </p>
+            </div>
+
+            {/* Trip Type Toggle (Leg 2 control) */}
+            {quoteType === 'single' && (
+                <div className="flex justify-end mb-6">
+                    <div className="bg-white/5 p-1 rounded-lg flex border border-white/10">
+                        <button
+                            onClick={() => setTripType('one-way')}
+                            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${tripType === 'one-way' ? 'bg-white/20 text-white' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            One Way
+                        </button>
+                        <button
+                            onClick={() => setTripType('round-trip')}
+                            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${tripType === 'round-trip' ? 'bg-white/20 text-white' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            Round Trip
+                        </button>
+                    </div>
+                </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
 
@@ -311,22 +342,36 @@ export default function BookingEngine() {
                                     <span className="text-gray-400 text-sm">Hours @ $20/hr</span>
                                 </div>
                             </div>
+                        ) : quoteType === 'single' ? (
+                            <div className="animate-in fade-in slide-in-from-top-4 duration-300 bg-white/5 p-4 rounded-xl border border-white/10">
+                                <label className="flex items-center gap-3 mb-3">
+                                    <Clock size={16} className="text-cyan-400" />
+                                    <span className="text-sm font-bold text-cyan-100 uppercase tracking-widest">Driver Wait Time</span>
+                                </label>
+                                <div className="flex gap-4 items-center">
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="24"
+                                        step="0.5"
+                                        value={waitTimeHours}
+                                        onChange={e => setWaitTimeHours(parseFloat(e.target.value) || 0)}
+                                        className="w-20 bg-black/30 border border-cyan-500/30 rounded-lg p-2 text-center text-white font-mono text-lg focus:border-cyan-500 focus:outline-none"
+                                    />
+                                    <span className="text-gray-400 text-sm">Hours @ $20/hr</span>
+                                </div>
+                            </div>
                         ) : (
-                            <label className="flex items-center gap-4 cursor-pointer group">
-                                <div className={`w-6 h-6 rounded border ${waitTime ? 'bg-cyan-600 border-cyan-600' : 'border-gray-500 group-hover:border-white'} flex items-center justify-center transition-colors`}>
-                                    {waitTime && <Clock size={16} className="text-white" />}
-                                </div>
-                                <input type="checkbox" className="hidden" checked={waitTime} onChange={e => setWaitTime(e.target.checked)} />
-                                <div>
-                                    <span className={`block font-medium ${waitTime ? 'text-white' : 'text-gray-400'} transition-colors`}>Request Driver Wait Time</span>
-                                    <span className="text-xs text-gray-500 block">+ $20.00 / hour</span>
-                                </div>
-                            </label>
+                            <div className="p-4 rounded-xl bg-cyan-900/20 border border-cyan-500/20">
+                                <span className="text-cyan-200 text-sm font-bold flex items-center gap-2">
+                                    <Clock size={16} /> Dedicated On-Call status included (up to 8 hours)
+                                </span>
+                            </div>
                         )}
                     </div>
 
                     {/* --- LEG 2 (Round Trip Only) --- */}
-                    {tripType === 'round-trip' && (
+                    {tripType === 'round-trip' && quoteType === 'single' && (
                         <div className="pt-6 border-t border-white/10 animate-in fade-in slide-in-from-top-10 duration-500">
                             <div className="flex items-center gap-2 mb-4">
                                 <div className="h-6 w-1 bg-cyan-600 rounded-full"></div>
@@ -379,10 +424,10 @@ export default function BookingEngine() {
                             </div>
                         )}
 
-                        {/* Round Trip Badge Overlay */}
-                        {tripType === 'round-trip' && (
+                        {/* Round Trip/Bundle Badge Overlay */}
+                        {(tripType === 'round-trip' || quoteType === 'bundle') && (
                             <div className="absolute bottom-2 right-2 bg-cyan-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg uppercase tracking-widest z-10">
-                                Round Trip Active
+                                {quoteType === 'bundle' ? 'Bundle Active' : 'Round Trip Active'}
                             </div>
                         )}
 
