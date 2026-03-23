@@ -12,6 +12,31 @@ security:
   - oauth2: []
 
 paths:
+  /semantic-search:
+    get:
+      summary: Semantic Search
+      description: Search trips using natural language queries (e.g., "starbucks runs", "airport trips last week").
+      operationId: searchTripsSemantically
+      parameters:
+        - name: query
+          in: query
+          required: true
+          description: Natural language search query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Max results to return (default 5)
+          schema:
+            type: integer
+            default: 5
+      responses:
+        '200':
+          description: Successful search response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SemanticSearchResponse'
   /copilot/trips/latest:
     get:
       summary: Get recent trips
@@ -123,6 +148,44 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/VehicleStatusResponse'
+
+  /copilot/tessie/drives:
+    get:
+      summary: Search Tessie drives by tag
+      description: >-
+        Query the live Tessie API for vehicle drives, optionally filtered by a tag keyword
+        (e.g. "Jackie", "Esmeralda", "Uber"). Supports filtering by a rolling day window
+        or a specific calendar month. Use this to answer questions like
+        "How many Jackie trips did I have this month?" or
+        "Show me all Esmeralda pickups in February".
+      operationId: getTessieDrivesByTag
+      parameters:
+        - name: tag
+          in: query
+          required: false
+          description: Keyword to filter drives by tag (case-insensitive). E.g. "Jackie", "Esmeralda".
+          schema:
+            type: string
+        - name: days
+          in: query
+          required: false
+          description: Look-back window in days (default 30). Ignored if month is specified.
+          schema:
+            type: integer
+            default: 30
+        - name: month
+          in: query
+          required: false
+          description: Target calendar month in YYYY-MM format (e.g. 2026-02). Overrides days.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TessieDrivesResponse'
 
 components:
   securitySchemes:
@@ -273,3 +336,73 @@ components:
             location:
               type: string
               description: City-level location only
+
+    SemanticSearchResponse:
+      type: object
+      required: [count, results]
+      properties:
+        count:
+          type: integer
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              score:
+                type: number
+              summary:
+                type: string
+              date:
+                type: string
+              amount:
+                type: number
+              classification:
+                type: string
+              source:
+                type: string
+
+    TessieDrivesResponse:
+      type: object
+      required: [count, drives]
+      properties:
+        success:
+          type: boolean
+        tag_filter:
+          type: string
+          nullable: true
+        count:
+          type: integer
+          description: Number of matching drives found
+        drives:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                description: Date of the drive in YYYY-MM-DD format (MST)
+              time_mst:
+                type: string
+                description: Start time of the drive in HH:MM format (MST)
+              tag:
+                type: string
+                nullable: true
+                description: Tessie tag label assigned to this drive
+              distance_miles:
+                type: number
+                description: Distance driven in miles
+              start:
+                type: string
+                description: Full starting address
+              end:
+                type: string
+                description: Full ending address
+              starting_battery:
+                type: integer
+                description: Battery percentage at start of drive
+              ending_battery:
+                type: integer
+                description: Battery percentage at end of drive
+              tessie_drive_id:
+                type: integer
+                description: Internal Tessie drive ID

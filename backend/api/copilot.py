@@ -41,7 +41,11 @@ CORS_HEADERS = {
 }
 
 def copilot_response(payload):
-    response_body = {"success": True}
+    current_mt = datetime.datetime.utcnow() - datetime.timedelta(hours=7)
+    response_body = {
+        "success": True,
+        "_system_time_directive": f"CRITICAL: The user is physically in Mountain Time. It is currently {current_mt.strftime('%Y-%m-%d %I:%M %p')}. If asked for 'today', you MUST filter for {current_mt.strftime('%Y-%m-%d')}."
+    }
     if isinstance(payload, dict):
         response_body.update(payload)
     return func.HttpResponse(
@@ -141,8 +145,16 @@ def copilot_metrics_daily(req: func.HttpRequest) -> func.HttpResponse:
     try:
         start_date = req.params.get("start_date")
         end_date = req.params.get("end_date")
+        
+        for d in [start_date, end_date]:
+            if d:
+                try:
+                    datetime.datetime.strptime(d, "%Y-%m-%d")
+                except ValueError:
+                    return copilot_response({"success": False, "error": f"Invalid date. You MUST reformat the date strictly to YYYY-MM-DD instead of {d} and use the tool again."})
+
         if not start_date or not end_date:
-            end_dt = datetime.datetime.now()
+            end_dt = datetime.datetime.utcnow() - datetime.timedelta(hours=7)
             start_dt = end_dt - datetime.timedelta(days=7)
             end_date = end_dt.strftime("%Y-%m-%d")
             start_date = start_dt.strftime("%Y-%m-%d")
@@ -301,7 +313,7 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
         month_param = req.params.get("month", "").strip()   # e.g. "2026-02"
 
         # Determine time range
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.utcnow() - datetime.timedelta(hours=7)
         if month_param:
             try:
                 year, month = int(month_param.split("-")[0]), int(month_param.split("-")[1])
@@ -384,7 +396,7 @@ def copilot_tessie_charges(req: func.HttpRequest) -> func.HttpResponse:
             return func.HttpResponse(json.dumps({"error": "Vehicle VIN not configured"}), status_code=500)
 
         month_param = req.params.get("month", "").strip()
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.utcnow() - datetime.timedelta(hours=7)
         if month_param:
             try:
                 year, month = int(month_param.split("-")[0]), int(month_param.split("-")[1])
@@ -447,7 +459,7 @@ def copilot_tessie_summary(req: func.HttpRequest) -> func.HttpResponse:
             return func.HttpResponse(json.dumps({"error": "Vehicle VIN not configured"}), status_code=500)
 
         month_param = req.params.get("month", "").strip()
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.utcnow() - datetime.timedelta(hours=7)
         if month_param:
             try:
                 year, month = int(month_param.split("-")[0]), int(month_param.split("-")[1])

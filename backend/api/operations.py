@@ -138,9 +138,17 @@ def status(req: func.HttpRequest) -> func.HttpResponse:
             evt_start = normalize_to_denver(start_str)
             evt_end = normalize_to_denver(end_str)
             
-            # Subject
+            # Subject and All-Day status
             subject = event.get("subject", "Unavailable")
+            is_all_day = event.get("isAllDay", False)
+            show_as = event.get("showAs", "busy")
             
+            # Identify true outages: Explicitly Out of Office, OR All-Day manual blocks
+            is_true_outage = (show_as == "oof") or is_all_day
+            
+            if not is_true_outage:
+                continue
+
             # Check if "Now" is inside this event
             if evt_start <= now <= evt_end:
                 out_today = True

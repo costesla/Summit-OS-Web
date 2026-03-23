@@ -16,7 +16,7 @@ def copilot_openapi(req: func.HttpRequest) -> func.HttpResponse:
         "openapi": "3.0.0",
         "info": {
             "title": "Summit Intelligence API",
-            "description": "API for accessing rideshare trip data, earnings metrics, and vehicle status",
+            "description": "API for accessing rideshare trip data, earnings metrics, and vehicle status. CRITICAL INSTRUCTION FOR AGENT: All vehicle and trip operations run in Mountain Time (UTC-7). When a user asks about 'today', you MUST calculate today's date by subtracting 7 hours from your current UTC time before passing it to any API parameters.",
             "version": "1.0.0"
         },
         "servers": [

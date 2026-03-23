@@ -157,8 +157,8 @@ export default function CalendarBooking({
         setError(null);
 
         try {
-            // Create calendar booking
-            const bookingResponse = await fetch("https://summitos-api.azurewebsites.net/api/calendar-book", {
+            // 1. Call custom NextJS route to generate Stripe Checkout URL
+            const bookingResponse = await fetch("/api/create-checkout-session", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -168,66 +168,24 @@ export default function CalendarBooking({
                     pickup,
                     dropoff,
                     appointmentStart: selectedTime,
-                    duration: 60,
                     price,
                     passengers,
-                    paymentMethod: 'External' // Default to external for now
+                    tripDistance,
+                    tripDuration,
                 }),
             });
 
             const bookingData = await bookingResponse.json();
 
-            if (!bookingData.success) {
-                throw new Error(bookingData.error || "Failed to create booking");
+            if (bookingData.url) {
+                // Redirect user to Stripe secure page
+                window.location.href = bookingData.url;
+            } else {
+                throw new Error(bookingData.error || "Failed to initialize secure checkout session");
             }
-
-            // Log to SQL database for unified analytics
-            try {
-                await fetch("https://summitos-api.azurewebsites.net/api/log-private-trip", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        customerName,
-                        customerEmail,
-                        customerPhone,
-                        pickup,
-                        dropoff,
-                        fare: parseFloat(price.replace('$', '')),
-                        appointmentTime: selectedTime,
-                        calendarEventId: bookingData.eventId,
-                        passengers,
-                    }),
-                });
-            } catch (dbError) {
-                // Don't fail the booking if SQL logging fails
-                console.warn("Failed to log to database:", dbError);
-            }
-
-            // Send receipt email
-            await fetch("/api/book", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    name: customerName,
-                    email: customerEmail,
-                    phone: customerPhone,
-                    passengers,
-                    pickup,
-                    dropoff,
-                    price,
-                    appointmentStart: selectedTime,
-                    tripDetails: {
-                        dist: tripDistance || "N/A",
-                        time: tripDuration || "N/A",
-                    },
-                }),
-            });
-
-            onBookingComplete(bookingData.eventId);
         } catch (err: any) {
             setError(err.message);
-            console.error("Booking error:", err);
-        } finally {
+            console.error("Checkout redirect error:", err);
             setBooking(false);
         }
     };

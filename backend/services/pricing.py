@@ -82,6 +82,37 @@ class PricingEngine:
             pricing_type="standard",
             customer_tier="Standard pricing v3.0 (2026)"
         )
+        
+    @staticmethod
+    def calculate_bundle_price(
+        distance_miles: float,
+        is_teller_county: bool = False
+    ) -> Dict[str, Any]:
+        """
+        Daily Exclusivity Bundle logic: Flat $100 up to 50 miles. +$1.75/mi overage.
+        """
+        bundle_price = 100.00
+        free_miles = 50.0
+        rate_per_mile = 1.75
+        
+        billable_miles = max(0.0, distance_miles - free_miles)
+        mileage_charge = billable_miles * rate_per_mile
+        
+        teller_fee = 15.00 if is_teller_county else 0.0
+        
+        total = bundle_price + mileage_charge + teller_fee
+        
+        return {
+            "baseFare": round(bundle_price, 2),
+            "overage": round(mileage_charge, 2),
+            "deadheadFee": 0.0,
+            "stopFee": 0.0,
+            "tellerFee": round(teller_fee, 2),
+            "waitFee": 0.0,
+            "total": round(total, 2),
+            "pricing_type": "bundle",
+            "customer_tier": "Daily Exclusivity Bundle"
+        }
     
     @staticmethod
     def _calculate_tiered_price(

@@ -85,18 +85,29 @@ def quote(req: func.HttpRequest) -> func.HttpResponse:
                 
         layover_hours = float(req_body.get('layoverHours', 0))
         simple_wait_time = req_body.get('simpleWaitTime', False)
+        wait_time_hours_input = float(req_body.get('waitTimeHours', 0))
+        quote_type = req_body.get('quoteType', 'single')
         
         wait_hours = layover_hours
         if trip_type == 'one-way' and simple_wait_time:
             wait_hours = max(wait_hours, 1.0)
+            
+        wait_hours = max(wait_hours, wait_time_hours_input)
 
         pricing = PricingEngine()
-        quote_data = pricing.calculate_trip_price(
-            distance_miles=total_dist_miles,
-            stops_count=total_stops,
-            wait_time_hours=wait_hours,
-            customer_email=customer_email
-        )
+        
+        if quote_type == 'bundle':
+            quote_data = pricing.calculate_bundle_price(
+                distance_miles=total_dist_miles,
+                is_teller_county=False
+            )
+        else:
+            quote_data = pricing.calculate_trip_price(
+                distance_miles=total_dist_miles,
+                stops_count=total_stops,
+                wait_time_hours=wait_hours,
+                customer_email=customer_email
+            )
         
         quote_data["debug"] = {
             "duration": dur_text, 
