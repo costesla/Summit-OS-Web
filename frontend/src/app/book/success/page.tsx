@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 
-export default function BookingSuccessPage() {
+function SuccessContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const sessionId = searchParams.get('session_id');
@@ -87,5 +87,18 @@ export default function BookingSuccessPage() {
                 )}
             </div>
         </div>
+    );
+}
+
+export default function BookingSuccessPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 font-sans">
+                <Loader2 className="w-16 h-16 text-cyan-500 animate-spin mb-6" />
+                <h2 className="text-2xl font-bold tracking-tight">Loading Secure Connection...</h2>
+            </div>
+        }>
+            <SuccessContent />
+        </Suspense>
     );
 }
