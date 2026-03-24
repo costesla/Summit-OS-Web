@@ -22,6 +22,7 @@ def ping_root(req: func.HttpRequest) -> func.HttpResponse:
 blueprints = [
     "api.pricing",
     "api.checkout",
+    "api.finalize",
     "api.ocr",
     "api.bookings",
     "api.tessie",

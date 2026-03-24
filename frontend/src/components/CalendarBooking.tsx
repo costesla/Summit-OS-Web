@@ -150,14 +150,53 @@ export default function CalendarBooking({
         fetchSlots();
     }, [selectedDate]);
 
+    // Clients who pay via Venmo/Zelle and should bypass Stripe entirely
+    const VENMO_CLIENTS = new Set([
+        "jacquelyn.heslep@playaba.net",
+    ]);
+
     const handleBooking = async () => {
         if (!selectedTime) return;
 
         setBooking(true);
         setError(null);
 
+        // --- VENMO / OUT-OF-BAND PAYMENT BYPASS ---
+        if (VENMO_CLIENTS.has(customerEmail.toLowerCase().trim())) {
+            try {
+                const res = await fetch("https://summitos-api.azurewebsites.net/api/book", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        customerName,
+                        customerEmail,
+                        customerPhone,
+                        pickup,
+                        dropoff,
+                        appointmentStart: selectedTime,
+                        price,
+                        passengers,
+                        tripDistance,
+                        tripDuration,
+                        paymentMethod: "Venmo",
+                    }),
+                });
+                const data = await res.json();
+                if (data.success) {
+                    window.location.href = `/book/success?direct=true`;
+                } else {
+                    throw new Error(data.error || "Booking failed.");
+                }
+            } catch (err: any) {
+                setError(err.message);
+                console.error("Direct booking error:", err);
+                setBooking(false);
+            }
+            return;
+        }
+
+        // --- STANDARD STRIPE CHECKOUT ---
         try {
-            // 1. Call Python Azure Function to generate Stripe Checkout URL
             const bookingResponse = await fetch("https://summitos-api.azurewebsites.net/api/create-checkout-session", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -180,7 +219,6 @@ export default function CalendarBooking({
             const bookingData = await bookingResponse.json();
 
             if (bookingData.url) {
-                // Redirect user to Stripe secure page
                 window.location.href = bookingData.url;
             } else {
                 throw new Error(bookingData.error || "Failed to initialize secure checkout session");

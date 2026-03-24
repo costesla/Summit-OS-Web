@@ -20,7 +20,7 @@ class CustomerPricingProfile:
             "notes": "Flat $30/trip - grandfathered"
         },
         
-        # Jacquelyn - Flat $20/trip until March 1, 2026
+        # Jacquelyn - Flat $20/trip (expired), pays via Venmo
         "jacquelyn.heslep@playaba.net": {
             "name": "Jacquelyn",
             "pricing_tier": "legacy_flat_20",
@@ -28,6 +28,18 @@ class CustomerPricingProfile:
             "notes": "Flat $20/trip - migrates to regular pricing March 1, 2026"
         },
     }
+
+    # Clients who pay via Venmo/Zelle/Cash and should NEVER be sent to Stripe
+    VENMO_CLIENTS = {
+        "jacquelyn.heslep@playaba.net",
+    }
+
+    @classmethod
+    def is_venmo_client(cls, email: str) -> bool:
+        """Return True if this customer pays out-of-band (Venmo/Zelle/Cash) and must bypass Stripe."""
+        if not email:
+            return False
+        return email.lower().strip() in cls.VENMO_CLIENTS
     
     # Define pricing tiers
     PRICING_TIERS = {
