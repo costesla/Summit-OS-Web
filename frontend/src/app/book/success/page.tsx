@@ -13,6 +13,13 @@ function SuccessContent() {
     const [errorMsg, setErrorMsg] = useState('');
 
     useEffect(() => {
+        // Direct booking (Venmo/Zelle) — already confirmed server-side, just show success
+        const isDirect = searchParams.get('direct') === 'true';
+        if (isDirect) {
+            setStatus('success');
+            return;
+        }
+
         if (!sessionId) {
             setStatus('error');
             setErrorMsg('Invalid session identifier.');
@@ -21,7 +28,7 @@ function SuccessContent() {
 
         const finalize = async () => {
             try {
-                const res = await fetch('/api/finalize-booking', {
+                const res = await fetch('https://summitos-api.azurewebsites.net/api/finalize-booking', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ session_id: sessionId })
