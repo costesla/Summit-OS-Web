@@ -379,6 +379,149 @@ def copilot_openapi(req: func.HttpRequest) -> func.HttpResponse:
                         }
                     }
                 }
+            },
+            "/copilot/tessie/drives": {
+                "get": {
+                    "operationId": "getTessieDrives",
+                    "summary": "Get Tessie vehicle drives",
+                    "description": "Retrieve detailed Tesla drive logs including efficiency, Autopilot usage, and locations. Can be filtered by tag (e.g., 'Jackie') and date range.",
+                    "parameters": [
+                        {
+                            "name": "tag",
+                            "in": "query",
+                            "description": "Filter by Tessie tag (keyword match, e.g. 'Jackie', 'Esmeralda')",
+                            "required": False,
+                            "schema": {"type": "string"}
+                        },
+                        {
+                            "name": "days",
+                            "in": "query",
+                            "description": "Number of days to look back (default 30, max 365)",
+                            "required": False,
+                            "schema": {"type": "integer", "default": 30}
+                        },
+                        {
+                            "name": "month",
+                            "in": "query",
+                            "description": "Specific month filter (YYYY-MM)",
+                            "required": False,
+                            "schema": {"type": "string"}
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "List of drives",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "success": {"type": "boolean"},
+                                            "tag_filter": {"type": "string"},
+                                            "count": {"type": "integer"},
+                                            "drives": {
+                                                "type": "array",
+                                                "items": {"$ref": "#/components/schemas/TessieDrive"}
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "/copilot/tessie/charges": {
+                "get": {
+                    "operationId": "getTessieCharges",
+                    "summary": "Get Tessie vehicle charges",
+                    "description": "Retrieve historical Tesla charging sessions including location, energy added, and battery levels.",
+                    "parameters": [
+                        {
+                            "name": "days",
+                            "in": "query",
+                            "description": "Number of days to look back (default 30, max 365)",
+                            "required": False,
+                            "schema": {"type": "integer", "default": 30}
+                        },
+                        {
+                            "name": "month",
+                            "in": "query",
+                            "description": "Specific month filter (YYYY-MM)",
+                            "required": False,
+                            "schema": {"type": "string"}
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "List of charging sessions",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "success": {"type": "boolean"},
+                                            "count": {"type": "integer"},
+                                            "sessions": {
+                                                "type": "array",
+                                                "items": {"$ref": "#/components/schemas/TessieCharge"}
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "/copilot/tessie/summary": {
+                "get": {
+                    "operationId": "getTessieSummary",
+                    "summary": "Get Tessie driving summary",
+                    "description": "Get aggregated driving statistics (miles, autopilot, efficiency) for a period.",
+                    "parameters": [
+                        {
+                            "name": "days",
+                            "in": "query",
+                            "description": "Number of days to summarize (default 30, max 365)",
+                            "required": False,
+                            "schema": {"type": "integer", "default": 30}
+                        },
+                        {
+                            "name": "month",
+                            "in": "query",
+                            "description": "Specific month filter (YYYY-MM)",
+                            "required": False,
+                            "schema": {"type": "string"}
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "Tessie execution summary",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "success": {"type": "boolean"},
+                                            "period": {"type": "string"},
+                                            "total_drives": {"type": "integer"},
+                                            "total_miles": {"type": "number"},
+                                            "total_energy_used_kwh": {"type": "number"},
+                                            "total_energy_charged_kwh": {"type": "number"},
+                                            "charge_sessions": {"type": "integer"},
+                                            "average_speed_mph": {"type": "number"},
+                                            "max_speed_mph": {"type": "number"},
+                                            "autopilot_miles": {"type": "number"},
+                                            "autopilot_pct": {"type": "number"},
+                                            "efficiency_wh_mi": {"type": "number"}
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
         "components": {
@@ -451,6 +594,39 @@ def copilot_openapi(req: func.HttpRequest) -> func.HttpResponse:
                         "total_tips": {"$ref": "#/components/schemas/Currency"},
                         "total_distance": {"type": "number"},
                         "average_fare": {"$ref": "#/components/schemas/Currency"}
+                    }
+                },
+                "TessieDrive": {
+                    "type": "object",
+                    "properties": {
+                        "date": {"type": "string", "format": "date"},
+                        "time_mst": {"type": "string"},
+                        "tag": {"type": "string"},
+                        "distance_miles": {"type": "number"},
+                        "average_speed_mph": {"type": "number"},
+                        "max_speed_mph": {"type": "number"},
+                        "energy_used_kwh": {"type": "number"},
+                        "efficiency_wh_mi": {"type": "number"},
+                        "autopilot_miles": {"type": "number"},
+                        "start": {"type": "string"},
+                        "end": {"type": "string"},
+                        "starting_battery": {"type": "integer"},
+                        "ending_battery": {"type": "integer"},
+                        "tessie_drive_id": {"type": "string"}
+                    }
+                },
+                "TessieCharge": {
+                    "type": "object",
+                    "properties": {
+                        "date": {"type": "string", "format": "date"},
+                        "time_mst": {"type": "string"},
+                        "energy_added_kwh": {"type": "number"},
+                        "starting_soc": {"type": "integer"},
+                        "ending_soc": {"type": "integer"},
+                        "duration_minutes": {"type": "number"},
+                        "location": {"type": "string"},
+                        "charge_type": {"type": "string"},
+                        "tessie_charge_id": {"type": "string"}
                     }
                 }
             }
