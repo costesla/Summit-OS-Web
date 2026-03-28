@@ -604,6 +604,13 @@ def copilot_openapi(req: func.HttpRequest) -> func.HttpResponse:
                             "description": "Number of transactions to pull (default 50)",
                             "required": False,
                             "schema": {"type": "integer", "default": 50}
+                        },
+                        {
+                            "name": "since_date",
+                            "in": "query",
+                            "description": "Optional starting date (YYYY-MM-DD)",
+                            "required": False,
+                            "schema": {"type": "string", "format": "date"}
                         }
                     ],
                     "responses": {
