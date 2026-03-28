@@ -71,6 +71,27 @@ def sanitize_location(location_name):
     if not location_name: return "Unknown"
     return location_name
 
+def classify_drive(tag, location):
+    tag_lower = (tag or "").lower()
+    loc_lower = (location or "").lower()
+    
+    meals = ["ihop", "mcdonalds", "starbucks", "dunkin", "taco bell", "burger king", "wendy's", "subway", "chipotle", "panera", "carl's jr"]
+    maintenance = ["quickquack", "car wash", "supercharge", "service", "tesla service", "tire", "maintenance"]
+    
+    for m in meals:
+        if m in tag_lower or m in loc_lower:
+            return "Meal Stop"
+            
+    for maint in maintenance:
+        if maint in tag_lower or maint in loc_lower:
+            return "Maintenance/Operational"
+            
+    # If it has a specific mission tag, it's business
+    if tag and tag != "Uncategorized" and not any(m in tag_lower for m in meals + maintenance):
+         return "Business/Mission"
+         
+    return "Personal/Unclassified"
+
 @bp.route(route="copilot/trips/latest", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def copilot_trips_latest(req: func.HttpRequest) -> func.HttpResponse:
     if req.method == "OPTIONS": return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
@@ -394,10 +415,15 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
 
             efficiency = round((total_energy * 1000) / total_dist, 1) if total_dist > 0 else None
             
+            # Semantic Classification
+            base_tag_for_class = key.split("|")[1] if "|" in key else "Uncategorized"
+            classification = classify_drive(base_tag_for_class, last.get("ending_location"))
+
             processed.append({
                 "date": start_dt_mst.strftime("%Y-%m-%d") if start_dt_mst else None,
                 "time_mst": start_dt_mst.strftime("%H:%M") if start_dt_mst else None,
-                "tag": key.split("|")[1] if "|" in key else "Uncategorized",
+                "tag": base_tag_for_class,
+                "classification": classification,
                 "leg_count": len(drives),
                 "is_blended": len(drives) > 1,
                 "distance_miles": round(total_dist, 2),
