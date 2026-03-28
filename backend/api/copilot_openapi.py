@@ -602,6 +602,7 @@ def copilot_openapi(req: func.HttpRequest) -> func.HttpResponse:
                         "date": {"type": "string", "format": "date"},
                         "time_mst": {"type": "string"},
                         "tag": {"type": "string"},
+                        "classification": {"type": "string"},
                         "distance_miles": {"type": "number"},
                         "average_speed_mph": {"type": "number"},
                         "max_speed_mph": {"type": "number"},
