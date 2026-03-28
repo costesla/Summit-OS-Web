@@ -4,6 +4,7 @@ import azure.functions as func
 import os
 import datetime
 from services.banking import BankingClient
+from services.banking_sync import BankingSyncService
 
 bp = func.Blueprint()
 
@@ -76,4 +77,18 @@ def copilot_banking_transactions(req: func.HttpRequest) -> func.HttpResponse:
         return copilot_response({"count": len(formatted), "transactions": formatted})
     except Exception as e:
         logging.error(f"Banking API Error: {e}")
+        return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500)
+
+@bp.route(route="copilot/banking/sync", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+def copilot_banking_sync(req: func.HttpRequest) -> func.HttpResponse:
+    if req.method == "OPTIONS": return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
+    
+    try:
+        count = int(req.params.get("limit", 50))
+        sync_service = BankingSyncService()
+        result = sync_service.sync_recent(count=count)
+        
+        return copilot_response(result)
+    except Exception as e:
+        logging.error(f"Banking Sync API Error: {e}")
         return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500)
