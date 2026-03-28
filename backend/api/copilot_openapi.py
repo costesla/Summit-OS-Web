@@ -355,6 +355,7 @@ def copilot_openapi(req: func.HttpRequest) -> func.HttpResponse:
                         }
                     }
                 }
+            },
             "/copilot/artifacts/{artifact_id}/raw": {
                 "get": {
                     "operationId": "getArtifactRaw",
