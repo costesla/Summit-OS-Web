@@ -591,6 +591,39 @@ def copilot_openapi(req: func.HttpRequest) -> func.HttpResponse:
                         }
                     }
                 }
+            },
+            "/copilot/banking/sync": {
+                "post": {
+                    "operationId": "syncBankTransactions",
+                    "summary": "Synchronize and vectorize bank transactions",
+                    "description": "Pulls the latest transactions from Teller and ingests them into the Vector Store (System_Vectors). Use this when the user asks to 'reconcile' or 'refresh' their financial context.",
+                    "parameters": [
+                        {
+                            "name": "limit",
+                            "in": "query",
+                            "description": "Number of transactions to pull (default 50)",
+                            "required": False,
+                            "schema": {"type": "integer", "default": 50}
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "Sync result",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "success": {"type": "boolean"},
+                                            "transactions_processed": {"type": "integer"},
+                                            "transactions_vectorized": {"type": "integer"}
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
         "components": {
