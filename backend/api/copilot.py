@@ -337,42 +337,89 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
         tessie = TessieClient()
         raw_drives = tessie.get_tagged_drives(vin, from_ts, to_ts)
 
-        # Filter by tag keyword (case-insensitive)
+        # Grouping/Blending Logic
+        from collections import defaultdict
+        grouped = defaultdict(list)
+        
         tag_lower = tag_filter.lower()
-        filtered = []
         for d in raw_drives:
-            drive_tag = str(d.get("tag") or "")
-            if not tag_filter or tag_lower in drive_tag.lower():
-                start_ts = d.get("started_at", 0)
-                start_dt_mst = (datetime.datetime.utcfromtimestamp(start_ts) - datetime.timedelta(hours=7)) if start_ts else None
-                dist = round(float(d.get("odometer_distance") or 0), 2)
-                energy = round(float(d.get("energy_used") or 0), 2)
-                # Wh/mi efficiency (energy_used is kWh, convert to Wh)
-                efficiency = round((energy * 1000) / dist, 1) if dist > 0 else None
-                # Average speed in tessie is km/h — convert to mph
-                avg_speed_kph = d.get("average_speed") or 0
-                max_speed_kph = d.get("max_speed") or 0
-                filtered.append({
-                    "date": start_dt_mst.strftime("%Y-%m-%d") if start_dt_mst else None,
-                    "time_mst": start_dt_mst.strftime("%H:%M") if start_dt_mst else None,
-                    "tag": drive_tag or None,
-                    "distance_miles": dist,
-                    "average_speed_mph": round(avg_speed_kph * 0.621371, 1),
-                    "max_speed_mph": round(max_speed_kph * 0.621371, 1),
-                    "energy_used_kwh": energy,
-                    "efficiency_wh_mi": efficiency,
-                    "autopilot_miles": round(float(d.get("autopilot_distance") or 0), 2),
-                    "start": d.get("starting_location"),
-                    "end": d.get("ending_location"),
-                    "starting_battery": d.get("starting_battery"),
-                    "ending_battery": d.get("ending_battery"),
-                    "tessie_drive_id": d.get("id")
-                })
+            raw_tag = str(d.get("tag") or "Uncategorized")
+            # Filter if tag_filter is provided
+            if tag_filter and tag_lower not in raw_tag.lower():
+                continue
+                
+            # Create base_tag by stripping mission descriptors
+            base_tag = raw_tag
+            for suffix in [" en route", " drop off", " pickup", " arrival", " - en route", " - drop off"]:
+                 if suffix in base_tag.lower():
+                     idx = base_tag.lower().find(suffix)
+                     base_tag = base_tag[:idx]
+            
+            # Map start time to MST for date grouping (prevents midnight splits)
+            start_ts = d.get("started_at", 0)
+            start_dt_mst = (datetime.datetime.utcfromtimestamp(start_ts) - datetime.timedelta(hours=7)) if start_ts else None
+            date_str = start_dt_mst.strftime("%Y-%m-%d") if start_dt_mst else "Unknown"
+            
+            # Special Case: If tag was "Uncategorized", treat every drive as unique to avoid blending non-labeled drives
+            if raw_tag == "Uncategorized":
+                group_key = f"{d.get('id')}|Uncategorized"
+            else:
+                group_key = f"{date_str}|{base_tag.strip()}"
+                
+            grouped[group_key].append(d)
+
+        processed = []
+        for key, drives in grouped.items():
+            # Sort chronologically
+            drives.sort(key=lambda x: x.get("started_at", 0))
+            
+            first = drives[0]
+            last = drives[-1]
+            
+            total_dist = sum(float(d.get("odometer_distance") or 0) for d in drives)
+            total_energy = sum(float(d.get("energy_used") or 0) for d in drives)
+            total_autopilot = sum(float(d.get("autopilot_distance") or 0) for d in drives)
+            
+            # Calculate MST time for the mission start
+            start_ts = first.get("started_at", 0)
+            start_dt_mst = (datetime.datetime.utcfromtimestamp(start_ts) - datetime.timedelta(hours=7)) if start_ts else None
+            
+            # Aggregated Speeds
+            max_speed_kph = max((float(d.get("max_speed") or 0) for d in drives), default=0)
+            if total_dist > 0:
+                weighted_speed_sum = sum((float(d.get("average_speed") or 0) * float(d.get("odometer_distance") or 0)) for d in drives)
+                avg_speed_kph = weighted_speed_sum / total_dist
+            else:
+                avg_speed_kph = sum(float(d.get("average_speed") or 0) for d in drives) / len(drives)
+
+            efficiency = round((total_energy * 1000) / total_dist, 1) if total_dist > 0 else None
+            
+            processed.append({
+                "date": start_dt_mst.strftime("%Y-%m-%d") if start_dt_mst else None,
+                "time_mst": start_dt_mst.strftime("%H:%M") if start_dt_mst else None,
+                "tag": key.split("|")[1] if "|" in key else "Uncategorized",
+                "leg_count": len(drives),
+                "is_blended": len(drives) > 1,
+                "distance_miles": round(total_dist, 2),
+                "average_speed_mph": round(avg_speed_kph * 0.621371, 1),
+                "max_speed_mph": round(max_speed_kph * 0.621371, 1),
+                "energy_used_kwh": round(total_energy, 2),
+                "efficiency_wh_mi": efficiency,
+                "autopilot_miles": round(total_autopilot, 2),
+                "start": first.get("starting_location"),
+                "end": last.get("ending_location"),
+                "starting_battery": first.get("starting_battery"),
+                "ending_battery": last.get("ending_battery"),
+                "tessie_drive_id": first.get("id")
+            })
+
+        # Sort by most recent first
+        processed.sort(key=lambda x: (x['date'], x['time_mst']), reverse=True)
 
         return copilot_response({
             "tag_filter": tag_filter or None,
-            "count": len(filtered),
-            "drives": filtered
+            "count": len(processed),
+            "drives": processed
         })
 
     except Exception as e:
