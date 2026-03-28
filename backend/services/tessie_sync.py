@@ -20,10 +20,10 @@ class TessieSyncService:
     def sync_day(self, target_date: str = None) -> Dict[str, Any]:
         """
         Synchronizes all drives and charging sessions for a specific date (YYYY-MM-DD).
-        Defaults to 'yesterday'.
+        Defaults to 'today'.
         """
         if not target_date:
-            target_date = (datetime.now(self.mdt) - timedelta(days=1)).strftime('%Y-%m-%d')
+            target_date = datetime.now(self.mdt).strftime('%Y-%m-%d')
         
         log.info(f"Starting Tessie Sync for {target_date}...")
         

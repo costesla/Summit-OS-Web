@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from .banking import BankingClient
 from .semantic_ingestion import SemanticIngestionService
 
@@ -10,13 +11,20 @@ class BankingSyncService:
     def sync_recent(self, count=50):
         """
         Pulls latest transactions and vectorizes them for semantic search.
+        Filters for 'today moving forward' as requested.
         """
         try:
-            logging.info(f"Starting Banking Sync (last {count} transactions)...")
+            today_str = datetime.now().strftime('%Y-%m-%d')
+            logging.info(f"Starting Banking Sync (last {count} transactions, since {today_str})...")
             transactions = self.banking.get_transactions(count=count)
             
             synced_count = 0
             for tx in transactions:
+                # Filter for today moving forward
+                tx_date = tx.get('date')
+                if tx_date and tx_date < today_str:
+                    continue
+                    
                 success = self.semantic.ingest_teller_transaction(tx)
                 if success:
                     synced_count += 1
