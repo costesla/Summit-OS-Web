@@ -75,8 +75,9 @@ def classify_drive(tag, location):
     tag_lower = (tag or "").lower()
     loc_lower = (location or "").lower()
     
-    meals = ["ihop", "mcdonalds", "starbucks", "dunkin", "taco bell", "burger king", "wendy's", "subway", "chipotle", "panera", "carl's jr"]
-    maintenance = ["quickquack", "car wash", "supercharge", "service", "tesla service", "tire", "maintenance"]
+    meals = ["ihop", "mcdonalds", "starbucks", "dunkin", "taco bell", "burger king", "wendy's", "subway", "chipotle", "panera", "carl's jr", "dutch bros", "coffee", "grocery", "king soopers", "safeway", "walmart"]
+    maintenance = ["quickquack", "car wash", "supercharge", "service", "tesla service", "tire", "maintenance", "autozone"]
+    personal = ["park", "gym", "museum", "home", "residence", "private"]
     
     for m in meals:
         if m in tag_lower or m in loc_lower:
@@ -85,12 +86,16 @@ def classify_drive(tag, location):
     for maint in maintenance:
         if maint in tag_lower or maint in loc_lower:
             return "Maintenance/Operational"
+
+    for p in personal:
+        if p in tag_lower or p in loc_lower:
+            return "Personal"
             
     # If it has a specific mission tag, it's business
-    if tag and tag != "Uncategorized" and not any(m in tag_lower for m in meals + maintenance):
+    if tag and tag != "Uncategorized":
          return "Business/Mission"
          
-    return "Personal/Unclassified"
+    return "Personal"
 
 @bp.route(route="copilot/trips/latest", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def copilot_trips_latest(req: func.HttpRequest) -> func.HttpResponse:
