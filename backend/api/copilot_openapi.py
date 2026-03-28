@@ -612,6 +612,7 @@ def copilot_openapi(req: func.HttpRequest) -> func.HttpResponse:
                         "transaction_id": {"type": "string"},
                         "date": {"type": "string", "format": "date"},
                         "description": {"type": "string"},
+                        "counterparty": {"type": "string"},
                         "amount": {"type": "number"},
                         "type": {"type": "string"},
                         "status": {"type": "string"},

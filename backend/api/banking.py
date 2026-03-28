@@ -66,6 +66,7 @@ def copilot_banking_transactions(req: func.HttpRequest) -> func.HttpResponse:
                 "transaction_id": t.get("id"),
                 "date": t.get("date"),
                 "description": t.get("description"),
+                "counterparty": t.get("details", {}).get("counterparty", {}).get("name") or t.get("description"),
                 "amount": float(t.get("amount") or 0),
                 "type": t.get("type"),
                 "status": t.get("status"),
