@@ -85,8 +85,9 @@ def copilot_banking_sync(req: func.HttpRequest) -> func.HttpResponse:
     
     try:
         count = int(req.params.get("limit", 50))
+        since_date = req.params.get("since_date")
         sync_service = BankingSyncService()
-        result = sync_service.sync_recent(count=count)
+        result = sync_service.sync_recent(count=count, since_date=since_date)
         
         return copilot_response(result)
     except Exception as e:
