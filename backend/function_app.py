@@ -29,12 +29,14 @@ blueprints = [
     "api.reports",
     "api.copilot",
     "api.copilot_openapi",
+    "api.banking",
     "api.health",
     "api.operations",
     "api.diag_drivers",
     "api.timer_reports",
     "api.cabin",
-    "api.weather"
+    "api.weather",
+    "api.automation"
 ]
 
 registration_logs = []

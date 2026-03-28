@@ -522,10 +522,102 @@ def copilot_openapi(req: func.HttpRequest) -> func.HttpResponse:
                         }
                     }
                 }
+            },
+            "/copilot/banking/accounts": {
+                "get": {
+                    "operationId": "getBankAccounts",
+                    "summary": "List connected bank accounts",
+                    "description": "Returns a list of connected financial accounts (Chase, etc.) via Teller. Use this to identify where operational expenses or earnings are settled.",
+                    "responses": {
+                        "200": {
+                            "description": "List of bank accounts",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "success": {"type": "boolean"},
+                                            "accounts": {
+                                                "type": "array",
+                                                "items": {"$ref": "#/components/schemas/BankAccount"}
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "/copilot/banking/transactions": {
+                "get": {
+                    "operationId": "getBankTransactions",
+                    "summary": "Get recent bank transactions",
+                    "description": "Retrieve recent financial activities for a specific account. Use this to reconcile driving missions with actual payments (e.g. Starbucks, McDonalds, Maintenance).",
+                    "parameters": [
+                        {
+                            "name": "account_id",
+                            "in": "query",
+                            "description": "The Teller Account ID (if omitted, uses default)",
+                            "required": False,
+                            "schema": {"type": "string"}
+                        },
+                        {
+                            "name": "limit",
+                            "in": "query",
+                            "description": "Number of transactions to return (default 20)",
+                            "required": False,
+                            "schema": {"type": "integer", "default": 20}
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "List of transactions",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "success": {"type": "boolean"},
+                                            "count": {"type": "integer"},
+                                            "transactions": {
+                                                "type": "array",
+                                                "items": {"$ref": "#/components/schemas/BankTransaction"}
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
         "components": {
             "schemas": {
+                "BankAccount": {
+                    "type": "object",
+                    "properties": {
+                        "account_id": {"type": "string"},
+                        "name": {"type": "string"},
+                        "type": {"type": "string"},
+                        "subtype": {"type": "string"},
+                        "currency": {"type": "string"},
+                        "institution": {"type": "string"}
+                    }
+                },
+                "BankTransaction": {
+                    "type": "object",
+                    "properties": {
+                        "transaction_id": {"type": "string"},
+                        "date": {"type": "string", "format": "date"},
+                        "description": {"type": "string"},
+                        "amount": {"type": "number"},
+                        "type": {"type": "string"},
+                        "status": {"type": "string"},
+                        "category": {"type": "string"}
+                    }
+                },
                 "SearchResult": {
                     "type": "object",
                     "properties": {
