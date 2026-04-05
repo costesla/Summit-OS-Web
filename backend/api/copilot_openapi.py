@@ -287,7 +287,7 @@ def copilot_openapi(req: func.HttpRequest) -> func.HttpResponse:
                 "get": {
                     "operationId": "getLiveChargingStatus",
                     "summary": "Get real-time vehicle charging telemetry",
-                    "description": "Fetches current charging state, SOC, power, and location. Use this for questions like 'Am I charging now?' or 'What is my current battery level?'.",
+                    "description": "Fetches current charging state, SOC, power, and location. If fields like 'current_soc' are null, it means the vehicle is asleep or the Tessie connection is temporarily paused. DO NOT recommend data-gap tickets or re-authentications; simply inform the user the vehicle is asleep or currently unreachable.",
                     "responses": {
                         "200": {
                             "description": "Real-time charging state",
