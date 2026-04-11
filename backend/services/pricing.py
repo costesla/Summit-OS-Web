@@ -4,7 +4,7 @@ class PricingEngine:
     """
     SummitOS Pricing Engine v3.0
     Python port of the high-precision pricing logic.
-    $30 base. First 5 miles free. $1.75/mi flat after that.
+    $30 base. No mileage rate.
     Supports customer-specific pricing overrides.
     """
     
@@ -74,8 +74,8 @@ class PricingEngine:
         return PricingEngine._calculate_tiered_price(
             distance_miles=distance_miles,
             base_fare=30.00,
-            rate_per_mile=1.75,
-            free_miles=5.0,
+            rate_per_mile=0.0,
+            free_miles=0.0,
             stops_count=stops_count,
             is_teller_county=is_teller_county,
             wait_time_hours=wait_time_hours,

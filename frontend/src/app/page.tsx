@@ -226,19 +226,11 @@ export default function Home() {
           <div className="bg-[#0f0f0f] rounded-[3rem] p-12 border border-white/10 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 blur-[100px] rounded-full pointer-events-none" />
 
-            <h3 className="text-3xl font-bold mb-8">Fairness Engine v3.0</h3>
+            <h3 className="text-3xl font-bold mb-8">Fairness Engine v4.0</h3>
             <div className="space-y-8">
               <div className="flex items-center justify-between border-b border-white/5 pb-4">
                 <span className="text-gray-400">Base Engagement</span>
                 <span className="text-2xl font-bold">$30.00</span>
-              </div>
-              <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                <span className="text-gray-400">First 5 Miles</span>
-                <span className="text-2xl font-bold text-cyan-400">FREE</span>
-              </div>
-              <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                <span className="text-gray-400">Every Mile After</span>
-                <span className="text-2xl font-bold">$1.75<span className="text-sm text-gray-600 font-normal">/mi</span></span>
               </div>
             </div>
             <p className="mt-8 text-xs text-gray-500 font-mono">
