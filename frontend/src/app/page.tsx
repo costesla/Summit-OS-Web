@@ -233,9 +233,9 @@ export default function Home() {
                 <span className="text-2xl font-bold">$30.00</span>
               </div>
             </div>
-            <p className="mt-8 text-xs text-gray-500 font-mono">
-              *PRICING CALCULATED VIA GOOGLE DISTANCE MATRIX API.
-              NO SURGE PRICING. EVER.
+            <p className="mt-8 text-xs text-gray-400 font-mono">
+              *$30 FLAT FEE IS VALID ONLY WITHIN EL PASO COUNTY, COLORADO. ANYTHING BEYOND THIS RANGE WILL INCLUDE $1.75/MILE.<br /><br />
+              *PRICING CALCULATED VIA GOOGLE DISTANCE MATRIX API. NO SURGE PRICING. EVER.
             </p>
           </div>
 
