@@ -94,6 +94,21 @@ def quote(req: func.HttpRequest) -> func.HttpResponse:
             
         wait_hours = max(wait_hours, wait_time_hours_input)
 
+        # Determine if out of county
+        origin_lower = actual_origin.lower()
+        dest_lower = actual_dest.lower()
+        
+        el_paso_cities = [
+            "colorado springs", "monument", "manitou springs", "fountain", 
+            "peyton", "falcon", "calhan", "ramah", "green mountain falls", 
+            "palmer lake", "cascade", "chipita park", "usaf academy", 
+            "schriever", "peterson", "fort carson", "el paso county"
+        ]
+        
+        is_origin_local = any(city in origin_lower for city in el_paso_cities)
+        is_dest_local = any(city in dest_lower for city in el_paso_cities)
+        is_out_of_county = not (is_origin_local and is_dest_local)
+
         pricing = PricingEngine()
         
         if quote_type == 'bundle':
@@ -106,7 +121,8 @@ def quote(req: func.HttpRequest) -> func.HttpResponse:
                 distance_miles=total_dist_miles,
                 stops_count=total_stops,
                 wait_time_hours=wait_hours,
-                customer_email=customer_email
+                customer_email=customer_email,
+                is_out_of_county=is_out_of_county
             )
         
         quote_data["debug"] = {

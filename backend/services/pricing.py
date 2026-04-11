@@ -14,7 +14,8 @@ class PricingEngine:
         stops_count: int = 0,
         is_teller_county: bool = False,
         wait_time_hours: float = 0.0,
-        customer_email: Optional[str] = None
+        customer_email: Optional[str] = None,
+        is_out_of_county: bool = False
     ) -> Dict[str, Any]:
         """
         Calculate trip price with support for customer-specific pricing
@@ -55,6 +56,10 @@ class PricingEngine:
                 if "base_fare" in custom_pricing:
                     base_fare = custom_pricing.get("base_fare", 30.00)
                     rate_per_mile = custom_pricing.get("rate_per_mile", custom_pricing.get("tier1_rate", 1.75))
+                    
+                    if is_out_of_county and rate_per_mile == 0.0:
+                        rate_per_mile = 1.75
+                        
                     free_miles = custom_pricing.get("free_miles", 5.0)
                     
                     # Calculate with custom rates
@@ -74,13 +79,13 @@ class PricingEngine:
         return PricingEngine._calculate_tiered_price(
             distance_miles=distance_miles,
             base_fare=30.00,
-            rate_per_mile=0.0,
+            rate_per_mile=1.75 if is_out_of_county else 0.0,
             free_miles=0.0,
             stops_count=stops_count,
             is_teller_county=is_teller_county,
             wait_time_hours=wait_time_hours,
             pricing_type="standard",
-            customer_tier="Standard pricing v3.0 (2026)"
+            customer_tier="Standard pricing v3.0 (2026)" + (" (Out of County Surcharge)" if is_out_of_county else "")
         )
         
     @staticmethod
