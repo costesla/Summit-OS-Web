@@ -12,27 +12,10 @@ class CustomerPricingProfile:
     """
     
     # Grandfathered customers with custom pricing
-    GRANDFATHERED_CUSTOMERS = {
-        # Esmeralda - Flat $30/trip permanently grandfathered
-        "esmii.lopez@hotmail.com": {
-            "name": "Esmeralda",
-            "pricing_tier": "flat_30",
-            "notes": "Flat $30/trip - grandfathered"
-        },
-        
-        # Jacquelyn - Flat $20/trip (expired), pays via Venmo
-        "jacquelyn.heslep@playaba.net": {
-            "name": "Jacquelyn",
-            "pricing_tier": "legacy_flat_20",
-            "expires": "2026-03-01",
-            "notes": "Flat $20/trip - migrates to regular pricing March 1, 2026"
-        },
-    }
+    GRANDFATHERED_CUSTOMERS = {}
 
     # Clients who pay via Venmo/Zelle/Cash and should NEVER be sent to Stripe
-    VENMO_CLIENTS = {
-        "jacquelyn.heslep@playaba.net",
-    }
+    VENMO_CLIENTS = set()
 
     @classmethod
     def is_venmo_client(cls, email: str) -> bool:
@@ -45,8 +28,8 @@ class CustomerPricingProfile:
     PRICING_TIERS = {
         "current": {
             "base_fare": 30.00,
-            "rate_per_mile": 1.75,
-            "free_miles": 5.0,
+            "rate_per_mile": 0.0,
+            "free_miles": 0.0,
             "description": "Standard pricing v3.0 (2026)"
         },
         "flat_30": {
