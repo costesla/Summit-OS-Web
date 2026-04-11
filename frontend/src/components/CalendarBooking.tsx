@@ -151,9 +151,7 @@ export default function CalendarBooking({
     }, [selectedDate]);
 
     // Clients who pay via Venmo/Zelle and should bypass Stripe entirely
-    const VENMO_CLIENTS = new Set([
-        // "jacquelyn.heslep@playaba.net", -- Moved to Stripe as per request
-    ]);
+    const VENMO_CLIENTS = new Set<string>([]);
 
     const handleBooking = async () => {
         if (!selectedTime) return;
