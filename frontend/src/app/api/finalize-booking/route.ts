@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { sendReceiptEmail, sendAdminNotification } from '@/lib/email';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder', {
     apiVersion: '2023-10-16' as any,
@@ -73,26 +74,27 @@ export async function POST(req: Request) {
             console.warn("Failed to log to database:", dbError);
         }
 
-        // 3. Send Receipt Email via Next.js
+        // 3. Send Receipt Email via local Nodemailer logic
         try {
-            await fetch(`${req.headers.get('origin') || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/book`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    name: meta.customerName,
-                    email: meta.customerEmail,
-                    phone: meta.customerPhone,
-                    passengers: parseInt(meta.passengers || '1'),
-                    pickup: meta.pickup,
-                    dropoff: meta.dropoff,
-                    price: meta.fareString,
-                    appointmentStart: meta.appointmentStart,
-                    tripDetails: {
-                        dist: meta.tripDistance,
-                        time: meta.tripDuration,
-                    },
-                }),
-            });
+            const receiptData = {
+                customerName: meta.customerName || "Customer",
+                customerEmail: meta.customerEmail || "",
+                pickup: meta.pickup || "N/A",
+                dropoff: meta.dropoff || "N/A",
+                date: meta.appointmentStart ? new Date(meta.appointmentStart).toLocaleString() : "To be scheduled",
+                distance: meta.tripDistance ? `${meta.tripDistance} miles` : 'N/A',
+                duration: meta.tripDuration ? `${meta.tripDuration} mins` : 'N/A',
+                priceCheckdown: {
+                    base: "-",
+                    mileage: "-",
+                    wait: "-",
+                    total: meta.fareString || "$0.00",
+                },
+                bookingId: bookingData.eventId || "Pending",
+                paymentMethod: 'Stripe',
+            };
+            await sendReceiptEmail(receiptData);
+            await sendAdminNotification(receiptData);
         } catch (e) {
             console.warn("Failed to send receipt:", e);
         }

@@ -28,7 +28,7 @@ function SuccessContent() {
 
         const finalize = async () => {
             try {
-                const res = await fetch('https://summitos-api.azurewebsites.net/api/finalize-booking', {
+                const res = await fetch('/api/finalize-booking', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ session_id: sessionId })
