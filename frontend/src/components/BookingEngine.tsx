@@ -60,6 +60,8 @@ export default function BookingEngine() {
     const [submitting, setSubmitting] = useState(false);
     const [showCalendar, setShowCalendar] = useState(false);
     const [bookingComplete, setBookingComplete] = useState(false);
+    const [checkoutLoading, setCheckoutLoading] = useState(false);
+    const [checkoutError, setCheckoutError] = useState('');
 
     // Auto-Calculate Quote when inputs change
     useEffect(() => {
@@ -190,8 +192,7 @@ export default function BookingEngine() {
             <div className="flex justify-between items-center mb-8 border-b border-white/10 pb-6">
                 <div>
                     <h2 className="text-3xl font-bold text-white tracking-tight">Trip Configuration</h2>
-                    <p className="text-gray-400 text-sm mt-1 tracking-wide uppercase">COS Tesla Booking v2.1</p>
-                    <p className="text-cyan-600/60 text-[10px] tracking-widest uppercase font-mono mt-1">Powered by SummitOS</p>
+                    <p className="text-gray-400 text-sm mt-1 tracking-wide uppercase">COS Tesla LLC | Powered by: SummitOS</p>
                 </div>
 
                 {/* Pricing Type Toggle */}
@@ -590,7 +591,64 @@ export default function BookingEngine() {
                                     <h4 className="text-xl font-bold text-white mb-2">Booking Confirmed!</h4>
                                     <p className="text-sm text-gray-300">You'll receive a confirmation email shortly.</p>
                                 </div>
+                            ) : quoteType === 'bundle' ? (
+                                // --- ALL-DAY BUNDLE: Pay via Stripe ---
+                                <div className="space-y-3">
+                                    {checkoutError && (
+                                        <p className="text-red-400 text-xs px-1 text-center">{checkoutError}</p>
+                                    )}
+                                    <button
+                                        onClick={async () => {
+                                            if (!name || !email || !phone) {
+                                                alert('Please fill in all contact information');
+                                                return;
+                                            }
+                                            setCheckoutLoading(true);
+                                            setCheckoutError('');
+                                            try {
+                                                const res = await fetch('https://summitos-api.azurewebsites.net/api/create-checkout-session', {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({
+                                                        customerName: name,
+                                                        customerEmail: email,
+                                                        customerPhone: phone,
+                                                        pickup: quote?.debug?.origin || pickup,
+                                                        dropoff: "As Directed (All-Day Bundle)",
+                                                        price: '$100.00',
+                                                        passengers,
+                                                        tripDistance: 'N/A',
+                                                        tripDuration: 'N/A',
+                                                        appointmentStart: null,
+                                                        successUrl: `${window.location.origin}/book/success?session_id={CHECKOUT_SESSION_ID}`,
+                                                        cancelUrl: `${window.location.origin}/book?payment_cancelled=true`
+                                                    })
+                                                });
+                                                const data = await res.json();
+                                                if (data.url) {
+                                                    window.location.href = data.url;
+                                                } else {
+                                                    setCheckoutError(data.error || 'Unable to start checkout. Please try again.');
+                                                }
+                                            } catch {
+                                                setCheckoutError('Connection error. Please try again.');
+                                            } finally {
+                                                setCheckoutLoading(false);
+                                            }
+                                        }}
+                                        disabled={!quote || !name || !email || !phone || checkoutLoading}
+                                        className={`w-full bg-cyan-600 text-white font-bold py-4 rounded-xl hover:bg-cyan-700 shadow-lg shadow-cyan-500/20 flex justify-center items-center gap-2 text-lg transition-all ${(!quote || !name || !email || !phone || checkoutLoading) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    >
+                                        {checkoutLoading ? (
+                                            <><span className="animate-spin inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full" /> Redirecting to Payment...</>
+                                        ) : (
+                                            <>Pay $100.00 via Stripe <ChevronRight /></>
+                                        )}
+                                    </button>
+                                    <p className="text-center text-xs text-gray-500">🔒 Secured by Stripe · SSL Encrypted</p>
+                                </div>
                             ) : (
+                                // --- SINGLE TRIP: Continue to Calendar ---
                                 <button
                                     onClick={() => {
                                         if (!quote || !name || !email || !phone) {

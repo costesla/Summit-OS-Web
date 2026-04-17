@@ -2,9 +2,9 @@ import logging
 import azure.functions as func
 import json
 import os
-from dateutil import parser
-from datetime import datetime, timedelta, timezone
 import pytz
+from datetime import datetime, timedelta, timezone
+from dateutil import parser
 from services.graph import GraphClient
 
 bp = func.Blueprint()
@@ -182,6 +182,88 @@ def status(req: func.HttpRequest) -> func.HttpResponse:
         # Return generic OK structure to not break frontend, but with error log
         return func.HttpResponse(
             json.dumps({"error": str(e), "outToday": False}),
+            status_code=500,
+            headers=_cors_headers(),
+            mimetype="application/json"
+        )
+
+@bp.route(route="sync-folders", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+def sync_folders(req: func.HttpRequest) -> func.HttpResponse:
+    """
+    Creates the Uber Driver folder hierarchy on OneDrive for a specific date.
+    Supports dryRun=true to preview changes.
+    """
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=_cors_headers())
+
+    try:
+        body = req.get_json()
+        target_date_str = body.get("processDate") or datetime.now().strftime("%Y-%m-%d")
+        dry_run = body.get("dryRun", False)
+        
+        dt = parser.parse(target_date_str)
+        month_name = dt.strftime("%B")
+        year = dt.strftime("%Y")
+        
+        # Week of Month logic (1-4)
+        week_num = min(4, (dt.day - 1) // 7 + 1)
+        
+        # Date format: M.D.YY (e.g. 4.13.26)
+        day_label = f"{dt.month}.{dt.day}.{dt.strftime('%y')}"
+        
+        full_path = f"Uber Driver/{year}/{month_name}/Week {week_num}/{day_label}"
+        
+        logs = [f"Intelligence Analysis for {target_date_str}:"]
+        logs.append(f"Target Structure: {full_path}")
+        
+        graph = GraphClient()
+        
+        if dry_run:
+            logs.append("MODE: DRY RUN - No changes will be made.")
+            # Verify if folders already exist
+            parts = full_path.split('/')
+            current = ""
+            for part in parts:
+                current = f"{current}/{part}" if current else part
+                exists = graph.get_item_by_path(current)
+                status = "EXISTING" if exists else "NEW"
+                logs.append(f"[{status}] {current}")
+        else:
+            logs.append("MODE: ACTUAL SYNC - Creating path...")
+            graph.ensure_path_exists(full_path)
+            logs.append("Successfully ensured all folders in path.")
+
+        return func.HttpResponse(
+            json.dumps({"success": True, "logs": logs, "path": full_path}),
+            status_code=200,
+            headers=_cors_headers(),
+            mimetype="application/json"
+        )
+    except Exception as e:
+        logging.error(f"Sync Folders Error: {str(e)}")
+        return func.HttpResponse(
+            json.dumps({"success": False, "error": str(e)}),
+            status_code=500,
+            headers=_cors_headers(),
+            mimetype="application/json"
+        )
+
+@bp.route(route="operations/trigger-cloud-scan", methods=["POST"])
+def trigger_cloud_scan(req: func.HttpRequest) -> func.HttpResponse:
+    """Manually triggers the autonomous cloud routing logic."""
+    try:
+        from services.cloud_watcher import CloudWatcherService
+        service = CloudWatcherService()
+        results = service.scan_and_route()
+        return func.HttpResponse(
+            json.dumps(results),
+            mimetype="application/json",
+            headers=_cors_headers()
+        )
+    except Exception as e:
+        logging.error(f"Manual Cloud Scan Error: {str(e)}")
+        return func.HttpResponse(
+            json.dumps({"success": False, "error": str(e)}),
             status_code=500,
             headers=_cors_headers(),
             mimetype="application/json"

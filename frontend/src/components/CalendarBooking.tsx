@@ -95,7 +95,7 @@ export default function CalendarBooking({
         if (!hop) return false;
         const w = dateObj.getDay();
         const dayHop = hop[w];
-        if (!dayHop) return false; // Day is off
+        if (!dayHop || !dayHop.start || !dayHop.end) return false; // Day is off or malformed
         const mins = dateObj.getHours() * 60 + dateObj.getMinutes();
         return mins >= toMinutes(dayHop.start) && mins <= toMinutes(dayHop.end);
     }
@@ -233,11 +233,10 @@ export default function CalendarBooking({
         if (!status) return false;
 
         // Use local YYYY-MM-DD to match backend return which is YYYY-MM-DD
-        // This assumes user is browsing in a similar timezone or we just respect strict date matching
         const ymd = date.toLocaleDateString("en-CA");
 
-        // Check upcoming
-        if (status.upcoming.some(u => u.date === ymd)) return true;
+        // Check upcoming (safe access)
+        if (status.upcoming?.some(u => u.date === ymd)) return true;
 
         // Check today
         const today = new Date().toLocaleDateString("en-CA");

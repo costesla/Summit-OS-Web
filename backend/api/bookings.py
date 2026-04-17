@@ -207,8 +207,8 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
                             <!-- Header -->
                             <tr>
                                 <td style="background-color: #000000; color: #ffffff; padding: 30px 20px; text-align: center;">
-                                    <h1 style="margin: 0; font-size: 24px; font-weight: bold;">SummitOS LLC</h1>
-                                    <p style="margin: 5px 0 0; color: #aaaaaa; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Trip Confirmation</p>
+                                    <h1 style="margin: 0; font-size: 20px; font-weight: bold;">COS TESLA LLC</h1>
+                                    <p style="margin: 5px 0 0; color: #aaaaaa; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Powered by: SummitOS</p>
                                 </td>
                             </tr>
                             
@@ -311,7 +311,8 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
                             <!-- Footer -->
                             <tr>
                                 <td style="background-color: #f5f5f5; padding: 25px 20px; text-align: center;">
-                                    <p style="margin: 0 0 5px; font-size: 14px; font-weight: bold; color: #333333;">SummitOS LLC</p>
+                                    <p style="margin: 0 0 5px; font-size: 14px; font-weight: bold; color: #333333;">COS Tesla LLC</p>
+                                    <p style="margin: 0 0 10px; font-size: 11px; color: #666666;">Powered by SummitOS</p>
                                     <p style="margin: 0 0 15px; font-size: 12px; color: #888888;">
                                         Support: <a href="mailto:peter.teehan@costesla.com" style="color: #06b6d4; text-decoration: none;">peter.teehan@costesla.com</a>
                                     </p>
