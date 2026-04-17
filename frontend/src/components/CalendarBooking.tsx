@@ -127,23 +127,19 @@ export default function CalendarBooking({
                 const data = await response.json();
 
                 if (data.success) {
-                    // Sort slots chronologically
                     const sortedSlots = data.slots.sort((a: TimeSlot, b: TimeSlot) =>
                         new Date(a.start).getTime() - new Date(b.start).getTime()
                     );
-
-                    // Filter out slots outside Hours of Operation
                     const filteredSlots = sortedSlots.filter((slot: TimeSlot) =>
                         withinHop(new Date(slot.start))
                     );
-
                     setAvailableSlots(filteredSlots);
                 } else {
-                    setError(data.error || "Failed to load available times");
+                    setError(`API Error: ${data.error || "Failed to load times"}`);
                 }
             } catch (err: any) {
-                setError("Failed to load available times");
-                console.error(err);
+                console.error("Availability Fetch Error:", err);
+                setError(`Connectivity Error: ${err.message || "Failed to reach booking server"}`);
             } finally {
                 setLoadingSlots(false);
             }
