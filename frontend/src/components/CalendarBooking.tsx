@@ -12,6 +12,7 @@ interface CalendarBookingProps {
     pickup: string;
     dropoff: string;
     price: string;
+    quoteType?: string;
     tripDistance?: string;
     tripDuration?: string;
     onBookingComplete: (eventId: string) => void;
@@ -54,6 +55,7 @@ export default function CalendarBooking({
     pickup,
     dropoff,
     price,
+    quoteType = 'single',
     tripDistance,
     tripDuration,
     onBookingComplete,
@@ -176,6 +178,7 @@ export default function CalendarBooking({
                         passengers,
                         tripDistance,
                         tripDuration,
+                        quoteType,
                         paymentMethod: method === 'invoice' ? "Invoice" : "Venmo",
                     }),
                 });
@@ -209,6 +212,7 @@ export default function CalendarBooking({
                     passengers,
                     tripDistance,
                     tripDuration,
+                    quoteType,
                     successUrl: `${window.location.origin}/book/success?session_id={CHECKOUT_SESSION_ID}`,
                     cancelUrl: `${window.location.origin}/book?payment_cancelled=true`
                 }),
