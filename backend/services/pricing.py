@@ -79,13 +79,13 @@ class PricingEngine:
         return PricingEngine._calculate_tiered_price(
             distance_miles=distance_miles,
             base_fare=30.00,
-            rate_per_mile=1.75 if is_out_of_county else 0.0,
-            free_miles=0.0,
+            rate_per_mile=1.50 if is_out_of_county else 0.0,
+            free_miles=5.0 if is_out_of_county else 0.0,
             stops_count=stops_count,
             is_teller_county=is_teller_county,
             wait_time_hours=wait_time_hours,
             pricing_type="standard",
-            customer_tier="Standard pricing v3.0 (2026)" + (" (Out of County Surcharge)" if is_out_of_county else "")
+            customer_tier="Standard pricing v4.0 (2026)" + (" (Out of County Surcharge)" if is_out_of_county else "")
         )
         
     @staticmethod

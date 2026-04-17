@@ -5,6 +5,7 @@ export interface TripParams {
     isTellerCounty: boolean;
     isAirport: boolean; // Airport Flag
     waitTimeHours: number;
+    isOutOfCounty?: boolean;
 }
 
 export interface PriceBreakdown {
@@ -42,7 +43,7 @@ export function calculateTripPrice(params: TripParams): PriceBreakdown {
 
     // 1. Base & Distance Fare
     const fixedBase = 30.00;
-    const RATE_PER_MILE = 1.75;
+    const RATE_PER_MILE = params.isOutOfCounty ? 1.50 : 0.0;
     const FREE_MILES = 5.0;
 
     const billableMiles = Math.max(0, distanceMiles - FREE_MILES);
@@ -77,7 +78,7 @@ export function calculateBundlePrice(params: TripParams): PriceBreakdown {
 
     // 1. Base & Distance Fare
     const BUNDLE_PRICE = 100.00;
-    const RATE_PER_MILE = 1.75;
+    const RATE_PER_MILE = 1.50;
     const FREE_MILES = 50.0;
 
     const billableMiles = Math.max(0, distanceMiles - FREE_MILES);

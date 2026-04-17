@@ -104,9 +104,10 @@ def quote(req: func.HttpRequest) -> func.HttpResponse:
             "palmer lake", "cascade", "chipita park", "usaf academy", 
             "schriever", "peterson", "fort carson", "el paso county"
         ]
-        
         is_origin_local = any(city in origin_lower for city in el_paso_cities)
         is_dest_local = any(city in dest_lower for city in el_paso_cities)
+        teller_cities = ["woodland park", "divide", "florissant", "cripple creek", "victor", "teller county"]
+        is_teller_county = any(city in origin_lower for city in teller_cities) or any(city in dest_lower for city in teller_cities)
         is_out_of_county = not (is_origin_local and is_dest_local)
 
         pricing = PricingEngine()
@@ -114,7 +115,7 @@ def quote(req: func.HttpRequest) -> func.HttpResponse:
         if quote_type == 'bundle':
             quote_data = pricing.calculate_bundle_price(
                 distance_miles=total_dist_miles,
-                is_teller_county=False
+                is_teller_county=is_teller_county
             )
         else:
             quote_data = pricing.calculate_trip_price(
@@ -122,7 +123,8 @@ def quote(req: func.HttpRequest) -> func.HttpResponse:
                 stops_count=total_stops,
                 wait_time_hours=wait_hours,
                 customer_email=customer_email,
-                is_out_of_county=is_out_of_county
+                is_out_of_county=is_out_of_county,
+                is_teller_county=is_teller_county
             )
         
         quote_data["debug"] = {
