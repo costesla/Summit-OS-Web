@@ -13,8 +13,17 @@ from services.datetime_utils import normalize_to_utc
 
 bp = func.Blueprint()
 
-@bp.route(route="calendar-availability", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+def _cors_headers():
+    return {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type"
+    }
+
+@bp.route(route="calendar-availability", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def calendar_availability(req: func.HttpRequest) -> func.HttpResponse:
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=_cors_headers())
     logging.info("Calendar availability requested via Blueprint")
     try:
         date_param = req.params.get('date')
@@ -56,13 +65,16 @@ def calendar_availability(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(
             json.dumps({"success": True, "slots": available_slots}),
             status_code=200,
+            headers=_cors_headers(),
             mimetype="application/json"
         )
     except Exception as e:
         return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500)
 
-@bp.route(route="calendar-book", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
+@bp.route(route="calendar-book", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def calendar_book(req: func.HttpRequest) -> func.HttpResponse:
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=_cors_headers())
     logging.info("Calendar booking requested via Blueprint")
     try:
         req_body = req.get_json()
@@ -108,6 +120,7 @@ def calendar_book(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(
             json.dumps({"success": True, "eventId": appointment.get('id')}),
             status_code=200,
+            headers=_cors_headers(),
             mimetype="application/json"
         )
     except Exception as e:
