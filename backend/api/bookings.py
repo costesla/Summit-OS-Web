@@ -10,6 +10,7 @@ from services.graph import GraphClient
 from services.database import DatabaseClient
 from services.flight import AviationStackClient
 from services.datetime_utils import normalize_to_utc
+from services.invoice import create_stripe_payment_link, build_invoice_id
 
 bp = func.Blueprint()
 
@@ -193,7 +194,34 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
         else:
             pickup_time = "To be scheduled"
             
-        booking_id = f"R-{int(time.time())}"
+        # Use centralized ID generation
+        booking_id = build_invoice_id(name, pickup_time)
+
+        # Generate Stripe Link for "Invoice" (Pay Later) flow
+        stripe_url = None
+        payment_method = data.get('paymentMethod', 'Venmo')
+        if payment_method == "Invoice":
+            try:
+                # Format price to float
+                import re
+                amount_num = float(re.sub(r'[^0-9.]', '', str(price)))
+                trip_label = f"{pickup} -> {dropoff} ({pickup_time})"
+                stripe_url = create_stripe_payment_link(name, amount_num, trip_label)
+            except Exception as se:
+                logging.error(f"Failed to generate pre-trip Stripe link: {se}")
+
+        stripe_button_html = ""
+        if stripe_url:
+            stripe_button_html = f"""
+            <tr>
+                <td style="padding: 0 0 20px 0;">
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; text-align: center;">
+                        <p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b;">Secure Card / Apple Pay</p>
+                        <a href="{stripe_url}" style="display: inline-block; padding: 12px 28px; background: #635bff; color: #ffffff; font-weight: bold; font-size: 14px; border-radius: 6px; text-decoration: none;">Pay {price} via Stripe →</a>
+                    </div>
+                </td>
+            </tr>
+            """
 
         # Generate cabin access token (valid 24h)
         try:
@@ -277,6 +305,7 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
                                         <tr>
                                             <td style="padding: 0 0 15px; font-size: 18px; font-weight: bold; color: #000000;">Payment Options</td>
                                         </tr>
+                                        {stripe_button_html}
                                         <tr>
                                             <td style="padding: 10px 0; font-size: 14px; color: #666666; line-height: 1.6;">
                                                 <p style="margin: 0 0 10px; font-weight: 600; color: #333333;">💳 Venmo</p>
