@@ -592,7 +592,7 @@ export default function BookingEngine() {
                                     <p className="text-sm text-gray-300">You'll receive a confirmation email shortly.</p>
                                 </div>
                             ) : quoteType === 'bundle' ? (
-                                // --- ALL-DAY BUNDLE: Pay via Stripe ---
+                                // --- ALL-DAY BUNDLE: Pay Now or Pay Later ---
                                 <div className="space-y-3">
                                     {checkoutError && (
                                         <p className="text-red-400 text-xs px-1 text-center">{checkoutError}</p>
@@ -637,15 +637,59 @@ export default function BookingEngine() {
                                             }
                                         }}
                                         disabled={!quote || !name || !email || !phone || checkoutLoading}
-                                        className={`w-full bg-cyan-600 text-white font-bold py-4 rounded-xl hover:bg-cyan-700 shadow-lg shadow-cyan-500/20 flex justify-center items-center gap-2 text-lg transition-all ${(!quote || !name || !email || !phone || checkoutLoading) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        className={`w-full bg-gradient-to-r from-[#635bff] to-[#8f86ff] text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-[#635bff]/40 flex justify-center items-center gap-2 transition-all ${(!quote || !name || !email || !phone || checkoutLoading) ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     >
                                         {checkoutLoading ? (
-                                            <><span className="animate-spin inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full" /> Redirecting to Payment...</>
+                                            <><span className="animate-spin inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full" /> Processing...</>
                                         ) : (
-                                            <>Pay $100.00 via Stripe <ChevronRight /></>
+                                            <>⚡ Pay Now (Stripe) <ChevronRight /></>
                                         )}
                                     </button>
-                                    <p className="text-center text-xs text-gray-500">🔒 Secured by Stripe · SSL Encrypted</p>
+
+                                    <button
+                                        onClick={async () => {
+                                            if (!name || !email || !phone) {
+                                                alert('Please fill in all contact information');
+                                                return;
+                                            }
+                                            setCheckoutLoading(true);
+                                            setCheckoutError('');
+                                            try {
+                                                const res = await fetch('https://summitos-api.azurewebsites.net/api/book', {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({
+                                                        customerName: name,
+                                                        customerEmail: email,
+                                                        customerPhone: phone,
+                                                        pickup: quote?.debug?.origin || pickup,
+                                                        dropoff: "As Directed (All-Day Bundle)",
+                                                        appointmentStart: null,
+                                                        price: '$100.00',
+                                                        passengers,
+                                                        tripDistance: 'N/A',
+                                                        tripDuration: 'N/A',
+                                                        paymentMethod: "Invoice",
+                                                    })
+                                                });
+                                                const data = await res.json();
+                                                if (data.success) {
+                                                    setBookingComplete(true);
+                                                } else {
+                                                    setCheckoutError(data.error || 'Booking failed.');
+                                                }
+                                            } catch {
+                                                setCheckoutError('Connection error. Please try again.');
+                                            } finally {
+                                                setCheckoutLoading(false);
+                                            }
+                                        }}
+                                        disabled={!quote || !name || !email || !phone || checkoutLoading}
+                                        className={`w-full bg-white/10 text-white font-bold py-4 rounded-xl border border-white/20 hover:bg-white/20 flex justify-center items-center gap-2 transition-all ${(!quote || !name || !email || !phone || checkoutLoading) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    >
+                                        ✉️ Pay Later (Post-Trip Invoice)
+                                    </button>
+                                    <p className="text-center text-xs text-gray-500">Secure booking via SummitOS Engine</p>
                                 </div>
                             ) : (
                                 // --- SINGLE TRIP: Continue to Calendar ---
