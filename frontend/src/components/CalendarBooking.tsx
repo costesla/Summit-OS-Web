@@ -153,14 +153,14 @@ export default function CalendarBooking({
     // Clients who pay via Venmo/Zelle and should bypass Stripe entirely
     const VENMO_CLIENTS = new Set<string>([]);
 
-    const handleBooking = async () => {
+    const handleBooking = async (method: 'stripe' | 'invoice') => {
         if (!selectedTime) return;
 
         setBooking(true);
         setError(null);
 
-        // --- VENMO / OUT-OF-BAND PAYMENT BYPASS ---
-        if (VENMO_CLIENTS.has(customerEmail.toLowerCase().trim())) {
+        // --- DIRECT INVOICE / PAY LATER ---
+        if (method === 'invoice' || VENMO_CLIENTS.has(customerEmail.toLowerCase().trim())) {
             try {
                 const res = await fetch("https://summitos-api.azurewebsites.net/api/book", {
                     method: "POST",
@@ -176,12 +176,12 @@ export default function CalendarBooking({
                         passengers,
                         tripDistance,
                         tripDuration,
-                        paymentMethod: "Venmo",
+                        paymentMethod: method === 'invoice' ? "Invoice" : "Venmo",
                     }),
                 });
                 const data = await res.json();
                 if (data.success) {
-                    window.location.href = `/book/success?direct=true`;
+                    if (onBookingComplete) onBookingComplete(data.eventId || "manual");
                 } else {
                     throw new Error(data.error || "Booking failed.");
                 }
@@ -390,15 +390,28 @@ export default function CalendarBooking({
                 </div>
             )}
 
-            {/* Confirm Button */}
-            <button
-                onClick={handleBooking}
-                disabled={!selectedTime || booking}
-                className={`w-full bg-cyan-600 text-white font-bold py-4 rounded-xl hover:bg-cyan-700 shadow-lg shadow-cyan-500/20 flex justify-center items-center gap-2 text-lg transition-all ${!selectedTime || booking ? "opacity-50 cursor-not-allowed" : ""
-                    }`}
-            >
-                {booking ? "Confirming Booking..." : "Confirm Appointment"}
-            </button>
+            {/* Action Buttons */}
+            <div className="space-y-3">
+                <button
+                    onClick={() => handleBooking('stripe')}
+                    disabled={!selectedTime || booking}
+                    className={`w-full bg-gradient-to-r from-[#635bff] to-[#8f86ff] text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-[#635bff]/40 flex justify-center items-center gap-2 text-lg transition-all ${!selectedTime || booking ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                    {booking ? (
+                        <><span className="animate-spin inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full" /> Processing...</>
+                    ) : (
+                        <>⚡ Pay Now (Stripe) <ChevronRight /></>
+                    )}
+                </button>
+
+                <button
+                    onClick={() => handleBooking('invoice')}
+                    disabled={!selectedTime || booking}
+                    className={`w-full bg-white/10 text-white font-bold py-4 rounded-xl border border-white/20 hover:bg-white/20 flex justify-center items-center gap-2 text-lg transition-all ${!selectedTime || booking ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                    ✉️ Pay Later (Post-Trip Invoice)
+                </button>
+            </div>
         </div>
     );
 }
