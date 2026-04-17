@@ -281,6 +281,30 @@ export default function BookingEngine() {
                         )}
                     </div>
 
+                    {quoteType === 'bundle' && pickup.length > 5 && !showCalendar && (
+                        <div className="p-4 bg-cyan-500/10 border border-cyan-500/30 rounded-xl animate-in fade-in slide-in-from-top-4 duration-500">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h4 className="text-cyan-400 font-bold text-sm">Step 2: Pick Your Date</h4>
+                                    <p className="text-xs text-cyan-200/60 mt-1">Select when you need the driver for the day.</p>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        if (!name || !email || !phone) {
+                                            setToastMessage("Please fill in contact info first (on the right)");
+                                            return;
+                                        }
+                                        setShowCalendar(true);
+                                    }}
+                                    className="bg-cyan-600 hover:bg-cyan-700 text-white p-3 rounded-lg flex items-center gap-2 font-bold transition-all shadow-lg shadow-cyan-500/20"
+                                >
+                                    <Clock size={18} />
+                                    Select Date
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
                     {stops.map((stop, idx) => (
                         <div key={idx} className="relative flex gap-2 items-end animate-in slide-in-from-left-4 fade-in duration-300">
                             <div className="flex-1">
