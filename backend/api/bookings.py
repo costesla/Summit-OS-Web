@@ -329,12 +329,40 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
         </html>
         """
         
-        # Send mail via Graph
-        graph = GraphClient()
-        # 1. To Customer
-        graph.send_mail(email, f"Trip Receipt: {booking_id}", html)
-        # 2. To Admin
-        graph.send_mail("peter.teehan@costesla.com", f"New Booking: {name} - {price}", html)
+        if not email:
+            logging.warning("No customer email provided — skipping receipt email")
+        else:
+            # Try Graph API first, fall back to SMTP if it fails
+            try:
+                graph = GraphClient()
+                graph.send_mail(email, f"Trip Receipt: {booking_id}", html)
+                graph.send_mail("peter.teehan@costesla.com", f"New Booking: {name} - {price}", html)
+                logging.info(f"Receipt email sent via Graph API to {email}")
+            except Exception as graph_err:
+                logging.warning(f"Graph API email failed ({graph_err}), falling back to SMTP")
+                try:
+                    import smtplib
+                    from email.mime.multipart import MIMEMultipart
+                    from email.mime.text import MIMEText
+                    smtp_user = os.environ.get("SMTP_USER", "PrivateTrips@costesla.com")
+                    smtp_pass = os.environ.get("SMTP_PASS", "")
+                    if not smtp_pass:
+                        raise Exception("SMTP_PASS not configured in app settings")
+                    # Send to customer
+                    for to_addr in [email, "peter.teehan@costesla.com"]:
+                        msg = MIMEMultipart("alternative")
+                        msg["Subject"] = f"Trip Receipt: {booking_id}" if to_addr == email else f"New Booking: {name} - {price}"
+                        msg["From"] = f"SummitOS Reservations <{smtp_user}>"
+                        msg["To"] = to_addr
+                        msg.attach(MIMEText(html, "html"))
+                        with smtplib.SMTP("smtp.office365.com", 587) as server:
+                            server.ehlo()
+                            server.starttls()
+                            server.login(smtp_user, smtp_pass)
+                            server.sendmail(smtp_user, to_addr, msg.as_string())
+                    logging.info(f"Receipt email sent via SMTP fallback to {email}")
+                except Exception as smtp_err:
+                    logging.error(f"SMTP fallback also failed: {smtp_err}")
         
         # Log to Database
         db = DatabaseClient()
