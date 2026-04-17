@@ -578,6 +578,7 @@ export default function BookingEngine() {
                                     pickup={quote?.debug?.origin || pickup}
                                     dropoff={(quote?.debug?.destination || dropoff) || "As Directed (All-Day Bundle)"}
                                     price={quote ? `$${quote.total.toFixed(2)}` : '$0.00'}
+                                    quoteType={quoteType}
                                     tripDistance={quote?.distance?.toFixed(1) || undefined}
                                     tripDuration={quote?.time?.toString() || undefined}
                                     onBookingComplete={(eventId) => {
@@ -591,120 +592,20 @@ export default function BookingEngine() {
                                     <h4 className="text-xl font-bold text-white mb-2">Booking Confirmed!</h4>
                                     <p className="text-sm text-gray-300">You'll receive a confirmation email shortly.</p>
                                 </div>
-                            ) : quoteType === 'bundle' ? (
-                                // --- ALL-DAY BUNDLE: Pay Now or Pay Later ---
-                                <div className="space-y-3">
-                                    {checkoutError && (
-                                        <p className="text-red-400 text-xs px-1 text-center">{checkoutError}</p>
-                                    )}
-                                    <button
-                                        onClick={async () => {
-                                            if (!name || !email || !phone) {
-                                                alert('Please fill in all contact information');
-                                                return;
-                                            }
-                                            setCheckoutLoading(true);
-                                            setCheckoutError('');
-                                            try {
-                                                const res = await fetch('https://summitos-api.azurewebsites.net/api/create-checkout-session', {
-                                                    method: 'POST',
-                                                    headers: { 'Content-Type': 'application/json' },
-                                                    body: JSON.stringify({
-                                                        customerName: name,
-                                                        customerEmail: email,
-                                                        customerPhone: phone,
-                                                        pickup: quote?.debug?.origin || pickup,
-                                                        dropoff: "As Directed (All-Day Bundle)",
-                                                        price: '$100.00',
-                                                        passengers,
-                                                        tripDistance: 'N/A',
-                                                        tripDuration: 'N/A',
-                                                        appointmentStart: null,
-                                                        successUrl: `${window.location.origin}/book/success?session_id={CHECKOUT_SESSION_ID}`,
-                                                        cancelUrl: `${window.location.origin}/book?payment_cancelled=true`
-                                                    })
-                                                });
-                                                const data = await res.json();
-                                                if (data.url) {
-                                                    window.location.href = data.url;
-                                                } else {
-                                                    setCheckoutError(data.error || 'Unable to start checkout. Please try again.');
-                                                }
-                                            } catch {
-                                                setCheckoutError('Connection error. Please try again.');
-                                            } finally {
-                                                setCheckoutLoading(false);
-                                            }
-                                        }}
-                                        disabled={!quote || !name || !email || !phone || checkoutLoading}
-                                        className={`w-full bg-gradient-to-r from-[#635bff] to-[#8f86ff] text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-[#635bff]/40 flex justify-center items-center gap-2 transition-all ${(!quote || !name || !email || !phone || checkoutLoading) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                    >
-                                        {checkoutLoading ? (
-                                            <><span className="animate-spin inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full" /> Processing...</>
-                                        ) : (
-                                            <>⚡ Pay Now (Stripe) <ChevronRight /></>
-                                        )}
-                                    </button>
-
-                                    <button
-                                        onClick={async () => {
-                                            if (!name || !email || !phone) {
-                                                alert('Please fill in all contact information');
-                                                return;
-                                            }
-                                            setCheckoutLoading(true);
-                                            setCheckoutError('');
-                                            try {
-                                                const res = await fetch('https://summitos-api.azurewebsites.net/api/book', {
-                                                    method: 'POST',
-                                                    headers: { 'Content-Type': 'application/json' },
-                                                    body: JSON.stringify({
-                                                        customerName: name,
-                                                        customerEmail: email,
-                                                        customerPhone: phone,
-                                                        pickup: quote?.debug?.origin || pickup,
-                                                        dropoff: "As Directed (All-Day Bundle)",
-                                                        appointmentStart: null,
-                                                        price: '$100.00',
-                                                        passengers,
-                                                        tripDistance: 'N/A',
-                                                        tripDuration: 'N/A',
-                                                        paymentMethod: "Invoice",
-                                                    })
-                                                });
-                                                const data = await res.json();
-                                                if (data.success) {
-                                                    setBookingComplete(true);
-                                                } else {
-                                                    setCheckoutError(data.error || 'Booking failed.');
-                                                }
-                                            } catch {
-                                                setCheckoutError('Connection error. Please try again.');
-                                            } finally {
-                                                setCheckoutLoading(false);
-                                            }
-                                        }}
-                                        disabled={!quote || !name || !email || !phone || checkoutLoading}
-                                        className={`w-full bg-white/10 text-white font-bold py-4 rounded-xl border border-white/20 hover:bg-white/20 flex justify-center items-center gap-2 transition-all ${(!quote || !name || !email || !phone || checkoutLoading) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                    >
-                                        ✉️ Pay Later (Post-Trip Invoice)
-                                    </button>
-                                    <p className="text-center text-xs text-gray-500">Secure booking via SummitOS Engine</p>
-                                </div>
                             ) : (
-                                // --- SINGLE TRIP: Continue to Calendar ---
+                                // --- BOTH SINGLE TRIP & ALL-DAY BUNDLE: Continue to Calendar ---
                                 <button
                                     onClick={() => {
-                                        if (!quote || !name || !email || !phone) {
+                                        if (!name || !email || !phone) {
                                             alert('Please fill in all contact information');
                                             return;
                                         }
                                         setShowCalendar(true);
                                     }}
-                                    disabled={!quote || !name || !email || !phone}
-                                    className={`w-full bg-cyan-600 text-white font-bold py-4 rounded-xl hover:bg-cyan-700 shadow-lg shadow-cyan-500/20 flex justify-center items-center gap-2 text-lg transition-all ${(!quote || !name || !email || !phone) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    disabled={!name || !email || !phone}
+                                    className={`w-full bg-cyan-600 text-white font-bold py-4 rounded-xl hover:bg-cyan-700 shadow-lg shadow-cyan-500/20 flex justify-center items-center gap-2 text-lg transition-all ${(!name || !email || !phone) ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 >
-                                    Continue to Calendar <ChevronRight />
+                                    Continue to Date Selection <ChevronRight />
                                 </button>
                             )}
                         </div>
