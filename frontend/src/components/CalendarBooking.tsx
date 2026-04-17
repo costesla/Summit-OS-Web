@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { formatTime, formatDate } from "@/lib/calendar";
-import { Calendar, Clock, CheckCircle } from "lucide-react";
+import { Calendar, Clock, CheckCircle, ChevronRight } from "lucide-react";
 
 interface CalendarBookingProps {
     customerName: string;
