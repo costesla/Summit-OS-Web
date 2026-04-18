@@ -278,11 +278,23 @@ class DatabaseClient:
         """Return True if the token exists in DB and has not expired."""
         if not token:
             return False
-        results = self.execute_query_params(
-            "SELECT Token FROM Rides.CabinTokens WHERE Token = ? AND ExpiresAt > GETDATE()",
-            (token,)
-        )
-        return len(results) > 0
+        
+        conn = self.get_connection()
+        if not conn:
+            # Return None to signal a connection error rather than "Not Found"
+            return None
+            
+        try:
+            cursor = conn.cursor()
+            query = "SELECT Token FROM Rides.CabinTokens WHERE Token = ? AND ExpiresAt > GETDATE()"
+            cursor.execute(query, (token,))
+            results = cursor.fetchall()
+            return len(results) > 0
+        except Exception as e:
+            logging.error(f"validate_cabin_token error: {e}")
+            return None # Signal error
+        finally:
+            conn.close()
 
     def execute_query_params(self, query, params):
         conn = self.get_connection()
@@ -297,5 +309,32 @@ class DatabaseClient:
         except Exception as e:
             logging.error(f"SQL Query Params Error: {e}")
             return []
+        finally:
+            conn.close()
+
+    def save_drive_telemetry(self, drive_id, telemetry_data):
+        import json
+        logging.info(f"Saving Raw Telemetry for Drive: {drive_id}")
+        conn = self.get_connection()
+        if not conn: return
+        cursor = conn.cursor()
+        query = """
+        MERGE INTO Drive_Telemetry AS target
+        USING (SELECT ? AS DriveID) AS source
+        ON (target.DriveID = source.DriveID)
+        WHEN MATCHED THEN
+            UPDATE SET RawJSONPayload = ?, LastUpdated = GETDATE()
+        WHEN NOT MATCHED THEN
+            INSERT (DriveID, RawJSONPayload, LastUpdated)
+            VALUES (?, ?, GETDATE());
+        """
+        try:
+            json_payload = json.dumps(telemetry_data)
+            params = (drive_id, json_payload, drive_id, json_payload)
+            cursor.execute(query, params)
+            conn.commit()
+            logging.info(f"Successfully archived telemetry payload for {drive_id}.")
+        except Exception as e:
+            logging.error(f"Error saving telemetry payload for {drive_id}: {e}")
         finally:
             conn.close()
