@@ -231,7 +231,7 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
             import secrets
             cabin_token = str(secrets.randbelow(900000) + 100000)  # fallback: 6-digit code
 
-        site_url = os.environ.get("SITE_URL", "https://gentle-plant-0f873710f.4.azurestaticapps.net")
+        site_url = os.environ.get("SITE_URL", "https://www.costesla.com")
         cabin_url = f"{site_url}/cabin?token={cabin_token}"
         html = f"""
         <html>
