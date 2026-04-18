@@ -3,6 +3,7 @@ import azure.functions as func
 import json
 import os
 from services.tessie import TessieClient
+from services.secret_manager import SecretManager
 
 bp = func.Blueprint()
 
@@ -31,10 +32,17 @@ def _validate_token(token):
     try:
         from services.database import DatabaseClient
         db = DatabaseClient()
-        return db.validate_cabin_token(token)
+        valid = db.validate_cabin_token(token)
+        
+        # If valid is None, it means the database connection failed
+        if valid is None:
+            logging.warning("Token validation DB connection failed - allowing for graceful degradation")
+            return True
+            
+        return valid
     except Exception as e:
-        logging.warning(f"Token validation DB error (allowing): {e}")
-        return True  # graceful fallback if DB is down
+        logging.warning(f"Token validation error (allowing): {e}")
+        return True  # graceful fallback if logic itself fails
 
 
 # ─── GET /cabin/state ─────────────────────────────────────────────────
@@ -53,9 +61,12 @@ def cabin_state(req: func.HttpRequest) -> func.HttpResponse:
     try:
         import requests
         tessie = TessieClient()
-        vin = os.environ.get("TESSIE_VIN")
+        sm = SecretManager()
+        vin = sm.get_secret("TESSIE_VIN")
+        
         if not vin:
-            return _json_response({"error": "No VIN configured"}, 500)
+            logging.error("TESSIE_VIN not found in environment or Key Vault")
+            return _json_response({"error": "Vehicle configuration missing (VIN)"}, 500)
 
         state = tessie.get_vehicle_state(vin)
         # Fallback to empty context if Tessie fails (but try to get location from DB or defaults if desperate?)
@@ -163,9 +174,11 @@ def cabin_command(req: func.HttpRequest) -> func.HttpResponse:
         return _json_response({"error": "Missing command"}, 400)
 
     tessie = TessieClient()
-    vin = os.environ.get("TESSIE_VIN")
+    sm = SecretManager()
+    vin = sm.get_secret("TESSIE_VIN")
+    
     if not vin:
-        return _json_response({"error": "No VIN configured"}, 500)
+        return _json_response({"error": "Vehicle configuration missing (VIN)"}, 500)
 
     ALLOWED_COMMANDS = {
         "seat_heater", "vent_windows", "close_windows",

@@ -1,12 +1,14 @@
-import os
 import logging
 import requests
 from datetime import datetime
+from .secret_manager import SecretManager
 
 class TessieClient:
     def __init__(self):
-        self.api_key = os.environ.get("TESSIE_API_KEY")
+        self.secrets = SecretManager()
+        self.api_key = self.secrets.get_secret("TESSIE_API_KEY")
         self.base_url = "https://api.tessie.com"
+        self.timeout = 10 # Default timeout for all Tessie requests
         
         if not self.api_key:
             logging.warning("Tessie API key not found. Telemetry will not function.")
@@ -45,7 +47,7 @@ class TessieClient:
             url = f"{self.base_url}/{vin}/state"
             headers = {"Authorization": f"Bearer {self.api_key}"}
             
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, timeout=self.timeout)
             response.raise_for_status()
             
             return response.json()
@@ -67,7 +69,7 @@ class TessieClient:
             # Limit to 1 to get the latest
             params = {"limit": 1} 
             
-            response = requests.get(url, headers=headers, params=params)
+            response = requests.get(url, headers=headers, params=params, timeout=self.timeout)
             response.raise_for_status()
             
             data = response.json()
@@ -93,10 +95,10 @@ class TessieClient:
             params = {
                 "from": from_ts,
                 "to": to_ts,
-                "limit": 50 # Capture all stops in a day
+                "limit": 250 # Capture all stops in a day
             }
             
-            response = requests.get(url, headers=headers, params=params)
+            response = requests.get(url, headers=headers, params=params, timeout=self.timeout)
             response.raise_for_status()
             
             data = response.json()
@@ -134,7 +136,7 @@ class TessieClient:
                 "limit": 10 # Should be enough for a 8 hour window
             }
             
-            response = requests.get(url, headers=headers, params=params)
+            response = requests.get(url, headers=headers, params=params, timeout=self.timeout)
             response.raise_for_status()
             
             data = response.json()
@@ -199,7 +201,7 @@ class TessieClient:
                 "limit": limit
             }
 
-            response = requests.get(url, headers=headers, params=params)
+            response = requests.get(url, headers=headers, params=params, timeout=self.timeout)
             response.raise_for_status()
 
             data = response.json()
@@ -207,6 +209,43 @@ class TessieClient:
         except Exception as e:
             logging.error(f"Error fetching tagged drives: {str(e)}")
             return []
+
+    def get_drive_telemetry(self, vin, from_ts, to_ts):
+        """
+        Fetches raw second-by-second historical telemetry via the states endpoint.
+        Returns a dict of arrays (speeds, elevations, inside_temps, outside_temps, etc).
+        """
+        if not self.api_key:
+            return None
+
+        logging.info(f"Fetching drive telemetry for VIN: {vin}")
+        try:
+            url = f"{self.base_url}/{vin}/states"
+            headers = {"Authorization": f"Bearer {self.api_key}"}
+            params = {
+                "from": from_ts,
+                "to": to_ts
+            }
+            
+            response = requests.get(url, headers=headers, params=params, timeout=self.timeout)
+            response.raise_for_status()
+            
+            data = response.json()
+            if 'results' in data and data['results']:
+                # The states endpoint returns { results: { "timestamp_key_maybe": { ...arrays } } }
+                # Or if it's a dict containing the arrays directly:
+                results = data['results']
+                if isinstance(results, dict):
+                    # Check if the arrays are directly at results.speeds or nested inside a key
+                    first_val = next(iter(results.values())) if results else None
+                    if first_val and isinstance(first_val, list):
+                        # Some keys like 'speeds' point to lists directly
+                        return results
+            return None
+            
+        except Exception as e:
+            logging.error(f"Error fetching Tessie telemetry: {str(e)}")
+            return None
 
     def get_charges(self, vin, from_ts, to_ts):
         """
@@ -225,7 +264,7 @@ class TessieClient:
                 "limit": 5
             }
             
-            response = requests.get(url, headers=headers, params=params)
+            response = requests.get(url, headers=headers, params=params, timeout=self.timeout)
             response.raise_for_status()
             
             data = response.json()
@@ -333,7 +372,7 @@ class TessieClient:
             headers = {"Authorization": f"Bearer {self.api_key}"}
             params = {"seat": seat, "level": level}
 
-            response = requests.get(url, headers=headers, params=params)
+            response = requests.get(url, headers=headers, params=params, timeout=self.timeout)
             response.raise_for_status()
             return response.json()
         except Exception as e:
@@ -354,7 +393,7 @@ class TessieClient:
             url = f"{self.base_url}/{vin}/command/{action}"
             headers = {"Authorization": f"Bearer {self.api_key}"}
 
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, timeout=self.timeout)
             response.raise_for_status()
             return response.json()
         except Exception as e:
@@ -368,7 +407,7 @@ class TessieClient:
         try:
             url = f"{self.base_url}/{vin}/command/start_climate"
             headers = {"Authorization": f"Bearer {self.api_key}"}
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, timeout=self.timeout)
             response.raise_for_status()
             return response.json()
         except Exception as e:
@@ -382,7 +421,7 @@ class TessieClient:
         try:
             url = f"{self.base_url}/{vin}/command/stop_climate"
             headers = {"Authorization": f"Bearer {self.api_key}"}
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, timeout=self.timeout)
             response.raise_for_status()
             return response.json()
         except Exception as e:
@@ -403,7 +442,7 @@ class TessieClient:
             url = f"{self.base_url}/{vin}/command/set_temperature"
             headers = {"Authorization": f"Bearer {self.api_key}"}
             params = {"temperature": temp_c}
-            response = requests.get(url, headers=headers, params=params)
+            response = requests.get(url, headers=headers, params=params, timeout=self.timeout)
             response.raise_for_status()
             return response.json()
         except Exception as e:
@@ -417,7 +456,7 @@ class TessieClient:
         try:
             url = f"{self.base_url}/{vin}/command/open_trunk"
             headers = {"Authorization": f"Bearer {self.api_key}"}
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, timeout=self.timeout)
             response.raise_for_status()
             return response.json()
         except Exception as e:
@@ -431,7 +470,7 @@ class TessieClient:
         try:
             url = f"{self.base_url}/{vin}/command/open_frunk"
             headers = {"Authorization": f"Bearer {self.api_key}"}
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, timeout=self.timeout)
             response.raise_for_status()
             return response.json()
         except Exception as e:
