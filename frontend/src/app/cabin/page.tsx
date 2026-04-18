@@ -37,7 +37,7 @@ interface CabinState {
     charging_state: string | null;
 }
 
-const API_BASE = "";
+const API_BASE = "https://summitos-api.azurewebsites.net";
 
 const INITIAL_STATE: CabinState = {
     speed: 0,

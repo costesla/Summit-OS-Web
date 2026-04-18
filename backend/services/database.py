@@ -254,7 +254,7 @@ class DatabaseClient:
         try:
             # Create table if it doesn't exist yet (idempotent)
             cursor.execute("""
-                IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='CabinTokens' AND xtype='U')
+                IF NOT EXISTS (SELECT * FROM sys.tables t JOIN sys.schemas s ON t.schema_id = s.schema_id WHERE s.name = 'Rides' AND t.name = 'CabinTokens')
                 CREATE TABLE Rides.CabinTokens (
                     Token NVARCHAR(64) PRIMARY KEY,
                     BookingID NVARCHAR(64) NOT NULL,
