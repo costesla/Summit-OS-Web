@@ -241,7 +241,7 @@ class DatabaseClient:
         results = self.execute_query_params(query, (days,))
         return results[0] if results else None
 
-    def create_cabin_token(self, booking_id: str, valid_hours: int = 24) -> str:
+    def create_cabin_token(self, booking_id: str, valid_hours: int = 24, expires_at=None) -> str:
         """Generate a 6-digit cabin access code for a booking, store it in DB."""
         import secrets
         # Generate a 6-digit code (100000-999999) for easier manual entry
@@ -262,10 +262,19 @@ class DatabaseClient:
                     CreatedAt DATETIME2 DEFAULT GETDATE()
                 )
             """)
-            cursor.execute(
-                "INSERT INTO Rides.CabinTokens (Token, BookingID, ExpiresAt) VALUES (?, ?, DATEADD(hour, ?, GETDATE()))",
-                (token, booking_id, valid_hours)
-            )
+            
+            if expires_at:
+                # Use provided expiry time
+                cursor.execute(
+                    "INSERT INTO Rides.CabinTokens (Token, BookingID, ExpiresAt) VALUES (?, ?, ?)",
+                    (token, booking_id, expires_at)
+                )
+            else:
+                # Default to current time + hours
+                cursor.execute(
+                    "INSERT INTO Rides.CabinTokens (Token, BookingID, ExpiresAt) VALUES (?, ?, DATEADD(hour, ?, GETDATE()))",
+                    (token, booking_id, valid_hours)
+                )
             conn.commit()
             logging.info(f"Cabin code {token} created for booking {booking_id}")
         except Exception as e:

@@ -223,11 +223,24 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
             </tr>
             """
 
-        # Generate cabin access token (valid 24h)
+        # Generate cabin access token
+        # Valid from now until 6 hours after the trip starts (ensures access on trip day)
         try:
             db_early = DatabaseClient()
-            cabin_token = db_early.create_cabin_token(booking_id, valid_hours=24)
-        except Exception:
+            from datetime import timedelta
+            
+            # Use 24h from now as fallback if no pickup time, otherwise 6h after pickup
+            token_expiry = None
+            if raw_time:
+                try:
+                    dt_utc = normalize_to_utc(raw_time)
+                    token_expiry = dt_utc + timedelta(hours=6)
+                except:
+                    pass
+            
+            cabin_token = db_early.create_cabin_token(booking_id, expires_at=token_expiry)
+        except Exception as e:
+            logging.warning(f"Failed to create persistent cabin token: {e}")
             import secrets
             cabin_token = str(secrets.randbelow(900000) + 100000)  # fallback: 6-digit code
 
