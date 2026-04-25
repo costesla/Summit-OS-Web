@@ -1,0 +1,40 @@
+{
+  "navigationFallback": {
+    "rewrite": "/index.html"
+  },
+  "routes": [
+    {
+      "route": "/driver-dashboard*",
+      "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/api/ops/*",
+      "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/.auth/login/github",
+      "statusCode": 404
+    },
+    {
+      "route": "/.auth/login/twitter",
+      "statusCode": 404
+    }
+  ],
+  "responseOverrides": {
+    "401": {
+      "redirect": "/.auth/login/aad",
+      "statusCode": 302
+    }
+  },
+  "auth": {
+    "identityProviders": {
+      "azureActiveDirectory": {
+        "registration": {
+          "openIdConnectConfiguration": {
+            "wellKnownConfigEndpoint": "https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration"
+          }
+        }
+      }
+    }
+  }
+}

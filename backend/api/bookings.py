@@ -179,7 +179,7 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
         
         # Handle Pickup Time formatting
         from services.datetime_utils import format_local_time, normalize_to_utc
-        from datetime import datetime
+        from datetime import datetime, timedelta
         
         # Capture booking time
         booking_time = format_local_time(datetime.utcnow())
@@ -222,6 +222,32 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
                 </td>
             </tr>
             """
+
+        # --- NEW: Create Calendar Event for Invoice/Venmo flows ---
+        # (Paid flow handles this in finalize-booking calling calendar-book)
+        if payment_method in ["Invoice", "Venmo"] and raw_time:
+            try:
+                from services.bookings import BookingsClient
+                bookings = BookingsClient()
+                dt_utc = normalize_to_utc(raw_time)
+                
+                # Create appointment in calendar
+                bookings.create_appointment(
+                    customer_data={
+                        'name': name,
+                        'email': email,
+                        'phone': phone,
+                        'pickup': pickup,
+                        'dropoff': dropoff,
+                        'notes': f"Payment Method: {payment_method}"
+                    },
+                    start_dt=dt_utc,
+                    end_dt=dt_utc + timedelta(hours=1),
+                    service_id=os.environ.get('MS_BOOKINGS_SERVICE_ID', 'dc16877c-160d-436e-b53b-52ae6f419604')
+                )
+                logging.info(f"Calendar event created for {payment_method} booking: {booking_id}")
+            except Exception as cal_err:
+                logging.error(f"Failed to create calendar event for {payment_method} booking: {cal_err}")
 
         # Generate cabin access token
         # Valid from now until 6 hours after the trip starts (ensures access on trip day)
@@ -423,15 +449,17 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
         # Log to Database
         db = DatabaseClient()
         try:
-            db.save_trip({
+            # Create a rich metadata object for the DB
+            db_data = data.copy()
+            db_data.update({
                 "trip_id": booking_id,
                 "classification": "Private_Booking",
                 "fare": float(price.replace('$', '').replace(',', '')) if '$' in price else 0,
-                "timestamp_epoch": time.time(),
-                "raw_text": f"Booking for {name} from {pickup} to {dropoff}"
+                "timestamp_epoch": time.time()
             })
-        except:
-            pass
+            db.save_trip(db_data)
+        except Exception as db_err:
+            logging.error(f"Failed to log booking to DB: {db_err}")
             
         return func.HttpResponse(
             json.dumps({"success": True, "message": "Booking confirmed & Receipt Sent"}),
