@@ -227,7 +227,7 @@ const TeslaStatusBar = () => {
                             />
                         </div>
                         <span className={`text-2xl font-black font-mono tabular-nums ${barColor.replace('bg-', 'text-')}`}
-                            style={{ textShadow: `0 0 20px ${soc > 50 ? 'rgba(52,211,153,0.3)' : soc > 20 ? 'rgba(251,191,36,0.3)' : 'rgba(244,63,94,0.3)'}` }}>
+                            style={{ textShadow: `0 0 20px ${(soc || 0) > 50 ? 'rgba(52,211,153,0.3)' : (soc || 0) > 20 ? 'rgba(251,191,36,0.3)' : 'rgba(244,63,94,0.3)'}` }}>
                             {soc !== null ? `${soc}%` : '--'}
                         </span>
                     </div>
@@ -287,7 +287,6 @@ const TessieDrivesPanel = ({
 }) => {
     const [drives, setDrives] = useState<TessieDrive[]>([]);
     const [loading, setLoading] = useState(true);
-    const [pendingDrive, setPendingDrive] = useState<TessieDrive | null>(null);
     const [error, setError] = useState(false);
     const [importedIds, setImportedIds] = useState<Set<string>>(new Set());
 
