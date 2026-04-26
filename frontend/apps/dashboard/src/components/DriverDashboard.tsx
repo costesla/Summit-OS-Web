@@ -176,7 +176,7 @@ const TeslaStatusBar = () => {
 
     useEffect(() => {
         fetchStatus();
-        const iv = setInterval(fetchStatus, 300_000); // refresh every 5 min
+        const iv = setInterval(fetchStatus, 30_000); // refresh every 30s for more 'live' feel
         return () => clearInterval(iv);
     }, [fetchStatus]);
 
@@ -202,7 +202,10 @@ const TeslaStatusBar = () => {
                     ? <BatteryCharging className="w-4 h-4 text-emerald-400" />
                     : offline ? <WifiOff className="w-4 h-4 text-gray-600" />
                         : <Battery className="w-4 h-4 text-cyan-400" />}
-                <span className="text-[10px] font-bold uppercase tracking-[0.25em] font-mono text-gray-500">Tesla Live</span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.25em] font-mono text-gray-500 flex items-center gap-2">
+                    Tesla Live
+                    <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
+                </span>
             </div>
 
             {loading && (
