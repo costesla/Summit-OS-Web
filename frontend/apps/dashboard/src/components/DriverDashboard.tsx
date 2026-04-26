@@ -5,7 +5,7 @@ import {
     TrendingUp, Car, Zap, Utensils, Plus, Trash2,
     Navigation, Receipt, RotateCcw, Clock,
     Battery, BatteryCharging, WifiOff, Download,
-    MapPin, Gauge, LogOut, ShieldCheck, Cpu, Play, Search, RefreshCw
+    MapPin, Gauge, LogOut, ShieldCheck, Cpu, Play, Search, RefreshCw, Cloud, CreditCard
 } from 'lucide-react';
 import TellerConnectButton from './TellerConnectButton';
 
@@ -715,6 +715,23 @@ const DriverDashboard = () => {
         if (typeof window === 'undefined') return { fastfood: [], charging: [] };
         try { return JSON.parse(localStorage.getItem('cos_expenses') ?? 'null') ?? { fastfood: [], charging: [] }; } catch { return { fastfood: [], charging: [] }; }
     });
+
+    const [stripeBalance, setStripeBalance] = useState<{ available: number; pending: number } | null>(null);
+
+    useEffect(() => {
+        const fetchStripe = async () => {
+            try {
+                const res = await fetch('https://summitos-api.azurewebsites.net/api/stripe/balance');
+                if (res.ok) {
+                    const data = await res.json();
+                    setStripeBalance({ available: data.available, pending: data.pending });
+                }
+            } catch (err) { console.error('Stripe fetch error:', err); }
+        };
+        fetchStripe();
+        const interval = setInterval(fetchStripe, 300000); // refresh every 5 mins
+        return () => clearInterval(interval);
+    }, []);
     const [tripForm, setTripForm] = useState<TripForm>({
         type: 'Uber', fare: '', tip: '', fees: '', insurance: '', otherFees: '',
     });
@@ -771,7 +788,7 @@ const DriverDashboard = () => {
             fees: parseFloat(tripForm.fees) || 0,
             insurance: parseFloat(tripForm.insurance) || 0,
             otherFees: parseFloat(tripForm.otherFees) || 0,
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            timestamp: `${selectedDate}T${new Date().toTimeString().split(' ')[0]}`,
         }, ...trips]);
         setTripForm({ type: 'Uber', fare: '', tip: '', fees: '', insurance: '', otherFees: '' });
     };
@@ -785,7 +802,7 @@ const DriverDashboard = () => {
                 id: Date.now(),
                 amount: parseFloat(expenseForm.amount) || 0,
                 note: expenseForm.note,
-                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                timestamp: `${selectedDate}T${new Date().toTimeString().split(' ')[0]}`,
             }, ...prev[expenseForm.category]],
         }));
         setExpenseForm({ ...expenseForm, amount: '', note: '' });
@@ -799,6 +816,36 @@ const DriverDashboard = () => {
         localStorage.removeItem('cos_expenses');
         localStorage.removeItem('cos_session_start');
         setTrips([]); setExpenses({ fastfood: [], charging: [] }); setShowResetConfirm(false);
+    };
+
+    const [syncing, setSyncing] = useState(false);
+    const [syncStatus, setSyncStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+    const syncToCloud = async () => {
+        if (trips.length === 0 && expenses.fastfood.length === 0 && expenses.charging.length === 0) {
+            alert("Nothing to sync yet! Add some trips or expenses first.");
+            return;
+        }
+        setSyncing(true);
+        setSyncStatus('idle');
+        try {
+            const resp = await fetch('https://summitos-api.azurewebsites.net/api/driver/sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ trips, expenses })
+            });
+            if (resp.ok) {
+                setSyncStatus('success');
+                setTimeout(() => setSyncStatus('idle'), 3000);
+            } else {
+                setSyncStatus('error');
+            }
+        } catch (err) {
+            console.error('Sync failed:', err);
+            setSyncStatus('error');
+        } finally {
+            setSyncing(false);
+        }
     };
 
     /** Called from TessieDrivesPanel — pre-fill the trip form and scroll to it */
@@ -883,16 +930,33 @@ const DriverDashboard = () => {
                             <p className="text-[10px] font-bold uppercase text-gray-600 tracking-[0.2em] font-mono">Est. $/hr</p>
                             <p className="text-2xl font-black text-white">${Math.max(0, stats.hourlyRate).toFixed(2)}</p>
                         </div>
-                        <button onClick={() => setShowResetConfirm(true)}
-                            className="p-2 rounded-xl border border-white/10 text-gray-600 hover:text-rose-400 hover:border-rose-500/30 transition-all"
-                            title="Reset Day">
-                            <RotateCcw className="w-4 h-4" />
-                        </button>
-                        <a href="/.auth/logout?post_logout_redirect_uri=/"
-                            className="p-2 rounded-xl border border-white/10 text-gray-600 hover:text-rose-400 hover:border-rose-500/30 transition-all flex items-center gap-1.5 text-xs font-mono"
-                            title="Sign Out">
-                            <LogOut className="w-4 h-4" />
-                        </a>
+                        <div className="flex items-center gap-2">
+                            <button 
+                                onClick={syncToCloud}
+                                disabled={syncing}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all font-bold text-xs uppercase tracking-wider ${
+                                    syncStatus === 'success' 
+                                    ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400' 
+                                    : syncStatus === 'error'
+                                    ? 'bg-rose-500/20 border-rose-500/40 text-rose-400'
+                                    : 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20'
+                                } ${syncing ? 'opacity-50 cursor-wait' : ''}`}
+                            >
+                                <Cloud className={`w-4 h-4 ${syncing ? 'animate-pulse' : ''}`} />
+                                {syncing ? 'Syncing...' : syncStatus === 'success' ? 'Synced' : syncStatus === 'error' ? 'Failed' : 'Sync to Cloud'}
+                            </button>
+
+                            <button onClick={() => setShowResetConfirm(true)}
+                                className="p-2 rounded-xl border border-white/10 text-gray-600 hover:text-rose-400 hover:border-rose-500/30 transition-all"
+                                title="Reset Day">
+                                <RotateCcw className="w-4 h-4" />
+                            </button>
+                            <a href="/.auth/logout?post_logout_redirect_uri=/"
+                                className="p-2 rounded-xl border border-white/10 text-gray-600 hover:text-rose-400 hover:border-rose-500/30 transition-all flex items-center gap-1.5 text-xs font-mono"
+                                title="Sign Out">
+                                <LogOut className="w-4 h-4" />
+                            </a>
+                        </div>
                     </div>
                 </header>
 
@@ -911,13 +975,16 @@ const DriverDashboard = () => {
                 )}
 
                 {/* ── Stat Cards ── */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                     <StatCard label="Total Trips" value={trips.length}
                         sub={`${stats.uberCount} Uber · ${stats.privateCount} Private`}
                         icon={<Car className="text-cyan-400 w-5 h-5" />} />
                     <StatCard label="Gross" value={`$${stats.gross.toFixed(2)}`}
                         sub={`Fees: $${stats.fees.toFixed(2)}`}
                         icon={<TrendingUp className="text-cyan-400 w-5 h-5" />} highlight />
+                    <StatCard label="Stripe Balance" value={`$${(stripeBalance?.available ?? 0).toFixed(2)}`}
+                        sub={`Pending: $${(stripeBalance?.pending ?? 0).toFixed(2)}`}
+                        icon={<CreditCard className="text-emerald-400 w-5 h-5" />} />
                     <StatCard label="Charging" value={`$${stats.charging.toFixed(2)}`} sub="Fuel & Power"
                         icon={<Zap className="text-amber-400 w-5 h-5" />} />
                     <StatCard label="Fast Food" value={`$${stats.food.toFixed(2)}`} sub="Meals & Drinks"

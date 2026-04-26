@@ -60,7 +60,7 @@ class DatabaseClient:
         import hashlib
         source_url = trip_data.get('source_url', '')
         url_hash = hashlib.md5(source_url.encode()).hexdigest()[:8]
-        ride_id = trip_data.get('trip_id') or f"R-{url_hash}"
+        ride_id = trip_data.get('trip_id') or trip_data.get('RideID') or f"R-{url_hash}"
 
         conn = self.get_connection()
         if not conn: return
@@ -88,50 +88,56 @@ class DatabaseClient:
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE());
         """
         
-        t_start = trip_data.get('timestamp_epoch')
-        if t_start: t_start = datetime.datetime.fromtimestamp(t_start)
+        t_start = trip_data.get('timestamp_epoch') or trip_data.get('started_at')
+        if t_start: 
+            if isinstance(t_start, (int, float)):
+                t_start = datetime.datetime.fromtimestamp(t_start)
+            # If it's already a string or datetime, we'll let pyodbc handle it or it's handled in params
+        
+        # Check for pre-formatted fields from TessieSyncService
+        t_start = t_start or trip_data.get('Timestamp_Start')
 
         params = (
             ride_id,
-            trip_data.get('trip_type', 'Uber' if trip_data.get('classification') == 'Uber_Core' else 'Private'),
+            trip_data.get('trip_type') or trip_data.get('TripType') or ('Uber' if trip_data.get('classification') == 'Uber_Core' else 'Private'),
             t_start,
-            trip_data.get('start_location') or trip_data.get('pickup_place'),
-            trip_data.get('end_location') or trip_data.get('dropoff_place'),
-            trip_data.get('distance_miles', 0),
-            trip_data.get('duration_minutes', 0),
-            trip_data.get('tessie_drive_id'),
-            trip_data.get('tessie_distance', 0),
+            trip_data.get('start_location') or trip_data.get('pickup_place') or trip_data.get('Pickup_Location'),
+            trip_data.get('end_location') or trip_data.get('dropoff_place') or trip_data.get('Dropoff_Location'),
+            trip_data.get('distance_miles') or trip_data.get('Distance_mi', 0),
+            trip_data.get('duration_minutes') or trip_data.get('Duration_min', 0),
+            trip_data.get('tessie_drive_id') or trip_data.get('Tessie_DriveID'),
+            trip_data.get('tessie_distance') or trip_data.get('Tessie_Distance', 0),
             trip_data.get('fare', 0),
             trip_data.get('tip', 0),
             trip_data.get('driver_total', 0),
             trip_data.get('uber_cut', 0),
-            trip_data.get('start_soc'),
-            trip_data.get('end_soc'),
-            trip_data.get('energy_used'),
-            trip_data.get('efficiency_wh_mi'),
+            trip_data.get('start_soc') or trip_data.get('Start_SOC'),
+            trip_data.get('end_soc') or trip_data.get('End_SOC'),
+            trip_data.get('energy_used') or trip_data.get('Energy_Used_kWh'),
+            trip_data.get('efficiency_wh_mi') or trip_data.get('Efficiency_Wh_mi'),
             source_url,
-            trip_data.get('classification'),
+            trip_data.get('classification') or trip_data.get('Classification'),
             json.dumps(trip_data) if trip_data else None,
             # For INSERT:
             ride_id,
-            trip_data.get('trip_type', 'Uber' if trip_data.get('classification') == 'Uber_Core' else 'Private'),
+            trip_data.get('trip_type') or trip_data.get('TripType') or ('Uber' if trip_data.get('classification') == 'Uber_Core' else 'Private'),
             t_start,
-            trip_data.get('start_location') or trip_data.get('pickup_place'),
-            trip_data.get('end_location') or trip_data.get('dropoff_place'),
-            trip_data.get('distance_miles', 0),
-            trip_data.get('duration_minutes', 0),
-            trip_data.get('tessie_drive_id'),
-            trip_data.get('tessie_distance', 0),
+            trip_data.get('start_location') or trip_data.get('pickup_place') or trip_data.get('Pickup_Location'),
+            trip_data.get('end_location') or trip_data.get('dropoff_place') or trip_data.get('Dropoff_Location'),
+            trip_data.get('distance_miles') or trip_data.get('Distance_mi', 0),
+            trip_data.get('duration_minutes') or trip_data.get('Duration_min', 0),
+            trip_data.get('tessie_drive_id') or trip_data.get('Tessie_DriveID'),
+            trip_data.get('tessie_distance') or trip_data.get('Tessie_Distance', 0),
             trip_data.get('fare', 0),
             trip_data.get('tip', 0),
             trip_data.get('driver_total', 0),
             trip_data.get('uber_cut', 0),
-            trip_data.get('start_soc'),
-            trip_data.get('end_soc'),
-            trip_data.get('energy_used'),
-            trip_data.get('efficiency_wh_mi'),
+            trip_data.get('start_soc') or trip_data.get('Start_SOC'),
+            trip_data.get('end_soc') or trip_data.get('End_SOC'),
+            trip_data.get('energy_used') or trip_data.get('Energy_Used_kWh'),
+            trip_data.get('efficiency_wh_mi') or trip_data.get('Efficiency_Wh_mi'),
             source_url,
-            trip_data.get('classification'),
+            trip_data.get('classification') or trip_data.get('Classification'),
             json.dumps(trip_data) if trip_data else None
         )
 
@@ -170,6 +176,55 @@ class DatabaseClient:
             conn.commit()
         except Exception as e:
             logging.error(f"SQL Save Charge Error: {e}")
+        finally:
+            conn.close()
+
+    def save_manual_expense(self, expense_data):
+        """Saves a manual expense (Fast Food, etc.) to the cloud."""
+        conn = self.get_connection()
+        if not conn: return
+        cursor = conn.cursor()
+        
+        try:
+            # Idempotent table creation
+            cursor.execute("""
+                IF OBJECT_ID('Rides.ManualExpenses', 'U') IS NULL
+                CREATE TABLE Rides.ManualExpenses (
+                    ExpenseID NVARCHAR(100) PRIMARY KEY,
+                    Category NVARCHAR(50),
+                    Amount DECIMAL(10,2),
+                    Note NVARCHAR(500),
+                    Timestamp DATETIME DEFAULT GETDATE(),
+                    LastUpdated DATETIME DEFAULT GETDATE()
+                )
+            """)
+            conn.commit()
+
+            query = """
+            MERGE INTO Rides.ManualExpenses AS target
+            USING (SELECT ? AS ExpenseID) AS source
+            ON (target.ExpenseID = source.ExpenseID)
+            WHEN MATCHED THEN
+                UPDATE SET Category = ?, Amount = ?, Note = ?, Timestamp = ?, LastUpdated = GETDATE()
+            WHEN NOT MATCHED THEN
+                INSERT (ExpenseID, Category, Amount, Note, Timestamp, LastUpdated)
+                VALUES (?, ?, ?, ?, ?, GETDATE());
+            """
+            
+            eid = expense_data.get('id')
+            cat = expense_data.get('category')
+            amt = float(expense_data.get('amount') or 0)
+            note = expense_data.get('note')
+            ts = expense_data.get('timestamp') or datetime.datetime.now()
+            
+            p = (cat, amt, note, ts)
+            params = (eid,) + p + (eid,) + p
+            
+            cursor.execute(query, params)
+            conn.commit()
+            logging.info(f"Saved manual expense {eid}")
+        except Exception as e:
+            logging.error(f"SQL Save Manual Expense Error: {e}")
         finally:
             conn.close()
 
