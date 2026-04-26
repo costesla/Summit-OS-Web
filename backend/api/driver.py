@@ -72,14 +72,20 @@ def driver_sync(req: func.HttpRequest) -> func.HttpResponse:
         # 1. Save Trips
         for trip in trips:
             # Normalize for save_trip
+            fare = trip.get("fare") or 0
+            tip = trip.get("tip") or 0
+            fees = trip.get("fees") or 0
+            insurance = trip.get("insurance") or 0
+            otherFees = trip.get("otherFees") or 0
+
             trip_payload = {
                 "RideID": trip.get("id"),
                 "TripType": trip.get("type"),
                 "Timestamp_Start": trip.get("timestamp"),
-                "Fare": trip.get("fare"),
-                "Tip": trip.get("tip"),
-                "Driver_Earnings": trip.get("fare") + trip.get("tip"),
-                "Platform_Cut": trip.get("fees") + trip.get("insurance") + trip.get("otherFees"),
+                "Fare": fare,
+                "Tip": tip,
+                "Driver_Earnings": fare + tip,
+                "Platform_Cut": fees + insurance + otherFees,
                 "Classification": "Manual_Entry"
             }
             db.save_trip(trip_payload)
