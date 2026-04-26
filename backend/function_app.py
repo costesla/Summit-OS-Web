@@ -36,7 +36,8 @@ blueprints = [
     "api.timer_reports",
     "api.cabin",
     "api.weather",
-    "api.automation"
+    "api.automation",
+    "api.driver"
 ]
 
 registration_logs = []

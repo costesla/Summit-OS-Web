@@ -10,7 +10,7 @@ bp = func.Blueprint()
 
 CORS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization, x-functions-key"
 }
 
@@ -92,4 +92,29 @@ def copilot_banking_sync(req: func.HttpRequest) -> func.HttpResponse:
         return copilot_response(result)
     except Exception as e:
         logging.error(f"Banking Sync API Error: {e}")
+        return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500)
+
+@bp.route(route="copilot/banking/token", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+def copilot_banking_token(req: func.HttpRequest) -> func.HttpResponse:
+    if req.method == "OPTIONS": return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
+    
+    try:
+        from services.secret_manager import SecretManager
+        
+        body = req.get_json()
+        token = body.get("token")
+        
+        if not token:
+            return func.HttpResponse(json.dumps({"error": "Missing token"}), status_code=400)
+            
+        sm = SecretManager()
+        success = sm.set_secret("TELLER_TOKEN", token)
+        
+        if success:
+            return copilot_response({"message": "Teller token updated successfully in Key Vault"})
+        else:
+            return func.HttpResponse(json.dumps({"error": "Failed to update Key Vault"}), status_code=500)
+            
+    except Exception as e:
+        logging.error(f"Banking Token Update Error: {e}")
         return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500)
