@@ -5,7 +5,7 @@ import {
     TrendingUp, Car, Zap, Utensils, Plus, Trash2,
     Navigation, Receipt, RotateCcw, Clock,
     Battery, BatteryCharging, WifiOff, Download,
-    MapPin, Gauge, LogOut, ShieldCheck, Cpu, Play, Search, RefreshCw, Settings
+    MapPin, Gauge, LogOut, ShieldCheck, Cpu, Play, Search, RefreshCw
 } from 'lucide-react';
 import TellerConnectButton from './TellerConnectButton';
 
@@ -540,13 +540,10 @@ const TessieChargesPanel = ({ onImport, selectedDate }: { onImport: (charge: Tes
 const IntelligenceSyncPanel = ({ selectedDate }: { selectedDate: string }) => {
     const [status, setStatus] = useState<'idle' | 'running'>('idle');
     const [logs, setLogs] = useState<string[]>([]);
-    const [error, setError] = useState<string | null>(null);
 
     const runSync = async (dryRun: boolean) => {
         setStatus('running');
-        setError(null);
         setLogs(prev => [...prev, `> Starting ${dryRun ? 'Dry Run' : 'Actual Sync'} for ${selectedDate}...`]);
-
         try {
             const resp = await fetch(`${AZURE_BASE}/operations/sync-folders`, {
                 method: 'POST',
@@ -558,11 +555,9 @@ const IntelligenceSyncPanel = ({ selectedDate }: { selectedDate: string }) => {
             if (data.success) {
                 setLogs(prev => [...prev, ...data.logs]);
             } else {
-                setError(data.error || 'Unknown error occurred');
                 setLogs(prev => [...prev, `[ERROR] ${data.error}`]);
             }
         } catch (e: any) {
-            setError(e.message);
             setLogs(prev => [...prev, `[EXCEPTION] ${e.message}`]);
         } finally {
             setStatus('idle');
@@ -571,7 +566,6 @@ const IntelligenceSyncPanel = ({ selectedDate }: { selectedDate: string }) => {
 
     const triggerCloudScan = async () => {
         setStatus('running');
-        setError(null);
         setLogs(prev => [...prev, `> Force Triggering Autonomous Cloud Scan...`]);
         setLogs(prev => [...prev, `> Monitoring OneDrive 'Camera Roll'...`]);
 
@@ -589,11 +583,9 @@ const IntelligenceSyncPanel = ({ selectedDate }: { selectedDate: string }) => {
                     `> Scan Complete: ${results.processed} files analyzed, ${results.matched} Uber trips routed.`
                 ]);
             } else {
-                setError(data.error || 'Scan failed');
                 setLogs(prev => [...prev, `[ERROR] ${data.error}`]);
             }
         } catch (e: any) {
-            setError(e.message);
             setLogs(prev => [...prev, `[EXCEPTION] ${e.message}`]);
         } finally {
             setStatus('idle');
@@ -602,7 +594,6 @@ const IntelligenceSyncPanel = ({ selectedDate }: { selectedDate: string }) => {
 
     const runDailySync = async () => {
         setStatus('running');
-        setError(null);
         setLogs(prev => [...prev, `> Initializing Daily Unified Sync (Folders + Data)...`]);
 
         try {
@@ -614,11 +605,9 @@ const IntelligenceSyncPanel = ({ selectedDate }: { selectedDate: string }) => {
             if (data.success) {
                 setLogs(prev => [...prev, ...data.logs, `> Daily Sync Complete.`]);
             } else {
-                setError(data.error || 'Sync failed');
                 setLogs(prev => [...prev, ...(data.logs || []), `[ERROR] ${data.error}`]);
             }
         } catch (e: any) {
-            setError(e.message);
             setLogs(prev => [...prev, `[EXCEPTION] ${e.message}`]);
         } finally {
             setStatus('idle');
