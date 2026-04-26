@@ -4,9 +4,10 @@ import os
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Any, Optional
 
-from .tessie import TessieClient
-from .database import DatabaseClient
-from .semantic_ingestion import SemanticIngestionService
+from services.tessie import TessieClient
+from services.database import DatabaseClient
+from services.semantic_ingestion import SemanticIngestionService
+from services.telemetry_analysis import TelemetryAnalysisService
 
 log = logging.getLogger(__name__)
 
@@ -15,6 +16,7 @@ class TessieSyncService:
         self.tessie = TessieClient()
         self.db     = DatabaseClient()
         self.semantic = SemanticIngestionService()
+        self.telemetry = TelemetryAnalysisService()
         self.mdt    = timezone(timedelta(hours=-6)) # Mountain Time Support
 
     def sync_day(self, target_date: str = None) -> Dict[str, Any]:
@@ -34,9 +36,10 @@ class TessieSyncService:
         
         start_ts = int(dt_start.timestamp())
         end_ts   = int(dt_end.timestamp())
-        vin = os.environ.get("TESSIE_VIN")
+        
+        vin = self.tessie.secrets.get_secret("TESSIE_VIN")
         if not vin:
-            raise ValueError("TESSIE_VIN environment variable not set")
+            raise ValueError("TESSIE_VIN not found in environment or Key Vault")
 
         # Fetch Drives
         drives = self.tessie.get_drives(vin, from_ts=start_ts, to_ts=end_ts)
@@ -57,29 +60,44 @@ class TessieSyncService:
         for drive in drives:
             try:
                 # Map Tessie fields to our SQL schema
-                # Tessie fields: 'uid', 'started_at', 'distance_miles', 'starting_location', 'tag', etc.
+                # Tessie fields: 'id', 'started_at', 'distance_miles', 'starting_location', 'tag', etc.
                 drive_data = {
-                    "RideID":             f"TESSIE-{drive.get('uid')}",
+                    "RideID":             f"TESSIE-{drive.get('id')}",
                     "Timestamp_Start":    self._format_ts(drive.get('started_at')),
                     "Timestamp_End":      self._format_ts(drive.get('ended_at')),
-                    "Distance_mi":        drive.get('distance_miles', 0),
+                    "Distance_mi":        drive.get('distance') or drive.get('distance_miles') or drive.get('odometer_distance', 0),
                     "Duration_min":       drive.get('duration_minutes', 0),
                     "Pickup_Location":    drive.get('starting_location', 'Unknown'),
                     "Dropoff_Location":   drive.get('ending_location', 'Unknown'),
                     "Classification":     f"Auto:{drive.get('tag', 'None')}",
-                    "Odometer_Distance":  drive.get('odometer_distance', 0),
+                    "Start_SOC":          drive.get('starting_battery'),
+                    "End_SOC":            drive.get('ending_battery'),
+                    "Energy_Used_kWh":    drive.get('energy_used'),
+                    "Efficiency_Wh_mi":   drive.get('efficiency'),
                     "TripType":           "Uber" if "Uber" in (drive.get('tag') or "") else "Private",
                     "Sidecar_Artifact_JSON": json.dumps(drive)
                 }
                 self.db.save_trip(drive_data)
                 
+                # Fetch & Analyze Telemetry
+                drive_id = drive.get('id')
+                d_start = drive.get('started_at')
+                d_end = drive.get('ended_at')
+                
+                telemetry_summary = ""
+                if d_start and d_end:
+                    tlm = self.tessie.get_drive_telemetry(vin, d_start, d_end)
+                    if tlm:
+                        self.db.save_drive_telemetry(f"TESSIE-{drive_id}", tlm)
+                        telemetry_summary = self.telemetry.analyze_drive(tlm)
+                
                 # Semantic Ingestion
-                self.semantic.ingest_tessie_drive(drive)
+                self.semantic.ingest_tessie_drive(drive, telemetry_summary=telemetry_summary)
                 
                 results["drives_saved"] += 1
             except Exception as e:
-                log.error(f"Error saving drive {drive.get('uid')}: {e}")
-                results["errors"].append(f"Drive {drive.get('uid')}: {str(e)}")
+                log.error(f"Error saving drive {drive.get('id')}: {e}")
+                results["errors"].append(f"Drive {drive.get('id')}: {str(e)}")
 
         # Save Charges
         for charge in charges:
@@ -87,7 +105,7 @@ class TessieSyncService:
                 # Tessie fields for charges: 'starting_at', 'starting_soc', 'energy_added', 'cost', etc.
                 # Our schema: Energy_Added_kWh, Cost, Charger_Type, Starting_SoC, Ending_SoC, Odometer
                 charge_data = {
-                    "ChargeID":             f"CHG-{charge.get('uid')}",
+                    "ChargeID":             f"CHG-{charge.get('id')}",
                     "Timestamp_Start":      self._format_ts(charge.get('starting_at')),
                     "Timestamp_End":        self._format_ts(charge.get('ending_at')),
                     "Energy_Added_kWh":     charge.get('energy_added', 0),
@@ -105,8 +123,8 @@ class TessieSyncService:
                 self._save_charge(charge_data)
                 results["charges_saved"] += 1
             except Exception as e:
-                log.error(f"Error saving charge {charge.get('uid')}: {e}")
-                results["errors"].append(f"Charge {charge.get('uid')}: {str(e)}")
+                log.error(f"Error saving charge {charge.get('id')}: {e}")
+                results["errors"].append(f"Charge {charge.get('id')}: {str(e)}")
 
         log.info(f"Sync Complete: {results['drives_saved']} drives, {results['charges_saved']} charges.")
         return results
@@ -140,3 +158,5 @@ class TessieSyncService:
         ))
         conn.commit()
         cursor.close()
+
+
