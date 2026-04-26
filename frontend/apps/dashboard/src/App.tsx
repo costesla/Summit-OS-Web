@@ -71,15 +71,7 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  const mockChartData = [
-    { time: '08:00', earnings: 45 },
-    { time: '10:00', earnings: 120 },
-    { time: '12:00', earnings: 85 },
-    { time: '14:00', earnings: 210 },
-    { time: '16:00', earnings: 150 },
-    { time: '18:00', earnings: 300 },
-    { time: '20:00', earnings: 240 },
-  ];
+  const mockChartData: { time: string; earnings: number }[] = [];
 
   return (
     <div className="min-h-screen bg-[#111] text-white p-6 md:p-10 w-full max-w-7xl">
@@ -95,7 +87,7 @@ function App() {
         <div className="flex items-center gap-4 text-sm bg-black/40 p-3 rounded-xl border border-white/5">
           <div className="flex items-center gap-2 text-tesla-gray">
             <MapPin className="w-4 h-4" />
-            {data?.telematics?.latitude?.toFixed(4) || '38.8339'}, {data?.telematics?.longitude?.toFixed(4) || '-104.8214'}
+            {data?.telematics?.latitude?.toFixed(4) ?? '—'}, {data?.telematics?.longitude?.toFixed(4) ?? '—'}
           </div>
           <button
             onClick={fetchData}
@@ -114,10 +106,10 @@ function App() {
             <DollarSign className="w-16 h-16" />
           </div>
           <p className="text-sm font-semibold text-tesla-gray mb-1 uppercase tracking-wider">Today's Revenue</p>
-          <h3 className="text-3xl font-black text-white">${data?.stats?.TotalEarnings?.toFixed(2) || '1,240.00'}</h3>
+          <h3 className="text-3xl font-black text-white">${data?.stats?.TotalEarnings?.toFixed(2) ?? '0.00'}</h3>
           <div className="mt-4 flex items-center gap-2 text-green-500 text-xs font-bold">
             <TrendingUp className="w-4 h-4" />
-            +{data?.stats?.TotalTips?.toFixed(2) || '42.50'} TIPS
+            +{data?.stats?.TotalTips?.toFixed(2) ?? '0.00'} TIPS
           </div>
         </div>
 
@@ -128,15 +120,15 @@ function App() {
           </div>
           <p className="text-sm font-semibold text-tesla-gray mb-1 uppercase tracking-wider">Model Y Status</p>
           <div className="flex items-end gap-2">
-            <h3 className="text-3xl font-black text-white">{data?.telematics?.battery_level || '84'}%</h3>
+            <h3 className="text-3xl font-black text-white">{data?.telematics?.battery_level ?? 0}%</h3>
             <span className="text-tesla-gray text-xs mb-1.5 font-bold uppercase">
-              {data?.telematics?.charging_state || 'Stationary'}
+              {data?.telematics?.charging_state ?? '—'}
             </span>
           </div>
           <div className="mt-4 h-1.5 w-full bg-black/40 rounded-full">
             <div
               className="h-full bg-green-500 rounded-full transition-all duration-1000"
-              style={{ width: `${data?.telematics?.battery_level || 84}%` }}
+              style={{ width: `${data?.telematics?.battery_level ?? 0}%` }}
             />
           </div>
         </div>
@@ -147,7 +139,7 @@ function App() {
             <Navigation className="w-16 h-16" />
           </div>
           <p className="text-sm font-semibold text-tesla-gray mb-1 uppercase tracking-wider">Active Shifts</p>
-          <h3 className="text-3xl font-black text-white">{data?.stats?.TripCount || 12} Trips</h3>
+          <h3 className="text-3xl font-black text-white">{data?.stats?.TripCount ?? 0} Trips</h3>
           <div className="mt-4 flex items-center gap-2 text-tesla-gray text-xs font-bold">
             <RefreshCcw className="w-4 h-4" />
             LIVE SYNC ACTIVE
@@ -160,10 +152,10 @@ function App() {
             <CloudRain className="w-16 h-16" />
           </div>
           <p className="text-sm font-semibold text-tesla-gray mb-1 uppercase tracking-wider">Environment</p>
-          <h3 className="text-3xl font-black text-white">{data?.weather?.Temperature_F || '32'}°F</h3>
+          <h3 className="text-3xl font-black text-white">{data?.weather?.Temperature_F ?? '—'}°F</h3>
           <div className="mt-4 flex items-center gap-2 text-tesla-gray text-xs font-bold uppercase">
             <Zap className="w-4 h-4 text-blue-400" />
-            {data?.weather?.Condition || 'Light Snow'}
+            {data?.weather?.Condition ?? '—'}
           </div>
         </div>
       </div>
@@ -228,8 +220,8 @@ function App() {
             <TrendingUp className="w-5 h-5 text-orange-500" />
             <h4 className="font-bold uppercase tracking-wider text-sm">Predictive Profitability</h4>
           </div>
-          <p className="text-2xl font-black text-white">$142.50 <span className="text-tesla-gray text-xs font-normal">Exp. Tip delta tomorrow</span></p>
-          <p className="text-xs text-tesla-gray mt-2 italic">Based on weather forecast (Light Snow) and historical airport activity trends.</p>
+          <p className="text-2xl font-black text-white">$0.00 <span className="text-tesla-gray text-xs font-normal">Exp. Tip delta tomorrow</span></p>
+          <p className="text-xs text-tesla-gray mt-2 italic">Awaiting live weather and historical data sync.</p>
         </div>
 
         <div className="bg-[#1a1a1a] p-6 rounded-2xl border border-white/5 border-l-blue-500/50 border-l-4">
@@ -237,8 +229,8 @@ function App() {
             <Navigation className="w-5 h-5 text-blue-500" />
             <h4 className="font-bold uppercase tracking-wider text-sm">Aviation Correlation</h4>
           </div>
-          <p className="text-2xl font-black text-white">HIGH <span className="text-tesla-gray text-xs font-normal">Airport pickup demand</span></p>
-          <p className="text-xs text-tesla-gray mt-2 italic">Detected 4 upcoming flight arrivals at COS in the next 60 minutes.</p>
+          <p className="text-2xl font-black text-white">— <span className="text-tesla-gray text-xs font-normal">Airport pickup demand</span></p>
+          <p className="text-xs text-tesla-gray mt-2 italic">Awaiting live flight arrival data.</p>
         </div>
       </div>
 
