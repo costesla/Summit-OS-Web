@@ -286,6 +286,7 @@ const TessieDrivesPanel = ({
 }) => {
     const [drives, setDrives] = useState<TessieDrive[]>([]);
     const [loading, setLoading] = useState(true);
+    const [pendingDrive, setPendingDrive] = useState<TessieDrive | null>(null);
     const [error, setError] = useState(false);
     const [importedIds, setImportedIds] = useState<Set<string>>(new Set());
 
@@ -717,6 +718,7 @@ const DriverDashboard = () => {
     });
 
     const [stripeBalance, setStripeBalance] = useState<{ available: number; pending: number } | null>(null);
+    const [pendingDrive, setPendingDrive] = useState<TessieDrive | null>(null);
 
     useEffect(() => {
         const fetchStripe = async () => {
@@ -789,8 +791,11 @@ const DriverDashboard = () => {
             insurance: parseFloat(tripForm.insurance) || 0,
             otherFees: parseFloat(tripForm.otherFees) || 0,
             timestamp: `${selectedDate}T${new Date().toTimeString().split(' ')[0]}`,
+            tessie_drive_id: pendingDrive?.tessie_drive_id,
+            distance_miles: pendingDrive?.distance_miles
         }, ...trips]);
         setTripForm({ type: 'Uber', fare: '', tip: '', fees: '', insurance: '', otherFees: '' });
+        setPendingDrive(null);
     };
 
     const addExpense = (e: React.FormEvent) => {
@@ -850,6 +855,7 @@ const DriverDashboard = () => {
 
     /** Called from TessieDrivesPanel — pre-fill the trip form and scroll to it */
     const handleImportDrive = (drive: TessieDrive) => {
+        setPendingDrive(drive);
         setTripForm({
             type: tagTripType(drive.tag),
             fare: '',
@@ -1066,6 +1072,27 @@ const DriverDashboard = () => {
                             <h2 className="text-base font-bold mb-4 flex items-center gap-2 text-white">
                                 <Plus className="w-4 h-4 text-cyan-400" /> Log New Trip
                             </h2>
+
+                            {pendingDrive && (
+                                <div className="mb-4 p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse" />
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-bold text-cyan-300 uppercase tracking-wider">Linked to Tessie Drive</span>
+                                            <span className="text-[9px] text-cyan-500 font-mono">
+                                                {pendingDrive.distance_miles.toFixed(1)} miles · {pendingDrive.time_mst}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => setPendingDrive(null)}
+                                        className="text-[9px] font-bold text-gray-500 hover:text-white uppercase tracking-tighter"
+                                    >
+                                        Unlink
+                                    </button>
+                                </div>
+                            )}
+
                             <form onSubmit={addTrip} className="space-y-3">
                                 <div className="grid grid-cols-2 gap-2">
                                     {(['Uber', 'Private'] as const).map((t) => (
