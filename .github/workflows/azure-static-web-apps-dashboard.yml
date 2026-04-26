@@ -36,7 +36,8 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
           app_location: "frontend/apps/dashboard"
-          api_location: ""
+          api_location: "frontend/apps/dashboard/api"
+          skip_api_build: true
           output_location: "dist"
 
   close_pull_request_job:
