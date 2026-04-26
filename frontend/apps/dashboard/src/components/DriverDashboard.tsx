@@ -226,7 +226,8 @@ const TeslaStatusBar = () => {
                                 style={{ width: `${soc ?? 0}%` }}
                             />
                         </div>
-                        <span className={`text-sm font-black font-mono tabular-nums ${barColor.replace('bg-', 'text-')}`}>
+                        <span className={`text-2xl font-black font-mono tabular-nums ${barColor.replace('bg-', 'text-')}`}
+                            style={{ textShadow: `0 0 20px ${soc > 50 ? 'rgba(52,211,153,0.3)' : soc > 20 ? 'rgba(251,191,36,0.3)' : 'rgba(244,63,94,0.3)'}` }}>
                             {soc !== null ? `${soc}%` : '--'}
                         </span>
                     </div>
@@ -897,6 +898,9 @@ const DriverDashboard = () => {
                 backgroundImage: 'radial-gradient(circle at 50% 0%, hsla(185,90%,55%,0.12), transparent 55%), linear-gradient(to bottom, #05080a, #000)',
             }}>
             <div className="max-w-6xl mx-auto space-y-5">
+                
+                {/* ── Tesla Status Bar (TOP) ── */}
+                <TeslaStatusBar />
 
                 {/* ── Header ── */}
                 <header
@@ -965,9 +969,6 @@ const DriverDashboard = () => {
                         </div>
                     </div>
                 </header>
-
-                {/* ── Tesla Status Bar ── */}
-                <TeslaStatusBar />
 
                 {/* ── Reset Confirm ── */}
                 {showResetConfirm && (

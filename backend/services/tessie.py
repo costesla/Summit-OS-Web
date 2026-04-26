@@ -1,7 +1,7 @@
 import logging
 import requests
 from datetime import datetime
-from .secret_manager import SecretManager
+from services.secret_manager import SecretManager
 
 class TessieClient:
     def __init__(self):
@@ -43,8 +43,8 @@ class TessieClient:
 
         logging.info(f"Fetching real-time state for VIN: {vin}")
         try:
-            # Tessie's state endpoint
-            url = f"{self.base_url}/{vin}/state"
+            # Tessie's state endpoint - use cache to get last known state if vehicle is asleep
+            url = f"{self.base_url}/{vin}/state?use_cache=true"
             headers = {"Authorization": f"Bearer {self.api_key}"}
             
             response = requests.get(url, headers=headers, timeout=self.timeout)
