@@ -739,10 +739,24 @@ const IntelligenceSyncPanel = ({ selectedDate }: { selectedDate: string }) => {
     );
 };
 
+// ─── Helper: today's date string in Mountain Time ──────────────────────────
+const getTodayMST = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Denver' });
+
 const DriverDashboard = () => {
     const [trips, setTrips] = useState<Trip[]>(() => {
         if (typeof window === 'undefined') return [];
-        try { return JSON.parse(localStorage.getItem('cos_trips') ?? '[]'); } catch { return []; }
+        try {
+            const savedDate = localStorage.getItem('cos_session_date');
+            if (savedDate && savedDate !== getTodayMST()) {
+                // New day — wipe stale data immediately
+                localStorage.removeItem('cos_trips');
+                localStorage.removeItem('cos_expenses');
+                localStorage.removeItem('cos_session_start');
+                localStorage.setItem('cos_session_date', getTodayMST());
+                return [];
+            }
+            return JSON.parse(localStorage.getItem('cos_trips') ?? '[]');
+        } catch { return []; }
     });
     const [expenses, setExpenses] = useState<Expenses>(() => {
         if (typeof window === 'undefined') return { fastfood: [], charging: [] };
@@ -772,10 +786,15 @@ const DriverDashboard = () => {
     const [expenseForm, setExpenseForm] = useState<ExpenseForm>({
         category: 'fastfood', amount: '', note: '',
     });
-    const [sessionStart] = useState<Date>(() => {
+    const [sessionStart, setSessionStart] = useState<Date>(() => {
         if (typeof window === 'undefined') return new Date();
         const saved = localStorage.getItem('cos_session_start');
-        if (!saved) { const d = new Date(); localStorage.setItem('cos_session_start', d.toISOString()); return d; }
+        if (!saved) {
+            const d = new Date();
+            localStorage.setItem('cos_session_start', d.toISOString());
+            localStorage.setItem('cos_session_date', getTodayMST());
+            return d;
+        }
         return new Date(saved);
     });
     const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -787,6 +806,30 @@ const DriverDashboard = () => {
     // ── Persist to localStorage on every change ──────────────────────────────
     useEffect(() => { localStorage.setItem('cos_trips', JSON.stringify(trips)); }, [trips]);
     useEffect(() => { localStorage.setItem('cos_expenses', JSON.stringify(expenses)); }, [expenses]);
+
+    // ── Auto-advance to a new day at midnight ────────────────────────────────
+    useEffect(() => {
+        const checkDay = () => {
+            const today = getTodayMST();
+            const storedDate = localStorage.getItem('cos_session_date');
+            if (storedDate && storedDate !== today) {
+                // Midnight crossed — reset session automatically
+                localStorage.removeItem('cos_trips');
+                localStorage.removeItem('cos_expenses');
+                localStorage.removeItem('cos_session_start');
+                localStorage.setItem('cos_session_date', today);
+                setTrips([]);
+                setExpenses({ fastfood: [], charging: [] });
+                const d = new Date();
+                setSessionStart(d);
+                localStorage.setItem('cos_session_start', d.toISOString());
+                setSelectedDate(today);
+            }
+        };
+        // Check every minute
+        const iv = setInterval(checkDay, 60_000);
+        return () => clearInterval(iv);
+    }, []);
 
     const stats = useMemo(() => {
         const totalEarnings = trips.reduce((sum, t) => sum + t.fare + (t.tip || 0), 0);
@@ -852,6 +895,10 @@ const DriverDashboard = () => {
         localStorage.removeItem('cos_trips');
         localStorage.removeItem('cos_expenses');
         localStorage.removeItem('cos_session_start');
+        localStorage.setItem('cos_session_date', getTodayMST());
+        const d = new Date();
+        setSessionStart(d);
+        localStorage.setItem('cos_session_start', d.toISOString());
         setTrips([]); setExpenses({ fastfood: [], charging: [] }); setShowResetConfirm(false);
     };
 
