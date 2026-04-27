@@ -60,7 +60,7 @@ class DatabaseClient:
         import hashlib
         source_url = trip_data.get('source_url', '')
         url_hash = hashlib.md5(source_url.encode()).hexdigest()[:8]
-        ride_id = trip_data.get('trip_id') or trip_data.get('RideID') or f"R-{url_hash}"
+        ride_id = str(trip_data.get('trip_id') or trip_data.get('RideID') or f"R-{url_hash}")
 
         conn = self.get_connection()
         if not conn: return
@@ -103,14 +103,14 @@ class DatabaseClient:
             t_start,
             trip_data.get('start_location') or trip_data.get('pickup_place') or trip_data.get('Pickup_Location'),
             trip_data.get('end_location') or trip_data.get('dropoff_place') or trip_data.get('Dropoff_Location'),
-            trip_data.get('distance_miles') or trip_data.get('Distance_mi', 0),
-            trip_data.get('duration_minutes') or trip_data.get('Duration_min', 0),
+            float(trip_data.get('distance_miles') or trip_data.get('Distance_mi') or 0),
+            float(trip_data.get('duration_minutes') or trip_data.get('Duration_min') or 0),
             trip_data.get('tessie_drive_id') or trip_data.get('Tessie_DriveID'),
-            trip_data.get('tessie_distance') or trip_data.get('Tessie_Distance', 0),
-            trip_data.get('fare', 0),
-            trip_data.get('tip', 0),
-            trip_data.get('driver_total', 0),
-            trip_data.get('uber_cut', 0),
+            float(trip_data.get('tessie_distance') or trip_data.get('Tessie_Distance') or 0),
+            float(trip_data.get('fare') or 0),
+            float(trip_data.get('tip') or 0),
+            float(trip_data.get('driver_total') or 0),
+            float(trip_data.get('uber_cut') or 0),
             trip_data.get('start_soc') or trip_data.get('Start_SOC'),
             trip_data.get('end_soc') or trip_data.get('End_SOC'),
             trip_data.get('energy_used') or trip_data.get('Energy_Used_kWh'),
@@ -124,14 +124,14 @@ class DatabaseClient:
             t_start,
             trip_data.get('start_location') or trip_data.get('pickup_place') or trip_data.get('Pickup_Location'),
             trip_data.get('end_location') or trip_data.get('dropoff_place') or trip_data.get('Dropoff_Location'),
-            trip_data.get('distance_miles') or trip_data.get('Distance_mi', 0),
-            trip_data.get('duration_minutes') or trip_data.get('Duration_min', 0),
+            float(trip_data.get('distance_miles') or trip_data.get('Distance_mi') or 0),
+            float(trip_data.get('duration_minutes') or trip_data.get('Duration_min') or 0),
             trip_data.get('tessie_drive_id') or trip_data.get('Tessie_DriveID'),
-            trip_data.get('tessie_distance') or trip_data.get('Tessie_Distance', 0),
-            trip_data.get('fare', 0),
-            trip_data.get('tip', 0),
-            trip_data.get('driver_total', 0),
-            trip_data.get('uber_cut', 0),
+            float(trip_data.get('tessie_distance') or trip_data.get('Tessie_Distance') or 0),
+            float(trip_data.get('fare') or 0),
+            float(trip_data.get('tip') or 0),
+            float(trip_data.get('driver_total') or 0),
+            float(trip_data.get('uber_cut') or 0),
             trip_data.get('start_soc') or trip_data.get('Start_SOC'),
             trip_data.get('end_soc') or trip_data.get('End_SOC'),
             trip_data.get('energy_used') or trip_data.get('Energy_Used_kWh'),
@@ -167,9 +167,10 @@ class DatabaseClient:
             VALUES (?, ?, ?, ?, ?, ?, GETDATE());
         """
         
+        sid = str(charge_data.get('session_id'))
         p = (charge_data.get('start_time'), charge_data.get('end_time'), charge_data.get('location'),
-             charge_data.get('energy_added'), charge_data.get('cost'))
-        params = (charge_data.get('session_id'),) + p + (charge_data.get('session_id'),) + p
+             float(charge_data.get('energy_added') or 0), float(charge_data.get('cost') or 0))
+        params = (sid,) + p + (sid,) + p
 
         try:
             cursor.execute(query, params)
@@ -211,7 +212,7 @@ class DatabaseClient:
                 VALUES (?, ?, ?, ?, ?, GETDATE());
             """
             
-            eid = expense_data.get('id')
+            eid = str(expense_data.get('id'))
             cat = expense_data.get('category')
             amt = float(expense_data.get('amount') or 0)
             note = expense_data.get('note')
