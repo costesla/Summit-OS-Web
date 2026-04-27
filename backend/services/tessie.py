@@ -351,6 +351,8 @@ class TessieClient:
             "charge_rate_mph": charge_state.get('charge_rate'),
             "minutes_to_full": charge_state.get('minutes_to_full_charge'),
             "battery_range_mi": charge_state.get('battery_range'),
+            "inside_temp": state.get('climate_state', {}).get('inside_temp'),
+            "outside_temp": state.get('climate_state', {}).get('outside_temp'),
             "location": self._resolve_address(drive_state.get('latitude'), drive_state.get('longitude')),
             "timestamp": datetime.now().isoformat()
         }

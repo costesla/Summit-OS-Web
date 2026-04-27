@@ -61,6 +61,9 @@ interface TeslaStatus {
     battery_range_mi: number | null;  // estimated range
     charge_power_kw: number;
     minutes_to_full: number | null;
+    location: string | null;
+    inside_temp: number | null;
+    outside_temp: number | null;
 }
 
 interface TessieDrive {
@@ -257,6 +260,32 @@ const TeslaStatusBar = () => {
                     {/* State label */}
                     {chargingState && !isCharging && (
                         <span className="text-[10px] text-gray-600 font-mono uppercase tracking-wider shrink-0">{chargingState}</span>
+                    )}
+
+                    {/* Temperature */}
+                    {(status.inside_temp !== null || status.outside_temp !== null) && (
+                        <div className="flex items-center gap-3 px-3 py-1 bg-white/5 rounded-full border border-white/5">
+                            {status.outside_temp !== null && (
+                                <div className="flex items-center gap-1">
+                                    <span className="text-[10px] text-gray-500 font-bold uppercase">Ext</span>
+                                    <span className="text-xs font-bold text-white font-mono">{Math.round(status.outside_temp * 9/5 + 32)}°</span>
+                                </div>
+                            )}
+                            {status.inside_temp !== null && (
+                                <div className="flex items-center gap-1 border-l border-white/10 pl-3">
+                                    <span className="text-[10px] text-gray-500 font-bold uppercase">Int</span>
+                                    <span className="text-xs font-bold text-cyan-400 font-mono">{Math.round(status.inside_temp * 9/5 + 32)}°</span>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Location */}
+                    {status.location && (
+                        <div className="flex items-center gap-1.5 px-3 py-1 bg-white/5 rounded-full border border-white/5 max-w-[200px]">
+                            <MapPin className="w-3 h-3 text-cyan-400 shrink-0" />
+                            <span className="text-[10px] font-bold text-gray-400 truncate uppercase tracking-tighter">{status.location}</span>
+                        </div>
                     )}
                 </>
             )}
