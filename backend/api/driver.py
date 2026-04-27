@@ -78,7 +78,7 @@ def driver_sync(req: func.HttpRequest) -> func.HttpResponse:
                 mimetype="application/json"
             )
         except Exception as e:
-            logging.error(f"Driver Data Fetch Error: {e}")
+            logging.error(f"Driver Data Fetch Error for date {date_str}: {e}")
             return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500, headers=CORS_HEADERS)
 
     try:

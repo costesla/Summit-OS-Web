@@ -264,7 +264,9 @@ class DatabaseClient:
         query = """
         SELECT 
             RideID AS id, TripType AS type, Fare AS fare, Tip AS tip, 
-            Platform_Cut AS fees, Tessie_DriveID AS tessie_drive_id, 
+            Platform_Cut AS fees, 
+            0 AS insurance, 0 AS otherFees,
+            Tessie_DriveID AS tessie_drive_id, 
             Distance_mi AS distance_miles, Format(Timestamp_Start, 'yyyy-MM-ddTHH:mm:ss') as timestamp
         FROM Rides.Rides 
         WHERE CAST(Timestamp_Start AS DATE) = CAST(? AS DATE)
