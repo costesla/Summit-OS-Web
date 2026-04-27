@@ -259,6 +259,46 @@ class DatabaseClient:
         query += " ORDER BY Timestamp_Start DESC"
         return self.execute_query_params(query, params)
 
+    def get_trips_by_date(self, date_str):
+        """Fetches all trips for a specific date (YYYY-MM-DD)."""
+        query = """
+        SELECT 
+            RideID AS id, TripType AS type, Fare AS fare, Tip AS tip, 
+            Platform_Cut AS fees, Tessie_DriveID AS tessie_drive_id, 
+            Distance_mi AS distance_miles, Format(Timestamp_Start, 'yyyy-MM-ddTHH:mm:ss') as timestamp
+        FROM Rides.Rides 
+        WHERE CAST(Timestamp_Start AS DATE) = CAST(? AS DATE)
+        ORDER BY Timestamp_Start DESC
+        """
+        return self.execute_query_params(query, (date_str,))
+
+    def get_expenses_by_date(self, date_str):
+        """Fetches manual expenses and charging for a specific date."""
+        # 1. Manual Expenses
+        manual_query = """
+        SELECT 
+            ExpenseID AS id, Category AS category, Amount AS amount, Note AS note, 
+            Format(Timestamp, 'yyyy-MM-ddTHH:mm:ss') as timestamp
+        FROM Rides.ManualExpenses
+        WHERE CAST(Timestamp AS DATE) = CAST(? AS DATE)
+        """
+        manual = self.execute_query_params(manual_query, (date_str,))
+        
+        # 2. Charging Sessions
+        charge_query = """
+        SELECT 
+            SessionID AS id, 'charging' AS category, Cost AS amount, Location_Name AS note, 
+            Format(Start_Time, 'yyyy-MM-ddTHH:mm:ss') as timestamp
+        FROM Rides.ChargingSessions
+        WHERE CAST(Start_Time AS DATE) = CAST(? AS DATE)
+        """
+        charging = self.execute_query_params(charge_query, (date_str,))
+        
+        return {
+            "fastfood": [m for m in manual if m['category'] == 'FastFood'],
+            "charging": charging
+        }
+
     def get_trip_by_id(self, ride_id):
         query = """
         SELECT 

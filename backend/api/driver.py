@@ -50,17 +50,42 @@ def stripe_balance(req: func.HttpRequest) -> func.HttpResponse:
             mimetype="application/json"
         )
 
-@bp.route(route="driver/sync", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+@bp.route(route="driver/sync", methods=["GET", "POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def driver_sync(req: func.HttpRequest) -> func.HttpResponse:
     if req.method == "OPTIONS":
         return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
+
+    db = DatabaseClient()
+
+    if req.method == "GET":
+        try:
+            date_str = req.params.get("date")
+            if not date_str:
+                return func.HttpResponse(json.dumps({"error": "Missing date parameter"}), status_code=400, headers=CORS_HEADERS)
+            
+            trips = db.get_trips_by_date(date_str)
+            expenses = db.get_expenses_by_date(date_str)
+            
+            return func.HttpResponse(
+                json.dumps({
+                    "success": True,
+                    "date": date_str,
+                    "trips": trips,
+                    "expenses": expenses
+                }),
+                status_code=200,
+                headers=CORS_HEADERS,
+                mimetype="application/json"
+            )
+        except Exception as e:
+            logging.error(f"Driver Data Fetch Error: {e}")
+            return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500, headers=CORS_HEADERS)
 
     try:
         data = req.get_json()
         trips = data.get("trips", [])
         expenses = data.get("expenses", {}) # { fastfood: [], charging: [] }
         
-        db = DatabaseClient()
         semantic = SemanticIngestionService()
         
         results = {
@@ -115,7 +140,7 @@ def driver_sync(req: func.HttpRequest) -> func.HttpResponse:
                 "start_time": charge.get("timestamp"),
                 "end_time": charge.get("timestamp"),
                 "location": "Manual Entry",
-                "energy_added": 0, # Could be improved if we add fields
+                "energy_added": 0, 
                 "cost": charge.get("amount")
             })
             results["expenses_saved"] += 1
