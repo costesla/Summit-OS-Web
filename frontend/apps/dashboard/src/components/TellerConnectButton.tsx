@@ -61,6 +61,7 @@ const TellerConnectButton: React.FC<TellerConnectButtonProps> = ({ applicationId
 
         const teller = window.TellerConnect.setup({
             applicationId: applicationId,
+            environment: environment || 'production',
             onSuccess: (enrollment: any) => {
                 const accessToken = enrollment.accessToken;
                 if (accessToken) {
