@@ -26,7 +26,7 @@ TESLA_WH_PER_MILE = 250.0
 
 # ─── Stripe Payment Link ───────────────────────────────────────────────────────
 
-def create_stripe_payment_link(customer_name: str, amount_usd: float, trip_label: str) -> str:
+def create_stripe_payment_link(customer_name: str, customer_email: str, amount_usd: float, trip_label: str) -> str:
     """
     Creates a one-time Stripe Checkout session and returns the hosted URL.
     Falls back to None if Stripe is unavailable.
@@ -42,7 +42,7 @@ def create_stripe_payment_link(customer_name: str, amount_usd: float, trip_label
 
         session = stripe.checkout.Session.create(
             payment_method_types=["card"],
-            customer_email=None,  # Customer fills in at checkout
+            customer_email=customer_email if customer_email else None,
             line_items=[{
                 "price_data": {
                     "currency": "usd",
@@ -55,10 +55,11 @@ def create_stripe_payment_link(customer_name: str, amount_usd: float, trip_label
                 "quantity": 1,
             }],
             mode="payment",
-            success_url=f"{base_url}/booking-success?session_id={{CHECKOUT_SESSION_ID}}",
+            success_url=f"{base_url}/book/success?session_id={{CHECKOUT_SESSION_ID}}",
             cancel_url=f"{base_url}/book",
             metadata={
                 "customerName": customer_name,
+                "customerEmail": customer_email,
                 "source": "post_trip_invoice",
             }
         )

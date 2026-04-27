@@ -4,6 +4,7 @@ import json
 import logging
 import tempfile
 from datetime import datetime
+from .secret_manager import SecretManager
 
 class BankingClient:
     def __init__(self):
@@ -12,10 +13,12 @@ class BankingClient:
         Requires TELLER_CERT, TELLER_KEY, and TELLER_TOKEN (Access Token).
         """
         self.base_url = "https://api.teller.io"
-        self.cert_str = os.environ.get("TELLER_CERT")
-        self.key_str = os.environ.get("TELLER_KEY")
-        self.access_token = os.environ.get("TELLER_TOKEN")
-        self.default_account_id = os.environ.get("TELLER_ACCOUNT_ID")
+        self.secrets = SecretManager()
+        
+        self.cert_str = self.secrets.get_secret("TELLER_CERT")
+        self.key_str = self.secrets.get_secret("TELLER_KEY")
+        self.access_token = self.secrets.get_secret("TELLER_TOKEN")
+        self.default_account_id = self.secrets.get_secret("TELLER_ACCOUNT_ID")
         
         if not self.cert_str or not self.key_str:
             logging.warning("Teller mTLS credentials (TELLER_CERT/TELLER_KEY) are missing. Banking will not function.")

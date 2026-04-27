@@ -6,13 +6,13 @@ from datetime import datetime
 from typing import Dict, Any, Tuple, Optional
 import requests # Added for archive_artifact
 
-from .ocr import OCRClient
-from .database import DatabaseClient
-from .vector_store import VectorStore
-from .validation_gate import ValidationGate
-from .vector_contract import ArtifactRecord, UberTripRecord, CanonicalVector
-from .config_loader import config_loader
-from .sharepoint import SharePointClient
+from services.ocr import OCRClient
+from services.database import DatabaseClient
+from services.vector_store import VectorStore
+from services.validation_gate import ValidationGate
+from services.vector_contract import ArtifactRecord, UberTripRecord, CanonicalVector
+from services.config_loader import config_loader
+from services.sharepoint import SharePointClient
 
 class SummitPipeline:
     """

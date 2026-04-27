@@ -237,10 +237,12 @@ def copilot_vehicle_status(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(json.dumps({"error": "Rate limit exceeded"}), status_code=429)
 
     try:
+        from services.secret_manager import SecretManager
+        secrets = SecretManager()
         tessie = TessieClient()
-        vin = os.environ.get("TESSIE_VIN")
+        vin = secrets.get_secret("TESSIE_VIN")
         if not vin:
-            return func.HttpResponse(json.dumps({"error": "VIN not configured"}), status_code=500)
+            return func.HttpResponse(json.dumps({"error": "VIN not configured in Key Vault"}), status_code=500)
         state = tessie.get_public_state(vin)
         if not state:
             return func.HttpResponse(json.dumps({"error": "Vehicle unreachable"}), status_code=404)
@@ -301,12 +303,15 @@ def copilot_charging_live(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(json.dumps({"error": "Rate limit exceeded"}), status_code=429)
 
     try:
-        vin = os.environ.get("TESSIE_VIN")
+        from services.secret_manager import SecretManager
+        secrets = SecretManager()
+        vin = secrets.get_secret("TESSIE_VIN")
         if not vin:
-            return func.HttpResponse(json.dumps({"error": "Vehicle VIN not configured"}), status_code=500)
+            return func.HttpResponse(json.dumps({"error": "Vehicle VIN not configured in Key Vault"}), status_code=500)
 
         tessie = TessieClient()
         charging_state = tessie.get_live_charging_state(vin)
+
         
         if not charging_state:
             return func.HttpResponse(json.dumps({"error": "Live charging data is not available right now"}), status_code=404)

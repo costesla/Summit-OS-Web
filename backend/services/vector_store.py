@@ -7,8 +7,8 @@ from datetime import datetime
 from typing import List, Dict, Any, Optional
 from openai import OpenAI
 from pydantic import ValidationError
-from .database import DatabaseClient
-from .vector_contract import CanonicalVector
+from services.database import DatabaseClient
+from services.vector_contract import CanonicalVector
 
 class VectorStore:
     """

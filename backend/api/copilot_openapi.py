@@ -224,16 +224,17 @@ def copilot_openapi(req: func.HttpRequest) -> func.HttpResponse:
                 "get": {
                     "operationId": "searchTripsSemantically",
                     "summary": "Find Verified Receipts and Purchases",
-                    "description": "Searches for receipts, expenses, and transaction details (e.g., Starbucks, McDonald's). Use this tool primarily to answer questions about purchases.",
-                    "x-ms-operation-label": "receipt_lookup",
+                    "description": "Searches for verifiable receipts, expenses, and purchase details (e.g., 'Show me my Starbucks runs' or 'Find the McDonald's receipt from Saturday'). Use this to provide the user with human-verifiable evidence of spending.",
+                    "x-ms-operation-label": "receipt_verification",
                     "parameters": [
                         {
                             "name": "q",
                             "in": "query",
-                            "description": "Semantic search query (e.g. 'Charging session on Tuesday')",
+                            "description": "Natural language search query for a purchase or receipt",
                             "required": True,
                             "schema": {"type": "string"}
                         },
+
                         {
                             "name": "keyword",
                             "in": "query",
@@ -624,6 +625,57 @@ def copilot_openapi(req: func.HttpRequest) -> func.HttpResponse:
                                             "success": {"type": "boolean"},
                                             "transactions_processed": {"type": "integer"},
                                             "transactions_vectorized": {"type": "integer"}
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "/send-invoice": {
+                "post": {
+                    "operationId": "sendPostTripInvoice",
+                    "summary": "Send a post-trip invoice to a client",
+                    "description": "Generates and emails a professional SummitOS invoice to a client after a completed private trip. The invoice includes Venmo, Zelle, and an optional Stripe payment link, plus Thor Telemetry showing electric energy used vs equivalent gas consumption. Use this when the user says 'send an invoice', 'bill a client', or 'send a payment request'. The Tessie VIN will be auto-queried for telemetry if distanceMiles or energyUsedKwh are not provided.",
+                    "requestBody": {
+                        "required": True,
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": ["customerEmail", "amountUSD"],
+                                    "properties": {
+                                        "customerName":  {"type": "string",  "description": "Client full name"},
+                                        "customerEmail": {"type": "string",  "description": "Client email address"},
+                                        "amountUSD":     {"type": "number",  "description": "Total amount due in USD (e.g. 100.00)"},
+                                        "pickup":        {"type": "string",  "description": "Pickup location"},
+                                        "dropoff":       {"type": "string",  "description": "Drop-off location"},
+                                        "tripDate":      {"type": "string",  "description": "Trip date YYYY-MM-DD (defaults to today)"},
+                                        "distanceMiles": {"type": "number",  "description": "Trip distance in miles (auto-fetched from Tessie if omitted)"},
+                                        "energyUsedKwh": {"type": "number",  "description": "Energy used in kWh from Tessie (auto-fetched if omitted)"},
+                                        "notes":         {"type": "string",  "description": "Optional personal note to include in the email"},
+                                        "generateStripe": {"type": "boolean", "description": "Whether to generate a Stripe payment link (default true)"}
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "responses": {
+                        "200": {
+                            "description": "Invoice sent successfully",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "success":          {"type": "boolean"},
+                                            "invoiceId":        {"type": "string"},
+                                            "sentTo":           {"type": "string"},
+                                            "amountUSD":        {"type": "number"},
+                                            "stripeGenerated":  {"type": "boolean"},
+                                            "stripeUrl":        {"type": "string"},
+                                            "telemetry":        {"type": "object"}
                                         }
                                     }
                                 }
