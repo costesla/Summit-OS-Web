@@ -5,7 +5,7 @@ import {
     TrendingUp, Car, Zap, Utensils, Plus, Trash2,
     Navigation, Receipt, RotateCcw, Clock,
     Battery, BatteryCharging, WifiOff, Download,
-    MapPin, Gauge, LogOut, ShieldCheck, Cpu, Play, Search, RefreshCw, Cloud, CreditCard
+    MapPin, Gauge, LogOut, ShieldCheck, Cpu, Play, Search, RefreshCw, Cloud, CreditCard, Loader2, Check
 } from 'lucide-react';
 import TellerConnectButton from './TellerConnectButton';
 
@@ -745,18 +745,7 @@ const getTodayMST = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Am
 const DriverDashboard = () => {
     const [trips, setTrips] = useState<Trip[]>(() => {
         if (typeof window === 'undefined') return [];
-        try {
-            const savedDate = localStorage.getItem('cos_session_date');
-            if (savedDate && savedDate !== getTodayMST()) {
-                // New day — wipe stale data immediately
-                localStorage.removeItem('cos_trips');
-                localStorage.removeItem('cos_expenses');
-                localStorage.removeItem('cos_session_start');
-                localStorage.setItem('cos_session_date', getTodayMST());
-                return [];
-            }
-            return JSON.parse(localStorage.getItem('cos_trips') ?? '[]');
-        } catch { return []; }
+        try { return JSON.parse(localStorage.getItem('cos_trips') ?? '[]'); } catch { return []; }
     });
     const [expenses, setExpenses] = useState<Expenses>(() => {
         if (typeof window === 'undefined') return { fastfood: [], charging: [] };
@@ -826,10 +815,38 @@ const DriverDashboard = () => {
                 setSelectedDate(today);
             }
         };
-        // Check every minute
         const iv = setInterval(checkDay, 60_000);
         return () => clearInterval(iv);
     }, []);
+
+    // ── Fetch from Cloud on Date Change ──────────────────────────────────────
+    const [isFetchingCloud, setIsFetchingCloud] = useState(false);
+    
+    const fetchFromCloud = useCallback(async (date: string) => {
+        setIsFetchingCloud(true);
+        try {
+            const resp = await fetch(`${AZURE_BASE}/driver/sync?date=${date}`);
+            if (resp.ok) {
+                const data = await resp.json();
+                if (data.success) {
+                    // Only update if we actually got data back to avoid wiping local work 
+                    // unless the cloud is explicitly the source of truth.
+                    // For syncing, cloud IS the source of truth.
+                    setTrips(data.trips || []);
+                    setExpenses(data.expenses || { fastfood: [], charging: [] });
+                    console.log(`Cloud data synced for ${date}`);
+                }
+            }
+        } catch (err) {
+            console.error('Failed to fetch from cloud:', err);
+        } finally {
+            setIsFetchingCloud(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchFromCloud(selectedDate);
+    }, [selectedDate, fetchFromCloud]);
 
     const stats = useMemo(() => {
         const totalEarnings = trips.reduce((sum, t) => sum + t.fare + (t.tip || 0), 0);
@@ -920,6 +937,8 @@ const DriverDashboard = () => {
             });
             if (resp.ok) {
                 setSyncStatus('success');
+                // Re-fetch to ensure local state matches DB exactly (IDs, etc)
+                await fetchFromCloud(selectedDate);
                 setTimeout(() => setSyncStatus('idle'), 3000);
             } else {
                 setSyncStatus('error');
@@ -980,67 +999,88 @@ const DriverDashboard = () => {
                 {/* ── Tesla Status Bar (TOP) ── */}
                 <TeslaStatusBar />
 
-                {/* ── Header ── */}
                 <header
-                    className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl border border-white/8"
-                    style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)' }}
+                    className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 p-8 rounded-2xl border border-white/8"
+                    style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(24px)' }}
                 >
-                    <div>
+                    <div className="space-y-1">
                         <p className="text-[10px] font-bold tracking-[0.4em] text-cyan-400 uppercase font-mono mb-2 flex items-center gap-2">
                             <span className="w-6 h-[1px] bg-cyan-400 inline-block" />
-                            COS Tesla · Driver Mode
+                            SummitOS · Driver Intelligence
                         </p>
-                        <h1 className="text-3xl font-bold flex items-center gap-3 tracking-tight">
-                            <Navigation className="text-cyan-400 w-7 h-7" />
+                        <h1 className="text-4xl font-bold flex items-center gap-3 tracking-tight text-white">
+                            <Navigation className="text-cyan-400 w-8 h-8" />
                             Driver Dashboard
                         </h1>
-                        <p className="text-gray-500 font-mono text-xs mt-1 tracking-wider flex items-center gap-3">
-                            <span>SESSION</span>
-                            <input
-                                type="date"
-                                value={selectedDate}
-                                onChange={(e) => { if (e.target.value) setSelectedDate(e.target.value); }}
-                                className="bg-transparent border-none text-cyan-400 font-bold focus:outline-none cursor-pointer"
-                            />
-                            {azureUser && <span className="text-cyan-400/60">· {azureUser}</span>}
-                        </p>
+                        <div className="flex items-center gap-3 pt-2">
+                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-black/40 border border-white/10">
+                                <Clock className="w-3.5 h-3.5 text-gray-500" />
+                                <input
+                                    type="date"
+                                    value={selectedDate}
+                                    onChange={(e) => { if (e.target.value) setSelectedDate(e.target.value); }}
+                                    className="bg-transparent border-none text-cyan-400 text-xs font-bold focus:outline-none cursor-pointer font-mono"
+                                />
+                            </div>
+                            {azureUser && (
+                                <div className="text-[10px] text-gray-500 font-mono flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/3 border border-white/5">
+                                    <ShieldCheck className="w-3 h-3 text-emerald-500/50" />
+                                    {azureUser}
+                                </div>
+                            )}
+                        </div>
                     </div>
 
-                    <div className="flex items-end gap-8">
-                        <div className="text-right">
-                            <p className="text-[10px] font-bold uppercase text-gray-600 tracking-[0.2em] font-mono">Net Profit</p>
-                            <p className={`text-4xl font-black tracking-tighter ${stats.profit >= 0 ? 'text-cyan-400' : 'text-rose-400'}`}
-                                style={{ textShadow: stats.profit >= 0 ? '0 0 30px rgba(0,242,255,0.5)' : '0 0 30px rgba(244,63,94,0.4)' }}>
-                                ${stats.profit.toFixed(2)}
-                            </p>
-                        </div>
-                        <div className="text-right">
-                            <p className="text-[10px] font-bold uppercase text-gray-600 tracking-[0.2em] font-mono">Est. $/hr</p>
-                            <p className="text-2xl font-black text-white">${Math.max(0, stats.hourlyRate).toFixed(2)}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <button 
+                    <div className="flex flex-wrap items-center gap-8 lg:gap-12">
+                        <div className="flex flex-col gap-2">
+                            <button
                                 onClick={syncToCloud}
                                 disabled={syncing}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all font-bold text-xs uppercase tracking-wider ${
-                                    syncStatus === 'success' 
-                                    ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400' 
-                                    : syncStatus === 'error'
-                                    ? 'bg-rose-500/20 border-rose-500/40 text-rose-400'
-                                    : 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20'
-                                } ${syncing ? 'opacity-50 cursor-wait' : ''}`}
+                                className={`group relative px-6 py-2.5 rounded-xl font-bold uppercase tracking-widest text-[10px] transition-all border flex items-center gap-2 min-w-[160px] justify-center ${
+                                    syncing ? 'bg-gray-800 border-white/5 text-gray-500 cursor-wait' :
+                                    syncStatus === 'success' ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400' :
+                                    syncStatus === 'error' ? 'bg-rose-500/20 border-rose-500/40 text-rose-400' :
+                                    'bg-cyan-500/10 border-cyan-500/20 text-cyan-400 hover:border-cyan-500/50 hover:bg-cyan-500/20'
+                                }`}
                             >
-                                <Cloud className={`w-4 h-4 ${syncing ? 'animate-pulse' : ''}`} />
-                                {syncing ? 'Syncing...' : syncStatus === 'success' ? 'Synced' : syncStatus === 'error' ? 'Failed' : 'Sync to Cloud'}
+                                {syncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 
+                                 syncStatus === 'success' ? <Check className="w-3.5 h-3.5" /> : 
+                                 <Cloud className="w-3.5 h-3.5" />}
+                                {syncing ? 'Syncing...' : syncStatus === 'success' ? 'Cloud Synced' : 'Sync to Cloud'}
                             </button>
+                            
+                            <button
+                                onClick={() => fetchFromCloud(selectedDate)}
+                                disabled={isFetchingCloud}
+                                className="text-[9px] font-mono text-gray-600 hover:text-cyan-400 transition-colors flex items-center gap-1.5 px-2 py-1 justify-center group"
+                            >
+                                <RefreshCw className={`w-2.5 h-2.5 group-hover:rotate-180 transition-transform duration-500 ${isFetchingCloud ? 'animate-spin' : ''}`} />
+                                {isFetchingCloud ? 'Refreshing Data...' : 'Refresh from Cloud'}
+                            </button>
+                        </div>
 
+                        <div className="flex items-center gap-10">
+                            <div className="text-right">
+                                <p className="text-[10px] font-bold uppercase text-gray-600 tracking-[0.2em] font-mono mb-1">Net Profit</p>
+                                <p className={`text-3xl font-black tracking-tighter ${stats.profit >= 0 ? 'text-white' : 'text-rose-400'}`}>
+                                    ${stats.profit.toFixed(2)}
+                                </p>
+                            </div>
+                            <div className="h-10 w-[1px] bg-white/5" />
+                            <div className="text-right">
+                                <p className="text-[10px] font-bold uppercase text-gray-600 tracking-[0.2em] font-mono mb-1">$/Hour</p>
+                                <p className="text-2xl font-black text-cyan-400/80">${Math.max(0, stats.hourlyRate).toFixed(2)}</p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
                             <button onClick={() => setShowResetConfirm(true)}
-                                className="p-2 rounded-xl border border-white/10 text-gray-600 hover:text-rose-400 hover:border-rose-500/30 transition-all"
-                                title="Reset Day">
+                                className="p-2.5 rounded-xl border border-white/5 bg-white/3 text-gray-600 hover:text-rose-400 hover:border-rose-500/20 transition-all"
+                                title="Reset Session Data">
                                 <RotateCcw className="w-4 h-4" />
                             </button>
                             <a href="/.auth/logout?post_logout_redirect_uri=/"
-                                className="p-2 rounded-xl border border-white/10 text-gray-600 hover:text-rose-400 hover:border-rose-500/30 transition-all flex items-center gap-1.5 text-xs font-mono"
+                                className="p-2.5 rounded-xl border border-white/5 bg-white/3 text-gray-600 hover:text-white hover:border-white/20 transition-all"
                                 title="Sign Out">
                                 <LogOut className="w-4 h-4" />
                             </a>
