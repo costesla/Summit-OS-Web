@@ -15,7 +15,7 @@ declare global {
     }
 }
 
-const TellerConnectButton: React.FC<TellerConnectButtonProps> = ({ applicationId, onTokenReceived }) => {
+const TellerConnectButton: React.FC<TellerConnectButtonProps> = ({ applicationId, environment, onTokenReceived }) => {
     const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
     const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
     const [token, setToken] = useState<string | null>(null);
@@ -76,7 +76,7 @@ const TellerConnectButton: React.FC<TellerConnectButtonProps> = ({ applicationId
         });
 
         teller.open();
-    }, [applicationId, onTokenReceived]);
+    }, [applicationId, environment, onTokenReceived]);
 
     const copyToClipboard = () => {
         if (token) {
