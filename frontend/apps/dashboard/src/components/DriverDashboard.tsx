@@ -743,6 +743,11 @@ const IntelligenceSyncPanel = ({ selectedDate }: { selectedDate: string }) => {
 const getTodayMST = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Denver' });
 
 const DriverDashboard = () => {
+    const [selectedDate, setSelectedDate] = useState(() => {
+        if (typeof window === 'undefined') return new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Denver' });
+        return new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Denver' });
+    });
+
     const [trips, setTrips] = useState<Trip[]>(() => {
         if (typeof window === 'undefined') return [];
         try { return JSON.parse(localStorage.getItem('cos_trips') ?? '[]'); } catch { return []; }
@@ -866,10 +871,6 @@ const DriverDashboard = () => {
         };
     }, [trips, expenses, sessionStart]);
 
-    const [selectedDate, setSelectedDate] = useState(() => {
-        if (typeof window === 'undefined') return '2026-03-05';
-        return new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Denver' });
-    });
 
     const addTrip = (e: React.FormEvent) => {
         e.preventDefault();
