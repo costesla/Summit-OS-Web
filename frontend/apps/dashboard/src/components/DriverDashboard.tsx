@@ -830,7 +830,9 @@ const DriverDashboard = () => {
     const fetchFromCloud = useCallback(async (date: string) => {
         setIsFetchingCloud(true);
         try {
-            const resp = await fetch(`${AZURE_BASE}/driver/sync?date=${date}`);
+            const resp = await fetch(`${AZURE_BASE}/driver/sync?date=${date}&t=${Date.now()}`, {
+                cache: 'no-store'
+            });
             if (resp.ok) {
                 const data = await resp.json();
                 if (data.success) {
@@ -931,7 +933,7 @@ const DriverDashboard = () => {
         setSyncing(true);
         setSyncStatus('idle');
         try {
-            const resp = await fetch('https://summitos-api.azurewebsites.net/api/driver/sync', {
+            const resp = await fetch(`${AZURE_BASE}/driver/sync`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ trips, expenses })
