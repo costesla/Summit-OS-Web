@@ -1,5 +1,5 @@
 import logging
-from .vector_store import VectorStore
+from services.vector_store import VectorStore
 
 class SystemOrchestrator:
     """

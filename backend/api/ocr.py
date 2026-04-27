@@ -14,11 +14,12 @@ bp = func.Blueprint()
 from services.pipeline import SummitPipeline
 
 bp = func.Blueprint()
-pipeline = SummitPipeline()
+# pipeline = SummitPipeline() # Moved inside function to avoid startup deadlocks
 
 @bp.route(route="process-blob", methods=["POST"], auth_level=func.AuthLevel.FUNCTION)
 def process_blob_http(req: func.HttpRequest) -> func.HttpResponse:
     logging.info("Modernized SummitOS Pipeline Triggered")
+    pipeline = SummitPipeline()
     try:
         req_body = req.get_json()
         blob_url = req_body.get('blob_url')

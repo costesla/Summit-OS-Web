@@ -13,6 +13,13 @@ class ValidationGate:
     Handles Quarantine for non-compliant data.
     """
     def __init__(self, log_path: str = "Audit_Log.ndjson", quarantine_root: str = "Quarantine"):
+        # Azure Linux compatibility: Use /tmp for writable files
+        is_azure = os.environ.get("FUNCTIONS_WORKER_RUNTIME") is not None
+        if is_azure and not log_path.startswith("/tmp/"):
+            log_path = os.path.join("/tmp", log_path)
+        if is_azure and not quarantine_root.startswith("/tmp/"):
+            quarantine_root = os.path.join("/tmp", quarantine_root)
+            
         self.log_path = log_path
         self.quarantine_root = quarantine_root
         

@@ -321,3 +321,130 @@ class GraphClient:
             
         return resp.json()
 
+
+    # --- ONEDRIVE / DRIVE METHODS ---
+
+    def get_drive_root_id(self):
+        """Fetches the root ID of the user's primary drive."""
+        token = self._get_token()
+        url = f"https://graph.microsoft.com/v1.0/users/{self.user_email}/drive/root"
+        headers = {"Authorization": f"Bearer {token}"}
+        resp = requests.get(url, headers=headers)
+        if not resp.ok:
+            logging.error(f"Graph Drive Root Error: {resp.text}")
+            raise Exception(f"Graph Drive Root Error: {resp.status_code} {resp.text}")
+        return resp.json().get("id")
+
+    def get_item_by_path(self, path: str):
+        """
+        Checks if an item exists at a given relative path.
+        Example path: 'Uber Driver/2026/April'
+        """
+        token = self._get_token()
+        # Escape path for URL
+        from urllib.parse import quote
+        encoded_path = quote(path)
+        url = f"https://graph.microsoft.com/v1.0/users/{self.user_email}/drive/root:/{encoded_path}"
+        headers = {"Authorization": f"Bearer {token}"}
+        resp = requests.get(url, headers=headers)
+        if resp.status_code == 404:
+            return None
+        if not resp.ok:
+            logging.error(f"Graph Item Path Error: {resp.text}")
+            return None # Treat as not found or error
+        return resp.json()
+
+    def create_folder(self, parent_id: str, folder_name: str):
+        """Creates a folder under a parent ID."""
+        token = self._get_token()
+        url = f"https://graph.microsoft.com/v1.0/users/{self.user_email}/drive/items/{parent_id}/children"
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "name": folder_name,
+            "folder": {},
+            "@microsoft.graph.conflictBehavior": "rename"
+        }
+        resp = requests.post(url, headers=headers, json=payload)
+        if not resp.ok:
+            logging.error(f"Graph Create Folder Error: {resp.text}")
+            raise Exception(f"Graph Create Folder Error: {resp.status_code} {resp.text}")
+        return resp.json()
+
+    def ensure_path_exists(self, full_path: str):
+        """
+        Recursively ensures a path exists in OneDrive. 
+        Returns the ID of the final folder.
+        """
+        parts = full_path.strip('/').split('/')
+        current_path = ""
+        last_id = self.get_drive_root_id()
+
+        for part in parts:
+            if current_path:
+                current_path += "/" + part
+            else:
+                current_path = part
+            
+            item = self.get_item_by_path(current_path)
+            if item:
+                last_id = item.get("id")
+            else:
+                new_folder = self.create_folder(last_id, part)
+                last_id = new_folder.get("id")
+                logging.info(f"Created folder: {current_path}")
+
+        return last_id
+
+    def list_folder_files(self, path: str):
+        """Lists all files in a given folder path."""
+        token = self._get_token()
+        from urllib.parse import quote
+        encoded_path = quote(path)
+        url = f"https://graph.microsoft.com/v1.0/users/{self.user_email}/drive/root:/{encoded_path}:/children"
+        headers = {"Authorization": f"Bearer {token}"}
+        
+        resp = requests.get(url, headers=headers)
+        if not resp.ok:
+            if resp.status_code == 404:
+                return []
+            logging.error(f"Graph List Files Error: {resp.text}")
+            return []
+        
+        return resp.json().get("value", [])
+
+    def move_file(self, item_id: str, destination_parent_id: str, new_name: str = None):
+        """Moves a file to a new parent folder. Optionally renames it."""
+        token = self._get_token()
+        url = f"https://graph.microsoft.com/v1.0/users/{self.user_email}/drive/items/{item_id}"
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "parentReference": {
+                "id": destination_parent_id
+            }
+        }
+        if new_name:
+            payload["name"] = new_name
+
+        resp = requests.patch(url, headers=headers, json=payload)
+        if not resp.ok:
+            logging.error(f"Graph Move File Error: {resp.text}")
+            raise Exception(f"Graph Move File Error: {resp.status_code} {resp.text}")
+        return resp.json()
+
+    def get_file_content(self, item_id: str):
+        """Downloads the bytes of a file by its ID."""
+        token = self._get_token()
+        url = f"https://graph.microsoft.com/v1.0/users/{self.user_email}/drive/items/{item_id}/content"
+        headers = {"Authorization": f"Bearer {token}"}
+        
+        resp = requests.get(url, headers=headers)
+        if not resp.ok:
+            logging.error(f"Graph Download Error: {resp.text}")
+            raise Exception(f"Graph Download Error: {resp.status_code} {resp.text}")
+        return resp.content

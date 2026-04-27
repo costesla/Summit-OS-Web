@@ -7,7 +7,7 @@ class SemanticIngestionService:
     def __init__(self):
         self.vector_store = VectorStore()
 
-    def ingest_tessie_drive(self, drive_data):
+    def ingest_tessie_drive(self, drive_data, telemetry_summary=""):
         """
         Transforms a Tesla drive into a vectorized semantic summary.
         Drive data can be raw from API or processed from SQL.
@@ -26,7 +26,7 @@ class SemanticIngestionService:
                 dt = datetime.utcnow()
 
             # Extract key details
-            ride_id = drive_data.get('RideID') or f"TES-{drive_data.get('uid')}"
+            ride_id = drive_data.get('RideID') or f"TES-{drive_data.get('id')}"
             start_loc = drive_data.get('starting_location') or drive_data.get('Pickup_Location', 'Unknown')
             end_loc = drive_data.get('ending_location') or drive_data.get('Dropoff_Location', 'Unknown')
             tag = drive_data.get('tag') or drive_data.get('Classification', 'None')
@@ -36,6 +36,7 @@ class SemanticIngestionService:
             summary = (
                 f"Tesla Drive Activity [{ride_id}]: Traveled {dist:.1f} miles from {start_loc} to {end_loc} "
                 f"on {dt.strftime('%Y-%m-%d %I:%M %p')}. Mission Tag: {tag}. "
+                f"{telemetry_summary} "
                 f"This mobility event represents operational usage of the Tesla fleet."
             )
             
@@ -92,3 +93,4 @@ class SemanticIngestionService:
         except Exception as e:
             logging.error(f"Semantic Ingestion Failure (Teller): {e}")
             return False
+

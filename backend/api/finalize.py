@@ -5,6 +5,7 @@ import os
 import stripe
 import time
 import re
+from services.graph import GraphClient
 
 bp = func.Blueprint()
 
@@ -49,6 +50,47 @@ def finalize_booking(req: func.HttpRequest) -> func.HttpResponse:
             return func.HttpResponse(
                 json.dumps({"success": False, "error": "No booking metadata found"}),
                 status_code=400,
+                headers=_cors_headers(),
+                mimetype="application/json"
+            )
+
+        # If this is a post-trip invoice payment, we don't need to create a calendar booking
+        if meta.get("source") == "post_trip_invoice":
+            customer_name = meta.get("customerName", "Valued Customer")
+            customer_email = meta.get("customerEmail")
+            
+            logging.info(f"Post-trip invoice paid for {customer_name}. Skipping calendar booking.")
+            
+            if customer_email:
+                try:
+                    graph = GraphClient()
+                    amount_paid = session.amount_total / 100.0
+                    html_confirmation = f"""
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
+                        <div style="text-align: center; background-color: #000; padding: 20px; border-radius: 10px 10px 0 0;">
+                            <h1 style="color: #fff; margin: 0;">Payment Received</h1>
+                        </div>
+                        <div style="padding: 20px;">
+                            <p>Hi {customer_name.split()[0]},</p>
+                            <p>Thank you! We've successfully received your payment of <strong>${amount_paid:,.2f}</strong> for your recent SummitOS trip.</p>
+                            <p>This email confirms that your invoice has been settled in full. We appreciate your business and look forward to driving you again soon.</p>
+                            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+                            <p style="font-size: 12px; color: #666; text-align: center;">COS Tesla LLC · Colorado Springs, CO</p>
+                        </div>
+                    </div>
+                    """
+                    graph.send_mail(
+                        to_email=customer_email,
+                        subject="Payment Received – Thank You! | SummitOS",
+                        body_html=html_confirmation
+                    )
+                    logging.info(f"Confirmation email sent to {customer_email}")
+                except Exception as e:
+                    logging.error(f"Failed to send payment confirmation email: {e}")
+
+            return func.HttpResponse(
+                json.dumps({"success": True, "message": "Invoice payment confirmed"}),
+                status_code=200,
                 headers=_cors_headers(),
                 mimetype="application/json"
             )
