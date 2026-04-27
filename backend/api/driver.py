@@ -94,6 +94,8 @@ def driver_sync(req: func.HttpRequest) -> func.HttpResponse:
             "vectors_created": 0
         }
 
+        logging.info(f"Driver Sync POST: Received {len(trips)} trips and {len(expenses.get('fastfood', [])) + len(expenses.get('charging', []))} expenses.")
+
         # 1. Save Trips
         for trip in trips:
             # Normalize for save_trip
@@ -107,12 +109,12 @@ def driver_sync(req: func.HttpRequest) -> func.HttpResponse:
                 "RideID": trip.get("id"),
                 "TripType": trip.get("type"),
                 "Timestamp_Start": trip.get("timestamp"),
-                "Fare": fare,
-                "Tip": tip,
-                "Driver_Earnings": fare + tip,
-                "Platform_Cut": fees + insurance + otherFees,
-                "Distance_mi": trip.get("distance_miles"),
-                "Tessie_DriveID": trip.get("tessie_drive_id"),
+                "fare": fare,
+                "tip": tip,
+                "driver_total": fare + tip,
+                "uber_cut": fees + insurance + otherFees,
+                "distance_miles": trip.get("distance_miles"),
+                "tessie_drive_id": trip.get("tessie_drive_id"),
                 "Classification": "Manual_Entry"
             }
             db.save_trip(trip_payload)
