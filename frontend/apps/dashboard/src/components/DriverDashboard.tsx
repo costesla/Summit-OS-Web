@@ -854,11 +854,11 @@ const DriverDashboard = () => {
     }, [selectedDate, fetchFromCloud]);
 
     const stats = useMemo(() => {
-        const totalEarnings = trips.reduce((sum, t) => sum + t.fare + (t.tip || 0), 0);
-        const totalFees = trips.reduce((sum, t) => sum + t.fees + t.insurance + t.otherFees, 0);
+        const totalEarnings = trips.reduce((sum, t) => sum + (t.fare || 0) + (t.tip || 0), 0);
+        const totalFees = trips.reduce((sum, t) => sum + (t.fees || 0) + (t.insurance || 0) + (t.otherFees || 0), 0);
         const netEarnings = totalEarnings - totalFees;
-        const foodTotal = expenses.fastfood.reduce((sum, e) => sum + e.amount, 0);
-        const chargingTotal = expenses.charging.reduce((sum, e) => sum + e.amount, 0);
+        const foodTotal = expenses.fastfood.reduce((sum, e) => sum + (e.amount || 0), 0);
+        const chargingTotal = expenses.charging.reduce((sum, e) => sum + (e.amount || 0), 0);
         const uberTrips = trips.filter((t) => t.type === 'Uber').length;
         const privateTrips = trips.filter((t) => t.type === 'Private').length;
         const elapsedHours = (Date.now() - sessionStart.getTime()) / 3_600_000;
@@ -938,7 +938,8 @@ const DriverDashboard = () => {
             });
             if (resp.ok) {
                 setSyncStatus('success');
-                // Re-fetch to ensure local state matches DB exactly (IDs, etc)
+                // Force an immediate fetch from cloud to confirm state parity
+                console.log("POST sync successful, fetching cloud state...");
                 await fetchFromCloud(selectedDate);
                 setTimeout(() => setSyncStatus('idle'), 3000);
             } else {
