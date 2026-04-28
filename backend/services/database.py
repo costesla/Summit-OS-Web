@@ -74,7 +74,10 @@ class DatabaseClient:
             UPDATE SET 
                 TripType = ?, Timestamp_Start = ?, Pickup_Location = ?, Dropoff_Location = ?,
                 Distance_mi = ?, Duration_min = ?, Tessie_DriveID = ?, Tessie_Distance = ?,
-                Fare = ?, Tip = ?, Driver_Earnings = ?, Platform_Cut = ?,
+                Fare = CASE WHEN ? > 0 THEN ? ELSE target.Fare END,
+                Tip = CASE WHEN ? > 0 THEN ? ELSE target.Tip END,
+                Driver_Earnings = CASE WHEN ? > 0 THEN ? ELSE target.Driver_Earnings END,
+                Platform_Cut = CASE WHEN ? <> 0 THEN ? ELSE target.Platform_Cut END,
                 Start_SOC = ?, End_SOC = ?, Energy_Used_kWh = ?, Efficiency_Wh_mi = ?,
                 Source_URL = ?, Classification = ?, Sidecar_Artifact_JSON = ?, LastUpdated = GETDATE()
         WHEN NOT MATCHED THEN
@@ -97,6 +100,11 @@ class DatabaseClient:
         # Check for pre-formatted fields from TessieSyncService
         t_start = t_start or trip_data.get('Timestamp_Start')
 
+        fare = float(trip_data.get('fare') or 0)
+        tip = float(trip_data.get('tip') or 0)
+        earnings = float(trip_data.get('driver_total') or 0)
+        cut = float(trip_data.get('uber_cut') or 0)
+
         params = (
             ride_id,
             trip_data.get('trip_type') or trip_data.get('TripType') or ('Uber' if trip_data.get('classification') == 'Uber_Core' else 'Private'),
@@ -107,10 +115,10 @@ class DatabaseClient:
             float(trip_data.get('duration_minutes') or trip_data.get('Duration_min') or 0),
             trip_data.get('tessie_drive_id') or trip_data.get('Tessie_DriveID'),
             float(trip_data.get('tessie_distance') or trip_data.get('Tessie_Distance') or 0),
-            float(trip_data.get('fare') or 0),
-            float(trip_data.get('tip') or 0),
-            float(trip_data.get('driver_total') or 0),
-            float(trip_data.get('uber_cut') or 0),
+            fare, fare,
+            tip, tip,
+            earnings, earnings,
+            cut, cut,
             trip_data.get('start_soc') or trip_data.get('Start_SOC'),
             trip_data.get('end_soc') or trip_data.get('End_SOC'),
             trip_data.get('energy_used') or trip_data.get('Energy_Used_kWh'),

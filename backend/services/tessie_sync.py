@@ -103,24 +103,17 @@ class TessieSyncService:
         for charge in charges:
             try:
                 # Tessie fields for charges: 'starting_at', 'starting_soc', 'energy_added', 'cost', etc.
-                # Our schema: Energy_Added_kWh, Cost, Charger_Type, Starting_SoC, Ending_SoC, Odometer
+                # Map to database.py save_charge expected keys:
+                # session_id, start_time, end_time, location, energy_added, cost
                 charge_data = {
-                    "ChargeID":             f"CHG-{charge.get('id')}",
-                    "Timestamp_Start":      self._format_ts(charge.get('starting_at')),
-                    "Timestamp_End":        self._format_ts(charge.get('ending_at')),
-                    "Energy_Added_kWh":     charge.get('energy_added', 0),
-                    "Cost":                 charge.get('cost', 0),
-                    "Charger_Type":         charge.get('charger_type', 'Unknown'),
-                    "Starting_SoC":         charge.get('starting_soc', 0),
-                    "Ending_SoC":           charge.get('ending_soc', 0),
-                    "Odometer":             charge.get('odometer', 0),
-                    "Location":             charge.get('location', 'Unknown'),
-                    "Source":               "Tessie",
-                    "Sidecar_Artifact_JSON": json.dumps(charge)
+                    "session_id":   str(charge.get('id')),
+                    "start_time":   self._format_ts(charge.get('starting_at')),
+                    "end_time":     self._format_ts(charge.get('ending_at')),
+                    "energy_added": charge.get('energy_added', 0),
+                    "cost":         charge.get('cost', 0),
+                    "location":     charge.get('location', 'Unknown')
                 }
-                # Assuming DatabaseClient has or should have a save_charge method
-                # If not, we'll use a direct query or add it.
-                self._save_charge(charge_data)
+                self.db.save_charge(charge_data)
                 results["charges_saved"] += 1
             except Exception as e:
                 log.error(f"Error saving charge {charge.get('id')}: {e}")
@@ -133,30 +126,5 @@ class TessieSyncService:
         if not ts: return None
         # Convert Tessie Unix timestamp to ISO string for SQL
         return datetime.fromtimestamp(ts, self.mdt).strftime('%Y-%m-%d %H:%M:%S')
-
-    def _save_charge(self, data: Dict[str, Any]):
-        """Direct SQL upsert for charging sessions."""
-        conn = self.db.get_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
-            MERGE INTO Rides.ChargingSessions AS target
-            USING (SELECT ? AS ChargeID) AS source
-            ON target.ChargeID = source.ChargeID
-            WHEN MATCHED THEN
-                UPDATE SET Timestamp_Start=?, Timestamp_End=?, Energy_Added_kWh=?, Cost=?, 
-                           Charger_Type=?, Starting_SoC=?, Ending_SoC=?, Odometer=?, Location=?, Sidecar_Artifact_JSON=?, LastUpdated=GETDATE()
-            WHEN NOT MATCHED THEN
-                INSERT (ChargeID, Timestamp_Start, Timestamp_End, Energy_Added_kWh, Cost, 
-                        Charger_Type, Starting_SoC, Ending_SoC, Odometer, Location, Sidecar_Artifact_JSON)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-        """, (
-            data["ChargeID"],
-            data["Timestamp_Start"], data["Timestamp_End"], data["Energy_Added_kWh"], data["Cost"],
-            data["Charger_Type"], data["Starting_SoC"], data["Ending_SoC"], data["Odometer"], data["Location"], data["Sidecar_Artifact_JSON"],
-            data["ChargeID"], data["Timestamp_Start"], data["Timestamp_End"], data["Energy_Added_kWh"], data["Cost"],
-            data["Charger_Type"], data["Starting_SoC"], data["Ending_SoC"], data["Odometer"], data["Location"], data["Sidecar_Artifact_JSON"]
-        ))
-        conn.commit()
-        cursor.close()
 
 
