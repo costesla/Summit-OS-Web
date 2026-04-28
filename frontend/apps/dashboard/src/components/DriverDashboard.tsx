@@ -845,9 +845,10 @@ const DriverDashboard = () => {
                     setTrips(data.trips || []);
                     setExpenses(data.expenses || { fastfood: [], charging: [] });
                     const now = new Date().toLocaleTimeString();
-                    setLastSync(now);
-                    localStorage.setItem('cos_last_sync', now);
-                    console.log(`Cloud data synced for ${date} at ${now}`);
+                    const tripCount = (data.trips || []).length;
+                    setLastSync(`${now} (${tripCount} trips)`);
+                    localStorage.setItem('cos_last_sync', `${now} (${tripCount} trips)`);
+                    console.log(`Cloud data synced: ${tripCount} trips found.`);
                 }
             }
         } catch (err) {
@@ -1069,8 +1070,19 @@ const DriverDashboard = () => {
                                     {isFetchingCloud ? 'Refreshing...' : 'Pull from Cloud'}
                                 </button>
                                 {lastSync && (
-                                    <span className="text-[8px] text-gray-700 font-mono">Last: {lastSync}</span>
+                                    <span className="text-[8px] text-gray-700 font-mono text-center">Last Pull: {lastSync}</span>
                                 )}
+                                <button
+                                    onClick={() => {
+                                        if (confirm("Clear local cache and refresh? (Saves will remain in Cloud)")) {
+                                            localStorage.clear();
+                                            window.location.reload();
+                                        }
+                                    }}
+                                    className="text-[7px] text-red-900/40 hover:text-red-500 font-mono mt-1 transition-colors"
+                                >
+                                    Reset Local Data
+                                </button>
                             </div>
                         </div>
 
