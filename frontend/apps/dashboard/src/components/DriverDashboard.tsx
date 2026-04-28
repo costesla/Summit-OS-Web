@@ -742,7 +742,10 @@ const IntelligenceSyncPanel = ({ selectedDate }: { selectedDate: string }) => {
 // ─── Helper: today's date string in Mountain Time ──────────────────────────
 const getTodayMST = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Denver' });
 
+const VERSION = "1.2.4";
+
 const DriverDashboard = () => {
+    const [lastSync, setLastSync] = useState<string | null>(() => localStorage.getItem('cos_last_sync'));
     const [selectedDate, setSelectedDate] = useState(() => {
         if (typeof window === 'undefined') return new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Denver' });
         return new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Denver' });
@@ -841,7 +844,10 @@ const DriverDashboard = () => {
                     // For syncing, cloud IS the source of truth.
                     setTrips(data.trips || []);
                     setExpenses(data.expenses || { fastfood: [], charging: [] });
-                    console.log(`Cloud data synced for ${date}`);
+                    const now = new Date().toLocaleTimeString();
+                    setLastSync(now);
+                    localStorage.setItem('cos_last_sync', now);
+                    console.log(`Cloud data synced for ${date} at ${now}`);
                 }
             }
         } catch (err) {
@@ -1010,7 +1016,7 @@ const DriverDashboard = () => {
                     <div className="space-y-1">
                         <p className="text-[10px] font-bold tracking-[0.4em] text-cyan-400 uppercase font-mono mb-2 flex items-center gap-2">
                             <span className="w-6 h-[1px] bg-cyan-400 inline-block" />
-                            SummitOS · Driver Intelligence
+                            SummitOS · v{VERSION} · Driver Intelligence
                         </p>
                         <h1 className="text-4xl font-bold flex items-center gap-3 tracking-tight text-white">
                             <Navigation className="text-cyan-400 w-8 h-8" />
@@ -1053,14 +1059,19 @@ const DriverDashboard = () => {
                                 {syncing ? 'Syncing...' : syncStatus === 'success' ? 'Cloud Synced' : 'Sync to Cloud'}
                             </button>
                             
-                            <button
-                                onClick={() => fetchFromCloud(selectedDate)}
-                                disabled={isFetchingCloud}
-                                className="text-[9px] font-mono text-gray-600 hover:text-cyan-400 transition-colors flex items-center gap-1.5 px-2 py-1 justify-center group"
-                            >
-                                <RefreshCw className={`w-2.5 h-2.5 group-hover:rotate-180 transition-transform duration-500 ${isFetchingCloud ? 'animate-spin' : ''}`} />
-                                {isFetchingCloud ? 'Refreshing Data...' : 'Refresh from Cloud'}
-                            </button>
+                            <div className="flex flex-col items-center">
+                                <button
+                                    onClick={() => fetchFromCloud(selectedDate)}
+                                    disabled={isFetchingCloud}
+                                    className="text-[9px] font-mono text-gray-600 hover:text-cyan-400 transition-colors flex items-center gap-1.5 px-2 py-1 justify-center group"
+                                >
+                                    <RefreshCw className={`w-2.5 h-2.5 group-hover:rotate-180 transition-transform duration-500 ${isFetchingCloud ? 'animate-spin' : ''}`} />
+                                    {isFetchingCloud ? 'Refreshing...' : 'Pull from Cloud'}
+                                </button>
+                                {lastSync && (
+                                    <span className="text-[8px] text-gray-700 font-mono">Last: {lastSync}</span>
+                                )}
+                            </div>
                         </div>
 
                         <div className="flex items-center gap-10">
