@@ -12,6 +12,15 @@ CORS_HEADERS = {
     "Access-Control-Allow-Headers": "Content-Type"
 }
 
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, (float, int)):
+            return obj
+        import decimal
+        if isinstance(obj, decimal.Decimal):
+            return float(obj)
+        return super(DecimalEncoder, self).default(obj)
+
 @bp.route(route="stripe/balance", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def stripe_balance(req: func.HttpRequest) -> func.HttpResponse:
     if req.method == "OPTIONS":
@@ -36,7 +45,7 @@ def stripe_balance(req: func.HttpRequest) -> func.HttpResponse:
                 "available": available,
                 "pending": pending,
                 "currency": "usd"
-            }),
+            }, cls=DecimalEncoder),
             status_code=200,
             headers=CORS_HEADERS,
             mimetype="application/json"
@@ -72,7 +81,7 @@ def driver_sync(req: func.HttpRequest) -> func.HttpResponse:
                     "date": date_str,
                     "trips": trips,
                     "expenses": expenses
-                }),
+                }, cls=DecimalEncoder),
                 status_code=200,
                 headers=CORS_HEADERS,
                 mimetype="application/json"
@@ -86,6 +95,7 @@ def driver_sync(req: func.HttpRequest) -> func.HttpResponse:
         trips = data.get("trips", [])
         expenses = data.get("expenses", {}) # { fastfood: [], charging: [] }
         
+        from services.semantic_ingestion import SemanticIngestionService
         semantic = SemanticIngestionService()
         
         results = {
@@ -127,8 +137,11 @@ def driver_sync(req: func.HttpRequest) -> func.HttpResponse:
             results["trips_saved"] += 1
             
             # Vectorize for Copilot
-            semantic.ingest_tessie_drive(trip_payload, telemetry_summary="Manually logged trip from Driver Dashboard.")
-            results["vectors_created"] += 1
+            try:
+                semantic.ingest_tessie_drive(trip_payload, telemetry_summary="Manually logged trip from Driver Dashboard.")
+                results["vectors_created"] += 1
+            except:
+                pass
 
         # 2. Save Fast Food Expenses
         for exp in expenses.get("fastfood", []):
