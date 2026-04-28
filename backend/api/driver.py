@@ -98,23 +98,29 @@ def driver_sync(req: func.HttpRequest) -> func.HttpResponse:
 
         # 1. Save Trips
         for trip in trips:
-            # Normalize for save_trip
-            fare = trip.get("fare") or 0
-            tip = trip.get("tip") or 0
-            fees = trip.get("fees") or 0
-            insurance = trip.get("insurance") or 0
-            otherFees = trip.get("otherFees") or 0
+            # Handle both PascalCase (old/cached frontend) and lowercase (new frontend)
+            fare = float(trip.get("fare") or trip.get("Fare") or 0)
+            tip = float(trip.get("tip") or trip.get("Tip") or 0)
+            fees = float(trip.get("fees") or trip.get("Fees") or 0)
+            insurance = float(trip.get("insurance") or trip.get("Insurance") or 0)
+            otherFees = float(trip.get("otherFees") or trip.get("OtherFees") or 0)
+            
+            # Distance and ID handling
+            ride_id = str(trip.get("id") or trip.get("RideID"))
+            ts = trip.get("timestamp") or trip.get("Timestamp_Start")
+            dist = float(trip.get("distance_miles") or trip.get("Distance_mi") or 0)
+            tdid = trip.get("tessie_drive_id") or trip.get("Tessie_DriveID")
 
             trip_payload = {
-                "RideID": trip.get("id"),
-                "TripType": trip.get("type"),
-                "Timestamp_Start": trip.get("timestamp"),
+                "RideID": ride_id,
+                "TripType": trip.get("type") or trip.get("TripType"),
+                "Timestamp_Start": ts,
                 "fare": fare,
                 "tip": tip,
                 "driver_total": fare + tip,
                 "uber_cut": fees + insurance + otherFees,
-                "distance_miles": trip.get("distance_miles"),
-                "tessie_drive_id": trip.get("tessie_drive_id"),
+                "distance_miles": dist,
+                "tessie_drive_id": tdid,
                 "Classification": "Manual_Entry"
             }
             db.save_trip(trip_payload)
@@ -127,23 +133,23 @@ def driver_sync(req: func.HttpRequest) -> func.HttpResponse:
         # 2. Save Fast Food Expenses
         for exp in expenses.get("fastfood", []):
             db.save_manual_expense({
-                "id": exp.get("id"),
+                "id": str(exp.get("id") or exp.get("ExpenseID")),
                 "category": "FastFood",
-                "amount": exp.get("amount"),
-                "note": exp.get("note"),
-                "timestamp": exp.get("timestamp")
+                "amount": float(exp.get("amount") or exp.get("Amount") or 0),
+                "note": exp.get("note") or exp.get("Note"),
+                "timestamp": exp.get("timestamp") or exp.get("Timestamp")
             })
             results["expenses_saved"] += 1
 
         # 3. Save Charging Expenses
         for charge in expenses.get("charging", []):
             db.save_charge({
-                "session_id": charge.get("id"),
-                "start_time": charge.get("timestamp"),
-                "end_time": charge.get("timestamp"),
-                "location": "Manual Entry",
+                "session_id": str(charge.get("id") or charge.get("SessionID")),
+                "start_time": charge.get("timestamp") or charge.get("Timestamp") or charge.get("Start_Time"),
+                "end_time": charge.get("timestamp") or charge.get("Timestamp") or charge.get("End_Time"),
+                "location": charge.get("note") or charge.get("Note") or "Manual Entry",
                 "energy_added": 0, 
-                "cost": charge.get("amount")
+                "cost": float(charge.get("amount") or charge.get("Amount") or 0)
             })
             results["expenses_saved"] += 1
 
