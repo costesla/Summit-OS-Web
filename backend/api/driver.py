@@ -75,6 +75,11 @@ def driver_sync(req: func.HttpRequest) -> func.HttpResponse:
             trips = db.get_trips_by_date(date_str)
             expenses = db.get_expenses_by_date(date_str)
             
+            headers = CORS_HEADERS.copy()
+            headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            headers["Pragma"] = "no-cache"
+            headers["Expires"] = "0"
+
             return func.HttpResponse(
                 json.dumps({
                     "success": True,
@@ -83,7 +88,7 @@ def driver_sync(req: func.HttpRequest) -> func.HttpResponse:
                     "expenses": expenses
                 }, cls=DecimalEncoder),
                 status_code=200,
-                headers=CORS_HEADERS,
+                headers=headers,
                 mimetype="application/json"
             )
         except Exception as e:
