@@ -31,8 +31,12 @@ def sync_folders(req: func.HttpRequest) -> func.HttpResponse:
         year = dt.strftime("%Y")
         month = dt.strftime("%B")
         day = dt.strftime("%d")
+        
+        # Week calculation: (Day-1)//7 + 1
+        week_num = (dt.day - 1) // 7 + 1
+        week_folder = f"Week {week_num}"
 
-        full_path = f"Uber Driver/{year}/{month}/{day}"
+        full_path = f"Uber Driver/{year}/{month}/{week_folder}/{day}"
         
         if dry_run:
             logs.append(f"[INFO] MODE: Dry Run")
@@ -108,10 +112,14 @@ def daily_sync(req: func.HttpRequest) -> func.HttpResponse:
         month = now.strftime("%B")
         day = now.strftime("%d")
         
+        # Week calculation: (Day-1)//7 + 1
+        week_num = (now.day - 1) // 7 + 1
+        week_folder = f"Week {week_num}"
+        
         # 1. Ensure OneDrive Folders Exist
         try:
             graph = GraphClient()
-            full_path = f"Uber Driver/{year}/{month}/{day}"
+            full_path = f"Uber Driver/{year}/{month}/{week_folder}/{day}"
             logs.append(f"[INFO] Ensuring OneDrive path exists: {full_path}")
             
             folder_id = graph.ensure_path_exists(full_path)
