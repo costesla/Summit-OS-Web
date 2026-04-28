@@ -31,16 +31,41 @@ class UberMatcherService:
         log.info(f"Parsed Card: {card['driver_earnings']} earned | {card['rider_payment']} rider paid")
 
         # 3. Match by Timestamp
-        # Extract timestamp from filename or metadata if available
-        # Format: Screenshot_YYYYMMDD_HHMMSS
-        m = re.search(r"Screenshot_(\d{8})_(\d{6})", filename)
-        card_dt = None
-        if m:
-            card_dt = datetime.datetime.strptime(m.group(1)+m.group(2), "%Y%m%d%H%M%S").replace(tzinfo=self.mdt)
+        # Support multiple filename formats:
+        # 1. Screenshot_YYYYMMDD_HHMMSS
+        # 2. Screenshot YYYY-MM-DD HHMMSS
+        # 3. Screenshot_YYYY-MM-DD-HH-MM-SS
         
+        card_dt = None
+        
+        # Pattern 1: Screenshot_20260328_053614
+        m1 = re.search(r"Screenshot_(\d{8})_(\d{6})", filename)
+        if m1:
+            card_dt = datetime.datetime.strptime(m1.group(1)+m1.group(2), "%Y%m%d%H%M%S")
+            
+        # Pattern 2: Screenshot 2026-04-27 070003
         if not card_dt:
-            # Fallback: Use current time or try to find date in text
-            card_dt = datetime.datetime.now(self.mdt)
+            m2 = re.search(r"Screenshot (\d{4}-\d{2}-\d{2}) (\d{6})", filename)
+            if m2:
+                card_dt = datetime.datetime.strptime(m2.group(1)+" "+m2.group(2), "%Y-%m-%d %H%M%S")
+
+        # Pattern 3: Screenshot_2026-04-27-07-00-03
+        if not card_dt:
+            m3 = re.search(r"Screenshot_(\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2})", filename)
+            if m3:
+                card_dt = datetime.datetime.strptime(m3.group(1), "%Y-%m-%d-%H-%M-%S")
+
+        if card_dt:
+            card_dt = card_dt.replace(tzinfo=self.mdt)
+        else:
+            # Fallback: Try to find a date string in the filename
+            # e.g. 2026-04-27
+            m_date = re.search(r"(\d{4}-\d{2}-\d{2})", filename)
+            if m_date:
+                card_dt = datetime.datetime.strptime(m_date.group(1), "%Y-%m-%d").replace(hour=12, tzinfo=self.mdt)
+            else:
+                log.warning(f"Could not parse date from filename: {filename}. Using current time.")
+                card_dt = datetime.datetime.now(self.mdt)
 
         # 4. Find closest unmatched Uber drive in SQL
         match = self._find_match(card_dt, tolerance_hours=4)
@@ -94,7 +119,7 @@ class UberMatcherService:
             FROM Rides.Rides
             WHERE Classification LIKE '%Uber%'
               AND (Classification LIKE '%DropOff%' OR Classification LIKE '%Dropoff%')
-              AND Fare IS NULL
+              AND (Fare IS NULL OR Fare = 0)
               AND Timestamp_Start BETWEEN ? AND ?
             ORDER BY ABS(DATEDIFF(SECOND, Timestamp_Start, ?)) ASC
         """, (
