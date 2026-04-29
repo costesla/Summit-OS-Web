@@ -41,9 +41,8 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
           app_location: "frontend"
-          api_location: "frontend/no-api"
-          output_location: ""
-          skip_api_build: true
+          api_location: ""
+          output_location: "out"
         env:
           NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
   close_pull_request_job:

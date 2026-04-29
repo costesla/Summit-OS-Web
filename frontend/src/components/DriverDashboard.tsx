@@ -607,7 +607,7 @@ const IntelligenceSyncPanel = ({ selectedDate }: { selectedDate: string }) => {
         setLogs(prev => [...prev, `> Initializing Daily Unified Sync (Folders + Data)...`]);
 
         try {
-            const resp = await fetch(`/api/ops/daily-sync`, {
+            const resp = await fetch(`${AZURE_BASE}/daily-sync`, {
                 method: 'POST'
             });
 
