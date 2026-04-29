@@ -41,7 +41,7 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
           app_location: "frontend"
-          api_location: ""
+          api_location: "frontend/no-api"
           output_location: ""
           skip_api_build: true
         env:
