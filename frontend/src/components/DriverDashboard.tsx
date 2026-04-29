@@ -5,8 +5,9 @@ import {
     TrendingUp, Car, Zap, Utensils, Plus, Trash2,
     Navigation, Receipt, RotateCcw, Clock,
     Battery, BatteryCharging, WifiOff, Download,
-    MapPin, Gauge, LogOut
+    MapPin, Gauge, LogOut, ShieldCheck, Cpu, Play, Search, RefreshCw, Settings
 } from 'lucide-react';
+import TellerConnectButton from './TellerConnectButton';
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 const AZURE_BASE = 'https://summitos-api.azurewebsites.net/api';
@@ -535,6 +536,176 @@ const TessieChargesPanel = ({ onImport, selectedDate }: { onImport: (charge: Tes
     );
 };
 
+// ─── Intelligence Sync Panel ─────────────────────────────────────────────────
+const IntelligenceSyncPanel = ({ selectedDate }: { selectedDate: string }) => {
+    const [status, setStatus] = useState<'idle' | 'running'>('idle');
+    const [logs, setLogs] = useState<string[]>([]);
+    const [error, setError] = useState<string | null>(null);
+
+    const runSync = async (dryRun: boolean) => {
+        setStatus('running');
+        setError(null);
+        setLogs(prev => [...prev, `> Starting ${dryRun ? 'Dry Run' : 'Actual Sync'} for ${selectedDate}...`]);
+
+        try {
+            const resp = await fetch(`${AZURE_BASE}/operations/sync-folders`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ processDate: selectedDate, dryRun })
+            });
+
+            const data = await resp.json();
+            if (data.success) {
+                setLogs(prev => [...prev, ...data.logs]);
+            } else {
+                setError(data.error || 'Unknown error occurred');
+                setLogs(prev => [...prev, `[ERROR] ${data.error}`]);
+            }
+        } catch (e: any) {
+            setError(e.message);
+            setLogs(prev => [...prev, `[EXCEPTION] ${e.message}`]);
+        } finally {
+            setStatus('idle');
+        }
+    };
+
+    const triggerCloudScan = async () => {
+        setStatus('running');
+        setError(null);
+        setLogs(prev => [...prev, `> Force Triggering Autonomous Cloud Scan...`]);
+        setLogs(prev => [...prev, `> Monitoring OneDrive 'Camera Roll'...`]);
+
+        try {
+            const resp = await fetch(`${AZURE_BASE}/operations/trigger-cloud-scan`, {
+                method: 'POST'
+            });
+
+            const data = await resp.json();
+            if (data.success !== false) {
+                const results = data;
+                setLogs(prev => [
+                    ...prev, 
+                    ...results.logs,
+                    `> Scan Complete: ${results.processed} files analyzed, ${results.matched} Uber trips routed.`
+                ]);
+            } else {
+                setError(data.error || 'Scan failed');
+                setLogs(prev => [...prev, `[ERROR] ${data.error}`]);
+            }
+        } catch (e: any) {
+            setError(e.message);
+            setLogs(prev => [...prev, `[EXCEPTION] ${e.message}`]);
+        } finally {
+            setStatus('idle');
+        }
+    };
+
+    const runDailySync = async () => {
+        setStatus('running');
+        setError(null);
+        setLogs(prev => [...prev, `> Initializing Daily Unified Sync (Folders + Data)...`]);
+
+        try {
+            const resp = await fetch(`/api/ops/daily-sync`, {
+                method: 'POST'
+            });
+
+            const data = await resp.json();
+            if (data.success) {
+                setLogs(prev => [...prev, ...data.logs, `> Daily Sync Complete.`]);
+            } else {
+                setError(data.error || 'Sync failed');
+                setLogs(prev => [...prev, ...(data.logs || []), `[ERROR] ${data.error}`]);
+            }
+        } catch (e: any) {
+            setError(e.message);
+            setLogs(prev => [...prev, `[EXCEPTION] ${e.message}`]);
+        } finally {
+            setStatus('idle');
+        }
+    };
+
+    return (
+        <div className="p-6 rounded-2xl border border-cyan-500/20 bg-cyan-500/5 backdrop-blur-xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 blur-3xl rounded-full pointer-events-none group-hover:bg-cyan-500/15 transition-all duration-1000" />
+            
+            <div className="flex justify-between items-start mb-1">
+                <div>
+                    <h2 className="text-base font-bold flex items-center gap-2 text-white">
+                        <Cpu className="w-4 h-4 text-cyan-400" /> Intelligence Sync
+                    </h2>
+                    <p className="text-[10px] text-gray-500 font-mono uppercase tracking-widest">Autonomous Pipeline Operating</p>
+                </div>
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+                    <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+                    <span className="text-[9px] font-bold text-emerald-400 uppercase font-mono tracking-tighter">Live Router</span>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mb-4">
+                <button
+                    disabled={status === 'running'}
+                    onClick={runDailySync}
+                    className="flex flex-col items-center justify-center gap-2 py-4 rounded-2xl font-bold bg-amber-500/15 border border-amber-500/30 text-amber-400 hover:bg-amber-500/25 transition-all disabled:opacity-50 group/btn"
+                >
+                    <div className="p-2 rounded-xl bg-amber-500/10 group-hover/btn:bg-amber-500/20 transition-colors">
+                        <Clock className={`w-5 h-5 ${status === 'running' ? 'animate-spin' : ''}`} />
+                    </div>
+                    <div className="text-center">
+                        <span className="text-sm block">Daily Sync</span>
+                        <span className="text-[9px] text-amber-500/60 font-mono uppercase tracking-widest">Full Unified Sync</span>
+                    </div>
+                </button>
+
+                <button
+                    disabled={status === 'running'}
+                    onClick={triggerCloudScan}
+                    className="flex flex-col items-center justify-center gap-2 py-4 rounded-2xl font-bold bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/25 transition-all disabled:opacity-50 group/btn"
+                >
+                    <div className="p-2 rounded-xl bg-cyan-500/10 group-hover/btn:bg-cyan-500/20 transition-colors">
+                        <RefreshCw className={`w-5 h-5 ${status === 'running' ? 'animate-spin' : ''}`} />
+                    </div>
+                    <div className="text-center">
+                        <span className="text-sm block">Hourly Sync</span>
+                        <span className="text-[9px] text-cyan-500/60 font-mono uppercase tracking-widest">Cloud Scan Only</span>
+                    </div>
+                </button>
+            </div>
+
+            {/* Console Log Window */}
+            <div className="bg-black/40 rounded-xl border border-white/5 overflow-hidden">
+                <div className="px-3 py-1.5 border-b border-white/5 flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <span className="text-[9px] font-mono text-gray-600 uppercase ml-auto">Terminal v2.0-Alpha</span>
+                </div>
+                <div className="p-3 h-32 overflow-y-auto font-mono text-[10px] space-y-1">
+                    {logs.length === 0 ? (
+                        <p className="text-gray-700 italic">// High-Tech Autonomous Router Status: ACTIVE
+// Monitoring: 'Pictures/Camera Roll'
+// Target: 'Uber Driver' Hierarchy
+// Cycle: 30 minutes</p>
+                    ) : (
+                        logs.map((log, i) => (
+                            <p key={i} className={
+                                log.startsWith('[ERROR]') || log.startsWith('[EXCEPTION]') || log.startsWith('ERROR:') ? 'text-rose-400' :
+                                log.startsWith('[NEW]') || log.startsWith('MATCH:') || log.startsWith('ROUTED:') ? 'text-emerald-400 font-bold' :
+                                log.startsWith('[EXISTING]') || log.startsWith('SKIP:') ? 'text-gray-500' :
+                                log.startsWith('MODE:') || log.startsWith('>') ? 'text-cyan-400 font-bold border-t border-white/5 pt-1 mt-1' :
+                                'text-gray-300'
+                            }>
+                                {log}
+                            </p>
+                        ))
+                    )}
+                    {status === 'running' && <p className="text-cyan-400 animate-pulse">_</p>}
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const DriverDashboard = () => {
     const [trips, setTrips] = useState<Trip[]>(() => {
         if (typeof window === 'undefined') return [];
@@ -557,6 +728,8 @@ const DriverDashboard = () => {
         return new Date(saved);
     });
     const [showResetConfirm, setShowResetConfirm] = useState(false);
+    const [tellerAppId, setTellerAppId] = useState<'app_pq99ebts2bv1virlra000' | 'app_pq9b461vff3qkl4efc000'>('app_pq99ebts2bv1virlra000');
+    const [tellerEnv, setTellerEnv] = useState<'production' | 'development'>('production');
     const tripFormRef = useRef<HTMLDivElement>(null);
     const expenseFormRef = useRef<HTMLDivElement>(null);
 
@@ -756,6 +929,68 @@ const DriverDashboard = () => {
 
                     {/* Forms Column */}
                     <div className="space-y-5">
+                        {/* Security & Banking Module */}
+                        <div className="p-6 rounded-2xl border border-cyan-500/20 bg-cyan-500/5 backdrop-blur-xl relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/10 blur-3xl rounded-full pointer-events-none group-hover:bg-cyan-500/20 transition-all duration-700" />
+                            <h2 className="text-base font-bold mb-2 flex items-center gap-2 text-white">
+                                <ShieldCheck className="w-4 h-4 text-cyan-400" /> Security & Banking
+                            </h2>
+                            <p className="text-[10px] text-gray-400 font-mono mb-6 leading-relaxed uppercase tracking-wider">
+                                Management of Production Credentials & Bank Enrollment
+                            </p>
+                            
+                            <div className="space-y-4">
+                                <div className="flex flex-col gap-2 p-3 rounded-xl bg-white/5 border border-white/10">
+                                    <p className="text-[10px] text-gray-500 font-mono uppercase tracking-wider mb-2">Troubleshooting Mode</p>
+                                    
+                                    <div className="flex items-center justify-between gap-4">
+                                        <span className="text-[10px] text-gray-400 font-medium">Environment:</span>
+                                        <div className="flex bg-black/40 p-0.5 rounded-lg border border-white/10">
+                                            {(['production', 'development'] as const).map((env) => (
+                                                <button
+                                                    key={env}
+                                                    onClick={() => setTellerEnv(env)}
+                                                    className={`px-3 py-1 text-[9px] font-bold uppercase rounded-md transition-all ${
+                                                        tellerEnv === env 
+                                                        ? 'bg-cyan-500/20 text-cyan-400 shadow-[0_0_10px_rgba(0,242,255,0.1)]' 
+                                                        : 'text-gray-500 hover:text-gray-400'
+                                                    }`}
+                                                >
+                                                    {env}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-col gap-1.5 mt-2">
+                                        <span className="text-[10px] text-gray-400 font-medium">Application ID:</span>
+                                        <div className="grid grid-cols-1 gap-1">
+                                            {(['app_pq99ebts2bv1virlra000', 'app_pq9b461vff3qkl4efc000'] as const).map((id) => (
+                                                <button
+                                                    key={id}
+                                                    onClick={() => setTellerAppId(id)}
+                                                    className={`px-3 py-1.5 text-[9px] font-mono rounded-lg border transition-all text-left truncate ${
+                                                        tellerAppId === id 
+                                                        ? 'bg-cyan-500/5 border-cyan-500/30 text-cyan-400 shadow-[0_0_15px_rgba(0,242,255,0.05)]' 
+                                                        : 'bg-black/20 border-white/5 text-gray-600 hover:border-white/10 hover:text-gray-500'
+                                                    }`}
+                                                >
+                                                    {id}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <TellerConnectButton 
+                                    applicationId={tellerAppId} 
+                                    environment={tellerEnv} 
+                                />
+                            </div>
+                        </div>
+
+                        {/* Intelligence Sync Module */}
+                        <IntelligenceSyncPanel selectedDate={selectedDate} />
 
                         {/* Trip Entry */}
                         <div ref={tripFormRef}
