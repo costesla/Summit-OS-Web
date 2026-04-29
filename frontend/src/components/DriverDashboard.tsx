@@ -1,4 +1,5 @@
 'use client';
+// Build trigger: Stripe box removed, sync buttons consolidated.
 
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import {
