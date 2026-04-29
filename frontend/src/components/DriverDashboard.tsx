@@ -64,6 +64,8 @@ interface TeslaStatus {
     minutes_to_full: number | null;
 }
 
+const DASHBOARD_VERSION = "2.1.0-CLEAN";
+
 interface TessieDrive {
     tessie_drive_id: string;
     date: string | null;
@@ -738,6 +740,17 @@ const DriverDashboard = () => {
     useEffect(() => { localStorage.setItem('cos_trips', JSON.stringify(trips)); }, [trips]);
     useEffect(() => { localStorage.setItem('cos_expenses', JSON.stringify(expenses)); }, [expenses]);
 
+    // Migration: Clear old stale trips/expenses on first load of this version
+    useEffect(() => {
+        const lastVer = localStorage.getItem('cos_dashboard_ver');
+        if (lastVer !== DASHBOARD_VERSION) {
+            console.log("Migration: Clearing stale local state...");
+            setTrips([]);
+            setExpenses({ fastfood: [], charging: [] });
+            localStorage.setItem('cos_dashboard_ver', DASHBOARD_VERSION);
+        }
+    }, []);
+
     const stats = useMemo(() => {
         const totalEarnings = trips.reduce((sum, t) => sum + t.fare + (t.tip || 0), 0);
         const totalFees = trips.reduce((sum, t) => sum + t.fees + t.insurance + t.otherFees, 0);
@@ -861,6 +874,7 @@ const DriverDashboard = () => {
                             Driver Dashboard
                         </h1>
                         <p className="text-gray-500 font-mono text-xs mt-1 tracking-wider flex items-center gap-3">
+                            <span className="text-cyan-400/40 font-bold">V{DASHBOARD_VERSION}</span>
                             <span>SESSION</span>
                             <input
                                 type="date"
