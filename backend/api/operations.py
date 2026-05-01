@@ -5,7 +5,6 @@ import os
 from datetime import datetime
 from services.graph import GraphClient
 from services.tessie_sync import TessieSyncService
-from services.banking_sync import BankingSyncService
 from services.cloud_watcher import CloudWatcherService
 
 bp = func.Blueprint()
@@ -150,15 +149,9 @@ def daily_sync(req: func.HttpRequest) -> func.HttpResponse:
             logging.error(f"Tessie Sync Error: {te}")
             logs.append(f"[ERROR] Tessie Sync Error: {str(te)}")
 
-        # 3. Sync Banking Data
-        try:
-            logs.append(f"[INFO] Syncing Banking transactions...")
-            b_sync = BankingSyncService()
-            b_result = b_sync.sync_recent(count=15, since_date=target_date)
-            logs.append(f"[SUCCESS] Banking Sync: {b_result.get('expenses_synced', 0)} expenses synced, {b_result.get('income_skipped', 0)} income skipped.")
-        except Exception as be:
-            logging.error(f"Banking Sync Error: {be}")
-            logs.append(f"[ERROR] Banking Sync Error: {str(be)}")
+        # 3. Banking Sync — DISABLED (manual expense entry only)
+        # Bank auto-sync distorts daily numbers; expenses are captured via receipt screenshots.
+        logs.append(f"[SKIP] Banking Auto-Sync disabled — use manual expense entry on dashboard.")
 
         # 4. Integrated Cloud Scan
         try:
