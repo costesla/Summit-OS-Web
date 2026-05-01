@@ -751,8 +751,12 @@ const getTodayMST = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Am
 
 
 const DriverDashboard = () => {
-    const [lastSync, setLastSync] = useState<string | null>(() => localStorage.getItem('cos_last_sync'));
+    const [lastSync, setLastSync] = useState<string | null>(() => {
+        if (typeof window === 'undefined') return null;
+        return localStorage.getItem('cos_last_sync');
+    });
     const [selectedDate, setSelectedDate] = useState(() => {
+        if (typeof window === 'undefined') return getTodayMST();
         const saved = localStorage.getItem('cos_selected_date');
         return saved || getTodayMST();
     });
