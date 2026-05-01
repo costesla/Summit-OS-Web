@@ -138,7 +138,7 @@ class UberMatcherService:
         cursor.execute("""
             UPDATE Rides.Rides
             SET Fare=?, Tip=?, Driver_Earnings=?, Platform_Cut=?, 
-                Sidecar_Artifact_JSON=?, LastUpdated=GETDATE()
+                Classification='Uber_Matched', Sidecar_Artifact_JSON=?, LastUpdated=GETDATE()
             WHERE RideID=?
         """, (
             card["rider_payment"], card["tip"], card["driver_earnings"], uber_cut,

@@ -279,13 +279,14 @@ class DatabaseClient:
             Distance_mi AS distance_miles, Format(Timestamp_Start, 'yyyy-MM-ddTHH:mm:ss') as timestamp
         FROM Rides.Rides 
         WHERE CAST(Timestamp_Start AS DATE) = CAST(? AS DATE)
+          AND (Fare > 0 OR Classification = 'Manual_Entry' OR Classification = 'Uber_Matched')
         ORDER BY Timestamp_Start DESC
         """
         return self.execute_query_params(query, (date_str,))
 
     def get_expenses_by_date(self, date_str):
         """Fetches manual expenses and charging for a specific date."""
-        # 1. Manual Expenses
+        # 1. Manual Expenses (including all categories like dining, fuel, etc.)
         manual_query = """
         SELECT 
             ExpenseID AS id, Category AS category, Amount AS amount, Note AS note, 
@@ -306,7 +307,7 @@ class DatabaseClient:
         charging = self.execute_query_params(charge_query, (date_str,))
         
         return {
-            "fastfood": [m for m in manual if m['category'] == 'FastFood'],
+            "fastfood": manual, # Return all manual/banking expenses to the UI
             "charging": charging
         }
 
