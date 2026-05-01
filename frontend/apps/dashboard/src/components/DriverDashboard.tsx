@@ -5,10 +5,9 @@ import {
     TrendingUp, Car, Zap, Utensils, Plus, Trash2,
     Navigation, Receipt, RotateCcw, Clock,
     Battery, BatteryCharging, WifiOff, Download,
-    MapPin, Gauge, LogOut, ShieldCheck, Cpu, RefreshCw, Cloud, Loader2, Check,
+    MapPin, Gauge, LogOut, Cpu, RefreshCw, Cloud, Loader2, Check,
     ShieldAlert
 } from 'lucide-react';
-import TellerConnectButton from './TellerConnectButton';
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 const AZURE_BASE = 'https://summitos-api.azurewebsites.net/api';
@@ -782,8 +781,7 @@ const DriverDashboard = () => {
         return new Date(saved);
     });
     const [showResetConfirm, setShowResetConfirm] = useState(false);
-    const [tellerAppId, setTellerAppId] = useState<'app_pq99ebts2bv1virlra000' | 'app_pq9b461vff3qkl4efc000'>('app_pq99ebts2bv1virlra000');
-    const [tellerEnv, setTellerEnv] = useState<'production' | 'development'>('production');
+
     const tripFormRef = useRef<HTMLDivElement>(null);
     const expenseFormRef = useRef<HTMLDivElement>(null);
 
@@ -1035,7 +1033,7 @@ const DriverDashboard = () => {
                             )}
                             {azureUser && (
                                 <div className="text-[10px] text-gray-500 font-mono flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/3 border border-white/5">
-                                    <ShieldCheck className="w-3 h-3 text-emerald-500/50" />
+                                    <LogOut className="w-3 h-3 text-emerald-500/50" />
                                     {azureUser}
                                 </div>
                             )}
@@ -1147,64 +1145,6 @@ const DriverDashboard = () => {
                     {/* Forms Column */}
                     <div className="space-y-5">
                         {/* Security & Banking Module */}
-                        <div className="p-6 rounded-2xl border border-cyan-500/20 bg-cyan-500/5 backdrop-blur-xl relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/10 blur-3xl rounded-full pointer-events-none group-hover:bg-cyan-500/20 transition-all duration-700" />
-                            <h2 className="text-base font-bold mb-2 flex items-center gap-2 text-white">
-                                <ShieldCheck className="w-4 h-4 text-cyan-400" /> Security & Banking
-                            </h2>
-                            <p className="text-[10px] text-gray-400 font-mono mb-6 leading-relaxed uppercase tracking-wider">
-                                Management of Production Credentials & Bank Enrollment
-                            </p>
-                            
-                            <div className="space-y-4">
-                                <div className="flex flex-col gap-2 p-3 rounded-xl bg-white/5 border border-white/10">
-                                    <p className="text-[10px] text-gray-500 font-mono uppercase tracking-wider mb-2">Troubleshooting Mode</p>
-                                    
-                                    <div className="flex items-center justify-between gap-4">
-                                        <span className="text-[10px] text-gray-400 font-medium">Environment:</span>
-                                        <div className="flex bg-black/40 p-0.5 rounded-lg border border-white/10">
-                                            {(['production', 'development'] as const).map((env) => (
-                                                <button
-                                                    key={env}
-                                                    onClick={() => setTellerEnv(env)}
-                                                    className={`px-3 py-1 text-[9px] font-bold uppercase rounded-md transition-all ${
-                                                        tellerEnv === env 
-                                                        ? 'bg-cyan-500/20 text-cyan-400 shadow-[0_0_10px_rgba(0,242,255,0.1)]' 
-                                                        : 'text-gray-500 hover:text-gray-400'
-                                                    }`}
-                                                >
-                                                    {env}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <div className="flex flex-col gap-1.5 mt-2">
-                                        <span className="text-[10px] text-gray-400 font-medium">Application ID:</span>
-                                        <div className="grid grid-cols-1 gap-1">
-                                            {(['app_pq99ebts2bv1virlra000', 'app_pq9b461vff3qkl4efc000'] as const).map((id) => (
-                                                <button
-                                                    key={id}
-                                                    onClick={() => setTellerAppId(id)}
-                                                    className={`px-3 py-1.5 text-[9px] font-mono rounded-lg border transition-all text-left truncate ${
-                                                        tellerAppId === id 
-                                                        ? 'bg-cyan-500/5 border-cyan-500/30 text-cyan-400 shadow-[0_0_15px_rgba(0,242,255,0.05)]' 
-                                                        : 'bg-black/20 border-white/5 text-gray-600 hover:border-white/10 hover:text-gray-500'
-                                                    }`}
-                                                >
-                                                    {id}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <TellerConnectButton 
-                                    applicationId={tellerAppId} 
-                                    environment={tellerEnv} 
-                                />
-                            </div>
-                        </div>
 
                         {/* Intelligence Sync Module */}
                         <IntelligenceSyncPanel selectedDate={selectedDate} />
