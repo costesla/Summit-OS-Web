@@ -673,45 +673,28 @@ const IntelligenceSyncPanel: React.FC<{ selectedDate: string }> = ({ selectedDat
                 )}
             </div>
 
-            <div className="grid grid-cols-2 gap-3 mb-4 mt-4">
-                <div className="space-y-2">
-                    <p className="text-[9px] font-bold text-gray-600 uppercase tracking-widest px-1">Structure</p>
-                    <div className="flex gap-2">
-                        <button
-                            disabled={status === 'running'}
-                            onClick={() => runSync(true)}
-                            className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] font-bold border border-white/5 bg-white/5 text-gray-500 hover:text-white hover:bg-white/10 transition-all disabled:opacity-50"
-                        >
-                            Dry Run
-                        </button>
-                        <button
-                            disabled={status === 'running'}
-                            onClick={() => runSync(false)}
-                            className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] font-bold bg-white/5 border border-white/5 text-gray-500 hover:text-white hover:bg-white/10 transition-all disabled:opacity-50"
-                        >
-                            Sync
-                        </button>
-                    </div>
-                </div>
-                <div className="space-y-2">
-                    <p className="text-[9px] font-bold text-cyan-500/60 uppercase tracking-widest px-1">Autonomous Flow</p>
-                    <div className="flex gap-2">
-                        <button
-                            disabled={status === 'running'}
-                            onClick={runDailySync}
-                            className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] font-bold bg-amber-500/15 border border-amber-500/30 text-amber-400 hover:bg-amber-500/25 transition-all disabled:opacity-50"
-                        >
-                            Full Sync
-                        </button>
-                        <button
-                            disabled={status === 'running'}
-                            onClick={triggerCloudScan}
-                            className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] font-bold bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/25 transition-all disabled:opacity-50"
-                        >
-                            Force Scan
-                        </button>
-                    </div>
-                </div>
+            <div className="flex gap-3 mb-4 mt-4">
+                <button
+                    disabled={status === 'running'}
+                    onClick={() => runSync(false)}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-bold bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition-all disabled:opacity-50"
+                >
+                    Sync
+                </button>
+                <button
+                    disabled={status === 'running'}
+                    onClick={runDailySync}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-bold bg-amber-500/15 border border-amber-500/30 text-amber-400 hover:bg-amber-500/25 transition-all disabled:opacity-50"
+                >
+                    Full Sync
+                </button>
+                <button
+                    disabled={status === 'running'}
+                    onClick={triggerCloudScan}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-bold bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/25 transition-all disabled:opacity-50"
+                >
+                    Force Scan
+                </button>
             </div>
 
             {/* Console Log Window */}
