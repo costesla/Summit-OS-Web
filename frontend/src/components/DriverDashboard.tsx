@@ -710,6 +710,22 @@ const IntelligenceSyncPanel = ({ selectedDate }: { selectedDate: string }) => {
 };
 
 const DriverDashboard = () => {
+    const [lastSync, setLastSync] = useState<string | null>(() => {
+        if (typeof window === 'undefined') return null;
+        return localStorage.getItem('cos_last_sync');
+    });
+
+    const [selectedDate, setSelectedDate] = useState(() => {
+        if (typeof window === 'undefined') return getTodayMST();
+        const saved = localStorage.getItem('cos_selected_date');
+        return saved || getTodayMST();
+    });
+
+    const updateSelectedDate = (date: string) => {
+        setSelectedDate(date);
+        localStorage.setItem('cos_selected_date', date);
+    };
+
     const [trips, setTrips] = useState<Trip[]>(() => {
         if (typeof window === 'undefined') return [];
         try { return JSON.parse(localStorage.getItem('cos_trips') ?? '[]'); } catch { return []; }
@@ -724,10 +740,15 @@ const DriverDashboard = () => {
     const [expenseForm, setExpenseForm] = useState<ExpenseForm>({
         category: 'fastfood', amount: '', note: '',
     });
-    const [sessionStart] = useState<Date>(() => {
+    const [sessionStart, setSessionStart] = useState<Date>(() => {
         if (typeof window === 'undefined') return new Date();
         const saved = localStorage.getItem('cos_session_start');
-        if (!saved) { const d = new Date(); localStorage.setItem('cos_session_start', d.toISOString()); return d; }
+        if (!saved) {
+            const d = new Date();
+            localStorage.setItem('cos_session_start', d.toISOString());
+            localStorage.setItem('cos_session_date', getTodayMST());
+            return d;
+        }
         return new Date(saved);
     });
     const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -740,6 +761,53 @@ const DriverDashboard = () => {
     useEffect(() => { localStorage.setItem('cos_trips', JSON.stringify(trips)); }, [trips]);
     useEffect(() => { localStorage.setItem('cos_expenses', JSON.stringify(expenses)); }, [expenses]);
 
+    // Cloud Sync Logic
+    const fetchFromCloud = async (date: string) => {
+        try {
+            const res = await fetch(`${AZURE_BASE}/driver/sync?date=${date}`, {
+                cache: 'no-store',
+                headers: { 'Cache-Control': 'no-cache' }
+            });
+            if (!res.ok) return;
+            const data = await res.json();
+            if (data.success) {
+                setTrips(data.trips || []);
+                setExpenses(data.expenses || { fastfood: [], charging: [] });
+                const now = new Date().toLocaleTimeString();
+                setLastSync(now);
+                localStorage.setItem('cos_last_sync', now);
+            }
+        } catch (e) {
+            console.error("Cloud Fetch Error:", e);
+        }
+    };
+
+    const saveToCloud = async () => {
+        try {
+            const res = await fetch(`${AZURE_BASE}/driver/sync`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    date: selectedDate,
+                    trips: trips,
+                    expenses: expenses
+                })
+            });
+            if (res.ok) {
+                const now = new Date().toLocaleTimeString();
+                setLastSync(`${now} (${trips.length} trips)`);
+                localStorage.setItem('cos_last_sync', `${now} (${trips.length} trips)`);
+            }
+        } catch (e) {
+            console.error("Cloud Save Error:", e);
+        }
+    };
+
+    // Auto-fetch when date changes
+    useEffect(() => {
+        if (selectedDate) fetchFromCloud(selectedDate);
+    }, [selectedDate]);
+
     // Migration: Clear old stale trips/expenses on first load of this version
     useEffect(() => {
         const lastVer = localStorage.getItem('cos_dashboard_ver');
@@ -749,6 +817,32 @@ const DriverDashboard = () => {
             setExpenses({ fastfood: [], charging: [] });
             localStorage.setItem('cos_dashboard_ver', DASHBOARD_VERSION);
         }
+    }, []);
+
+    // Check for day rollover
+    useEffect(() => {
+        const checkDay = () => {
+            const today = getTodayMST();
+            const storedDate = localStorage.getItem('cos_session_date');
+            if (storedDate && storedDate !== today) {
+                const currentSelected = localStorage.getItem('cos_selected_date');
+                if (!currentSelected || currentSelected === storedDate) {
+                    localStorage.removeItem('cos_trips');
+                    localStorage.removeItem('cos_expenses');
+                    localStorage.removeItem('cos_session_start');
+                    localStorage.setItem('cos_session_date', today);
+                    localStorage.setItem('cos_selected_date', today);
+                    setTrips([]);
+                    setExpenses({ fastfood: [], charging: [] });
+                    const d = new Date();
+                    setSessionStart(d);
+                    localStorage.setItem('cos_session_start', d.toISOString());
+                    setSelectedDate(today);
+                }
+            }
+        };
+        const iv = setInterval(checkDay, 60_000);
+        return () => clearInterval(iv);
     }, []);
 
     const stats = useMemo(() => {
@@ -879,9 +973,10 @@ const DriverDashboard = () => {
                             <input
                                 type="date"
                                 value={selectedDate}
-                                onChange={(e) => { if (e.target.value) setSelectedDate(e.target.value); }}
+                                onChange={(e) => { if (e.target.value) updateSelectedDate(e.target.value); }}
                                 className="bg-transparent border-none text-cyan-400 font-bold focus:outline-none cursor-pointer"
                             />
+                            {lastSync && <span className="text-gray-600">· Sync: {lastSync}</span>}
                             {azureUser && <span className="text-cyan-400/60">· {azureUser}</span>}
                         </p>
                     </div>
@@ -898,6 +993,11 @@ const DriverDashboard = () => {
                             <p className="text-[10px] font-bold uppercase text-gray-600 tracking-[0.2em] font-mono">Est. $/hr</p>
                             <p className="text-2xl font-black text-white">${Math.max(0, stats.hourlyRate).toFixed(2)}</p>
                         </div>
+                        <button onClick={saveToCloud}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20 transition-all text-xs font-bold"
+                        >
+                            <Cloud className="w-4 h-4" /> Sync to Cloud
+                        </button>
                         <button onClick={() => setShowResetConfirm(true)}
                             className="p-2 rounded-xl border border-white/10 text-gray-600 hover:text-rose-400 hover:border-rose-500/30 transition-all"
                             title="Reset Day">
