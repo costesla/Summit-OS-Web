@@ -57,17 +57,29 @@ class BankingSyncService:
         self.semantic = SemanticIngestionService()
         self.db = DatabaseClient()
 
-    def sync_recent(self, count=50, since_date=None):
+    def sync_recent(self, count=15, since_date=None, days_back=0):
         """
-        Pulls expense-only transactions (debits) for all connected accounts.
-        Skips all income, credits, and known rideshare deposits.
-        Includes both posted and pending transactions so receipt screenshots
-        can be matched against same-day pending items.
+        Pulls today's expense transactions (debits) only.
+        
+        By default fetches only TODAY to avoid loading historical data.
+        Set days_back > 0 only when you need to backfill a specific date range.
+        
+        Args:
+            count:      Max transactions to fetch per account (default 15 — enough for one day)
+            since_date: ISO date string (YYYY-MM-DD). Defaults to today.
+            days_back:  If > 0, fetches from (today - days_back) onward. Use sparingly.
         """
         logs = []
         try:
-            target_date = since_date or datetime.now().strftime('%Y-%m-%d')
-            logs.append(f"START: Expense-only Banking Sync (Since: {target_date})")
+            from datetime import timedelta
+            today = datetime.now().strftime('%Y-%m-%d')
+
+            if days_back > 0:
+                since = (datetime.now() - timedelta(days=days_back)).strftime('%Y-%m-%d')
+            else:
+                since = since_date or today
+
+            logs.append(f"START: Daily Expense Sync (Date: {since}{'→'+today if days_back else ''})")
 
             accounts = self.banking.get_accounts()
             if not accounts:
@@ -83,15 +95,15 @@ class BankingSyncService:
                 acc_id = acc.get('id')
                 acc_name = acc.get('name', 'Unknown Account')
 
-                logs.append(f"SYNC: Fetching transactions for '{acc_name}'...")
+                logs.append(f"SYNC: Fetching up to {count} transactions for '{acc_name}'...")
                 transactions = self.banking.get_transactions(account_id=acc_id, count=count)
                 total_tx += len(transactions)
 
                 acc_synced = 0
                 for tx in transactions:
-                    # Date filter
+                    # Date filter — only process transactions on or after 'since'
                     tx_date = tx.get('date')
-                    if tx_date and tx_date < target_date:
+                    if tx_date and tx_date < since:
                         continue
 
                     # ── Expense filter ────────────────────────────────────────
