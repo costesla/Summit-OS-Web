@@ -7,6 +7,7 @@ from typing import Dict, Any, Optional, List
 
 from .database import DatabaseClient
 from .ocr import OCRClient
+from .semantic_ingestion import SemanticIngestionService
 
 log = logging.getLogger(__name__)
 
@@ -14,6 +15,7 @@ class UberMatcherService:
     def __init__(self):
         self.db = DatabaseClient()
         self.ocr = OCRClient()
+        self.semantic = SemanticIngestionService()
         self.mdt = timezone(timedelta(hours=-6))
 
     def process_image_bytes(self, image_bytes: bytes, filename: str) -> Dict[str, Any]:
@@ -83,7 +85,25 @@ class UberMatcherService:
         }
 
         self._update_ride(match["RideID"], card, uber_cut, sidecar)
-        
+
+        # 6. Vectorize the matched ride for Copilot semantic memory
+        try:
+            embedding_text = (
+                f"Uber trip matched via OCR card '{filename}'. "
+                f"Driver earned ${card['driver_earnings']:.2f} "
+                f"(rider paid ${card['rider_payment']:.2f}, tip ${card.get('tip', 0):.2f}, "
+                f"Uber cut ${uber_cut:.2f}). "
+                f"Tessie ride ID: {match['RideID']}. "
+                f"Screenshot timestamp: {card_dt.strftime('%Y-%m-%d %H:%M')} MST. "
+                f"Operational vehicle: Thor (Tesla fleet)."
+            )
+            self.semantic.ingest_tessie_drive(
+                {"RideID": match["RideID"], "Timestamp_Start": card_dt.isoformat(),
+                 "Classification": "Uber_Matched"},
+                telemetry_summary=embedding_text
+            )
+        except Exception as ve:
+            log.warning(f"Vector embedding failed for {match['RideID']}: {ve}")
         return {
             "status": "MATCHED",
             "ride_id": match["RideID"],
