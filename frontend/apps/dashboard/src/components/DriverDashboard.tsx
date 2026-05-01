@@ -5,12 +5,14 @@ import {
     TrendingUp, Car, Zap, Utensils, Plus, Trash2,
     Navigation, Receipt, RotateCcw, Clock,
     Battery, BatteryCharging, WifiOff, Download,
-    MapPin, Gauge, LogOut, ShieldCheck, Cpu, Play, Search, RefreshCw, Cloud, CreditCard, Loader2, Check
+    MapPin, Gauge, LogOut, ShieldCheck, Cpu, Play, Search, RefreshCw, Cloud, Loader2, Check,
+    ShieldAlert, AlertTriangle, AlertCircle, Info, Calendar, LayoutGrid, BarChart, History
 } from 'lucide-react';
 import TellerConnectButton from './TellerConnectButton';
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 const AZURE_BASE = 'https://summitos-api.azurewebsites.net/api';
+const VERSION = "2.1.0-CLEAN";
 const TAG_FILTERS = ['Uber', 'Jackie', 'Esmeralda'] as const;
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -570,13 +572,42 @@ const TessieChargesPanel = ({ onImport, selectedDate }: { onImport: (charge: Tes
 };
 
 // ─── Intelligence Sync Panel ─────────────────────────────────────────────────
-const IntelligenceSyncPanel = ({ selectedDate }: { selectedDate: string }) => {
-    const [status, setStatus] = useState<'idle' | 'running'>('idle');
+const IntelligenceSyncPanel: React.FC<{ selectedDate: string }> = ({ selectedDate }) => {
+    const [status, setStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle');
     const [logs, setLogs] = useState<string[]>([]);
+
+    const triggerCloudScan = async () => {
+        setStatus('running');
+        setLogs([`> Initiating Cloud Intelligence Scan for ${selectedDate}...`]);
+        
+        try {
+            const resp = await fetch(`${AZURE_BASE}/operations/trigger-cloud-scan`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ date: selectedDate })
+            });
+            const results = await resp.json();
+            
+            if (results.success) {
+                setStatus('success');
+                setLogs(prev => [
+                    ...prev, 
+                    ...(results.logs || []),
+                    `> [SUCCESS] Scan complete. ${results.processed || 0} processed, ${results.matched || 0} matched.`
+                ]);
+            } else {
+                setStatus('error');
+                setLogs(prev => [...prev, `> [ERROR] ${results.error || 'Unknown scan error'}`]);
+            }
+        } catch (err) {
+            setStatus('error');
+            setLogs(prev => [...prev, `> [CRITICAL] Connection failed: ${err instanceof Error ? err.message : String(err)}`]);
+        }
+    };
 
     const runSync = async (dryRun: boolean) => {
         setStatus('running');
-        setLogs(prev => [...prev, `> Starting ${dryRun ? 'Dry Run' : 'Actual Sync'} for ${selectedDate}...`]);
+        setLogs([`> Starting ${dryRun ? 'Dry Run' : 'Actual Sync'} for ${selectedDate}...`]);
         try {
             const resp = await fetch(`${AZURE_BASE}/operations/sync-folders`, {
                 method: 'POST',
@@ -586,64 +617,40 @@ const IntelligenceSyncPanel = ({ selectedDate }: { selectedDate: string }) => {
 
             const data = await resp.json();
             if (data.success) {
-                setLogs(prev => [...prev, ...data.logs]);
+                setStatus('success');
+                setLogs(prev => [...prev, ...(data.logs || []), `> [SUCCESS] Folder sync finalized.`]);
             } else {
-                setLogs(prev => [...prev, `[ERROR] ${data.error}`]);
+                setStatus('error');
+                setLogs(prev => [...prev, `> [ERROR] ${data.error}`]);
             }
         } catch (e: any) {
-            setLogs(prev => [...prev, `[EXCEPTION] ${e.message}`]);
-        } finally {
-            setStatus('idle');
-        }
-    };
-
-    const triggerCloudScan = async () => {
-        setStatus('running');
-        setLogs(prev => [...prev, `> Force Triggering Autonomous Cloud Scan...`]);
-        setLogs(prev => [...prev, `> Monitoring OneDrive 'Camera Roll'...`]);
-
-        try {
-            const resp = await fetch(`${AZURE_BASE}/operations/trigger-cloud-scan`, {
-                method: 'POST'
-            });
-
-            const data = await resp.json();
-            if (data.success !== false) {
-                const results = data;
-                setLogs(prev => [
-                    ...prev, 
-                    ...results.logs,
-                    `> Scan Complete: ${results.processed} files analyzed, ${results.matched} Uber trips routed.`
-                ]);
-            } else {
-                setLogs(prev => [...prev, `[ERROR] ${data.error}`]);
-            }
-        } catch (e: any) {
-            setLogs(prev => [...prev, `[EXCEPTION] ${e.message}`]);
-        } finally {
-            setStatus('idle');
+            setStatus('error');
+            setLogs(prev => [...prev, `> [CRITICAL] ${e.message}`]);
         }
     };
 
     const runDailySync = async () => {
         setStatus('running');
-        setLogs(prev => [...prev, `> Initializing Daily Unified Sync (Folders + Data)...`]);
+        setLogs([`> Initializing Daily Unified Sync (Folders + Data)...`]);
 
         try {
             const resp = await fetch(`${AZURE_BASE}/daily-sync`, {
-                method: 'POST'
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ date: selectedDate })
             });
 
             const data = await resp.json();
             if (data.success) {
-                setLogs(prev => [...prev, ...data.logs, `> Daily Sync Complete.`]);
+                setStatus('success');
+                setLogs(prev => [...prev, ...(data.logs || []), `> [SUCCESS] Daily Sync Complete.`]);
             } else {
-                setLogs(prev => [...prev, ...(data.logs || []), `[ERROR] ${data.error}`]);
+                setStatus('error');
+                setLogs(prev => [...prev, ...(data.logs || []), `> [ERROR] ${data.error}`]);
             }
         } catch (e: any) {
-            setLogs(prev => [...prev, `[EXCEPTION] ${e.message}`]);
-        } finally {
-            setStatus('idle');
+            setStatus('error');
+            setLogs(prev => [...prev, `> [CRITICAL] ${e.message}`]);
         }
     };
 
@@ -658,29 +665,31 @@ const IntelligenceSyncPanel = ({ selectedDate }: { selectedDate: string }) => {
                     </h2>
                     <p className="text-[10px] text-gray-500 font-mono uppercase tracking-widest">Autonomous Pipeline Operating</p>
                 </div>
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-                    <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-                    <span className="text-[9px] font-bold text-emerald-400 uppercase font-mono tracking-tighter">Live Router</span>
-                </div>
+                {status === 'running' && (
+                    <div className="flex items-center gap-1.5 px-3 py-1 bg-cyan-500/10 border border-cyan-500/20 rounded-full">
+                        <Loader2 className="w-3 h-3 text-cyan-400 animate-spin" />
+                        <span className="text-[9px] font-bold text-cyan-400 uppercase font-mono tracking-tighter">Running</span>
+                    </div>
+                )}
             </div>
 
-            <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="grid grid-cols-2 gap-3 mb-4 mt-4">
                 <div className="space-y-2">
-                    <p className="text-[9px] font-bold text-gray-600 uppercase tracking-widest px-1">Administrative Actions</p>
+                    <p className="text-[9px] font-bold text-gray-600 uppercase tracking-widest px-1">Structure</p>
                     <div className="flex gap-2">
                         <button
                             disabled={status === 'running'}
                             onClick={() => runSync(true)}
                             className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] font-bold border border-white/5 bg-white/5 text-gray-500 hover:text-white hover:bg-white/10 transition-all disabled:opacity-50"
                         >
-                            <Search className="w-3 h-3" /> Dry Run
+                            Dry Run
                         </button>
                         <button
                             disabled={status === 'running'}
                             onClick={() => runSync(false)}
                             className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] font-bold bg-white/5 border border-white/5 text-gray-500 hover:text-white hover:bg-white/10 transition-all disabled:opacity-50"
                         >
-                            <Play className="w-3 h-3" /> Sync
+                            Sync
                         </button>
                     </div>
                 </div>
@@ -692,14 +701,14 @@ const IntelligenceSyncPanel = ({ selectedDate }: { selectedDate: string }) => {
                             onClick={runDailySync}
                             className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] font-bold bg-amber-500/15 border border-amber-500/30 text-amber-400 hover:bg-amber-500/25 transition-all disabled:opacity-50"
                         >
-                            <Clock className={`w-3 h-3 ${status === 'running' ? 'animate-spin' : ''}`} /> Daily Sync
+                            Full Sync
                         </button>
                         <button
                             disabled={status === 'running'}
                             onClick={triggerCloudScan}
                             className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] font-bold bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/25 transition-all disabled:opacity-50"
                         >
-                            <RefreshCw className={`w-3 h-3 ${status === 'running' ? 'animate-spin' : ''}`} /> Force Scan
+                            Force Scan
                         </button>
                     </div>
                 </div>
@@ -711,21 +720,18 @@ const IntelligenceSyncPanel = ({ selectedDate }: { selectedDate: string }) => {
                     <div className="w-1.5 h-1.5 rounded-full bg-rose-500" />
                     <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    <span className="text-[9px] font-mono text-gray-600 uppercase ml-auto">Terminal v2.0-Alpha</span>
+                    <span className="text-[9px] font-mono text-gray-600 uppercase ml-auto">Intelligence Console</span>
                 </div>
-                <div className="p-3 h-32 overflow-y-auto font-mono text-[10px] space-y-1">
+                <div className="p-3 h-32 overflow-y-auto font-mono text-[10px] space-y-1 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
                     {logs.length === 0 ? (
-                        <p className="text-gray-700 italic">// High-Tech Autonomous Router Status: ACTIVE
-// Monitoring: 'Pictures/Camera Roll'
-// Target: 'Uber Driver' Hierarchy
-// Cycle: 30 minutes</p>
+                        <p className="text-gray-700 italic">// System Ready. Select operation for {selectedDate}.</p>
                     ) : (
                         logs.map((log, i) => (
                             <p key={i} className={
-                                log.startsWith('[ERROR]') || log.startsWith('[EXCEPTION]') || log.startsWith('ERROR:') ? 'text-rose-400' :
-                                log.startsWith('[NEW]') || log.startsWith('MATCH:') || log.startsWith('ROUTED:') ? 'text-emerald-400 font-bold' :
-                                log.startsWith('[EXISTING]') || log.startsWith('SKIP:') ? 'text-gray-500' :
-                                log.startsWith('MODE:') || log.startsWith('>') ? 'text-cyan-400 font-bold border-t border-white/5 pt-1 mt-1' :
+                                log.includes('[ERROR]') || log.includes('[CRITICAL]') || log.includes('ERROR:') ? 'text-rose-400' :
+                                log.includes('[SUCCESS]') || log.includes('MATCH:') || log.includes('ROUTED:') ? 'text-emerald-400 font-bold' :
+                                log.includes('SKIP:') ? 'text-gray-500' :
+                                log.startsWith('>') ? 'text-cyan-400 font-bold border-t border-white/5 pt-1 mt-1' :
                                 'text-gray-300'
                             }>
                                 {log}
@@ -742,14 +748,19 @@ const IntelligenceSyncPanel = ({ selectedDate }: { selectedDate: string }) => {
 // ─── Helper: today's date string in Mountain Time ──────────────────────────
 const getTodayMST = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Denver' });
 
-const VERSION = "1.2.4";
+
 
 const DriverDashboard = () => {
     const [lastSync, setLastSync] = useState<string | null>(() => localStorage.getItem('cos_last_sync'));
     const [selectedDate, setSelectedDate] = useState(() => {
-        if (typeof window === 'undefined') return new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Denver' });
-        return new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Denver' });
+        const saved = localStorage.getItem('cos_selected_date');
+        return saved || getTodayMST();
     });
+
+    const updateSelectedDate = (date: string) => {
+        setSelectedDate(date);
+        localStorage.setItem('cos_selected_date', date);
+    };
 
     const [trips, setTrips] = useState<Trip[]>(() => {
         if (typeof window === 'undefined') return [];
@@ -760,23 +771,9 @@ const DriverDashboard = () => {
         try { return JSON.parse(localStorage.getItem('cos_expenses') ?? 'null') ?? { fastfood: [], charging: [] }; } catch { return { fastfood: [], charging: [] }; }
     });
 
-    const [stripeBalance, setStripeBalance] = useState<{ available: number; pending: number } | null>(null);
     const [pendingDrive, setPendingDrive] = useState<TessieDrive | null>(null);
 
-    useEffect(() => {
-        const fetchStripe = async () => {
-            try {
-                const res = await fetch('https://summitos-api.azurewebsites.net/api/stripe/balance');
-                if (res.ok) {
-                    const data = await res.json();
-                    setStripeBalance({ available: data.available, pending: data.pending });
-                }
-            } catch (err) { console.error('Stripe fetch error:', err); }
-        };
-        fetchStripe();
-        const interval = setInterval(fetchStripe, 300000); // refresh every 5 mins
-        return () => clearInterval(interval);
-    }, []);
+
     const [tripForm, setTripForm] = useState<TripForm>({
         type: 'Uber', fare: '', tip: '', fees: '', insurance: '', otherFees: '',
     });
@@ -811,16 +808,21 @@ const DriverDashboard = () => {
             const storedDate = localStorage.getItem('cos_session_date');
             if (storedDate && storedDate !== today) {
                 // Midnight crossed — reset session automatically
-                localStorage.removeItem('cos_trips');
-                localStorage.removeItem('cos_expenses');
-                localStorage.removeItem('cos_session_start');
-                localStorage.setItem('cos_session_date', today);
-                setTrips([]);
-                setExpenses({ fastfood: [], charging: [] });
-                const d = new Date();
-                setSessionStart(d);
-                localStorage.setItem('cos_session_start', d.toISOString());
-                setSelectedDate(today);
+                // But only if we are currently on "Today"
+                const currentSelected = localStorage.getItem('cos_selected_date');
+                if (!currentSelected || currentSelected === storedDate) {
+                    localStorage.removeItem('cos_trips');
+                    localStorage.removeItem('cos_expenses');
+                    localStorage.removeItem('cos_session_start');
+                    localStorage.setItem('cos_session_date', today);
+                    localStorage.setItem('cos_selected_date', today);
+                    setTrips([]);
+                    setExpenses({ fastfood: [], charging: [] });
+                    const d = new Date();
+                    setSessionStart(d);
+                    localStorage.setItem('cos_session_start', d.toISOString());
+                    setSelectedDate(today);
+                }
             }
         };
         const iv = setInterval(checkDay, 60_000);
@@ -1029,10 +1031,18 @@ const DriverDashboard = () => {
                                 <input
                                     type="date"
                                     value={selectedDate}
-                                    onChange={(e) => { if (e.target.value) setSelectedDate(e.target.value); }}
+                                    onChange={(e) => { if (e.target.value) updateSelectedDate(e.target.value); }}
                                     className="bg-transparent border-none text-cyan-400 text-xs font-bold focus:outline-none cursor-pointer font-mono"
                                 />
                             </div>
+                            {syncStatus !== 'idle' && (
+                                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[10px] font-mono uppercase tracking-wider animate-in fade-in duration-300 ${
+                                    syncStatus === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+                                }`}>
+                                    {syncStatus === 'success' ? <Check className="w-3 h-3" /> : <ShieldAlert className="w-3 h-3" />}
+                                    {syncStatus === 'success' ? 'Telemetry Synced' : 'Sync Failed'}
+                                </div>
+                            )}
                             {azureUser && (
                                 <div className="text-[10px] text-gray-500 font-mono flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/3 border border-white/5">
                                     <ShieldCheck className="w-3 h-3 text-emerald-500/50" />
@@ -1127,16 +1137,14 @@ const DriverDashboard = () => {
                 )}
 
                 {/* ── Stat Cards ── */}
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <StatCard label="Total Trips" value={trips.length}
                         sub={`${stats.uberCount} Uber · ${stats.privateCount} Private`}
                         icon={<Car className="text-cyan-400 w-5 h-5" />} />
                     <StatCard label="Gross" value={`$${stats.gross.toFixed(2)}`}
                         sub={`Fees: $${stats.fees.toFixed(2)}`}
                         icon={<TrendingUp className="text-cyan-400 w-5 h-5" />} highlight />
-                    <StatCard label="Stripe Balance" value={`$${(stripeBalance?.available ?? 0).toFixed(2)}`}
-                        sub={`Pending: $${(stripeBalance?.pending ?? 0).toFixed(2)}`}
-                        icon={<CreditCard className="text-emerald-400 w-5 h-5" />} />
+
                     <StatCard label="Charging" value={`$${stats.charging.toFixed(2)}`} sub="Fuel & Power"
                         icon={<Zap className="text-amber-400 w-5 h-5" />} />
                     <StatCard label="Fast Food" value={`$${stats.food.toFixed(2)}`} sub="Meals & Drinks"
