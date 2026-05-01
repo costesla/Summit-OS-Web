@@ -677,23 +677,26 @@ const IntelligenceSyncPanel: React.FC<{ selectedDate: string }> = ({ selectedDat
                 <button
                     disabled={status === 'running'}
                     onClick={() => runSync(false)}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-bold bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition-all disabled:opacity-50"
+                    className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 rounded-xl text-[10px] font-bold bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition-all disabled:opacity-50"
                 >
-                    Sync
+                    <span>Create Folders</span>
+                    <span className="text-[8px] font-normal text-gray-600 normal-case">OneDrive structure</span>
                 </button>
                 <button
                     disabled={status === 'running'}
                     onClick={runDailySync}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-bold bg-amber-500/15 border border-amber-500/30 text-amber-400 hover:bg-amber-500/25 transition-all disabled:opacity-50"
+                    className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 rounded-xl text-[10px] font-bold bg-amber-500/15 border border-amber-500/30 text-amber-400 hover:bg-amber-500/25 transition-all disabled:opacity-50"
                 >
-                    Full Sync
+                    <span>Rebuild Day</span>
+                    <span className="text-[8px] font-normal text-amber-400/50 normal-case">Tessie + Bank + Scan</span>
                 </button>
                 <button
                     disabled={status === 'running'}
                     onClick={triggerCloudScan}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-bold bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/25 transition-all disabled:opacity-50"
+                    className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 rounded-xl text-[10px] font-bold bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/25 transition-all disabled:opacity-50"
                 >
-                    Force Scan
+                    <span>Match Screenshots</span>
+                    <span className="text-[8px] font-normal text-cyan-400/50 normal-case">OCR → trip matching</span>
                 </button>
             </div>
 
