@@ -76,8 +76,11 @@ def trigger_cloud_scan(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
 
     try:
+        data = req.get_json() if req.get_body() else {}
+        target_date = data.get("date")
+        
         service = CloudWatcherService()
-        results = service.scan_and_route()
+        results = service.scan_and_route(target_date=target_date)
         return func.HttpResponse(
             json.dumps({
                 "success": results.get("success", False),
@@ -107,7 +110,15 @@ def daily_sync(req: func.HttpRequest) -> func.HttpResponse:
     logs = []
     
     try:
-        now = datetime.now()
+        data = req.get_json() if req.get_body() else {}
+        target_date_str = data.get("date") or data.get("processDate")
+        
+        if target_date_str:
+            now = datetime.strptime(target_date_str, "%Y-%m-%d")
+            logs.append(f"[INFO] Targeted Daily Sync for {target_date_str}")
+        else:
+            now = datetime.now()
+            logs.append(f"[INFO] Standard Daily Sync for {now.strftime('%Y-%m-%d')}")
         year = now.strftime("%Y")
         month = now.strftime("%B")
         day = now.strftime("%d")
@@ -143,11 +154,24 @@ def daily_sync(req: func.HttpRequest) -> func.HttpResponse:
         try:
             logs.append(f"[INFO] Syncing Banking transactions...")
             b_sync = BankingSyncService()
-            b_result = b_sync.sync_recent(count=50, since_date=target_date)
-            logs.append(f"[SUCCESS] Banking Sync: {b_result.get('transactions_vectorized', 0)} transactions vectorized.")
+            b_result = b_sync.sync_recent(count=15, since_date=target_date)
+            logs.append(f"[SUCCESS] Banking Sync: {b_result.get('expenses_synced', 0)} expenses synced, {b_result.get('income_skipped', 0)} income skipped.")
         except Exception as be:
             logging.error(f"Banking Sync Error: {be}")
             logs.append(f"[ERROR] Banking Sync Error: {str(be)}")
+
+        # 4. Integrated Cloud Scan
+        try:
+            logs.append(f"[INFO] Triggering Autonomous Cloud Scan...")
+            c_watcher = CloudWatcherService()
+            c_result = c_watcher.scan_and_route(target_date=target_date)
+            logs.append(f"[SUCCESS] Cloud Scan: {c_result.get('processed', 0)} files analyzed, {c_result.get('matched', 0)} Uber trips routed.")
+            # Append cloud scan logs to main logs for visibility
+            for l in c_result.get("logs", []):
+                logs.append(f"  > {l}")
+        except Exception as ce:
+            logging.error(f"Cloud Scan Error: {ce}")
+            logs.append(f"[ERROR] Cloud Scan Error: {str(ce)}")
 
         return func.HttpResponse(
             json.dumps({
