@@ -5,8 +5,8 @@ import {
     TrendingUp, Car, Zap, Utensils, Plus, Trash2,
     Navigation, Receipt, RotateCcw, Clock,
     Battery, BatteryCharging, WifiOff, Download,
-    MapPin, Gauge, LogOut, ShieldCheck, Cpu, Play, Search, RefreshCw, Cloud, Loader2, Check,
-    ShieldAlert, AlertTriangle, AlertCircle, Info, Calendar, LayoutGrid, BarChart, History
+    MapPin, Gauge, LogOut, ShieldCheck, Cpu, RefreshCw, Cloud, Loader2, Check,
+    ShieldAlert
 } from 'lucide-react';
 import TellerConnectButton from './TellerConnectButton';
 
