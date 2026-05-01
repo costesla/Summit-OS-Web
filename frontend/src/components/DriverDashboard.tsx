@@ -709,6 +709,9 @@ const IntelligenceSyncPanel = ({ selectedDate }: { selectedDate: string }) => {
     );
 };
 
+// ─── Helper: today's date string in Mountain Time ──────────────────────────
+const getTodayMST = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Denver' });
+
 const DriverDashboard = () => {
     const [lastSync, setLastSync] = useState<string | null>(() => {
         if (typeof window === 'undefined') return null;
