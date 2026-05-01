@@ -863,10 +863,6 @@ const DriverDashboard = () => {
         };
     }, [trips, expenses, sessionStart]);
 
-    const [selectedDate, setSelectedDate] = useState(() => {
-        if (typeof window === 'undefined') return '2026-03-05';
-        return new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Denver' });
-    });
 
     const addTrip = (e: React.FormEvent) => {
         e.preventDefault();
