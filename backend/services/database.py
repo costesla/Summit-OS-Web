@@ -276,10 +276,20 @@ class DatabaseClient:
             Platform_Cut AS fees, 
             0 AS insurance, 0 AS otherFees,
             Tessie_DriveID AS tessie_drive_id, 
-            Distance_mi AS distance_miles, Format(Timestamp_Start, 'yyyy-MM-ddTHH:mm:ss') as timestamp
+            Distance_mi AS distance_miles, Format(Timestamp_Start, 'yyyy-MM-ddTHH:mm:ss') as timestamp,
+            Classification AS classification,
+            Pickup_Location AS pickup_location,
+            Dropoff_Location AS dropoff_location
         FROM Rides.Rides 
         WHERE CAST(Timestamp_Start AS DATE) = CAST(? AS DATE)
-          AND (Fare > 0 OR Classification = 'Manual_Entry' OR Classification = 'Uber_Matched')
+          AND (
+            Fare > 0
+            OR Classification = 'Manual_Entry'
+            OR Classification = 'Uber_Matched'
+            OR Classification = 'Uber_Dropoff'
+            OR Classification = 'Jackie'
+            OR Classification = 'Esmeralda'
+          )
         ORDER BY Timestamp_Start DESC
         """
         return self.execute_query_params(query, (date_str,))
