@@ -269,14 +269,25 @@ class DatabaseClient:
         return self.execute_query_params(query, params)
 
     def get_trips_by_date(self, date_str):
-        """Fetches all trips for a specific date (YYYY-MM-DD)."""
+        """Fetches all trips for a specific date (YYYY-MM-DD).
+        
+        Only returns trips that have meaningful data:
+        - Fare > 0 (any trip with earnings)
+        - Manual_Entry (manually logged by operator)
+        - Uber_Matched (screenshot matched to a Tessie drive)
+        
+        Uber_Dropoff records are intentionally hidden until a screenshot
+        is matched to them to prevent ghost duplicates when manual entries exist.
+        Jackie and Esmeralda private drives are shown regardless of fare.
+        """
         query = """
         SELECT 
             RideID AS id, TripType AS type, Fare AS fare, Tip AS tip, 
             Platform_Cut AS fees, 
             0 AS insurance, 0 AS otherFees,
             Tessie_DriveID AS tessie_drive_id, 
-            Distance_mi AS distance_miles, Format(Timestamp_Start, 'yyyy-MM-ddTHH:mm:ss') as timestamp,
+            Distance_mi AS distance_miles,
+            Format(Timestamp_Start, 'yyyy-MM-ddTHH:mm:ss') as timestamp,
             Classification AS classification,
             Pickup_Location AS pickup_location,
             Dropoff_Location AS dropoff_location
@@ -286,7 +297,6 @@ class DatabaseClient:
             Fare > 0
             OR Classification = 'Manual_Entry'
             OR Classification = 'Uber_Matched'
-            OR Classification = 'Uber_Dropoff'
             OR Classification = 'Jackie'
             OR Classification = 'Esmeralda'
           )
