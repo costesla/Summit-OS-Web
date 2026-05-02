@@ -69,15 +69,24 @@ class TessieSyncService:
                     "Duration_min":       drive.get('duration_minutes', 0),
                     "Pickup_Location":    drive.get('starting_location', 'Unknown'),
                     "Dropoff_Location":   drive.get('ending_location', 'Unknown'),
-                    "Classification":     f"Auto:{drive.get('tag', 'None')}",
                     "Start_SOC":          drive.get('starting_battery'),
                     "End_SOC":            drive.get('ending_battery'),
                     "Energy_Used_kWh":    drive.get('energy_used'),
                     "Efficiency_Wh_mi":   drive.get('efficiency'),
-                    "TripType":           "Uber" if "Uber" in (drive.get('tag') or "") else "Private",
+                    "TripType":           "Uber" if "uber" in (drive.get('tag') or "").lower() else "Private",
+                    "Classification":     self._classify_drive(drive.get('tag')),
                     "Sidecar_Artifact_JSON": json.dumps(drive)
                 }
-                self.db.save_trip(drive_data)
+                
+                # Only save to DB if it's tagged with a recognized business label (avoids "ghost" data)
+                tag = (drive.get('tag') or '').lower()
+                is_valid_tag = any(label in tag for label in ['uber', 'jackie', 'esmeralda'])
+                
+                if is_valid_tag:
+                    self.db.save_trip(drive_data)
+                    results["drives_saved"] += 1
+                else:
+                    log.info(f"Skipping drive {drive.get('id')} with tag '{drive.get('tag')}' - not a recognized business trip.")
                 
                 # Fetch & Analyze Telemetry
                 drive_id = drive.get('id')
@@ -94,7 +103,6 @@ class TessieSyncService:
                 # Semantic Ingestion
                 self.semantic.ingest_tessie_drive(drive, telemetry_summary=telemetry_summary)
                 
-                results["drives_saved"] += 1
             except Exception as e:
                 log.error(f"Error saving drive {drive.get('id')}: {e}")
                 results["errors"].append(f"Drive {drive.get('id')}: {str(e)}")
@@ -107,8 +115,8 @@ class TessieSyncService:
                 # session_id, start_time, end_time, location, energy_added, cost
                 charge_data = {
                     "session_id":   str(charge.get('id')),
-                    "start_time":   self._format_ts(charge.get('starting_at')),
-                    "end_time":     self._format_ts(charge.get('ending_at')),
+                    "start_time":   self._format_ts(charge.get('started_at') or charge.get('starting_at')),
+                    "end_time":     self._format_ts(charge.get('ended_at') or charge.get('ending_at')),
                     "energy_added": charge.get('energy_added', 0),
                     "cost":         charge.get('cost', 0),
                     "location":     charge.get('location', 'Unknown')
@@ -124,7 +132,20 @@ class TessieSyncService:
 
     def _format_ts(self, ts: int) -> Optional[str]:
         if not ts: return None
-        # Convert Tessie Unix timestamp to ISO string for SQL
         return datetime.fromtimestamp(ts, self.mdt).strftime('%Y-%m-%d %H:%M:%S')
 
-
+    def _classify_drive(self, tag: str) -> str:
+        """
+        Maps a Tessie tag to a SummitOS Classification value.
+        These values are used by the dashboard query and the screenshot matcher.
+        """
+        if not tag:
+            return 'Untagged'
+        t = tag.lower()
+        if 'uber' in t:
+            return 'Uber_Dropoff'   # Required by UberMatcherService._find_match()
+        if 'jackie' in t:
+            return 'Jackie'
+        if 'esmeralda' in t:
+            return 'Esmeralda'
+        return f'Private:{tag}'
