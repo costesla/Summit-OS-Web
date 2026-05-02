@@ -1,5 +1,4 @@
 name: Dashboard - Azure Static Web Apps CI/CD
-
 on:
   push:
     branches:
