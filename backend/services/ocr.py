@@ -2,6 +2,7 @@ import os
 import logging
 import time
 import re
+from typing import Optional, List, Dict, Any
 from azure.identity import DefaultAzureCredential
 from azure.ai.vision.imageanalysis import ImageAnalysisClient
 from azure.ai.vision.imageanalysis.models import VisualFeatures
@@ -10,6 +11,8 @@ from openai import OpenAI
 import json
 
 class OCRClient:
+    """Azure AI Vision OCR client. v2.1 — supports analyze_image_bytes, extract_text, extract_text_from_stream."""
+
     def __init__(self):
         self.endpoint = os.environ.get("AZURE_VISION_ENDPOINT")
         self.key = os.environ.get("AZURE_VISION_KEY")
@@ -40,6 +43,24 @@ class OCRClient:
             except Exception as e:
                 logging.error(f"Failed to initialize OCR Client with AAD: {str(e)}")
                 self.client = None
+
+    def analyze_image_bytes(self, image_bytes: bytes) -> Optional[str]:
+        """
+        Extracts text from image bytes using Azure AI Vision.
+        """
+        if not self.client:
+            logging.error("OCR Client not initialized.")
+            return None
+
+        try:
+            result = self.client.analyze(
+                image_data=image_bytes,
+                visual_features=[VisualFeatures.READ]
+            )
+            return self._parse_analysis_result(result)
+        except Exception as e:
+            logging.error(f"Error during OCR extraction (Bytes): {str(e)}")
+            return None
 
     def extract_text(self, image_url):
         """
