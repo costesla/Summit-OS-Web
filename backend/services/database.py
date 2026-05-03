@@ -292,7 +292,8 @@ class DatabaseClient:
             Pickup_Location AS pickup_location,
             Dropoff_Location AS dropoff_location
         FROM Rides.Rides 
-        WHERE CAST(Timestamp_Start AS DATE) = CAST(? AS DATE)
+        WHERE Timestamp_Start >= DATEADD(hour, 4, CAST(? AS DATETIME2))
+          AND Timestamp_Start < DATEADD(hour, 28, CAST(? AS DATETIME2))
           AND (
             Fare > 0
             OR Classification = 'Manual_Entry'
@@ -302,7 +303,7 @@ class DatabaseClient:
           )
         ORDER BY Timestamp_Start DESC
         """
-        return self.execute_query_params(query, (date_str,))
+        return self.execute_query_params(query, (date_str, date_str))
 
     def get_expenses_by_date(self, date_str):
         """Fetches manual expenses and charging for a specific date."""
@@ -312,9 +313,10 @@ class DatabaseClient:
             ExpenseID AS id, Category AS category, Amount AS amount, Note AS note, 
             Format(Timestamp, 'yyyy-MM-ddTHH:mm:ss') as timestamp
         FROM Rides.ManualExpenses
-        WHERE CAST(Timestamp AS DATE) = CAST(? AS DATE)
+        WHERE Timestamp >= DATEADD(hour, 4, CAST(? AS DATETIME2))
+          AND Timestamp < DATEADD(hour, 28, CAST(? AS DATETIME2))
         """
-        manual = self.execute_query_params(manual_query, (date_str,))
+        manual = self.execute_query_params(manual_query, (date_str, date_str))
         
         # 2. Charging Sessions
         charge_query = """
@@ -322,9 +324,10 @@ class DatabaseClient:
             SessionID AS id, 'charging' AS category, Cost AS amount, Location_Name AS note, 
             Format(Start_Time, 'yyyy-MM-ddTHH:mm:ss') as timestamp
         FROM Rides.ChargingSessions
-        WHERE CAST(Start_Time AS DATE) = CAST(? AS DATE)
+        WHERE Start_Time >= DATEADD(hour, 4, CAST(? AS DATETIME2))
+          AND Start_Time < DATEADD(hour, 28, CAST(? AS DATETIME2))
         """
-        charging = self.execute_query_params(charge_query, (date_str,))
+        charging = self.execute_query_params(charge_query, (date_str, date_str))
         
         return {
             "fastfood": manual, # Return all manual/banking expenses to the UI

@@ -31,7 +31,8 @@ class TessieSyncService:
         
         # 1. Fetch from Tessie
         # Note: Tessie API uses 'since' and 'until' as Unix timestamps
-        dt_start = datetime.strptime(target_date, '%Y-%m-%d').replace(tzinfo=self.mdt)
+        # Shift the operational day from Midnight to 4:00 AM (rideshare standard)
+        dt_start = datetime.strptime(target_date, '%Y-%m-%d').replace(tzinfo=self.mdt) + timedelta(hours=4)
         dt_end   = dt_start + timedelta(days=1)
         
         start_ts = int(dt_start.timestamp())
