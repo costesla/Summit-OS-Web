@@ -185,19 +185,9 @@ def daily_sync(req: func.HttpRequest) -> func.HttpResponse:
         # Bank auto-sync distorts daily numbers; expenses are captured via receipt screenshots.
         logs.append(f"[SKIP] Banking Auto-Sync disabled — use manual expense entry on dashboard.")
 
-        # 4. Integrated Cloud Scan
-        try:
-            logs.append(f"[INFO] Triggering Autonomous Cloud Scan...")
-            c_watcher = CloudWatcherService()
-            c_result = c_watcher.scan_and_route(target_date=target_date)
-            logs.append(f"[SUCCESS] Cloud Scan: {c_result.get('processed', 0)} files analyzed, {c_result.get('matched', 0)} Uber trips routed.")
-            # Append cloud scan logs to main logs for visibility
-            for l in c_result.get("logs", []):
-                logs.append(f"  > {l}")
-        except Exception as ce:
-            logging.error(f"Cloud Scan Error: {ce}")
-            logs.append(f"[ERROR] Cloud Scan Error: {str(ce)}")
-
+        # 4. Integrated Cloud Scan - DISABLED (User now uploads directly via UI)
+        logs.append(f"[SKIP] Autonomous OneDrive Scan disabled — using direct UI upload.")
+        
         return func.HttpResponse(
             json.dumps({
                 "success": True,
