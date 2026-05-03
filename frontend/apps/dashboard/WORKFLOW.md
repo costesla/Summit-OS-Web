@@ -61,7 +61,7 @@ Click the **Rebuild Day** button in the Intelligence Sync panel.
 > ⚠️ **Note (May 2026):** Samsung has terminated its OneDrive auto-sync partnership. Screenshots must be uploaded manually until a replacement auto-sync solution is configured.
 
 **Option A — Direct Upload on Dashboard (Preferred)**
-Use the **Upload Screenshot** button directly on the dashboard. Select your Uber trip detail card image from your device — it is sent directly to the OCR engine without needing OneDrive at all.
+Use the **Upload Screenshot** button directly on the dashboard. You can select **multiple screenshots at once** (e.g. `Ctrl + A` or dragging to select) from your device — they are sent directly to the OCR engine and processed sequentially without needing OneDrive at all.
 
 **Option B — Manual OneDrive Upload**
 If using OneDrive, place screenshots in the date folder:
