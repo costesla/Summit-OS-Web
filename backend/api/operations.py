@@ -100,7 +100,40 @@ def trigger_cloud_scan(req: func.HttpRequest) -> func.HttpResponse:
             mimetype="application/json"
         )
 
+@bp.route(route="operations/upload-screenshot", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+def upload_screenshot(req: func.HttpRequest) -> func.HttpResponse:
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
+    
+    try:
+        file = req.files.get("file")
+        if not file:
+            return func.HttpResponse(json.dumps({"success": False, "error": "No file provided"}), status_code=400, headers=CORS_HEADERS, mimetype="application/json")
+        
+        filename = file.filename
+        image_bytes = file.read()
+        
+        from services.uber_matcher import UberMatcherService
+        matcher = UberMatcherService()
+        result = matcher.process_image_bytes(image_bytes, filename)
+        
+        return func.HttpResponse(
+            json.dumps({"success": result.get("status") == "MATCHED", "result": result}),
+            status_code=200,
+            headers=CORS_HEADERS,
+            mimetype="application/json"
+        )
+    except Exception as e:
+        logging.error(f"Upload Screenshot Error: {e}")
+        return func.HttpResponse(
+            json.dumps({"success": False, "error": str(e)}),
+            status_code=500,
+            headers=CORS_HEADERS,
+            mimetype="application/json"
+        )
+
 @bp.route(route="daily-sync", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+
 def daily_sync(req: func.HttpRequest) -> func.HttpResponse:
     if req.method == "OPTIONS":
         return func.HttpResponse(status_code=204, headers=CORS_HEADERS)

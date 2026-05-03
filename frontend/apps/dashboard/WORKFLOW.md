@@ -56,17 +56,23 @@ Click the **Rebuild Day** button in the Intelligence Sync panel.
 
 ---
 
-### Step 3 — Upload Uber Trip Detail Screenshots to OneDrive
+### Step 3 — Upload Screenshots
 
-Take screenshots of each **Uber Trip Details card** after completing a ride.
+> ⚠️ **Note (May 2026):** Samsung has terminated its OneDrive auto-sync partnership. Screenshots must be uploaded manually until a replacement auto-sync solution is configured.
 
-Upload them to either of these OneDrive locations:
+**Option A — Direct Upload on Dashboard (Preferred)**
+Use the **Upload Screenshot** button directly on the dashboard. Select your Uber trip detail card image from your device — it is sent directly to the OCR engine without needing OneDrive at all.
+
+**Option B — Manual OneDrive Upload**
+If using OneDrive, place screenshots in the date folder:
 ```
-OneDrive → Pictures → Camera Roll
-OneDrive → Pictures → Screenshots
+OneDrive → Uber Driver → YYYY → Month → Week N → DD
 ```
+Example for May 1st: `Uber Driver/2026/May/Week 1/01`
 
-**Screenshot filename format matters** — the filename timestamp is used to match the screenshot to the correct drive. Standard iOS/Android screenshot naming (which includes date and time) works automatically:
+Then run **Match Screenshots** from the dashboard.
+
+**Screenshot filename format** — the filename timestamp is what the matcher uses to find the correct Tessie drive:
 
 | Format | Example |
 |---|---|

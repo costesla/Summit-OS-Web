@@ -574,6 +574,46 @@ const TessieChargesPanel = ({ onImport, selectedDate }: { onImport: (charge: Tes
 const IntelligenceSyncPanel: React.FC<{ selectedDate: string }> = ({ selectedDate }) => {
     const [status, setStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle');
     const [logs, setLogs] = useState<string[]>([]);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setStatus('running');
+        setLogs([`> Uploading ${file.name} for direct OCR match...`]);
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const resp = await fetch(`${AZURE_BASE}/operations/upload-screenshot`, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await resp.json();
+
+            if (data.success) {
+                setStatus('success');
+                setLogs(prev => [
+                    ...prev,
+                    `> [SUCCESS] MATCHED: ${file.name}`,
+                    `  Earnings: $${data.result.card.driver_earnings}`,
+                    `  Fare: $${data.result.card.rider_payment}`,
+                    `  Trip updated.`
+                ]);
+            } else {
+                setStatus('error');
+                setLogs(prev => [...prev, `> [ERROR] ${data.error || data.result?.message || 'Failed to match screenshot'}`]);
+            }
+        } catch (err: any) {
+            setStatus('error');
+            setLogs(prev => [...prev, `> [CRITICAL] Upload failed: ${err.message}`]);
+        }
+        
+        // Reset input so the same file can be selected again if needed
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
 
     const triggerCloudScan = async () => {
         setStatus('running');
@@ -691,11 +731,18 @@ const IntelligenceSyncPanel: React.FC<{ selectedDate: string }> = ({ selectedDat
                 </button>
                 <button
                     disabled={status === 'running'}
-                    onClick={triggerCloudScan}
-                    className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 rounded-xl text-[10px] font-bold bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/25 transition-all disabled:opacity-50"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 rounded-xl text-[10px] font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/25 transition-all disabled:opacity-50"
                 >
-                    <span>Match Screenshots</span>
-                    <span className="text-[8px] font-normal text-cyan-400/50 normal-case">OCR → trip matching</span>
+                    <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        onChange={handleFileUpload} 
+                        accept="image/*" 
+                        className="hidden" 
+                    />
+                    <span>Upload Screenshot</span>
+                    <span className="text-[8px] font-normal text-emerald-400/50 normal-case">Direct OCR Match</span>
                 </button>
             </div>
 
