@@ -577,41 +577,52 @@ const IntelligenceSyncPanel: React.FC<{ selectedDate: string }> = ({ selectedDat
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
 
         setStatus('running');
-        setLogs([`> Uploading ${file.name} for direct OCR match...`]);
+        setLogs([`> Starting bulk OCR match for ${files.length} screenshots...`]);
 
-        const formData = new FormData();
-        formData.append('file', file);
+        let successCount = 0;
+        let failCount = 0;
 
-        try {
-            const resp = await fetch(`${AZURE_BASE}/operations/upload-screenshot`, {
-                method: 'POST',
-                body: formData
-            });
-            const data = await resp.json();
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            setLogs(prev => [...prev, `> Uploading (${i + 1}/${files.length}): ${file.name}...`]);
 
-            if (data.success) {
-                setStatus('success');
-                setLogs(prev => [
-                    ...prev,
-                    `> [SUCCESS] MATCHED: ${file.name}`,
-                    `  Earnings: $${data.result.card.driver_earnings}`,
-                    `  Fare: $${data.result.card.rider_payment}`,
-                    `  Trip updated.`
-                ]);
-            } else {
-                setStatus('error');
-                setLogs(prev => [...prev, `> [ERROR] ${data.error || data.result?.message || 'Failed to match screenshot'}`]);
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const resp = await fetch(`${AZURE_BASE}/operations/upload-screenshot`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await resp.json();
+
+                if (data.success) {
+                    successCount++;
+                    setLogs(prev => [
+                        ...prev,
+                        `> [SUCCESS] MATCHED: ${file.name}`,
+                        `  Earnings: $${data.result.card.driver_earnings}`,
+                        `  Fare: $${data.result.card.rider_payment}`,
+                        `  Trip updated.`
+                    ]);
+                } else {
+                    failCount++;
+                    setLogs(prev => [...prev, `> [ERROR] ${data.error || data.result?.message || 'Failed to match screenshot'}`]);
+                }
+            } catch (err: any) {
+                failCount++;
+                setLogs(prev => [...prev, `> [CRITICAL] Upload failed: ${err.message}`]);
             }
-        } catch (err: any) {
-            setStatus('error');
-            setLogs(prev => [...prev, `> [CRITICAL] Upload failed: ${err.message}`]);
         }
         
-        // Reset input so the same file can be selected again if needed
+        setStatus(failCount === 0 ? 'success' : 'error');
+        setLogs(prev => [...prev, `> Bulk upload complete. ${successCount} matched, ${failCount} failed.`]);
+        
+        // Reset input so the same files can be selected again if needed
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
@@ -711,6 +722,7 @@ const IntelligenceSyncPanel: React.FC<{ selectedDate: string }> = ({ selectedDat
                         ref={fileInputRef} 
                         onChange={handleFileUpload} 
                         accept="image/*" 
+                        multiple
                         className="hidden" 
                     />
                     <span>Upload Screenshot</span>
