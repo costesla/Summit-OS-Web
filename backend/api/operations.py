@@ -133,7 +133,6 @@ def upload_screenshot(req: func.HttpRequest) -> func.HttpResponse:
         )
 
 @bp.route(route="daily-sync", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
-
 def daily_sync(req: func.HttpRequest) -> func.HttpResponse:
     if req.method == "OPTIONS":
         return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
