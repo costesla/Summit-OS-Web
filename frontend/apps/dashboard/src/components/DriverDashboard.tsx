@@ -615,34 +615,6 @@ const IntelligenceSyncPanel: React.FC<{ selectedDate: string }> = ({ selectedDat
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
-    const triggerCloudScan = async () => {
-        setStatus('running');
-        setLogs([`> Initiating Cloud Intelligence Scan for ${selectedDate}...`]);
-        
-        try {
-            const resp = await fetch(`${AZURE_BASE}/operations/trigger-cloud-scan`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ date: selectedDate })
-            });
-            const results = await resp.json();
-            
-            if (results.success) {
-                setStatus('success');
-                setLogs(prev => [
-                    ...prev, 
-                    ...(results.logs || []),
-                    `> [SUCCESS] Scan complete. ${results.processed || 0} processed, ${results.matched || 0} matched.`
-                ]);
-            } else {
-                setStatus('error');
-                setLogs(prev => [...prev, `> [ERROR] ${results.error || 'Unknown scan error'}`]);
-            }
-        } catch (err) {
-            setStatus('error');
-            setLogs(prev => [...prev, `> [CRITICAL] Connection failed: ${err instanceof Error ? err.message : String(err)}`]);
-        }
-    };
 
     const runSync = async (dryRun: boolean) => {
         setStatus('running');
