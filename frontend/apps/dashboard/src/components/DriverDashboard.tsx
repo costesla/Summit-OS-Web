@@ -885,20 +885,30 @@ const DriverDashboard = () => {
     }, [selectedDate, fetchFromCloud]);
 
     const stats = useMemo(() => {
-        const totalEarnings = trips.reduce((sum, t) => sum + (t.fare || 0) + (t.tip || 0), 0);
+        const totalVolume = trips.reduce((sum, t) => sum + (t.fare || 0) + (t.tip || 0), 0);
         const totalFees = trips.reduce((sum, t) => sum + (t.fees || 0) + (t.insurance || 0) + (t.otherFees || 0), 0);
-        const netEarnings = totalEarnings - totalFees;
+        const driverPay = totalVolume - totalFees;
+        
         const foodTotal = expenses.fastfood.reduce((sum, e) => sum + (e.amount || 0), 0);
         const chargingTotal = expenses.charging.reduce((sum, e) => sum + (e.amount || 0), 0);
+        
         const uberTrips = trips.filter((t) => t.type === 'Uber').length;
         const privateTrips = trips.filter((t) => t.type === 'Private').length;
         const elapsedHours = (Date.now() - sessionStart.getTime()) / 3_600_000;
-        const profit = netEarnings - foodTotal - chargingTotal;
+        
+        const profit = driverPay - foodTotal - chargingTotal;
         const hourlyRate = elapsedHours > 0.1 ? profit / elapsedHours : 0;
+        
         return {
-            gross: totalEarnings, fees: totalFees, net: netEarnings,
-            food: foodTotal, charging: chargingTotal,
-            profit, uberCount: uberTrips, privateCount: privateTrips, hourlyRate,
+            volume: totalVolume,
+            fees: totalFees,
+            driverPay: driverPay,
+            food: foodTotal, 
+            charging: chargingTotal,
+            profit, 
+            uberCount: uberTrips, 
+            privateCount: privateTrips, 
+            hourlyRate,
         };
     }, [trips, expenses, sessionStart]);
 
@@ -1140,15 +1150,15 @@ const DriverDashboard = () => {
 
                         <div className="flex items-center gap-10">
                             <div className="text-right">
-                                <p className="text-[10px] font-bold uppercase text-gray-600 tracking-[0.2em] font-mono mb-1">Net Profit</p>
+                                <p className="text-[10px] font-bold uppercase text-gray-600 tracking-[0.2em] font-mono mb-1">Session Profit</p>
                                 <p className={`text-3xl font-black tracking-tighter ${stats.profit >= 0 ? 'text-white' : 'text-rose-400'}`}>
                                     ${stats.profit.toFixed(2)}
                                 </p>
                             </div>
                             <div className="h-10 w-[1px] bg-white/5" />
                             <div className="text-right">
-                                <p className="text-[10px] font-bold uppercase text-gray-600 tracking-[0.2em] font-mono mb-1">$/Hour</p>
-                                <p className="text-2xl font-black text-cyan-400/80">${Math.max(0, stats.hourlyRate).toFixed(2)}</p>
+                                <p className="text-[10px] font-bold uppercase text-gray-600 tracking-[0.2em] font-mono mb-1">Driver Pay</p>
+                                <p className="text-2xl font-black text-cyan-400/80">${stats.driverPay.toFixed(2)}</p>
                             </div>
                         </div>
 
@@ -1407,16 +1417,16 @@ const DriverDashboard = () => {
                                     <span className="text-[10px] text-gray-600 font-mono uppercase tracking-widest">Session Total</span>
                                     <div className="flex gap-6">
                                         <div className="text-right">
-                                            <p className="text-[10px] text-gray-600 font-mono">GROSS</p>
-                                            <p className="text-sm font-bold text-white">${stats.gross.toFixed(2)}</p>
+                                            <p className="text-[10px] text-gray-600 font-mono">TOTAL VOL</p>
+                                            <p className="text-sm font-bold text-gray-500">${stats.volume.toFixed(2)}</p>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="text-[10px] text-gray-600 font-mono">FEES</p>
+                                        <div className="text-right border-l border-white/5 pl-6">
+                                            <p className="text-[10px] text-gray-600 font-mono">UBER CUT</p>
                                             <p className="text-sm font-bold text-rose-400">-${stats.fees.toFixed(2)}</p>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="text-[10px] text-gray-600 font-mono">NET</p>
-                                            <p className="text-sm font-black text-cyan-400" style={{ textShadow: '0 0 10px rgba(0,242,255,0.4)' }}>${stats.net.toFixed(2)}</p>
+                                        <div className="text-right border-l border-white/5 pl-6">
+                                            <p className="text-[10px] text-cyan-400 font-bold font-mono uppercase tracking-tighter">Driver Pay</p>
+                                            <p className="text-sm font-black text-white" style={{ textShadow: '0 0 10px rgba(0,242,255,0.4)' }}>${stats.driverPay.toFixed(2)}</p>
                                         </div>
                                     </div>
                                 </div>
