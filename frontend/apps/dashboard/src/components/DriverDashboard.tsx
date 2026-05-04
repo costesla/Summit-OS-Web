@@ -27,6 +27,8 @@ interface Trip {
     duration_minutes?: number;
     tessie_drive_id?: string;
     distance_miles?: number;
+    validation_status?: 'Verified' | 'Mismatch' | null;
+    ocr_suggested?: any;
 }
 
 interface Expense {
@@ -1152,9 +1154,9 @@ const DriverDashboard = () => {
                                         }
                                     }}
                                     disabled={isFetchingCloud}
-                                    className="text-[9px] font-mono text-gray-600 hover:text-rose-400 transition-colors flex items-center gap-1.5 px-2 py-1 justify-center group"
+                                    className="w-full mt-2 py-2.5 rounded-xl font-bold text-[11px] text-rose-400 hover:text-white border border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/20 transition-all uppercase tracking-widest flex items-center justify-center gap-2 group"
                                 >
-                                    <RefreshCw className={`w-2.5 h-2.5 group-hover:rotate-180 transition-transform duration-500 ${isFetchingCloud ? 'animate-spin' : ''}`} />
+                                    <RefreshCw className={`w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-500 ${isFetchingCloud ? 'animate-spin' : ''}`} />
                                     {isFetchingCloud ? 'Resetting...' : 'Force Reset from Cloud'}
                                 </button>
                                 {lastSync && (
@@ -1425,15 +1427,34 @@ const DriverDashboard = () => {
                                                                 {margin.toFixed(0)}%
                                                             </span>
                                                         </td>
-                                                        <td className="px-5 py-4 text-right flex items-center justify-end gap-2">
-                                                            <button onClick={() => handleEditTrip(trip)}
-                                                                className="text-gray-700 hover:text-cyan-400 transition-all opacity-0 group-hover:opacity-100">
-                                                                <RefreshCw className="w-3.5 h-3.5" />
-                                                            </button>
-                                                            <button onClick={() => deleteTrip(trip.id)}
-                                                                className="text-gray-700 hover:text-rose-400 transition-all opacity-0 group-hover:opacity-100">
-                                                                <Trash2 className="w-3.5 h-3.5" />
-                                                            </button>
+                                                        <td className="px-5 py-4 text-right">
+                                                            <div className="flex items-center justify-end gap-3">
+                                                                {trip.validation_status === 'Verified' && (
+                                                                    <div className="group relative">
+                                                                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                                                                        <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block bg-black border border-emerald-500/30 p-2 rounded text-[10px] whitespace-nowrap z-50">
+                                                                            Verified by Screenshot
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                                {trip.validation_status === 'Mismatch' && (
+                                                                    <div className="group relative">
+                                                                        <ShieldAlert className="w-3.5 h-3.5 text-rose-500 animate-pulse" />
+                                                                        <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block bg-black border border-rose-500/30 p-2 rounded text-[10px] whitespace-nowrap z-50 shadow-[0_0_20px_rgba(244,63,94,0.3)]">
+                                                                            <p className="font-bold text-rose-400 mb-1">OCR Mismatch!</p>
+                                                                            <p className="text-gray-400 italic">Manual vs Screenshot difference</p>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                                <button onClick={() => handleEditTrip(trip)}
+                                                                    className="text-gray-700 hover:text-cyan-400 transition-all opacity-0 group-hover:opacity-100">
+                                                                    <RefreshCw className="w-3.5 h-3.5" />
+                                                                </button>
+                                                                <button onClick={() => deleteTrip(trip.id)}
+                                                                    className="text-gray-700 hover:text-rose-400 transition-all opacity-0 group-hover:opacity-100">
+                                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                                </button>
+                                                            </div>
                                                         </td>
                                                     </tr>
                                                 );
