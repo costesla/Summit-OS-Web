@@ -1198,7 +1198,7 @@ const DriverDashboard = () => {
                     <StatCard label="Total Trips" value={trips.length}
                         sub={`${stats.uberCount} Uber · ${stats.privateCount} Private`}
                         icon={<Car className="text-cyan-400 w-5 h-5" />} />
-                    <StatCard label="Gross" value={`$${stats.gross.toFixed(2)}`}
+                    <StatCard label="Driver Pay" value={`$${stats.driverPay.toFixed(2)}`}
                         sub={`Fees: $${stats.fees.toFixed(2)}`}
                         icon={<TrendingUp className="text-cyan-400 w-5 h-5" />} highlight />
 
