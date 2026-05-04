@@ -230,34 +230,35 @@ const TeslaStatusBar = () => {
             {!loading && !offline && status && (
                 <>
                     {/* Battery bar + % */}
-                    <div className="flex items-center gap-3 flex-1 min-w-[160px]">
+                    <div className="flex items-center gap-3 flex-1 min-w-[120px] md:min-w-[160px]">
                         <div className="flex-1 h-1.5 bg-gray-800 rounded-full overflow-hidden">
                             <div
                                 className={`h-full ${barColor} transition-all duration-700`}
                                 style={{ width: `${soc ?? 0}%` }}
                             />
                         </div>
-                        <span className={`text-2xl font-black font-mono tabular-nums ${barColor.replace('bg-', 'text-')}`}
+                        <span className={`text-xl md:text-2xl font-black font-mono tabular-nums ${barColor.replace('bg-', 'text-')}`}
                             style={{ textShadow: `0 0 20px ${(soc || 0) > 50 ? 'rgba(52,211,153,0.3)' : (soc || 0) > 20 ? 'rgba(251,191,36,0.3)' : 'rgba(244,63,94,0.3)'}` }}>
                             {soc !== null ? `${soc}%` : '--'}
                         </span>
                     </div>
 
-                    {/* Range */}
-                    {range !== null && (
-                        <div className="flex items-center gap-1.5 shrink-0">
-                            <Gauge className="w-3.5 h-3.5 text-gray-500" />
-                            <span className="text-sm font-bold text-white tabular-nums">{range.toFixed(0)}<span className="text-gray-600 font-normal text-xs"> mi</span></span>
-                        </div>
-                    )}
+                    {/* Range & Charging Info Container */}
+                    <div className="flex items-center gap-4 ml-auto">
+                        {range !== null && (
+                            <div className="flex items-center gap-1.5 shrink-0">
+                                <Gauge className="w-3.5 h-3.5 text-gray-500" />
+                                <span className="text-xs md:text-sm font-bold text-white tabular-nums">{range.toFixed(0)}<span className="text-gray-600 font-normal text-[10px]"> mi</span></span>
+                            </div>
+                        )}
 
-                    {/* Charging info */}
-                    {isCharging && (
-                        <div className="flex items-center gap-1.5 shrink-0">
-                            <Zap className="w-3.5 h-3.5 text-emerald-400" />
-                            <span className="text-sm font-bold text-emerald-400 tabular-nums">{kw} kW</span>
-                            {minsToFull !== null && (
-                                <span className="text-xs text-gray-500 font-mono">({Math.round(minsToFull / 60)}h {minsToFull % 60}m to full)</span>
+                        {isCharging && (
+                            <div className="flex items-center gap-1.5 shrink-0">
+                                <Zap className="w-3.5 h-3.5 text-emerald-400" />
+                                <span className="text-xs md:text-sm font-bold text-emerald-400 tabular-nums">{kw} kW</span>
+                            </div>
+                        )}
+                    </div>
                             )}
                         </div>
                     )}
@@ -699,11 +700,11 @@ const IntelligenceSyncPanel: React.FC<{ selectedDate: string }> = ({ selectedDat
                 )}
             </div>
 
-            <div className="flex gap-3 mb-4 mt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 mb-4 mt-4">
                 <button
                     disabled={status === 'running'}
                     onClick={() => runSync(false)}
-                    className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 rounded-xl text-[10px] font-bold bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition-all disabled:opacity-50"
+                    className="flex flex-col items-center justify-center gap-0.5 py-3 rounded-xl text-[10px] font-bold bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition-all disabled:opacity-50"
                 >
                     <span>Create Folders</span>
                     <span className="text-[8px] font-normal text-gray-600 normal-case">OneDrive structure</span>
@@ -711,7 +712,7 @@ const IntelligenceSyncPanel: React.FC<{ selectedDate: string }> = ({ selectedDat
                 <button
                     disabled={status === 'running'}
                     onClick={runDailySync}
-                    className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 rounded-xl text-[10px] font-bold bg-amber-500/15 border border-amber-500/30 text-amber-400 hover:bg-amber-500/25 transition-all disabled:opacity-50"
+                    className="flex flex-col items-center justify-center gap-0.5 py-3 rounded-xl text-[10px] font-bold bg-amber-500/15 border border-amber-500/30 text-amber-400 hover:bg-amber-500/25 transition-all disabled:opacity-50"
                 >
                     <span>Rebuild Day</span>
                     <span className="text-[8px] font-normal text-amber-400/50 normal-case">Tessie + Bank + Scan</span>
@@ -719,7 +720,7 @@ const IntelligenceSyncPanel: React.FC<{ selectedDate: string }> = ({ selectedDat
                 <button
                     disabled={status === 'running'}
                     onClick={() => fileInputRef.current?.click()}
-                    className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 rounded-xl text-[10px] font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/25 transition-all disabled:opacity-50"
+                    className="flex flex-col items-center justify-center gap-0.5 py-3 rounded-xl text-[10px] font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/25 transition-all disabled:opacity-50"
                 >
                     <input 
                         type="file" 
@@ -1093,32 +1094,32 @@ const DriverDashboard = () => {
                             <span className="w-6 h-[1px] bg-cyan-400 inline-block" />
                             SummitOS · v{VERSION} · Driver Intelligence
                         </p>
-                        <h1 className="text-4xl font-bold flex items-center gap-3 tracking-tight text-white">
-                            <Navigation className="text-cyan-400 w-8 h-8" />
+                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold flex items-center gap-3 tracking-tight text-white">
+                            <Navigation className="text-cyan-400 w-6 h-6 md:w-8 md:h-8" />
                             Driver Dashboard
                         </h1>
-                        <div className="flex items-center gap-3 pt-2">
+                        <div className="flex flex-wrap items-center gap-2 md:gap-3 pt-2">
                             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-black/40 border border-white/10">
-                                <Clock className="w-3.5 h-3.5 text-gray-500" />
+                                <Clock className="w-3 h-3 md:w-3.5 md:h-3.5 text-gray-500" />
                                 <input
                                     type="date"
                                     value={selectedDate}
                                     onChange={(e) => { if (e.target.value) updateSelectedDate(e.target.value); }}
-                                    className="bg-transparent border-none text-cyan-400 text-xs font-bold focus:outline-none cursor-pointer font-mono"
+                                    className="bg-transparent border-none text-cyan-400 text-[10px] md:text-xs font-bold focus:outline-none cursor-pointer font-mono"
                                 />
                             </div>
                             {syncStatus !== 'idle' && (
-                                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[10px] font-mono uppercase tracking-wider animate-in fade-in duration-300 ${
+                                <div className={`flex items-center gap-2 px-2 md:px-3 py-1.5 rounded-lg border text-[9px] md:text-[10px] font-mono uppercase tracking-wider animate-in fade-in duration-300 ${
                                     syncStatus === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
                                 }`}>
                                     {syncStatus === 'success' ? <Check className="w-3 h-3" /> : <ShieldAlert className="w-3 h-3" />}
-                                    {syncStatus === 'success' ? 'Telemetry Synced' : 'Sync Failed'}
+                                    {syncStatus === 'success' ? 'Telemetry' : 'Failed'}
                                 </div>
                             )}
                             {azureUser && (
-                                <div className="text-[10px] text-gray-500 font-mono flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/3 border border-white/5">
+                                <div className="text-[9px] md:text-[10px] text-gray-500 font-mono flex items-center gap-2 px-2 md:px-3 py-1.5 rounded-lg bg-white/3 border border-white/5">
                                     <LogOut className="w-3 h-3 text-emerald-500/50" />
-                                    {azureUser}
+                                    {azureUser.split('@')[0]}
                                 </div>
                             )}
                         </div>
@@ -1176,22 +1177,22 @@ const DriverDashboard = () => {
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-10">
-                            <div className="text-right">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-10">
+                            <div className="text-left sm:text-right">
                                 <p className="text-[10px] font-bold uppercase text-gray-600 tracking-[0.2em] font-mono mb-1">Session Profit</p>
-                                <p className={`text-3xl font-black tracking-tighter ${stats.profit >= 0 ? 'text-white' : 'text-rose-400'}`}>
+                                <p className={`text-2xl sm:text-3xl font-black tracking-tighter ${stats.profit >= 0 ? 'text-white' : 'text-rose-400'}`}>
                                     ${stats.profit.toFixed(2)}
                                 </p>
                             </div>
-                            <div className="h-10 w-[1px] bg-white/5" />
-                            <div className="text-right">
+                            <div className="hidden sm:block h-10 w-[1px] bg-white/5" />
+                            <div className="text-left sm:text-right">
                                 <p className="text-[10px] font-bold uppercase text-gray-600 tracking-[0.2em] font-mono mb-1">Driver Pay</p>
-                                <p className="text-2xl font-black text-white/90">${stats.driverPay.toFixed(2)}</p>
+                                <p className="text-xl sm:text-2xl font-black text-white/90">${stats.driverPay.toFixed(2)}</p>
                             </div>
-                            <div className="h-10 w-[1px] bg-white/5" />
-                            <div className="text-right">
+                            <div className="hidden sm:block h-10 w-[1px] bg-white/5" />
+                            <div className="text-left sm:text-right">
                                 <p className="text-[10px] font-bold uppercase text-gray-600 tracking-[0.2em] font-mono mb-1">$/Hour</p>
-                                <p className="text-2xl font-black text-cyan-400/80">${Math.max(0, stats.hourlyRate).toFixed(2)}</p>
+                                <p className="text-xl sm:text-2xl font-black text-cyan-400/80">${Math.max(0, stats.hourlyRate).toFixed(2)}</p>
                                 <p className="text-[9px] text-gray-700 font-mono italic">est. {stats.activeHours.toFixed(1)}h shift</p>
                             </div>
                         </div>
@@ -1465,16 +1466,16 @@ const DriverDashboard = () => {
                             {trips.length > 0 && (
                                 <div className="px-5 py-4 border-t border-white/8 flex justify-between items-center">
                                     <span className="text-[10px] text-gray-600 font-mono uppercase tracking-widest">Session Total</span>
-                                    <div className="flex gap-6">
-                                        <div className="text-right">
+                                    <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+                                        <div className="flex justify-between sm:block text-right">
                                             <p className="text-[10px] text-gray-600 font-mono">TOTAL VOL</p>
                                             <p className="text-sm font-bold text-gray-500">${stats.volume.toFixed(2)}</p>
                                         </div>
-                                        <div className="text-right border-l border-white/5 pl-6">
+                                        <div className="flex justify-between sm:block text-right sm:border-l sm:border-white/5 sm:pl-6">
                                             <p className="text-[10px] text-gray-600 font-mono">UBER CUT</p>
                                             <p className="text-sm font-bold text-rose-400">-${stats.fees.toFixed(2)}</p>
                                         </div>
-                                        <div className="text-right border-l border-white/5 pl-6">
+                                        <div className="flex justify-between sm:block text-right sm:border-l sm:border-white/5 sm:pl-6">
                                             <p className="text-[10px] text-cyan-400 font-bold font-mono uppercase tracking-tighter">Driver Pay</p>
                                             <p className="text-sm font-black text-white" style={{ textShadow: '0 0 10px rgba(0,242,255,0.4)' }}>${stats.driverPay.toFixed(2)}</p>
                                         </div>
