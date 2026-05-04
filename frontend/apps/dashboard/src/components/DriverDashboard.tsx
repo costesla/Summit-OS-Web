@@ -24,6 +24,7 @@ interface Trip {
     insurance: number;
     otherFees: number;
     timestamp: string;
+    duration_minutes?: number;
     tessie_drive_id?: string;
     distance_miles?: number;
 }
@@ -80,6 +81,7 @@ interface TessieDrive {
     end: string | null;
     starting_battery: number | null;
     ending_battery: number | null;
+    duration_minutes: number;
 }
 
 interface TessieCharge {
@@ -900,19 +902,22 @@ const DriverDashboard = () => {
         let activeHours = 0;
 
         if (isToday) {
-            // Shift-based tracking for today
+            // Shift-based tracking for today (real-time)
             activeHours = (Date.now() - sessionStart.getTime()) / 3_600_000;
         } else if (trips.length > 0) {
             // Activity-based tracking for historical days
-            // Sort by timestamp and find the span between first and last event
             const sorted = [...trips].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
             const start = new Date(sorted[0].timestamp).getTime();
             const end = new Date(sorted[sorted.length - 1].timestamp).getTime();
-            activeHours = (end - start) / 3_600_000 + 1.0; // add 1 hour buffer for the last trip
+            const spanHours = (end - start) / 3_600_000;
+            
+            // If the span is less than 6 hours, assume a standard 6-hour shift floor 
+            // for historical reporting unless they've logged more than 6 hours of drive time.
+            activeHours = Math.max(spanHours + 1.0, 6.0); 
         }
         
         const profit = driverPay - foodTotal - chargingTotal;
-        const hourlyRate = activeHours > 0.25 ? profit / activeHours : 0;
+        const hourlyRate = activeHours > 0.5 ? profit / activeHours : 0;
         
         return {
             volume: totalVolume,
@@ -1177,6 +1182,7 @@ const DriverDashboard = () => {
                             <div className="text-right">
                                 <p className="text-[10px] font-bold uppercase text-gray-600 tracking-[0.2em] font-mono mb-1">$/Hour</p>
                                 <p className="text-2xl font-black text-cyan-400/80">${Math.max(0, stats.hourlyRate).toFixed(2)}</p>
+                                <p className="text-[9px] text-gray-700 font-mono italic">est. {stats.activeHours.toFixed(1)}h shift</p>
                             </div>
                         </div>
 
