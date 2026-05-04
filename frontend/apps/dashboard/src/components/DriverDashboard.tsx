@@ -811,6 +811,7 @@ const DriverDashboard = () => {
         }
         return new Date(saved);
     });
+    const [editingTripId, setEditingTripId] = useState<number | null>(null);
     const [showResetConfirm, setShowResetConfirm] = useState(false);
 
     const tripFormRef = useRef<HTMLDivElement>(null);
@@ -905,8 +906,9 @@ const DriverDashboard = () => {
     const addTrip = (e: React.FormEvent) => {
         e.preventDefault();
         if (!tripForm.fare) return;
-        setTrips([{
-            id: Date.now(),
+
+        const newTrip: Trip = {
+            id: editingTripId ?? Date.now(),
             type: tripForm.type,
             fare: parseFloat(tripForm.fare) || 0,
             tip: tripForm.type === 'Uber' ? (parseFloat(tripForm.tip) || 0) : undefined,
@@ -916,9 +918,30 @@ const DriverDashboard = () => {
             timestamp: `${selectedDate}T${new Date().toTimeString().split(' ')[0]}`,
             tessie_drive_id: pendingDrive?.tessie_drive_id,
             distance_miles: pendingDrive?.distance_miles
-        }, ...trips]);
+        };
+
+        if (editingTripId) {
+            setTrips(trips.map(t => t.id === editingTripId ? newTrip : t));
+            setEditingTripId(null);
+        } else {
+            setTrips([newTrip, ...trips]);
+        }
+
         setTripForm({ type: 'Uber', fare: '', tip: '', fees: '', insurance: '', otherFees: '' });
         setPendingDrive(null);
+    };
+
+    const handleEditTrip = (trip: Trip) => {
+        setEditingTripId(trip.id);
+        setTripForm({
+            type: trip.type,
+            fare: trip.fare.toString(),
+            tip: (trip.tip ?? '').toString(),
+            fees: trip.fees.toString(),
+            insurance: trip.insurance.toString(),
+            otherFees: trip.otherFees.toString()
+        });
+        tripFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
 
     const addExpense = (e: React.FormEvent) => {
@@ -1208,6 +1231,24 @@ const DriverDashboard = () => {
                                 </div>
                             )}
 
+                            <h2 className="text-base font-bold mb-4 flex items-center gap-2 text-white">
+                                <Plus className="w-4 h-4 text-cyan-400" /> {editingTripId ? 'Edit Trip' : 'Log Trip'}
+                            </h2>
+                            {editingTripId && (
+                                <div className="mb-4 p-2 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-between">
+                                    <span className="text-[10px] font-bold text-amber-400 uppercase tracking-tighter">Editing Existing Trip</span>
+                                    <button 
+                                        onClick={() => {
+                                            setEditingTripId(null);
+                                            setTripForm({ type: 'Uber', fare: '', tip: '', fees: '', insurance: '', otherFees: '' });
+                                        }}
+                                        className="text-[10px] font-bold text-gray-500 hover:text-white uppercase tracking-tighter"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            )}
+
                             <form onSubmit={addTrip} className="space-y-3">
                                 <div className="grid grid-cols-2 gap-2">
                                     {(['Uber', 'Private'] as const).map((t) => (
@@ -1247,7 +1288,7 @@ const DriverDashboard = () => {
                                 <button type="submit"
                                     className="w-full py-3 rounded-xl font-bold text-sm text-black transition-all hover:brightness-110 hover:-translate-y-0.5"
                                     style={{ background: 'linear-gradient(135deg, hsl(185,70%,40%), hsl(190,100%,60%), hsl(185,70%,40%))', boxShadow: '0 4px 20px rgba(0,242,255,0.25)' }}>
-                                    LOG TRIP
+                                    {editingTripId ? 'SAVE CHANGES' : 'LOG TRIP'}
                                 </button>
                             </form>
                         </div>
@@ -1345,7 +1386,11 @@ const DriverDashboard = () => {
                                                                 {margin.toFixed(0)}%
                                                             </span>
                                                         </td>
-                                                        <td className="px-5 py-4 text-right">
+                                                        <td className="px-5 py-4 text-right flex items-center justify-end gap-2">
+                                                            <button onClick={() => handleEditTrip(trip)}
+                                                                className="text-gray-700 hover:text-cyan-400 transition-all opacity-0 group-hover:opacity-100">
+                                                                <RefreshCw className="w-3.5 h-3.5" />
+                                                            </button>
                                                             <button onClick={() => deleteTrip(trip.id)}
                                                                 className="text-gray-700 hover:text-rose-400 transition-all opacity-0 group-hover:opacity-100">
                                                                 <Trash2 className="w-3.5 h-3.5" />
