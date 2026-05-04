@@ -1158,7 +1158,12 @@ const DriverDashboard = () => {
                             <div className="h-10 w-[1px] bg-white/5" />
                             <div className="text-right">
                                 <p className="text-[10px] font-bold uppercase text-gray-600 tracking-[0.2em] font-mono mb-1">Driver Pay</p>
-                                <p className="text-2xl font-black text-cyan-400/80">${stats.driverPay.toFixed(2)}</p>
+                                <p className="text-2xl font-black text-white/90">${stats.driverPay.toFixed(2)}</p>
+                            </div>
+                            <div className="h-10 w-[1px] bg-white/5" />
+                            <div className="text-right">
+                                <p className="text-[10px] font-bold uppercase text-gray-600 tracking-[0.2em] font-mono mb-1">$/Hour</p>
+                                <p className="text-2xl font-black text-cyan-400/80">${Math.max(0, stats.hourlyRate).toFixed(2)}</p>
                             </div>
                         </div>
 
