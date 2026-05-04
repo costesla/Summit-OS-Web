@@ -446,6 +446,7 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
                 "end": last.get("ending_location"),
                 "starting_battery": first.get("starting_battery"),
                 "ending_battery": last.get("ending_battery"),
+                "duration_minutes": round((last.get("ended_at", 0) - first.get("started_at", 0)) / 60, 1) if first.get("started_at") and last.get("ended_at") else 0,
                 "tessie_drive_id": first.get("id")
             })
 

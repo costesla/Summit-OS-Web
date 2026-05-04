@@ -132,7 +132,7 @@ def driver_sync(req: func.HttpRequest) -> func.HttpResponse:
                 "Timestamp_Start": ts,
                 "fare": fare,
                 "tip": tip,
-                "driver_total": fare + tip,
+                "driver_total": fare + tip - (fees + insurance + otherFees),
                 "uber_cut": fees + insurance + otherFees,
                 "distance_miles": dist,
                 "tessie_drive_id": tdid,
