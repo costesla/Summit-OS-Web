@@ -1403,8 +1403,8 @@ const DriverDashboard = () => {
                                             ? <tr><td colSpan={6} className="px-5 py-16 text-center text-gray-700 italic font-mono text-sm">// no trips recorded yet</td></tr>
                                             : trips.map((trip) => {
                                                 const deducted = trip.fees + trip.insurance + trip.otherFees;
-                                                const net = trip.fare - deducted;
-                                                const margin = trip.fare > 0 ? (net / trip.fare) * 100 : 0;
+                                                const net = (trip.fare + (trip.tip || 0)) - deducted;
+                                                const margin = (trip.fare + (trip.tip || 0)) > 0 ? (net / (trip.fare + (trip.tip || 0))) * 100 : 0;
                                                 return (
                                                     <tr key={trip.id} className="hover:bg-white/3 transition-colors group">
                                                         <td className="px-5 py-4">
