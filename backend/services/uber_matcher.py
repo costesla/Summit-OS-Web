@@ -34,28 +34,27 @@ class UberMatcherService:
 
         # 3. Match by Timestamp
         # Support multiple filename formats:
-        # 1. Screenshot_YYYYMMDD_HHMMSS
-        # 2. Screenshot YYYY-MM-DD HHMMSS
-        # 3. Screenshot_YYYY-MM-DD-HH-MM-SS
+        # 1. Screenshot_YYYYMMDD_HHMMSS (or with dash Screenshot_YYYYMMDD-HHMMSS)
+        # 2. Screenshot YYYY-MM-DD HHMMSS (or with hyphens)
         
         card_dt = None
         
-        # Pattern 1: Screenshot_20260328_053614
-        m1 = re.search(r"Screenshot_(\d{8})_(\d{6})", filename)
+        # Pattern 1: Screenshot_20260328_053614 or Screenshot_20260328-053614
+        m1 = re.search(r"Screenshot_(\d{8})[-_](\d{6})", filename)
         if m1:
             card_dt = datetime.datetime.strptime(m1.group(1)+m1.group(2), "%Y%m%d%H%M%S")
             
-        # Pattern 2: Screenshot 2026-04-27 070003
+        # Pattern 2: Screenshot 2026-04-27 070003 or Screenshot 2026-04-27-070003
         if not card_dt:
-            m2 = re.search(r"Screenshot (\d{4}-\d{2}-\d{2}) (\d{6})", filename)
+            m2 = re.search(r"Screenshot.*?(\d{4}-\d{2}-\d{2}).*?(\d{2})[-_:]?(\d{2})[-_:]?(\d{2})", filename)
             if m2:
-                card_dt = datetime.datetime.strptime(m2.group(1)+" "+m2.group(2), "%Y-%m-%d %H%M%S")
+                card_dt = datetime.datetime.strptime(f"{m2.group(1)} {m2.group(2)}{m2.group(3)}{m2.group(4)}", "%Y-%m-%d %H%M%S")
 
-        # Pattern 3: Screenshot_2026-04-27-07-00-03
+        # Pattern 3: YYYYMMDD_HHMMSS anywhere
         if not card_dt:
-            m3 = re.search(r"Screenshot_(\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2})", filename)
+            m3 = re.search(r"(\d{8})[-_](\d{6})", filename)
             if m3:
-                card_dt = datetime.datetime.strptime(m3.group(1), "%Y-%m-%d-%H-%M-%S")
+                card_dt = datetime.datetime.strptime(m3.group(1)+m3.group(2), "%Y%m%d%H%M%S")
 
         if card_dt:
             card_dt = card_dt.replace(tzinfo=self.mdt)
@@ -70,7 +69,9 @@ class UberMatcherService:
                 card_dt = datetime.datetime.now(self.mdt)
 
         # 4. Find closest unmatched Uber drive in SQL
-        match = self._find_match(card_dt, tolerance_hours=4)
+        # Increased tolerance to 24 hours to handle edge cases where the exact time cannot be parsed
+        # and we fall back to midday. It will still pick the closest available unmatched drive.
+        match = self._find_match(card_dt, tolerance_hours=24)
         if not match:
             return {"status": "NO_MATCH", "parsed": card, "text": text}
 
