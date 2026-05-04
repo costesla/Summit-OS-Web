@@ -230,14 +230,14 @@ const TeslaStatusBar = () => {
             {!loading && !offline && status && (
                 <>
                     {/* Battery bar + % */}
-                    <div className="flex items-center gap-3 flex-1 min-w-[120px] md:min-w-[160px]">
+                    <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
                         <div className="flex-1 h-1.5 bg-gray-800 rounded-full overflow-hidden">
                             <div
                                 className={`h-full ${barColor} transition-all duration-700`}
                                 style={{ width: `${soc ?? 0}%` }}
                             />
                         </div>
-                        <span className={`text-xl md:text-2xl font-black font-mono tabular-nums ${barColor.replace('bg-', 'text-')}`}
+                        <span className={`text-lg md:text-2xl font-black font-mono tabular-nums ${barColor.replace('bg-', 'text-')}`}
                             style={{ textShadow: `0 0 20px ${(soc || 0) > 50 ? 'rgba(52,211,153,0.3)' : (soc || 0) > 20 ? 'rgba(251,191,36,0.3)' : 'rgba(244,63,94,0.3)'}` }}>
                             {soc !== null ? `${soc}%` : '--'}
                         </span>
@@ -259,9 +259,7 @@ const TeslaStatusBar = () => {
                             </div>
                         )}
                     </div>
-                            )}
-                        </div>
-                    )}
+
 
                     {/* State label */}
                     {chargingState && !isCharging && (
@@ -1075,18 +1073,18 @@ const DriverDashboard = () => {
     }, []);
 
     return (
-        <div className="min-h-screen text-white p-4 md:p-8"
+        <div className="min-h-screen text-white p-3 sm:p-4 md:p-8 overflow-x-hidden"
             style={{
                 background: '#05080a',
                 backgroundImage: 'radial-gradient(circle at 50% 0%, hsla(185,90%,55%,0.12), transparent 55%), linear-gradient(to bottom, #05080a, #000)',
             }}>
-            <div className="max-w-6xl mx-auto space-y-5">
+            <div className="max-w-full lg:max-w-6xl mx-auto space-y-4 sm:space-y-5">
                 
                 {/* ── Tesla Status Bar (TOP) ── */}
                 <TeslaStatusBar />
 
                 <header
-                    className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 p-8 rounded-2xl border border-white/8"
+                    className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 p-5 sm:p-8 rounded-2xl border border-white/8"
                     style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(24px)' }}
                 >
                     <div className="space-y-1">
