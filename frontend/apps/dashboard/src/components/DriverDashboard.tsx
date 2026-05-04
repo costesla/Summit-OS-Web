@@ -894,10 +894,25 @@ const DriverDashboard = () => {
         
         const uberTrips = trips.filter((t) => t.type === 'Uber').length;
         const privateTrips = trips.filter((t) => t.type === 'Private').length;
-        const elapsedHours = (Date.now() - sessionStart.getTime()) / 3_600_000;
+        
+        // --- Improved Hourly Rate Logic ---
+        const isToday = selectedDate === getTodayMST();
+        let activeHours = 0;
+
+        if (isToday) {
+            // Shift-based tracking for today
+            activeHours = (Date.now() - sessionStart.getTime()) / 3_600_000;
+        } else if (trips.length > 0) {
+            // Activity-based tracking for historical days
+            // Sort by timestamp and find the span between first and last event
+            const sorted = [...trips].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+            const start = new Date(sorted[0].timestamp).getTime();
+            const end = new Date(sorted[sorted.length - 1].timestamp).getTime();
+            activeHours = (end - start) / 3_600_000 + 1.0; // add 1 hour buffer for the last trip
+        }
         
         const profit = driverPay - foodTotal - chargingTotal;
-        const hourlyRate = elapsedHours > 0.1 ? profit / elapsedHours : 0;
+        const hourlyRate = activeHours > 0.25 ? profit / activeHours : 0;
         
         return {
             volume: totalVolume,
@@ -909,8 +924,9 @@ const DriverDashboard = () => {
             uberCount: uberTrips, 
             privateCount: privateTrips, 
             hourlyRate,
+            activeHours
         };
-    }, [trips, expenses, sessionStart]);
+    }, [trips, expenses, sessionStart, selectedDate]);
 
 
     const addTrip = (e: React.FormEvent) => {
@@ -1001,9 +1017,6 @@ const DriverDashboard = () => {
             });
             if (resp.ok) {
                 setSyncStatus('success');
-                // Force an immediate fetch from cloud to confirm state parity
-                console.log("POST sync successful, fetching cloud state...");
-                await fetchFromCloud(selectedDate);
                 setTimeout(() => setSyncStatus('idle'), 3000);
             } else {
                 setSyncStatus('error');
@@ -1246,9 +1259,6 @@ const DriverDashboard = () => {
                                 </div>
                             )}
 
-                            <h2 className="text-base font-bold mb-4 flex items-center gap-2 text-white">
-                                <Plus className="w-4 h-4 text-cyan-400" /> {editingTripId ? 'Edit Trip' : 'Log Trip'}
-                            </h2>
                             {editingTripId && (
                                 <div className="mb-4 p-2 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-between">
                                     <span className="text-[10px] font-bold text-amber-400 uppercase tracking-tighter">Editing Existing Trip</span>
