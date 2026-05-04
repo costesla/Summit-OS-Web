@@ -256,6 +256,9 @@ const TeslaStatusBar = () => {
                             <div className="flex items-center gap-1.5 shrink-0">
                                 <Zap className="w-3.5 h-3.5 text-emerald-400" />
                                 <span className="text-xs md:text-sm font-bold text-emerald-400 tabular-nums">{kw} kW</span>
+                                {minsToFull !== null && (
+                                    <span className="hidden md:inline text-[10px] text-gray-500 font-mono">({Math.round(minsToFull / 60)}h {minsToFull % 60}m)</span>
+                                )}
                             </div>
                         )}
                     </div>
