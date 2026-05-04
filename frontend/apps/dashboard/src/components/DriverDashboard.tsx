@@ -1076,20 +1076,443 @@ const DriverDashboard = () => {
     }, []);
 
     return (
-        <div className="min-h-screen bg-black text-white flex items-center justify-center p-8">
-            <div className="text-center space-y-4">
-                <h1 className="text-4xl font-bold text-cyan-400">SummitOS Debug</h1>
-                <p className="text-gray-400 font-mono">Dashboard v{VERSION} is attempting to render...</p>
-                <div className="p-4 bg-white/5 border border-white/10 rounded-xl">
-                    <p className="text-xs text-gray-500">Selected Date: {selectedDate}</p>
-                    <p className="text-xs text-gray-500">User: {azureUser || 'Guest'}</p>
-                </div>
-                <button 
-                    onClick={() => window.location.reload()}
-                    className="px-6 py-2 bg-cyan-500 text-black font-bold rounded-lg"
+        <div className="min-h-screen text-white p-3 sm:p-4 md:p-8 overflow-x-hidden"
+            style={{
+                background: '#05080a',
+                backgroundImage: 'radial-gradient(circle at 50% 0%, hsla(185,90%,55%,0.12), transparent 55%), linear-gradient(to bottom, #05080a, #000)',
+            }}>
+            <div className="max-w-full lg:max-w-6xl mx-auto space-y-4 sm:space-y-5">
+                
+                {/* ── Tesla Status Bar (TOP) ── */}
+                <TeslaStatusBar />
+
+                <header
+                    className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 p-5 sm:p-8 rounded-2xl border border-white/8"
+                    style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(24px)' }}
                 >
-                    Hard Refresh
-                </button>
+                    <div className="space-y-1">
+                        <p className="text-[10px] font-bold tracking-[0.4em] text-cyan-400 uppercase font-mono mb-2 flex items-center gap-2">
+                            <span className="w-6 h-[1px] bg-cyan-400 inline-block" />
+                            SummitOS · v{VERSION} · Driver Intelligence
+                        </p>
+                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold flex items-center gap-3 tracking-tight text-white">
+                            <Navigation className="text-cyan-400 w-6 h-6 md:w-8 md:h-8" />
+                            Driver Dashboard
+                        </h1>
+                        <div className="flex flex-wrap items-center gap-2 md:gap-3 pt-2">
+                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-black/40 border border-white/10">
+                                <Clock className="w-3 h-3 md:w-3.5 md:h-3.5 text-gray-500" />
+                                <input
+                                    type="date"
+                                    value={selectedDate}
+                                    onChange={(e) => { if (e.target.value) updateSelectedDate(e.target.value); }}
+                                    className="bg-transparent border-none text-cyan-400 text-[10px] md:text-xs font-bold focus:outline-none cursor-pointer font-mono"
+                                />
+                            </div>
+                            {syncStatus !== 'idle' && (
+                                <div className={`flex items-center gap-2 px-2 md:px-3 py-1.5 rounded-lg border text-[9px] md:text-[10px] font-mono uppercase tracking-wider animate-in fade-in duration-300 ${
+                                    syncStatus === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+                                }`}>
+                                    {syncStatus === 'success' ? <Check className="w-3 h-3" /> : <ShieldAlert className="w-3 h-3" />}
+                                    {syncStatus === 'success' ? 'Telemetry' : 'Failed'}
+                                </div>
+                            )}
+                            {azureUser && (
+                                <div className="text-[9px] md:text-[10px] text-gray-500 font-mono flex items-center gap-2 px-2 md:px-3 py-1.5 rounded-lg bg-white/3 border border-white/5">
+                                    <LogOut className="w-3 h-3 text-emerald-500/50" />
+                                    {azureUser.split('@')[0]}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-8 lg:gap-12">
+                        <div className="flex flex-col gap-2">
+                            <button
+                                onClick={syncToCloud}
+                                disabled={syncing}
+                                className={`group relative px-6 py-2.5 rounded-xl font-bold uppercase tracking-widest text-[10px] transition-all border flex items-center gap-2 min-w-[160px] justify-center ${
+                                    syncing ? 'bg-gray-800 border-white/5 text-gray-500 cursor-wait' :
+                                    syncStatus === 'success' ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400' :
+                                    syncStatus === 'error' ? 'bg-rose-500/20 border-rose-500/40 text-rose-400' :
+                                    'bg-cyan-500/10 border-cyan-500/20 text-cyan-400 hover:border-cyan-500/50 hover:bg-cyan-500/20'
+                                }`}
+                            >
+                                {syncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 
+                                 syncStatus === 'success' ? <Check className="w-3.5 h-3.5" /> : 
+                                 <Cloud className="w-3.5 h-3.5" />}
+                                {syncing ? 'Syncing...' : syncStatus === 'success' ? 'Cloud Synced' : 'Sync to Cloud'}
+                            </button>
+                            
+                            <div className="flex flex-col items-center">
+                                <button
+                                    onClick={() => {
+                                        if (confirm("Wipe local dashboard and force refresh from cloud? This will permanently remove any ghost trips that your browser is remembering.")) {
+                                            localStorage.removeItem('cos_trips');
+                                            localStorage.removeItem('cos_expenses');
+                                            setTrips([]);
+                                            setExpenses({ fastfood: [], charging: [] });
+                                            fetchFromCloud(selectedDate);
+                                        }
+                                    }}
+                                    disabled={isFetchingCloud}
+                                    className="w-full mt-2 py-2.5 rounded-xl font-bold text-[11px] text-rose-400 hover:text-white border border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/20 transition-all uppercase tracking-widest flex items-center justify-center gap-2 group"
+                                >
+                                    <RefreshCw className={`w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-500 ${isFetchingCloud ? 'animate-spin' : ''}`} />
+                                    {isFetchingCloud ? 'Resetting...' : 'Force Reset from Cloud'}
+                                </button>
+                                {lastSync && (
+                                    <span className="text-[8px] text-gray-700 font-mono text-center">Last Pull: {lastSync}</span>
+                                )}
+                                <button
+                                    onClick={() => {
+                                        if (confirm("Clear local cache and refresh? (Saves will remain in Cloud)")) {
+                                            localStorage.clear();
+                                            window.location.reload();
+                                        }
+                                    }}
+                                    className="text-[7px] text-red-900/40 hover:text-red-500 font-mono mt-1 transition-colors"
+                                >
+                                    Reset Local Data
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-10">
+                            <div className="text-left sm:text-right">
+                                <p className="text-[10px] font-bold uppercase text-gray-600 tracking-[0.2em] font-mono mb-1">Session Profit</p>
+                                <p className={`text-2xl sm:text-3xl font-black tracking-tighter ${stats.profit >= 0 ? 'text-white' : 'text-rose-400'}`}>
+                                    ${stats.profit.toFixed(2)}
+                                </p>
+                            </div>
+                            <div className="hidden sm:block h-10 w-[1px] bg-white/5" />
+                            <div className="text-left sm:text-right">
+                                <p className="text-[10px] font-bold uppercase text-gray-600 tracking-[0.2em] font-mono mb-1">Driver Pay</p>
+                                <p className="text-xl sm:text-2xl font-black text-white/90">${stats.driverPay.toFixed(2)}</p>
+                            </div>
+                            <div className="hidden sm:block h-10 w-[1px] bg-white/5" />
+                            <div className="text-left sm:text-right">
+                                <p className="text-[10px] font-bold uppercase text-gray-600 tracking-[0.2em] font-mono mb-1">$/Hour</p>
+                                <p className="text-xl sm:text-2xl font-black text-cyan-400/80">${Math.max(0, stats.hourlyRate).toFixed(2)}</p>
+                                <p className="text-[9px] text-gray-700 font-mono italic">est. {stats.activeHours.toFixed(1)}h shift</p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <button onClick={() => setShowResetConfirm(true)}
+                                className="p-2.5 rounded-xl border border-white/5 bg-white/3 text-gray-600 hover:text-rose-400 hover:border-rose-500/20 transition-all"
+                                title="Reset Session Data">
+                                <RotateCcw className="w-4 h-4" />
+                            </button>
+                            <a href="/.auth/logout?post_logout_redirect_uri=/"
+                                className="p-2.5 rounded-xl border border-white/5 bg-white/3 text-gray-600 hover:text-white hover:border-white/20 transition-all"
+                                title="Sign Out">
+                                <LogOut className="w-4 h-4" />
+                            </a>
+                        </div>
+                    </div>
+                </header>
+
+                {/* ── Reset Confirm ── */}
+                {showResetConfirm && (
+                    <div className="flex items-center justify-between bg-rose-950/50 border border-rose-500/30 rounded-2xl p-4 px-6">
+                        <p className="text-sm text-rose-300 font-mono">Reset all trips and expenses for this session?</p>
+                        <div className="flex gap-3">
+                            <button onClick={resetSession} className="text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 px-4 py-1.5 rounded-lg transition-colors">Reset</button>
+                            <button onClick={() => setShowResetConfirm(false)} className="text-xs font-bold text-gray-400 hover:text-white px-4 py-1.5 rounded-lg transition-colors">Cancel</button>
+                        </div>
+                    </div>
+                )}
+
+                {/* ── Stat Cards ── */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <StatCard label="Total Trips" value={trips.length}
+                        sub={`${stats.uberCount} Uber · ${stats.privateCount} Private`}
+                        icon={<Car className="text-cyan-400 w-5 h-5" />} />
+                    <StatCard label="Driver Pay" value={`$${stats.driverPay.toFixed(2)}`}
+                        sub={`Fees: $${stats.fees.toFixed(2)}`}
+                        icon={<TrendingUp className="text-cyan-400 w-5 h-5" />} highlight />
+
+                    <StatCard label="Charging" value={`$${stats.charging.toFixed(2)}`} sub="Fuel & Power"
+                        icon={<Zap className="text-amber-400 w-5 h-5" />} />
+                    <StatCard label="Fast Food" value={`$${stats.food.toFixed(2)}`} sub="Meals & Drinks"
+                        icon={<Utensils className="text-rose-400 w-5 h-5" />} />
+                </div>
+
+                {/* ── Main Grid ── */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                    {/* Forms Column */}
+                    <div className="space-y-5">
+                        {/* Security & Banking Module */}
+
+                        {/* Intelligence Sync Module */}
+                        <IntelligenceSyncPanel selectedDate={selectedDate} />
+
+                        {/* Trip Entry */}
+                        <div ref={tripFormRef}
+                            className="p-6 rounded-2xl border border-white/8"
+                            style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(16px)' }}>
+                            <h2 className="text-base font-bold mb-4 flex items-center gap-2 text-white">
+                                <Plus className="w-4 h-4 text-cyan-400" /> Log New Trip
+                            </h2>
+
+                            {pendingDrive && (
+                                <div className="mb-4 p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse" />
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-bold text-cyan-300 uppercase tracking-wider">Linked to Tessie Drive</span>
+                                            <span className="text-[9px] text-cyan-500 font-mono">
+                                                {pendingDrive.distance_miles.toFixed(1)} miles · {pendingDrive.time_mst}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => setPendingDrive(null)}
+                                        className="text-[9px] font-bold text-gray-500 hover:text-white uppercase tracking-tighter"
+                                    >
+                                        Unlink
+                                    </button>
+                                </div>
+                            )}
+
+                            {editingTripId && (
+                                <div className="mb-4 p-2 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-between">
+                                    <span className="text-[10px] font-bold text-amber-400 uppercase tracking-tighter">Editing Existing Trip</span>
+                                    <button 
+                                        onClick={() => {
+                                            setEditingTripId(null);
+                                            setTripForm({ type: 'Uber', fare: '', tip: '', fees: '', insurance: '', otherFees: '' });
+                                        }}
+                                        className="text-[10px] font-bold text-gray-500 hover:text-white uppercase tracking-tighter"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            )}
+
+                            <form onSubmit={addTrip} className="space-y-3">
+                                <div className="grid grid-cols-2 gap-2">
+                                    {(['Uber', 'Private'] as const).map((t) => (
+                                        <button key={t} type="button"
+                                            onClick={() => setTripForm({ ...tripForm, type: t })}
+                                            className={`p-2 rounded-xl text-sm font-bold transition-all border ${tripForm.type === t
+                                                ? t === 'Uber'
+                                                    ? 'bg-white text-black border-white'
+                                                    : 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 shadow-[0_0_15px_rgba(0,242,255,0.15)]'
+                                                : 'bg-white/5 text-gray-500 border-white/8 hover:border-white/20'}`}>
+                                            {t}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] font-mono mb-1 block">Passenger Paid ($)</label>
+                                    <input type="number" step="0.01" className={inputCls} value={tripForm.fare}
+                                        onChange={(e) => setTripForm({ ...tripForm, fare: e.target.value })} placeholder="0.00" />
+                                </div>
+                                {tripForm.type === 'Uber' && (
+                                    <div>
+                                        <label className="text-[10px] font-bold text-emerald-500/80 uppercase tracking-[0.2em] font-mono mb-1 block">Tip ($) <span className="text-gray-600 normal-case tracking-normal">optional</span></label>
+                                        <input type="number" step="0.01" className={inputCls + ' focus:border-emerald-500/50 focus:shadow-[0_0_15px_rgba(16,185,129,0.15)]'} value={tripForm.tip}
+                                            onChange={(e) => setTripForm({ ...tripForm, tip: e.target.value })} placeholder="0.00" />
+                                    </div>
+                                )}
+                                <div className="grid grid-cols-3 gap-2">
+                                    {[{ key: 'fees', label: 'Fees' }, { key: 'insurance', label: 'Insur.' }, { key: 'otherFees', label: 'Other' }].map(({ key, label }) => (
+                                        <div key={key}>
+                                            <label className="text-[10px] font-bold text-gray-600 uppercase tracking-[0.15em] font-mono mb-1 block">{label}</label>
+                                            <input type="number" step="0.01" className={inputCls}
+                                                value={tripForm[key as keyof TripForm]}
+                                                onChange={(e) => setTripForm({ ...tripForm, [key]: e.target.value })} placeholder="0.00" />
+                                        </div>
+                                    ))}
+                                </div>
+                                <button type="submit"
+                                    className="w-full py-3 rounded-xl font-bold text-sm text-black transition-all hover:brightness-110 hover:-translate-y-0.5"
+                                    style={{ background: 'linear-gradient(135deg, hsl(185,70%,40%), hsl(190,100%,60%), hsl(185,70%,40%))', boxShadow: '0 4px 20px rgba(0,242,255,0.25)' }}>
+                                    {editingTripId ? 'SAVE CHANGES' : 'LOG TRIP'}
+                                </button>
+                            </form>
+                        </div>
+
+                        {/* Expense Entry */}
+                        <div ref={expenseFormRef}
+                            className="p-6 rounded-2xl border border-white/8"
+                            style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(16px)' }}>
+                            <h2 className="text-base font-bold mb-4 flex items-center gap-2 text-white">
+                                <Receipt className="w-4 h-4 text-rose-400" /> Log Expense
+                            </h2>
+                            <form onSubmit={addExpense} className="space-y-4">
+                                <div className="flex gap-2">
+                                    {[
+                                        { key: 'fastfood', label: '🍔 Food', active: 'bg-rose-500/15 border-rose-500/40 text-rose-300' },
+                                        { key: 'charging', label: '⚡ Charge', active: 'bg-amber-500/15 border-amber-500/40 text-amber-300' },
+                                    ].map(({ key, label, active }) => (
+                                        <button key={key} type="button"
+                                            onClick={() => setExpenseForm({ ...expenseForm, category: key as keyof Expenses })}
+                                            className={`flex-1 p-2 rounded-xl text-sm font-bold border transition-all ${expenseForm.category === key ? active : 'bg-white/5 border-white/8 text-gray-500 hover:border-white/20'}`}>
+                                            {label}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <input type="number" step="0.01" placeholder="Amount" className={inputCls}
+                                        value={expenseForm.amount}
+                                        onChange={(e) => setExpenseForm({ ...expenseForm, amount: e.target.value })} />
+                                    <input type="text" placeholder="Note" className={inputCls}
+                                        value={expenseForm.note}
+                                        onChange={(e) => setExpenseForm({ ...expenseForm, note: e.target.value })} />
+                                </div>
+                                <button type="submit"
+                                    className="w-full py-3 rounded-xl font-bold text-sm text-white bg-white/8 border border-white/12 hover:bg-white/12 hover:border-white/20 transition-all">
+                                    ADD EXPENSE
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    {/* Trips + Expenses Column */}
+                    <div className="lg:col-span-2 space-y-5">
+
+                        {/* Trip History Table */}
+                        <div className="rounded-2xl border border-white/8 overflow-hidden"
+                            style={{ background: 'rgba(255,255,255,0.02)', backdropFilter: 'blur(16px)' }}>
+                            <div className="p-5 border-b border-white/8 flex justify-between items-center">
+                                <h2 className="font-bold text-white flex items-center gap-2">
+                                    <Clock className="w-4 h-4 text-cyan-400" /> Recent Trips
+                                </h2>
+                                <span className="text-[10px] bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-3 py-1 rounded-full font-mono uppercase tracking-widest">
+                                    Today · {trips.length} trips
+                                </span>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead>
+                                        <tr className="text-[10px] text-gray-600 uppercase font-mono tracking-widest border-b border-white/5">
+                                            <th className="px-5 py-3">Type</th>
+                                            <th className="px-5 py-3 text-right">Fare</th>
+                                            <th className="px-5 py-3 text-right">Deducted</th>
+                                            <th className="px-5 py-3 text-right">Net</th>
+                                            <th className="px-5 py-3 text-right">Margin</th>
+                                            <th className="px-5 py-3" />
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/5">
+                                        {trips.length === 0
+                                            ? <tr><td colSpan={6} className="px-5 py-16 text-center text-gray-700 italic font-mono text-sm">// no trips recorded yet</td></tr>
+                                            : trips.map((trip) => {
+                                                const deducted = trip.fees + trip.insurance + trip.otherFees;
+                                                const net = trip.fare - deducted;
+                                                const margin = trip.fare > 0 ? (net / trip.fare) * 100 : 0;
+                                                return (
+                                                    <tr key={trip.id} className="hover:bg-white/3 transition-colors group">
+                                                        <td className="px-5 py-4">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className={`w-1.5 h-1.5 rounded-full ${trip.type === 'Uber' ? 'bg-white' : 'bg-cyan-400 shadow-[0_0_8px_rgba(0,242,255,0.6)]'}`} />
+                                                                <div>
+                                                                    <p className="font-bold text-sm text-white">{trip.type}</p>
+                                                                    <p className="text-[10px] text-gray-600 font-mono">{trip.timestamp}{trip.distance_miles ? ` · ${trip.distance_miles.toFixed(1)}mi` : ''}</p>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-5 py-4 text-right font-mono text-gray-300">
+                                                            ${trip.fare.toFixed(2)}
+                                                            {trip.tip ? <span className="ml-1.5 text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">+${trip.tip.toFixed(2)} tip</span> : null}
+                                                        </td>
+                                                        <td className="px-5 py-4 text-right font-mono text-rose-400 text-xs">{deducted > 0 ? `-$${deducted.toFixed(2)}` : '—'}</td>
+                                                        <td className="px-5 py-4 text-right">
+                                                            <span className="text-sm font-black text-cyan-400" style={{ textShadow: '0 0 10px rgba(0,242,255,0.4)' }}>${net.toFixed(2)}</span>
+                                                        </td>
+                                                        <td className="px-5 py-4 text-right">
+                                                            <span className={`text-xs font-mono px-2 py-0.5 rounded ${margin >= 80 ? 'bg-emerald-500/10 text-emerald-400' : margin >= 60 ? 'bg-amber-500/10 text-amber-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                                                                {margin.toFixed(0)}%
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-5 py-4 text-right">
+                                                            <div className="flex items-center justify-end gap-3">
+                                                                {trip.validation_status === 'Verified' && (
+                                                                    <div className="group relative">
+                                                                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                                                                        <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block bg-black border border-emerald-500/30 p-2 rounded text-[10px] whitespace-nowrap z-50">
+                                                                            Verified by Screenshot
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                                {trip.validation_status === 'Mismatch' && (
+                                                                    <div className="group relative">
+                                                                        <ShieldAlert className="w-3.5 h-3.5 text-rose-500 animate-pulse" />
+                                                                        <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block bg-black border border-rose-500/30 p-2 rounded text-[10px] whitespace-nowrap z-50 shadow-[0_0_20px_rgba(244,63,94,0.3)]">
+                                                                            <p className="font-bold text-rose-400 mb-1">OCR Mismatch!</p>
+                                                                            <p className="text-gray-400 italic">Manual vs Screenshot difference</p>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                                <button onClick={() => handleEditTrip(trip)}
+                                                                    className="text-gray-700 hover:text-cyan-400 transition-all opacity-0 group-hover:opacity-100">
+                                                                    <RefreshCw className="w-3.5 h-3.5" />
+                                                                </button>
+                                                                <button onClick={() => deleteTrip(trip.id)}
+                                                                    className="text-gray-700 hover:text-rose-400 transition-all opacity-0 group-hover:opacity-100">
+                                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {trips.length > 0 && (
+                                <div className="px-5 py-4 border-t border-white/8 flex justify-between items-center">
+                                    <span className="text-[10px] text-gray-600 font-mono uppercase tracking-widest">Session Total</span>
+                                    <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+                                        <div className="flex justify-between sm:block text-right">
+                                            <p className="text-[10px] text-gray-600 font-mono">TOTAL VOL</p>
+                                            <p className="text-sm font-bold text-gray-500">${stats.volume.toFixed(2)}</p>
+                                        </div>
+                                        <div className="flex justify-between sm:block text-right sm:border-l sm:border-white/5 sm:pl-6">
+                                            <p className="text-[10px] text-gray-600 font-mono">UBER CUT</p>
+                                            <p className="text-sm font-bold text-rose-400">-${stats.fees.toFixed(2)}</p>
+                                        </div>
+                                        <div className="flex justify-between sm:block text-right sm:border-l sm:border-white/5 sm:pl-6">
+                                            <p className="text-[10px] text-cyan-400 font-bold font-mono uppercase tracking-tighter">Driver Pay</p>
+                                            <p className="text-sm font-black text-white" style={{ textShadow: '0 0 10px rgba(0,242,255,0.4)' }}>${stats.driverPay.toFixed(2)}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Expense Lists */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <ExpenseList title="Food Expenses" data={expenses.fastfood}
+                                icon={<Utensils className="w-4 h-4 text-rose-400" />}
+                                onDelete={(id) => deleteExpense('fastfood', id)} accentColor="text-rose-400" />
+
+                            {/* Charging Records Column */}
+                            <div className="space-y-5">
+                                <ExpenseList title="Charging Log" data={expenses.charging}
+                                    icon={<Zap className="w-4 h-4 text-amber-400" />}
+                                    onDelete={(id) => deleteExpense('charging', id)} accentColor="text-amber-400" />
+
+                                {/* ── Tessie Charging Sessions ── */}
+                                <TessieChargesPanel onImport={handleImportCharge} selectedDate={selectedDate} />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ── Tessie Drives Panel (full width) ── */}
+                <TessieDrivesPanel onImport={handleImportDrive} selectedDate={selectedDate} />
+
+                {/* Footer */}
+                <div className="text-center pt-2 pb-6">
+                    <p className="text-[10px] font-mono text-gray-700 tracking-[0.3em] uppercase">
+                        Powered by SummitOS · COS Tesla LLC
+                    </p>
+                </div>
             </div>
         </div>
     );
