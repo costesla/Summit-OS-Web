@@ -1142,12 +1142,20 @@ const DriverDashboard = () => {
                             
                             <div className="flex flex-col items-center">
                                 <button
-                                    onClick={() => fetchFromCloud(selectedDate)}
+                                    onClick={() => {
+                                        if (confirm("Wipe local dashboard and force refresh from cloud? This will permanently remove any ghost trips that your browser is remembering.")) {
+                                            localStorage.removeItem('cos_trips');
+                                            localStorage.removeItem('cos_expenses');
+                                            setTrips([]);
+                                            setExpenses({ fastfood: [], charging: [] });
+                                            fetchFromCloud(selectedDate);
+                                        }
+                                    }}
                                     disabled={isFetchingCloud}
-                                    className="text-[9px] font-mono text-gray-600 hover:text-cyan-400 transition-colors flex items-center gap-1.5 px-2 py-1 justify-center group"
+                                    className="text-[9px] font-mono text-gray-600 hover:text-rose-400 transition-colors flex items-center gap-1.5 px-2 py-1 justify-center group"
                                 >
                                     <RefreshCw className={`w-2.5 h-2.5 group-hover:rotate-180 transition-transform duration-500 ${isFetchingCloud ? 'animate-spin' : ''}`} />
-                                    {isFetchingCloud ? 'Refreshing...' : 'Pull from Cloud'}
+                                    {isFetchingCloud ? 'Resetting...' : 'Force Reset from Cloud'}
                                 </button>
                                 {lastSync && (
                                     <span className="text-[8px] text-gray-700 font-mono text-center">Last Pull: {lastSync}</span>
