@@ -581,61 +581,27 @@ const TessieChargesPanel = ({ onImport, selectedDate }: { onImport: (charge: Tes
 const IntelligenceSyncPanel: React.FC<{ selectedDate: string }> = ({ selectedDate }) => {
     const [status, setStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle');
     const [logs, setLogs] = useState<string[]>([]);
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = e.target.files;
-        if (!files || files.length === 0) return;
+    // Helper: build Uber Driver OneDrive path from a date string
+    const buildOneDrivePath = (dateStr: string, folderOverride?: string) => {
+        // Parse YYYY-MM-DD safely without timezone shifting
+        const [y, m, d] = dateStr.split('-').map(Number);
+        const dt = new Date(y, m - 1, d);
+        const year = dt.getFullYear();
+        const month = dt.toLocaleString('default', { month: 'long' });
+        const weekNum = Math.floor((dt.getDate() - 1) / 7) + 1;
+        const week = `Week ${weekNum}`;
+        const day = folderOverride ?? String(dt.getDate()).padStart(2, '0');
+        return `Uber Driver/${year}/${month}/${week}/${day}`;
+    };
 
-        setStatus('running');
-        setLogs([`> Starting bulk OCR match for ${files.length} screenshots...`]);
-
-        let successCount = 0;
-        let failCount = 0;
-
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            setLogs(prev => [...prev, `> Uploading (${i + 1}/${files.length}): ${file.name}...`]);
-
-            const formData = new FormData();
-            formData.append('file', file);
-
-            try {
-                const resp = await fetch(`${AZURE_BASE}/operations/upload-screenshot`, {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await resp.json();
-
-                if (data.success) {
-                    successCount++;
-                    // Backend returns flat: { status, ride_id, driver_earnings, rider_payment }
-                    const earnings = data.result?.driver_earnings ?? data.driver_earnings ?? '?';
-                    const fare = data.result?.rider_payment ?? data.rider_payment ?? '?';
-                    const rideId = data.result?.ride_id ?? data.ride_id ?? 'unknown';
-                    setLogs(prev => [
-                        ...prev,
-                        `> [SUCCESS] MATCHED: ${file.name}`,
-                        `  Ride: ${rideId}`,
-                        `  Earnings: $${earnings}  |  Rider Paid: $${fare}`,
-                        `  Trip updated in database.`
-                    ]);
-                } else {
-                    failCount++;
-                    const errMsg = data.error || data.result?.message || data.result?.reason || 'No match found';
-                    setLogs(prev => [...prev, `> [NO MATCH] ${file.name}: ${errMsg}`]);
-                }
-            } catch (err: any) {
-                failCount++;
-                setLogs(prev => [...prev, `> [CRITICAL] Upload failed: ${err.message}`]);
-            }
-        }
-        
-        setStatus(failCount === 0 ? 'success' : 'error');
-        setLogs(prev => [...prev, `> Bulk upload complete. ${successCount} matched, ${failCount} failed.`]);
-        
-        // Reset input so the same files can be selected again if needed
-        if (fileInputRef.current) fileInputRef.current.value = '';
+    const triggerCloudScan = async (path: string) => {
+        const resp = await fetch(`${AZURE_BASE}/operations/trigger-cloud-scan`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path })
+        });
+        return resp.json();
     };
 
 
@@ -688,32 +654,38 @@ const IntelligenceSyncPanel: React.FC<{ selectedDate: string }> = ({ selectedDat
         }
     };
 
-    const runOneDriveSync = async () => {
-        const folderName = prompt("Enter OneDrive folder name (e.g. 03):");
-        if (!folderName) return;
-
+    // Scan the auto-calculated OneDrive folder for the selected date — no prompt
+    const runScanDay = async () => {
+        const path = buildOneDrivePath(selectedDate);
         setStatus('running');
-        setLogs([`> Starting OneDrive Cloud Sync for folder: ${folderName}...`]);
-        
+        setLogs([`> Scanning OneDrive: ${path}...`]);
         try {
-            // Calculate path similar to how backend does it but with custom folder name
-            const dt = new Date(selectedDate);
-            const year = dt.getFullYear();
-            const month = dt.toLocaleString('default', { month: 'long' });
-            const weekNum = Math.floor((dt.getDate() - 1) / 7) + 1;
-            const week = `Week ${weekNum}`;
-            const fullPath = `Uber Driver/${year}/${month}/${week}/${folderName}`;
-
-            const resp = await fetch(`${AZURE_BASE}/operations/trigger-cloud-scan`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: fullPath })
-            });
-
-            const data = await resp.json();
+            const data = await triggerCloudScan(path);
             if (data.success) {
                 setStatus('success');
-                setLogs(prev => [...prev, ...(data.logs || []), `> [SUCCESS] Cloud folder sync complete.`]);
+                setLogs(prev => [...prev, ...(data.logs || []), `> [SUCCESS] Scan complete. ${data.matched ?? 0} matched, ${data.processed ?? 0} processed.`]);
+            } else {
+                setStatus('error');
+                setLogs(prev => [...prev, `> [ERROR] ${data.error}`]);
+            }
+        } catch (e: any) {
+            setStatus('error');
+            setLogs(prev => [...prev, `> [CRITICAL] ${e.message}`]);
+        }
+    };
+
+    // Scan a custom-named folder (for edge cases where folder name differs from day number)
+    const runOneDriveSyncCustom = async () => {
+        const folderName = prompt('Enter folder name (e.g. 03):');
+        if (!folderName) return;
+        const path = buildOneDrivePath(selectedDate, folderName);
+        setStatus('running');
+        setLogs([`> Scanning custom folder: ${path}...`]);
+        try {
+            const data = await triggerCloudScan(path);
+            if (data.success) {
+                setStatus('success');
+                setLogs(prev => [...prev, ...(data.logs || []), `> [SUCCESS] Custom scan complete.`]);
             } else {
                 setStatus('error');
                 setLogs(prev => [...prev, `> [ERROR] ${data.error}`]);
@@ -743,7 +715,7 @@ const IntelligenceSyncPanel: React.FC<{ selectedDate: string }> = ({ selectedDat
                 )}
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-4 mt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 mb-4 mt-4">
                 <button
                     disabled={status === 'running'}
                     onClick={() => runSync(false)}
@@ -760,30 +732,24 @@ const IntelligenceSyncPanel: React.FC<{ selectedDate: string }> = ({ selectedDat
                     <span>Rebuild Day</span>
                     <span className="text-[8px] font-normal text-amber-400/50 normal-case">Tessie + Bank + Scan</span>
                 </button>
-                <button
-                    disabled={status === 'running'}
-                    onClick={runOneDriveSync}
-                    className="flex flex-col items-center justify-center gap-0.5 py-3 rounded-xl text-[10px] font-bold bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/25 transition-all disabled:opacity-50"
-                >
-                    <span>OneDrive Sync</span>
-                    <span className="text-[8px] font-normal text-cyan-400/50 normal-case">Target Folder</span>
-                </button>
-                <button
-                    disabled={status === 'running'}
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex flex-col items-center justify-center gap-0.5 py-3 rounded-xl text-[10px] font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/25 transition-all disabled:opacity-50"
-                >
-                    <input 
-                        type="file" 
-                        ref={fileInputRef} 
-                        onChange={handleFileUpload} 
-                        accept="image/*" 
-                        multiple
-                        className="hidden" 
-                    />
-                    <span>Upload Screenshot</span>
-                    <span className="text-[8px] font-normal text-emerald-400/50 normal-case">Direct OCR Match</span>
-                </button>
+                {/* Scan Day: auto-path from selected date, no prompt, no file picker */}
+                <div className="flex flex-col gap-1">
+                    <button
+                        disabled={status === 'running'}
+                        onClick={runScanDay}
+                        className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 rounded-t-xl text-[10px] font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/25 transition-all disabled:opacity-50"
+                    >
+                        <span>Scan Day</span>
+                        <span className="text-[8px] font-normal text-emerald-400/50 normal-case">Auto-scan OneDrive folder</span>
+                    </button>
+                    <button
+                        disabled={status === 'running'}
+                        onClick={runOneDriveSyncCustom}
+                        className="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-b-xl text-[9px] font-bold bg-emerald-500/8 border border-t-0 border-emerald-500/20 text-emerald-600 hover:text-emerald-400 hover:bg-emerald-500/15 transition-all disabled:opacity-50"
+                    >
+                        <span>Custom Folder ↗</span>
+                    </button>
+                </div>
             </div>
 
             {/* Console Log Window */}
