@@ -609,16 +609,21 @@ const IntelligenceSyncPanel: React.FC<{ selectedDate: string }> = ({ selectedDat
 
                 if (data.success) {
                     successCount++;
+                    // Backend returns flat: { status, ride_id, driver_earnings, rider_payment }
+                    const earnings = data.result?.driver_earnings ?? data.driver_earnings ?? '?';
+                    const fare = data.result?.rider_payment ?? data.rider_payment ?? '?';
+                    const rideId = data.result?.ride_id ?? data.ride_id ?? 'unknown';
                     setLogs(prev => [
                         ...prev,
                         `> [SUCCESS] MATCHED: ${file.name}`,
-                        `  Earnings: $${data.result.card.driver_earnings}`,
-                        `  Fare: $${data.result.card.rider_payment}`,
-                        `  Trip updated.`
+                        `  Ride: ${rideId}`,
+                        `  Earnings: $${earnings}  |  Rider Paid: $${fare}`,
+                        `  Trip updated in database.`
                     ]);
                 } else {
                     failCount++;
-                    setLogs(prev => [...prev, `> [ERROR] ${data.error || data.result?.message || 'Failed to match screenshot'}`]);
+                    const errMsg = data.error || data.result?.message || data.result?.reason || 'No match found';
+                    setLogs(prev => [...prev, `> [NO MATCH] ${file.name}: ${errMsg}`]);
                 }
             } catch (err: any) {
                 failCount++;
