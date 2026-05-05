@@ -12,7 +12,7 @@ import {
 // ─── Constants ─────────────────────────────────────────────────────────────
 const AZURE_BASE = 'https://summitos-api.azurewebsites.net/api';
 const VERSION = "2.1.0-CLEAN";
-const TAG_FILTERS = ['Uber', 'Jackie', 'Esmeralda'] as const;
+const TAG_FILTERS = ['Uber', 'Jackie', 'Esmeralda', 'Uncategorized'] as const;
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface Trip {
@@ -305,9 +305,10 @@ const TAG_STYLE: Record<string, string> = {
     uber: 'bg-white/10 text-white border-white/20',
     jackie: 'bg-purple-500/15 text-purple-300 border-purple-500/30',
     esmeralda: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+    uncategorized: 'bg-orange-500/15 text-orange-300 border-orange-500/30',
 };
 const tagStyle = (tag: string | null) => {
-    const key = (tag ?? '').toLowerCase();
+    const key = (tag ?? '').toLowerCase() || 'uncategorized';
     for (const [k, v] of Object.entries(TAG_STYLE)) if (key.includes(k)) return v;
     return 'bg-gray-700/30 text-gray-400 border-gray-600/30';
 };

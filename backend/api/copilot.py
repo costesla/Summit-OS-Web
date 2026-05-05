@@ -373,6 +373,17 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
         grouped = defaultdict(list)
         
         tag_lower = tag_filter.lower()
+        
+        # Suffixes to strip for mission blending (case-insensitive)
+        # We handle both space-separated and camelCase variants common in the user's manual tagging
+        suffixes_to_strip = [
+            " en route", " enroute", " - en route",
+            " pickup", " pick up", " pickup", " - pickup", "pickup", "pick up",
+            " dropoff", " drop off", " drop-off", " - dropoff", "dropoff", "drop off",
+            " arrival", " - arrival", " arrival",
+            " stop ", " stop-", " stop"
+        ]
+
         for d in raw_drives:
             raw_tag = str(d.get("tag") or "Uncategorized")
             # Filter if tag_filter is provided
@@ -381,10 +392,21 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
                 
             # Create base_tag by stripping mission descriptors
             base_tag = raw_tag
-            for suffix in [" en route", " drop off", " pickup", " arrival", " - en route", " - drop off"]:
-                 if suffix in base_tag.lower():
-                     idx = base_tag.lower().find(suffix)
-                     base_tag = base_tag[:idx]
+            tag_l = base_tag.lower()
+            
+            # Iteratively strip suffixes from the end of the tag
+            changed = True
+            while changed:
+                changed = False
+                for s in suffixes_to_strip:
+                    if tag_l.endswith(s):
+                        idx = tag_l.rfind(s)
+                        base_tag = base_tag[:idx]
+                        tag_l = base_tag.lower()
+                        changed = True
+                        break
+            
+            base_tag = base_tag.strip()
             
             # Map start time to MST for date grouping (prevents midnight splits)
             start_ts = d.get("started_at", 0)
