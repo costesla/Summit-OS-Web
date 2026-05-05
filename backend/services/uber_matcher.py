@@ -32,6 +32,20 @@ class UberMatcherService:
         card = self._parse_uber_card(text)
         log.info(f"Parsed Card: {card['driver_earnings']} earned | {card['rider_payment']} rider paid")
 
+        # 2.5 Check if already processed (Idempotency)
+        conn = self.db.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT RideID FROM Rides.Rides WHERE Sidecar_Artifact_JSON LIKE ?", (f'%"{filename}"%',))
+        existing_row = cursor.fetchone()
+        if existing_row:
+            log.info(f"Screenshot {filename} was already processed.")
+            return {
+                "status": "MATCHED",
+                "ride_id": existing_row[0],
+                "driver_earnings": card["driver_earnings"],
+                "rider_payment": card["rider_payment"]
+            }
+
         # 3. Match by Timestamp
         # Support multiple filename formats:
         # 1. Screenshot_YYYYMMDD_HHMMSS (or with dash Screenshot_YYYYMMDD-HHMMSS)
@@ -72,10 +86,7 @@ class UberMatcherService:
         # Increased tolerance to 24 hours to handle edge cases where the exact time cannot be parsed
         # and we fall back to midday. It will still pick the closest available unmatched drive.
         match = self._find_match(card_dt, tolerance_hours=24)
-        if not match:
-            return {"status": "NO_MATCH", "parsed": card, "text": text}
 
-        # 5. Update SQL
         uber_cut = round(card["rider_payment"] - card["driver_earnings"], 2)
         sidecar = {
             "source": "uber_card_auto",
@@ -85,7 +96,12 @@ class UberMatcherService:
             "matched_at": datetime.datetime.now(self.mdt).isoformat()
         }
 
-        self._update_ride(match["RideID"], card, uber_cut, sidecar)
+        if not match:
+            # Create a new ride if no unmatched shell was found
+            ride_id = self._create_ride(card_dt, card, uber_cut, sidecar)
+        else:
+            ride_id = match["RideID"]
+            self._update_ride(ride_id, card, uber_cut, sidecar)
 
         # 6. Vectorize the matched ride for Copilot semantic memory
         try:
@@ -94,20 +110,20 @@ class UberMatcherService:
                 f"Driver earned ${card['driver_earnings']:.2f} "
                 f"(rider paid ${card['rider_payment']:.2f}, tip ${card.get('tip', 0):.2f}, "
                 f"Uber cut ${uber_cut:.2f}). "
-                f"Tessie ride ID: {match['RideID']}. "
+                f"Tessie ride ID: {ride_id}. "
                 f"Screenshot timestamp: {card_dt.strftime('%Y-%m-%d %H:%M')} MST. "
                 f"Operational vehicle: Thor (Tesla fleet)."
             )
             self.semantic.ingest_tessie_drive(
-                {"RideID": match["RideID"], "Timestamp_Start": card_dt.isoformat(),
+                {"RideID": ride_id, "Timestamp_Start": card_dt.isoformat(),
                  "Classification": "Uber_Matched"},
                 telemetry_summary=embedding_text
             )
         except Exception as ve:
-            log.warning(f"Vector embedding failed for {match['RideID']}: {ve}")
+            log.warning(f"Vector embedding failed for {ride_id}: {ve}")
         return {
             "status": "MATCHED",
-            "ride_id": match["RideID"],
+            "ride_id": ride_id,
             "driver_earnings": card["driver_earnings"],
             "rider_payment": card["rider_payment"],
             "uber_cut": uber_cut
@@ -160,10 +176,25 @@ class UberMatcherService:
             UPDATE Rides.Rides
             SET Fare=?, Tip=?, Driver_Earnings=?, Platform_Cut=?, 
                 Classification='Uber_Matched', Sidecar_Artifact_JSON=?, LastUpdated=GETDATE()
-            WHERE RideID=?
+            WHERE RideID = ?
         """, (
-            card["rider_payment"], card["tip"], card["driver_earnings"], uber_cut,
+            card["rider_payment"], card.get("tip", 0.0), card["driver_earnings"], uber_cut,
             json.dumps(sidecar), ride_id
         ))
         conn.commit()
         cursor.close()
+
+    def _create_ride(self, card_dt: datetime.datetime, card: Dict[str, Any], uber_cut: float, sidecar: Dict[str, Any]) -> str:
+        conn = self.db.get_connection()
+        cursor = conn.cursor()
+        ride_id = f"UBER-{int(card_dt.timestamp())}"
+        cursor.execute("""
+            INSERT INTO Rides.Rides 
+            (RideID, TripType, Timestamp_Start, Fare, Driver_Earnings, Tip, Platform_Cut, Classification, Sidecar_Artifact_JSON, CreatedAt, LastUpdated)
+            VALUES (?, 'Uber', ?, ?, ?, ?, ?, 'Uber_Matched', ?, GETUTCDATE(), GETUTCDATE())
+        """, (
+            ride_id, card_dt, card["rider_payment"], card["driver_earnings"], card.get("tip", 0.0), uber_cut, json.dumps(sidecar)
+        ))
+        conn.commit()
+        cursor.close()
+        return ride_id
