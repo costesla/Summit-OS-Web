@@ -84,6 +84,9 @@ interface TessieDrive {
     starting_battery: number | null;
     ending_battery: number | null;
     duration_minutes: number;
+    // OCR fare match status — populated by backend cross-referencing Rides.Rides
+    fare_matched?: boolean;
+    driver_earnings?: number | null;
 }
 
 interface TessieCharge {
@@ -441,6 +444,21 @@ const TessieDrivesPanel = ({
                                     <span className="text-[10px] text-gray-500 font-mono">
                                         {drive.date} · {drive.time_mst}
                                     </span>
+                                    {/* Fare match indicator — only shown for Uber trips */}
+                                    {(drive.tag ?? '').toLowerCase().includes('uber') && (
+                                        drive.fare_matched
+                                            ? (
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-500/15 border-emerald-500/30 text-emerald-400">
+                                                    <span>✓</span>
+                                                    <span>${drive.driver_earnings?.toFixed(2)}</span>
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-rose-500/15 border-rose-500/30 text-rose-400">
+                                                    <span>✗</span>
+                                                    <span>No receipt</span>
+                                                </span>
+                                            )
+                                    )}
                                 </div>
                                 {(drive.start || drive.end) && (
                                     <div className="flex items-start gap-1.5 text-[11px] text-gray-400">

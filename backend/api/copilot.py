@@ -475,6 +475,35 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
         # Sort by most recent first
         processed.sort(key=lambda x: (x['date'], x['time_mst']), reverse=True)
 
+        # ─── Fare Match Lookup ──────────────────────────────────────────────
+        # Cross-reference each drive with Rides.Rides to see if an OCR match
+        # has been recorded (Driver_Earnings > 0 and Tessie_DriveID is set)
+        try:
+            from services.database import DatabaseClient
+            db = DatabaseClient()
+            conn = db.get_connection()
+            cur = conn.cursor()
+            cur.execute("""
+                SELECT Tessie_DriveID, Driver_Earnings
+                FROM Rides.Rides
+                WHERE Tessie_DriveID IS NOT NULL
+                  AND Driver_Earnings > 0
+            """)
+            matched_drives = {str(row[0]): float(row[1]) for row in cur.fetchall()}
+            cur.close()
+        except Exception as db_err:
+            logging.warning(f"Could not fetch fare match data: {db_err}")
+            matched_drives = {}
+
+        for drive in processed:
+            drive_id = str(drive.get("tessie_drive_id") or "")
+            if drive_id and drive_id in matched_drives:
+                drive["fare_matched"] = True
+                drive["driver_earnings"] = matched_drives[drive_id]
+            else:
+                drive["fare_matched"] = False
+                drive["driver_earnings"] = None
+
         return copilot_response({
             "tag_filter": tag_filter or None,
             "count": len(processed),
