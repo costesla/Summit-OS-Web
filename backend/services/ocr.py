@@ -142,24 +142,36 @@ class OCRClient:
             data["rider"] = match.group(1).strip()
         
         # 2. Financials
-        # Rider Payment: "Rider payment $15.78" or "Price $15.78"
-        # Note: Python regex needs escaped $ for literal dollar sign if it's not end of line anchor.
-        # But in raw strings, we just look for patterns.
-        match = re.search(r"(?:Rider payment|Price|Total)\s*[\$]?([0-9]+\.[0-9]{2})", text, re.IGNORECASE)
-        if match:
-            data["rider_payment"] = float(match.group(1))
+        # Try primary regexes first (inline values)
+        rider_match = re.search(r"(?:Rider payment|Price|Total)\s*[\$]?([0-9]+\.[0-9]{2})", text, re.IGNORECASE)
+        if rider_match:
+            data["rider_payment"] = float(rider_match.group(1))
 
-        # Driver Earnings: "Your earnings $7.03" or "You earned $7.03" or standalone "$12.36" (Offer screens)
-        match = re.search(r"(?:Your earnings|You earned)\s*[\$]?([0-9]+\.[0-9]{2})", text, re.IGNORECASE)
-        if match:
-            data["driver_total"] = float(match.group(1))
-        else:
-            # Fallback for offer/accept screens: Look for the first major dollar amount
-            # Usually looks like "$12.36" on a line by itself
+        driver_match = re.search(r"(?:Your earnings|You earned)\s*[\$]?([0-9]+\.[0-9]{2})", text, re.IGNORECASE)
+        if driver_match:
+            data["driver_total"] = float(driver_match.group(1))
+
+        # Fallback for stacked layouts (Labels then values on new lines)
+        # This often happens in OCR when "Your earnings" and "Rider payment" are side-by-side
+        if data["driver_total"] == 0.0:
+            earnings_label = re.search(r"Your earnings", text, re.IGNORECASE)
+            if earnings_label:
+                # Look for all dollar amounts after the label
+                after_text = text[earnings_label.end():]
+                amounts = re.findall(r"\$([0-9]+\.[0-9]{2})", after_text)
+                if amounts:
+                    # If we have both labels stacked, the first two amounts are usually Driver and Rider
+                    if "Rider payment" in after_text[:50] and len(amounts) >= 2:
+                        data["driver_total"] = float(amounts[0])
+                        data["rider_payment"] = float(amounts[1])
+                    else:
+                        data["driver_total"] = float(amounts[0])
+
+        # Final fallback for offer/accept screens or standalone amounts
+        if data["driver_total"] == 0.0:
             match = re.search(r"^\s*[\$]([0-9]+\.[0-9]{2})\s*$", text, re.MULTILINE)
             if match:
                 data["driver_total"] = float(match.group(1))
-                # For offers, we assume rider payment is at least the driver total
                 data["rider_payment"] = max(data["rider_payment"], data["driver_total"])
 
         # Tip: "Tip $3.00"
