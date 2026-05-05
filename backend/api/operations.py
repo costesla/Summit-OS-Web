@@ -77,9 +77,10 @@ def trigger_cloud_scan(req: func.HttpRequest) -> func.HttpResponse:
     try:
         data = req.get_json() if req.get_body() else {}
         target_date = data.get("date")
+        explicit_path = data.get("path")
         
         service = CloudWatcherService()
-        results = service.scan_and_route(target_date=target_date)
+        results = service.scan_and_route(target_date=target_date, explicit_path=explicit_path)
         return func.HttpResponse(
             json.dumps({
                 "success": results.get("success", False),

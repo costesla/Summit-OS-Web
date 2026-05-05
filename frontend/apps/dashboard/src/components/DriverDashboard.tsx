@@ -683,6 +683,42 @@ const IntelligenceSyncPanel: React.FC<{ selectedDate: string }> = ({ selectedDat
         }
     };
 
+    const runOneDriveSync = async () => {
+        const folderName = prompt("Enter OneDrive folder name (e.g. 03):");
+        if (!folderName) return;
+
+        setStatus('running');
+        setLogs([`> Starting OneDrive Cloud Sync for folder: ${folderName}...`]);
+        
+        try {
+            // Calculate path similar to how backend does it but with custom folder name
+            const dt = new Date(selectedDate);
+            const year = dt.getFullYear();
+            const month = dt.toLocaleString('default', { month: 'long' });
+            const weekNum = Math.floor((dt.getDate() - 1) / 7) + 1;
+            const week = `Week ${weekNum}`;
+            const fullPath = `Uber Driver/${year}/${month}/${week}/${folderName}`;
+
+            const resp = await fetch(`${AZURE_BASE}/operations/trigger-cloud-scan`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: fullPath })
+            });
+
+            const data = await resp.json();
+            if (data.success) {
+                setStatus('success');
+                setLogs(prev => [...prev, ...(data.logs || []), `> [SUCCESS] Cloud folder sync complete.`]);
+            } else {
+                setStatus('error');
+                setLogs(prev => [...prev, `> [ERROR] ${data.error}`]);
+            }
+        } catch (e: any) {
+            setStatus('error');
+            setLogs(prev => [...prev, `> [CRITICAL] ${e.message}`]);
+        }
+    };
+
     return (
         <div className="p-6 rounded-2xl border border-cyan-500/20 bg-cyan-500/5 backdrop-blur-xl relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 blur-3xl rounded-full pointer-events-none group-hover:bg-cyan-500/15 transition-all duration-1000" />
@@ -702,7 +738,7 @@ const IntelligenceSyncPanel: React.FC<{ selectedDate: string }> = ({ selectedDat
                 )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 mb-4 mt-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-4 mt-4">
                 <button
                     disabled={status === 'running'}
                     onClick={() => runSync(false)}
@@ -718,6 +754,14 @@ const IntelligenceSyncPanel: React.FC<{ selectedDate: string }> = ({ selectedDat
                 >
                     <span>Rebuild Day</span>
                     <span className="text-[8px] font-normal text-amber-400/50 normal-case">Tessie + Bank + Scan</span>
+                </button>
+                <button
+                    disabled={status === 'running'}
+                    onClick={runOneDriveSync}
+                    className="flex flex-col items-center justify-center gap-0.5 py-3 rounded-xl text-[10px] font-bold bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/25 transition-all disabled:opacity-50"
+                >
+                    <span>OneDrive Sync</span>
+                    <span className="text-[8px] font-normal text-cyan-400/50 normal-case">Target Folder</span>
                 </button>
                 <button
                     disabled={status === 'running'}

@@ -13,32 +13,35 @@ class CloudWatcherService:
         self.camera_roll_path = "Pictures/Camera Roll"
         self.target_root = "Uber Driver"
 
-    def scan_and_route(self, target_date: str = None) -> dict:
+    def scan_and_route(self, target_date: str = None, explicit_path: str = None) -> dict:
         """
         Scans OneDrive for new Uber screenshots and routes matched files.
 
         Args:
-            target_date: ISO date string (YYYY-MM-DD). If provided, also scans
-                         the specific Uber Driver folder for that date in addition
-                         to Camera Roll / Screenshots.
+            target_date: ISO date string (YYYY-MM-DD).
+            explicit_path: If provided, scans this exact OneDrive path instead of defaults.
         """
-        scan_paths = [self.camera_roll_path, "Pictures/Screenshots"]
+        scan_paths = []
         
-        # Calculate target folder for the date if provided
-        target_folder = None
-        if target_date:
-            try:
-                dt = datetime.datetime.strptime(target_date, "%Y-%m-%d")
-                year = dt.strftime("%Y")
-                month = dt.strftime("%B")
-                day = dt.strftime("%d")
-                week_num = (dt.day - 1) // 7 + 1
-                week = f"Week {week_num}"
-                target_folder = f"{self.target_root}/{year}/{month}/{week}/{day}"
-                if target_folder not in scan_paths:
-                    scan_paths.append(target_folder)
-            except Exception as e:
-                log.error(f"Error parsing target_date {target_date}: {e}")
+        if explicit_path:
+            scan_paths = [explicit_path]
+        else:
+            scan_paths = [self.camera_roll_path, "Pictures/Screenshots"]
+            
+            # Calculate target folder for the date if provided
+            if target_date:
+                try:
+                    dt = datetime.datetime.strptime(target_date, "%Y-%m-%d")
+                    year = dt.strftime("%Y")
+                    month = dt.strftime("%B")
+                    day = dt.strftime("%d")
+                    week_num = (dt.day - 1) // 7 + 1
+                    week = f"Week {week_num}"
+                    target_folder = f"{self.target_root}/{year}/{month}/{week}/{day}"
+                    if target_folder not in scan_paths:
+                        scan_paths.append(target_folder)
+                except Exception as e:
+                    log.error(f"Error parsing target_date {target_date}: {e}")
 
         all_results = {
             "success": True,
@@ -49,7 +52,7 @@ class CloudWatcherService:
             "logs": []
         }
 
-        all_results["logs"].append(f"START: Cloud Scan (Target: {target_date or 'Today'})")
+        all_results["logs"].append(f"START: Cloud Scan (Path: {explicit_path or scan_paths})")
 
         for path in scan_paths:
             all_results["logs"].append(f"SCAN: Checking OneDrive path '{path}'...")
