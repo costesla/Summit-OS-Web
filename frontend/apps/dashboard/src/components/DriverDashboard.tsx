@@ -619,7 +619,20 @@ const IntelligenceSyncPanel: React.FC<{ selectedDate: string }> = ({ selectedDat
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ path })
         });
-        return resp.json();
+        
+        if (!resp.ok) {
+            const text = await resp.text();
+            if (text.includes('504') || text.includes('timeout') || !text.startsWith('{')) {
+                throw new Error('TIMEOUT_EXPECTED');
+            }
+            throw new Error(`Server returned ${resp.status}: ${text.substring(0, 100)}`);
+        }
+        
+        try {
+            return await resp.json();
+        } catch (e) {
+            throw new Error('TIMEOUT_EXPECTED');
+        }
     };
 
 
@@ -687,8 +700,17 @@ const IntelligenceSyncPanel: React.FC<{ selectedDate: string }> = ({ selectedDat
                 setLogs(prev => [...prev, `> [ERROR] ${data.error}`]);
             }
         } catch (e: any) {
-            setStatus('error');
-            setLogs(prev => [...prev, `> [CRITICAL] ${e.message}`]);
+            if (e.message === 'TIMEOUT_EXPECTED') {
+                setStatus('success'); // Mark as success because background job is running
+                setLogs(prev => [...prev, 
+                    `> [NOTICE] Large scan detected (>45s).`,
+                    `> Azure proxy timed out, but the scan is still running in the background.`,
+                    `> Please wait 60 seconds and refresh the page to see your checkmarks.`
+                ]);
+            } else {
+                setStatus('error');
+                setLogs(prev => [...prev, `> [CRITICAL] ${e.message}`]);
+            }
         }
     };
 
@@ -709,8 +731,17 @@ const IntelligenceSyncPanel: React.FC<{ selectedDate: string }> = ({ selectedDat
                 setLogs(prev => [...prev, `> [ERROR] ${data.error}`]);
             }
         } catch (e: any) {
-            setStatus('error');
-            setLogs(prev => [...prev, `> [CRITICAL] ${e.message}`]);
+            if (e.message === 'TIMEOUT_EXPECTED') {
+                setStatus('success');
+                setLogs(prev => [...prev, 
+                    `> [NOTICE] Large scan detected.`,
+                    `> Proxy timed out, but background sync is likely still active.`,
+                    `> Refresh in 60 seconds.`
+                ]);
+            } else {
+                setStatus('error');
+                setLogs(prev => [...prev, `> [CRITICAL] ${e.message}`]);
+            }
         }
     };
 

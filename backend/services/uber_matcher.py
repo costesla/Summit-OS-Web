@@ -39,6 +39,7 @@ class UberMatcherService:
         existing_row = cursor.fetchone()
         if existing_row:
             log.info(f"Screenshot {filename} was already processed.")
+            # Still return matched data so the caller knows what happened
             return {
                 "status": "MATCHED",
                 "ride_id": existing_row[0],
@@ -121,6 +122,7 @@ class UberMatcherService:
             )
         except Exception as ve:
             log.warning(f"Vector embedding failed for {ride_id}: {ve}")
+            
         return {
             "status": "MATCHED",
             "ride_id": ride_id,
@@ -130,20 +132,16 @@ class UberMatcherService:
         }
 
     def _parse_uber_card(self, text: str) -> Dict[str, Any]:
-        # Logic from ocr_uber_v2.py
-        data = {"fare": 0.0, "driver_earnings": 0.0, "tip": 0.0, "rider_payment": 0.0}
+        """Parses Uber card text using the robust OCRClient logic."""
+        parsed = self.ocr.parse_ubertrip(text)
         
-        # Simple extraction logic (refined for the Uber Trip Details layout)
-        m = re.search(r"Your earnings\s*\$?([\d.]+)", text, re.IGNORECASE)
-        if m: data["driver_earnings"] = float(m.group(1))
-        
-        m = re.search(r"Rider payment\s*\$?([\d.]+)", text, re.IGNORECASE)
-        if m: data["rider_payment"] = float(m.group(1))
-        
-        m = re.search(r"Added tip\s*\$?([\d.]+)", text, re.IGNORECASE)
-        if m: data["tip"] = float(m.group(1))
-        
-        return data
+        # Map OCRClient fields to UberMatcherService expectations
+        return {
+            "fare": parsed.get("rider_payment", 0.0),
+            "driver_earnings": parsed.get("driver_total", 0.0),
+            "tip": parsed.get("tip", 0.0),
+            "rider_payment": parsed.get("rider_payment", 0.0)
+        }
 
     def _find_match(self, card_dt: datetime.datetime, tolerance_hours: int = 4) -> Optional[Dict[str, Any]]:
         conn = self.db.get_connection()
@@ -154,8 +152,8 @@ class UberMatcherService:
         cursor.execute("""
             SELECT RideID, Timestamp_Start, Classification
             FROM Rides.Rides
-            WHERE Classification LIKE '%Uber%'
-              AND (Classification LIKE '%DropOff%' OR Classification LIKE '%Dropoff%')
+            WHERE (Classification LIKE '%Uber%' OR Classification = 'Manual_Entry')
+              AND (Classification LIKE '%DropOff%' OR Classification LIKE '%Dropoff%' OR Classification = 'Manual_Entry')
               AND (Fare IS NULL OR Fare = 0)
               AND Timestamp_Start BETWEEN ? AND ?
             ORDER BY ABS(DATEDIFF(SECOND, Timestamp_Start, ?)) ASC
@@ -175,7 +173,7 @@ class UberMatcherService:
         cursor.execute("""
             UPDATE Rides.Rides
             SET Fare=?, Tip=?, Driver_Earnings=?, Platform_Cut=?, 
-                Classification='Uber_Matched', Sidecar_Artifact_JSON=?, LastUpdated=GETDATE()
+                Classification='Uber_Matched', Sidecar_Artifact_JSON=?, LastUpdated=GETUTCDATE()
             WHERE RideID = ?
         """, (
             card["rider_payment"], card.get("tip", 0.0), card["driver_earnings"], uber_cut,
