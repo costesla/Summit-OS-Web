@@ -48,40 +48,42 @@ class UberMatcherService:
             }
 
         # 3. Match by Timestamp
-        # Support multiple filename formats:
-        # 1. Screenshot_YYYYMMDD_HHMMSS (or with dash Screenshot_YYYYMMDD-HHMMSS)
-        # 2. Screenshot YYYY-MM-DD HHMMSS (or with hyphens)
+        # 3.1 Try extracting timestamp from OCR text first (more accurate than filename)
+        card_dt = self._parse_timestamp_from_text(text)
         
-        card_dt = None
-        
-        # Pattern 1: Screenshot_20260328_053614 or Screenshot_20260328-053614
-        m1 = re.search(r"Screenshot_(\d{8})[-_](\d{6})", filename)
-        if m1:
-            card_dt = datetime.datetime.strptime(m1.group(1)+m1.group(2), "%Y%m%d%H%M%S")
+        if not card_dt:
+            # 3.2 Fallback: Support multiple filename formats:
+            # 1. Screenshot_YYYYMMDD_HHMMSS (or with dash Screenshot_YYYYMMDD-HHMMSS)
+            # 2. Screenshot YYYY-MM-DD HHMMSS (or with hyphens)
             
-        # Pattern 2: Screenshot 2026-04-27 070003 or Screenshot 2026-04-27-070003
-        if not card_dt:
-            m2 = re.search(r"Screenshot.*?(\d{4}-\d{2}-\d{2}).*?(\d{2})[-_:]?(\d{2})[-_:]?(\d{2})", filename)
-            if m2:
-                card_dt = datetime.datetime.strptime(f"{m2.group(1)} {m2.group(2)}{m2.group(3)}{m2.group(4)}", "%Y-%m-%d %H%M%S")
+            # Pattern 1: Screenshot_20260328_053614 or Screenshot_20260328-053614
+            m1 = re.search(r"Screenshot_(\d{8})[-_](\d{6})", filename)
+            if m1:
+                card_dt = datetime.datetime.strptime(m1.group(1)+m1.group(2), "%Y%m%d%H%M%S")
+                
+            # Pattern 2: Screenshot 2026-04-27 070003 or Screenshot 2026-04-27-070003
+            if not card_dt:
+                m2 = re.search(r"Screenshot.*?(\d{4}-\d{2}-\d{2}).*?(\d{2})[-_:]?(\d{2})[-_:]?(\d{2})", filename)
+                if m2:
+                    card_dt = datetime.datetime.strptime(f"{m2.group(1)} {m2.group(2)}{m2.group(3)}{m2.group(4)}", "%Y-%m-%d %H%M%S")
 
-        # Pattern 3: YYYYMMDD_HHMMSS anywhere
-        if not card_dt:
-            m3 = re.search(r"(\d{8})[-_](\d{6})", filename)
-            if m3:
-                card_dt = datetime.datetime.strptime(m3.group(1)+m3.group(2), "%Y%m%d%H%M%S")
+            # Pattern 3: YYYYMMDD_HHMMSS anywhere
+            if not card_dt:
+                m3 = re.search(r"(\d{8})[-_](\d{6})", filename)
+                if m3:
+                    card_dt = datetime.datetime.strptime(m3.group(1)+m3.group(2), "%Y%m%d%H%M%S")
 
-        if card_dt:
-            card_dt = card_dt.replace(tzinfo=self.mdt)
-        else:
-            # Fallback: Try to find a date string in the filename
-            # e.g. 2026-04-27
-            m_date = re.search(r"(\d{4}-\d{2}-\d{2})", filename)
-            if m_date:
-                card_dt = datetime.datetime.strptime(m_date.group(1), "%Y-%m-%d").replace(hour=12, tzinfo=self.mdt)
+            if card_dt:
+                card_dt = card_dt.replace(tzinfo=self.mdt)
             else:
-                log.warning(f"Could not parse date from filename: {filename}. Using current time.")
-                card_dt = datetime.datetime.now(self.mdt)
+                # Fallback: Try to find a date string in the filename
+                # e.g. 2026-04-27
+                m_date = re.search(r"(\d{4}-\d{2}-\d{2})", filename)
+                if m_date:
+                    card_dt = datetime.datetime.strptime(m_date.group(1), "%Y-%m-%d").replace(hour=12, tzinfo=self.mdt)
+                else:
+                    log.warning(f"Could not parse date from filename: {filename}. Using current time.")
+                    card_dt = datetime.datetime.now(self.mdt)
 
         # 4. Find closest unmatched Uber drive in SQL
         # Increased tolerance to 24 hours to handle edge cases where the exact time cannot be parsed
@@ -142,6 +144,25 @@ class UberMatcherService:
             "tip": parsed.get("tip", 0.0),
             "rider_payment": parsed.get("rider_payment", 0.0)
         }
+
+    def _parse_timestamp_from_text(self, text: str) -> Optional[datetime.datetime]:
+        """Extracts 'Month Day, Year . H:MM AM/PM' from OCR text."""
+        # e.g. May 5, 2026 . 5:16 AM
+        m = re.search(r"([A-Z][a-z]+ \d{1,2}, \d{4}) \. (\d{1,2}:\d{2} [APM]{2})", text)
+        if m:
+            date_str = m.group(1)
+            time_str = m.group(2)
+            try:
+                # Try short month (May) and long month (October)
+                for fmt in ["%b %d, %Y %I:%M %p", "%B %d, %Y %I:%M %p"]:
+                    try:
+                        dt = datetime.datetime.strptime(f"{date_str} {time_str}", fmt)
+                        return dt.replace(tzinfo=self.mdt)
+                    except:
+                        continue
+            except Exception as e:
+                log.warning(f"Failed to parse in-text timestamp '{date_str} {time_str}': {e}")
+        return None
 
     def _find_match(self, card_dt: datetime.datetime, tolerance_hours: int = 4) -> Optional[Dict[str, Any]]:
         conn = self.db.get_connection()
