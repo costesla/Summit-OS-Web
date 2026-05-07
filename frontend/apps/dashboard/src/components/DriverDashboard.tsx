@@ -11,7 +11,7 @@ import {
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 const AZURE_BASE = 'https://summitos-api.azurewebsites.net/api';
-const VERSION = "1.1.0";
+const VERSION = "1.2.0";
 const TAG_FILTERS = ['Uber', 'Jackie', 'Esmeralda', 'Uncategorized'] as const;
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -613,7 +613,7 @@ interface UberTrip {
     filename: string | null;
 }
 
-const UberTripsPanel: React.FC<{ selectedDate: string }> = ({ selectedDate }) => {
+const UberTripsPanel: React.FC<{ selectedDate: string, onRefreshDashboard: () => void }> = ({ selectedDate, onRefreshDashboard }) => {
     const [trips, setTrips] = useState<UberTrip[]>([]);
     const [loading, setLoading] = useState(true);
     const [scanning, setScanning] = useState(false);
@@ -673,6 +673,7 @@ const UberTripsPanel: React.FC<{ selectedDate: string }> = ({ selectedDate }) =>
             if (data.success) {
                 setLogs(prev => [...prev, `> [DONE] ${data.trip_count} trips saved. $${data.total_earnings?.toFixed(2)} total.`]);
                 await fetchTrips();
+                onRefreshDashboard(); // Sync main dashboard state
             } else {
                 setLogs(prev => [...prev, `> [ERROR] ${data.error}`]);
             }
@@ -1787,7 +1788,7 @@ const DriverDashboard = () => {
                 <TessieDrivesPanel onImport={handleImportDrive} selectedDate={selectedDate} />
 
                 {/* ── Uber Trips Panel — OCR numbered trip cards ── */}
-                <UberTripsPanel selectedDate={selectedDate} />
+                <UberTripsPanel selectedDate={selectedDate} onRefreshDashboard={() => fetchFromCloud(selectedDate)} />
 
                 {/* Footer */}
                 <div className="text-center pt-2 pb-6">
