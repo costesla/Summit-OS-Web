@@ -11,8 +11,8 @@ import {
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 const AZURE_BASE = 'https://summitos-api.azurewebsites.net/api';
-const VERSION = "1.2.0";
-const TAG_FILTERS = ['Uber', 'Jackie', 'Esmeralda', 'Uncategorized'] as const;
+const VERSION = "1.3.0";
+const TAG_FILTERS = ['Uber', 'Uber_Matched', 'Uber_Pickup', 'Jackie', 'Esmeralda', 'Uncategorized'] as const;
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface Trip {
@@ -306,6 +306,8 @@ const TeslaStatusBar = () => {
 // ─── Tag badge ───────────────────────────────────────────────────────────────
 const TAG_STYLE: Record<string, string> = {
     uber: 'bg-white/10 text-white border-white/20',
+    uber_matched: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+    uber_pickup: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30',
     jackie: 'bg-purple-500/15 text-purple-300 border-purple-500/30',
     esmeralda: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
     uncategorized: 'bg-orange-500/15 text-orange-300 border-orange-500/30',

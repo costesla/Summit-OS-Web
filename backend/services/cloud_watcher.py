@@ -203,6 +203,27 @@ class CloudWatcherService:
                             uber_cut,
                             tessie_drive_id
                         ))
+
+                        # --- NEW: Auto-tag the preceding 'Pickup' drive ---
+                        # Look for a drive that ended within 30 mins before this one started
+                        cursor.execute("""
+                            SELECT TOP 1 RideID 
+                            FROM Rides.Rides 
+                            WHERE Timestamp_Start < ? 
+                              AND Timestamp_Start > DATEADD(minute, -60, ?)
+                              AND (Classification IS NULL OR Classification = 'Untagged')
+                            ORDER BY Timestamp_Start DESC
+                        """, (match['Timestamp_Start'], match['Timestamp_Start']))
+                        pickup_row = cursor.fetchone()
+                        if pickup_row:
+                            pickup_id = pickup_row[0]
+                            cursor.execute("""
+                                UPDATE Rides.Rides 
+                                SET Classification = 'Uber_Pickup', LastUpdated = GETUTCDATE() 
+                                WHERE RideID = ?
+                            """, (pickup_id,))
+                            logs.append(f"AUTO-TAG: {pickup_id} labeled as Uber_Pickup")
+
                     except Exception as ue:
                         logs.append(f"WARN: Failed to update Tessie drive {tessie_drive_id}: {ue}")
 
