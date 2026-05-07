@@ -101,6 +101,59 @@ def trigger_cloud_scan(req: func.HttpRequest) -> func.HttpResponse:
             mimetype="application/json"
         )
 
+@bp.route(route="operations/scan-day-trips", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+def scan_day_trips(req: func.HttpRequest) -> func.HttpResponse:
+    """OCRs all screenshots in a day's OneDrive folder, sorts by trip time,
+    and saves numbered TRIP-{YYYYMMDD}-{N} records to Rides.Rides."""
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
+    try:
+        data = req.get_json() if req.get_body() else {}
+        date_str = data.get("date")
+        explicit_path = data.get("path")
+        if not date_str:
+            return func.HttpResponse(
+                json.dumps({"success": False, "error": "date is required (YYYY-MM-DD)"}),
+                status_code=400, headers=CORS_HEADERS, mimetype="application/json"
+            )
+        service = CloudWatcherService()
+        result = service.scan_and_number_trips(date_str, explicit_path=explicit_path)
+        return func.HttpResponse(
+            json.dumps(result),
+            status_code=200, headers=CORS_HEADERS, mimetype="application/json"
+        )
+    except Exception as e:
+        logging.error(f"Scan Day Trips Error: {e}")
+        return func.HttpResponse(
+            json.dumps({"success": False, "error": str(e)}),
+            status_code=500, headers=CORS_HEADERS, mimetype="application/json"
+        )
+
+@bp.route(route="operations/get-day-trips", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+def get_day_trips(req: func.HttpRequest) -> func.HttpResponse:
+    """Returns saved TRIP-{YYYYMMDD}-* records from SQL for a given date."""
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
+    try:
+        date_str = req.params.get("date")
+        if not date_str:
+            return func.HttpResponse(
+                json.dumps({"success": False, "error": "date param required"}),
+                status_code=400, headers=CORS_HEADERS, mimetype="application/json"
+            )
+        service = CloudWatcherService()
+        trips = service.get_trips_for_date(date_str)
+        return func.HttpResponse(
+            json.dumps({"success": True, "date": date_str, "trips": trips, "trip_count": len(trips)}),
+            status_code=200, headers=CORS_HEADERS, mimetype="application/json"
+        )
+    except Exception as e:
+        logging.error(f"Get Day Trips Error: {e}")
+        return func.HttpResponse(
+            json.dumps({"success": False, "error": str(e)}),
+            status_code=500, headers=CORS_HEADERS, mimetype="application/json"
+        )
+
 @bp.route(route="operations/upload-screenshot", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def upload_screenshot(req: func.HttpRequest) -> func.HttpResponse:
     if req.method == "OPTIONS":

@@ -11,7 +11,7 @@ import {
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 const AZURE_BASE = 'https://summitos-api.azurewebsites.net/api';
-const VERSION = "2.1.0-CLEAN";
+const VERSION = "1.1.0";
 const TAG_FILTERS = ['Uber', 'Jackie', 'Esmeralda', 'Uncategorized'] as const;
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -590,6 +590,220 @@ const TessieChargesPanel = ({ onImport, selectedDate }: { onImport: (charge: Tes
                         </div>
                     );
                 })}
+            </div>
+        </div>
+    );
+};
+
+// ─── Uber Trips Panel (OCR numbered trip cards) ────────────────────────────
+interface UberTrip {
+    trip_id: string;
+    trip_number: number;
+    timestamp: string | null;
+    time_display: string;
+    service_type: string;
+    driver_earnings: number;
+    rider_payment: number;
+    tip: number;
+    uber_cut: number;
+    pickup: string | null;
+    dropoff: string | null;
+    duration_min: number | null;
+    distance_mi: number | null;
+    filename: string | null;
+}
+
+const UberTripsPanel: React.FC<{ selectedDate: string }> = ({ selectedDate }) => {
+    const [trips, setTrips] = useState<UberTrip[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [scanning, setScanning] = useState(false);
+    const [logs, setLogs] = useState<string[]>([]);
+    const [showLogs, setShowLogs] = useState(false);
+    const [totalEarnings, setTotalEarnings] = useState(0);
+
+    const fetchTrips = async () => {
+        setLoading(true);
+        try {
+            const resp = await fetch(`${AZURE_BASE}/operations/get-day-trips?date=${selectedDate}&t=${Date.now()}`, {
+                signal: AbortSignal.timeout(12_000), cache: 'no-store'
+            });
+            const data = resp.ok ? await resp.json() : { trips: [] };
+            const tripList = (data.trips ?? []) as UberTrip[];
+            setTrips(tripList);
+            setTotalEarnings(tripList.reduce((s, t) => s + t.driver_earnings, 0));
+        } catch { setTrips([]); } finally { setLoading(false); }
+    };
+
+    useEffect(() => { fetchTrips(); }, [selectedDate]);
+
+    const handleScan = async () => {
+        setScanning(true);
+        setLogs([`> Starting OCR scan for ${selectedDate}...`]);
+        setShowLogs(true);
+
+        // Build path
+        const [y, m, d] = selectedDate.split('-').map(Number);
+        const dt = new Date(y, m - 1, d);
+        const month = dt.toLocaleString('default', { month: 'long' });
+        const weekNum = Math.floor((dt.getDate() - 1) / 7) + 1;
+        const day = String(dt.getDate()).padStart(2, '0');
+        const path = `Uber Driver/${dt.getFullYear()}/${month}/Week ${weekNum}/${day}`;
+
+        try {
+            const resp = await fetch(`${AZURE_BASE}/operations/scan-day-trips`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ date: selectedDate, path }),
+            });
+
+            if (!resp.ok) {
+                const text = await resp.text();
+                if (!text.startsWith('{')) {
+                    setLogs(prev => [...prev,
+                        '> [NOTICE] Scan taking longer than 45s (background processing)',
+                        '> Waiting 60s then refreshing...'
+                    ]);
+                    setTimeout(() => { fetchTrips(); setScanning(false); }, 60_000);
+                    return;
+                }
+            }
+
+            const data = await resp.json();
+            setLogs(data.logs ?? []);
+            if (data.success) {
+                setLogs(prev => [...prev, `> [DONE] ${data.trip_count} trips saved. $${data.total_earnings?.toFixed(2)} total.`]);
+                await fetchTrips();
+            } else {
+                setLogs(prev => [...prev, `> [ERROR] ${data.error}`]);
+            }
+        } catch (e: any) {
+            if (e.message?.includes('timeout') || e.name === 'TimeoutError') {
+                setLogs(prev => [...prev, '> [NOTICE] Timeout — scan running in background. Refreshing in 60s...']);
+                setTimeout(() => { fetchTrips(); setScanning(false); }, 60_000);
+                return;
+            }
+            setLogs(prev => [...prev, `> [CRITICAL] ${e.message}`]);
+        } finally {
+            setScanning(false);
+        }
+    };
+
+    return (
+        <div className="rounded-2xl border border-violet-500/20 overflow-hidden"
+            style={{ background: 'rgba(139,92,246,0.04)', backdropFilter: 'blur(16px)' }}>
+            {/* Header */}
+            <div className="p-5 border-b border-violet-500/15 flex flex-wrap items-center gap-3 justify-between">
+                <div className="flex items-center gap-2">
+                    <Receipt className="w-4 h-4 text-violet-400" />
+                    <h2 className="font-bold text-white">Uber Trips</h2>
+                    <span className="text-[10px] font-mono text-gray-600 uppercase tracking-wider">{selectedDate}</span>
+                    {trips.length > 0 && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-violet-500/30 bg-violet-500/10 text-violet-300 font-mono">
+                            {trips.length} trips · ${totalEarnings.toFixed(2)}
+                        </span>
+                    )}
+                </div>
+                <div className="flex items-center gap-2">
+                    <button onClick={fetchTrips} disabled={loading}
+                        className="text-[10px] font-bold px-2 py-1 rounded-lg border border-white/10 text-gray-400 hover:text-white hover:border-white/20 transition-all">
+                        <RefreshCw className={`w-3 h-3 inline mr-1 ${loading ? 'animate-spin' : ''}`} />
+                        Refresh
+                    </button>
+                    <button onClick={handleScan} disabled={scanning}
+                        className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border border-violet-500/30 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 hover:border-violet-500/50 transition-all disabled:opacity-50">
+                        {scanning
+                            ? <><Loader2 className="w-3 h-3 animate-spin" /> Scanning...</>
+                            : <><Cloud className="w-3 h-3" /> Scan Trips</>}
+                    </button>
+                </div>
+            </div>
+
+            {/* Log console */}
+            {showLogs && logs.length > 0 && (
+                <div className="bg-black/40 border-b border-violet-500/10 p-3 max-h-32 overflow-y-auto">
+                    {logs.map((l, i) => (
+                        <p key={i} className={`text-[10px] font-mono leading-5
+                            ${l.includes('DONE') || l.includes('SUCCESS') ? 'text-emerald-400'
+                            : l.includes('ERROR') || l.includes('CRITICAL') ? 'text-rose-400'
+                            : l.includes('NOTICE') ? 'text-amber-400'
+                            : 'text-gray-500'}`}>{l}</p>
+                    ))}
+                </div>
+            )}
+
+            {/* Body */}
+            <div className="divide-y divide-violet-500/8">
+                {loading && (
+                    <div className="p-10 text-center animate-pulse">
+                        <div className="h-2 w-48 bg-gray-800 rounded-full mx-auto mb-3" />
+                        <div className="h-2 w-32 bg-gray-800 rounded-full mx-auto" />
+                    </div>
+                )}
+
+                {!loading && trips.length === 0 && (
+                    <div className="p-10 text-center">
+                        <Receipt className="w-6 h-6 text-gray-700 mx-auto mb-2" />
+                        <p className="text-xs text-gray-600 font-mono italic">
+                            // no trips found — click "Scan Trips" to OCR the {selectedDate} folder
+                        </p>
+                    </div>
+                )}
+
+                {!loading && trips.map((trip) => (
+                    <div key={trip.trip_id}
+                        className="p-4 flex flex-col md:flex-row md:items-center gap-3 hover:bg-violet-500/5 transition-colors group">
+
+                        {/* Trip number badge */}
+                        <div className="shrink-0 flex flex-col items-center justify-center w-10 h-10 rounded-xl bg-violet-500/15 border border-violet-500/25">
+                            <span className="text-[10px] font-mono text-violet-400 leading-none">Trip</span>
+                            <span className="text-sm font-black text-violet-300 leading-none">{trip.trip_number}</span>
+                        </div>
+
+                        {/* Left: meta */}
+                        <div className="flex-1 space-y-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-white/15 bg-white/8 text-white font-mono uppercase">
+                                    {trip.service_type}
+                                </span>
+                                <span className="text-[10px] text-gray-500 font-mono">{trip.time_display}</span>
+                                {trip.duration_min && (
+                                    <span className="text-[10px] text-gray-600 font-mono">{trip.duration_min.toFixed(0)} min</span>
+                                )}
+                                {trip.distance_mi && (
+                                    <span className="text-[10px] text-gray-600 font-mono">{trip.distance_mi.toFixed(2)} mi</span>
+                                )}
+                            </div>
+                            {(trip.pickup || trip.dropoff) && (
+                                <div className="flex items-start gap-1.5 text-[11px] text-gray-400">
+                                    <MapPin className="w-3 h-3 mt-0.5 text-gray-600 shrink-0" />
+                                    <span className="leading-snug truncate">{trip.pickup ?? '—'} → {trip.dropoff ?? '—'}</span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Right: earnings */}
+                        <div className="flex gap-4 shrink-0 text-center">
+                            <div>
+                                <p className="text-[10px] text-gray-600 font-mono uppercase">Earned</p>
+                                <p className="text-base font-black text-emerald-400 tabular-nums">${trip.driver_earnings.toFixed(2)}</p>
+                            </div>
+                            {trip.tip > 0 && (
+                                <div>
+                                    <p className="text-[10px] text-gray-600 font-mono uppercase">Tip</p>
+                                    <p className="text-base font-black text-amber-400 tabular-nums">${trip.tip.toFixed(2)}</p>
+                                </div>
+                            )}
+                            <div>
+                                <p className="text-[10px] text-gray-600 font-mono uppercase">Rider</p>
+                                <p className="text-sm font-bold text-gray-400 tabular-nums">${trip.rider_payment.toFixed(2)}</p>
+                            </div>
+                            <div>
+                                <p className="text-[10px] text-gray-600 font-mono uppercase">Uber Cut</p>
+                                <p className="text-sm font-bold text-rose-400/70 tabular-nums">${trip.uber_cut.toFixed(2)}</p>
+                            </div>
+                        </div>
+                    </div>
+                ))}
             </div>
         </div>
     );
@@ -1571,6 +1785,9 @@ const DriverDashboard = () => {
 
                 {/* ── Tessie Drives Panel (full width) ── */}
                 <TessieDrivesPanel onImport={handleImportDrive} selectedDate={selectedDate} />
+
+                {/* ── Uber Trips Panel — OCR numbered trip cards ── */}
+                <UberTripsPanel selectedDate={selectedDate} />
 
                 {/* Footer */}
                 <div className="text-center pt-2 pb-6">
