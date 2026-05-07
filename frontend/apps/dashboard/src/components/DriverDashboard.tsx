@@ -712,12 +712,6 @@ const UberTripsPanel: React.FC<{ selectedDate: string, onRefreshDashboard: () =>
                         <RefreshCw className={`w-3 h-3 inline mr-1 ${loading ? 'animate-spin' : ''}`} />
                         Refresh
                     </button>
-                    <button onClick={handleScan} disabled={scanning}
-                        className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border border-violet-500/30 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 hover:border-violet-500/50 transition-all disabled:opacity-50">
-                        {scanning
-                            ? <><Loader2 className="w-3 h-3 animate-spin" /> Scanning...</>
-                            : <><Cloud className="w-3 h-3" /> Scan Trips</>}
-                    </button>
                 </div>
             </div>
 
@@ -813,7 +807,7 @@ const UberTripsPanel: React.FC<{ selectedDate: string, onRefreshDashboard: () =>
 };
 
 // ─── Intelligence Sync Panel ─────────────────────────────────────────────────
-const IntelligenceSyncPanel: React.FC<{ selectedDate: string }> = ({ selectedDate }) => {
+const IntelligenceSyncPanel: React.FC<{ selectedDate: string, onRefresh: () => void }> = ({ selectedDate, onRefresh }) => {
     const [status, setStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle');
     const [logs, setLogs] = useState<string[]>([]);
 
@@ -906,12 +900,41 @@ const IntelligenceSyncPanel: React.FC<{ selectedDate: string }> = ({ selectedDat
     const runScanDay = async () => {
         const path = buildOneDrivePath(selectedDate);
         setStatus('running');
-        setLogs([`> Scanning OneDrive: ${path}...`]);
+        setLogs([`> Initializing Unified Day Scan: ${path}...`]);
         try {
+            // 1. General Cloud Scan & Routing
             const data = await triggerCloudScan(path);
             if (data.success) {
-                setStatus('success');
-                setLogs(prev => [...prev, ...(data.logs || []), `> [SUCCESS] Scan complete. ${data.matched ?? 0} matched, ${data.processed ?? 0} processed.`]);
+                setLogs(prev => [...prev, `> [STEP 1] Folder organization complete.`]);
+                
+                // 2. OCR Trip Numbering & Auto-tagging
+                setLogs(prev => [...prev, `> [STEP 2] Starting OCR trip extraction...`]);
+                const ocrResp = await fetch(`${AZURE_BASE}/operations/scan-day-trips`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ date: selectedDate, path })
+                });
+                
+                if (ocrResp.ok) {
+                    const ocrData = await ocrResp.json();
+                    if (ocrData.success) {
+                        setStatus('success');
+                        setLogs(prev => [...prev, 
+                            ...(ocrData.logs || []),
+                            `> [SUCCESS] Full Day Scan Complete.`,
+                            `> ${ocrData.trip_count} Uber trips extracted and labeled.`
+                        ]);
+                        // Refresh everything
+                        onRefresh();
+                    } else {
+                        setStatus('error');
+                        setLogs(prev => [...prev, `> [OCR ERROR] ${ocrData.error}`]);
+                    }
+                } else {
+                    setLogs(prev => [...prev, `> [NOTICE] OCR scan is continuing in background due to size.`]);
+                    setStatus('success');
+                    setTimeout(onRefresh, 60_000);
+                }
             } else {
                 setStatus('error');
                 setLogs(prev => [...prev, `> [ERROR] ${data.error}`]);
@@ -1529,7 +1552,7 @@ const DriverDashboard = () => {
                         {/* Security & Banking Module */}
 
                         {/* Intelligence Sync Module */}
-                        <IntelligenceSyncPanel selectedDate={selectedDate} />
+                        <IntelligenceSyncPanel selectedDate={selectedDate} onRefresh={() => fetchFromCloud(selectedDate)} />
 
                         {/* Trip Entry */}
                         <div ref={tripFormRef}
