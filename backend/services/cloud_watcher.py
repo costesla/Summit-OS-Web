@@ -112,8 +112,8 @@ class CloudWatcherService:
         if not files:
             return {"success": True, "trips": [], "logs": [f"INFO: Folder '{explicit_path}' is empty."]}
 
-        image_files = [f for f in files if f.get("name", "").lower().endswith(('.jpg', '.jpeg', '.png'))]
-        logs.append(f"INFO: Found {len(image_files)} images in '{explicit_path}'.")
+        image_files = [f for f in files if f.get("name", "").lower().endswith(('.jpg', '.jpeg', '.png', '.heic', '.heif'))]
+        logs.append(f"INFO: Found {len(files)} total files in folder; {len(image_files)} are supported images.")
 
         # 2. OCR each file and collect raw card data
         raw_cards = []
