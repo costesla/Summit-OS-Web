@@ -156,18 +156,10 @@ class CloudWatcherService:
         if not raw_cards:
             return {"success": True, "trips": [], "logs": logs + ["INFO: No parseable trip cards found."]}
 
-        # 3. Filter to cards that actually have trip timestamps for this date
-        # (keeps only cards whose in-text date matches the requested date)
-        target_date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
-        dated_cards = []
-        for c in raw_cards:
-            if c["trip_dt"] and c["trip_dt"].date() == target_date:
-                dated_cards.append(c)
-            elif not c["trip_dt"]:
-                # No in-text timestamp — use the card anyway and place at end
-                dated_cards.append(c)
-
-        logs.append(f"INFO: {len(dated_cards)} cards matched date {date_str}.")
+        # 3. Use all cards found in the folder for this dashboard day
+        # (Be less strict with date check since it's already in the targeted day folder)
+        dated_cards = raw_cards
+        logs.append(f"INFO: Processing {len(dated_cards)} cards from folder for {date_str}.")
 
         # 4. Sort chronologically by trip_dt (None last)
         dated_cards.sort(key=lambda c: c["trip_dt"] if c["trip_dt"] else datetime.datetime.max.replace(tzinfo=c["trip_dt"].tzinfo if c.get("trip_dt") else None))
@@ -181,13 +173,38 @@ class CloudWatcherService:
         if deleted:
             logs.append(f"INFO: Cleared {deleted} existing TRIP records for {date_str}.")
 
-        # 6. Write numbered TRIP records
+        # 6. Write numbered TRIP records & try to link to Tessie
         trips_out = []
         for i, c in enumerate(dated_cards, start=1):
             trip_id = f"TRIP-{date_compact}-{i:02d}"
             card = c["card"]
             trip_dt = c["trip_dt"]
             uber_cut = round((card.get("rider_payment") or 0) - (card.get("driver_earnings") or 0), 2)
+
+            # --- Proximity Matching to Tessie ---
+            tessie_drive_id = None
+            if trip_dt:
+                match = self.uber._find_match(trip_dt, tolerance_hours=2)
+                if match:
+                    tessie_drive_id = match["RideID"]
+                    logs.append(f"LINK: {trip_id} matched to {tessie_drive_id} (diff: {abs((match['Timestamp_Start'] - trip_dt).total_seconds())/60:.1f}m)")
+                    
+                    # Update the matched Tessie drive with earnings data (this "labels" it in the UI)
+                    try:
+                        cursor.execute("""
+                            UPDATE Rides.Rides
+                            SET Fare = ?, Tip = ?, Driver_Earnings = ?, Platform_Cut = ?,
+                                Classification = 'Uber_Matched', LastUpdated = GETUTCDATE()
+                            WHERE RideID = ?
+                        """, (
+                            card.get("rider_payment") or 0,
+                            card.get("tip") or 0,
+                            card.get("driver_earnings") or 0,
+                            uber_cut,
+                            tessie_drive_id
+                        ))
+                    except Exception as ue:
+                        logs.append(f"WARN: Failed to update Tessie drive {tessie_drive_id}: {ue}")
 
             sidecar = {
                 "source": "scan_and_number",
@@ -200,6 +217,7 @@ class CloudWatcherService:
                 "duration_min": c["duration_min"],
                 "distance_mi": c["distance_mi"],
                 "service_type": c["service_type"],
+                "tessie_link": tessie_drive_id,
                 "scanned_at": datetime.datetime.now(MDT).isoformat(),
             }
 
@@ -207,8 +225,8 @@ class CloudWatcherService:
                 cursor.execute("""
                     INSERT INTO Rides.Rides
                     (RideID, TripType, Timestamp_Start, Fare, Driver_Earnings, Tip, Platform_Cut,
-                     Classification, Sidecar_Artifact_JSON, CreatedAt, LastUpdated)
-                    VALUES (?, 'Uber', ?, ?, ?, ?, ?, 'Uber_Matched', ?, GETUTCDATE(), GETUTCDATE())
+                     Classification, Sidecar_Artifact_JSON, Tessie_DriveID, CreatedAt, LastUpdated)
+                    VALUES (?, 'Uber', ?, ?, ?, ?, ?, 'Uber_Matched', ?, ?, GETUTCDATE(), GETUTCDATE())
                 """, (
                     trip_id,
                     trip_dt or datetime.datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=MDT),
@@ -216,9 +234,10 @@ class CloudWatcherService:
                     card.get("driver_earnings") or 0,
                     card.get("tip") or 0,
                     uber_cut,
-                    json.dumps(sidecar)
+                    json.dumps(sidecar),
+                    tessie_drive_id
                 ))
-                logs.append(f"SAVED: {trip_id} — Trip #{i} @ {str(trip_dt)[:16]} — ${card.get('driver_earnings', 0):.2f}")
+                logs.append(f"SAVED: {trip_id} — Trip #{i} — ${card.get('driver_earnings', 0):.2f}")
             except Exception as e:
                 logs.append(f"ERROR saving {trip_id}: {e}")
                 log.error(f"Error inserting {trip_id}: {e}")
