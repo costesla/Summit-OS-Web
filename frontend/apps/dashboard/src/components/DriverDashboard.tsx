@@ -12,7 +12,8 @@ import {
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 const AZURE_BASE = 'https://summitos-api.azurewebsites.net/api';
-const VERSION = "1.3.1";
+const VERSION = "1.4.0";
+
 const TAG_FILTERS = ['Uber', 'Uber_Matched', 'Uber_Pickup', 'Jackie', 'Esmeralda', 'Uncategorized'] as const;
 
 // ─── Types ──────────────────────────────────────────────────────────────────
