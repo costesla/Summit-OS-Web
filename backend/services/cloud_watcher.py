@@ -141,31 +141,131 @@ class CloudWatcherService:
             item_id = file.get("id")
             try:
                 content = self.graph.get_file_content(item_id)
-                text = self.uber.ocr.analyze_image_bytes(content)
-                if not text:
-                    return None, f"SKIP: No OCR text from '{name}'"
-                card = self.uber._parse_uber_card(text)
-                trip_dt = self.uber._parse_timestamp_from_text(text)
-                pickup, dropoff = self._extract_route(text)
-                duration_min = self._extract_duration(text)
-                distance_mi = self._extract_distance(text)
-                service_type = self._extract_service_type(text)
+
+                # ── Step A: GPT-4o Vision — accurate financial extraction ──────────
+                # Azure Vision misreads digits (e.g. 7→1). GPT-4o Vision reads
+                # mobile screenshots with near-perfect accuracy.
+                import base64
+                from openai import OpenAI
+                import os, json as _json
+
+                card = {"driver_earnings": 0.0, "fare": 0.0, "tip": 0.0, "rider_payment": 0.0}
+                try:
+                    _oai = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+                    b64 = base64.b64encode(content).decode("utf-8")
+                    vision_resp = _oai.chat.completions.create(
+                        model="gpt-4o-mini",
+                        messages=[{
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": (
+                                        "This is a screenshot from the Uber Driver app. "
+                                        "Extract ONLY the financial data and trip timestamp. "
+                                        "Return a JSON object with these exact keys:\n"
+                                        "  driver_total: total amount driver received including tip (the 'You earned' value)\n"
+                                        "  base_earnings: driver earnings before tip ('Your earnings')\n"
+                                        "  tip: tip amount\n"
+                                        "  rider_payment: what the rider paid for the ride ('Rider payment')\n"
+                                        "  trip_time: trip time as shown (e.g. 'May 8, 2026 · 6:42 AM')\n"
+                                        "  pickup: pickup address if visible\n"
+                                        "  dropoff: dropoff address if visible\n"
+                                        "  is_uber_receipt: true if this looks like an Uber trip receipt, false otherwise\n"
+                                        "Use 0 for any value not found. Return ONLY valid JSON, no markdown."
+                                    )
+                                },
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": f"data:image/jpeg;base64,{b64}",
+                                        "detail": "low"
+                                    }
+                                }
+                            ]
+                        }],
+                        max_tokens=300,
+                        temperature=0
+                    )
+                    raw = vision_resp.choices[0].message.content.strip()
+                    # Strip markdown code fences if present
+                    raw = re.sub(r"^```(?:json)?\s*", "", raw)
+                    raw = re.sub(r"\s*```$", "", raw)
+                    vdata = _json.loads(raw)
+
+                    if not vdata.get("is_uber_receipt", True):
+                        return None, f"SKIP: '{name}' — GPT-4o says not an Uber receipt"
+
+                    driver_total = float(vdata.get("driver_total") or 0)
+                    base_earn    = float(vdata.get("base_earnings") or 0)
+                    tip_val      = float(vdata.get("tip") or 0)
+                    rider_pay    = float(vdata.get("rider_payment") or 0)
+
+                    card = {
+                        "driver_earnings": driver_total or base_earn,
+                        "fare": rider_pay,
+                        "tip": tip_val,
+                        "rider_payment": rider_pay,
+                    }
+
+                    # Parse trip_time from GPT response
+                    trip_dt = None
+                    trip_time_str = vdata.get("trip_time", "")
+                    if trip_time_str:
+                        trip_dt = self.uber._parse_timestamp_from_text(trip_time_str)
+
+                    # Route from GPT
+                    pickup  = vdata.get("pickup", "") or ""
+                    dropoff = vdata.get("dropoff", "") or ""
+
+                    log.info(f"GPT-4o Vision: {name} → earned=${card['driver_earnings']}, rider=${rider_pay}, tip=${tip_val}, time={trip_time_str}")
+
+                except Exception as ve:
+                    log.warning(f"GPT-4o Vision failed for {name}: {ve} — falling back to Azure OCR")
+                    # ── Fallback: Azure Vision OCR + regex ──────────────────────────
+                    text = self.uber.ocr.analyze_image_bytes(content)
+                    if not text:
+                        return None, f"SKIP: No OCR text from '{name}'"
+                    card_raw = self.uber._parse_uber_card(text)
+                    card = {
+                        "driver_earnings": card_raw.get("driver_earnings", 0),
+                        "fare": card_raw.get("fare", 0),
+                        "tip": card_raw.get("tip", 0),
+                        "rider_payment": card_raw.get("rider_payment", 0),
+                    }
+                    trip_dt = self.uber._parse_timestamp_from_text(text)
+                    pickup, dropoff = self._extract_route(text)
+
+                if card.get("driver_earnings", 0) == 0:
+                    return None, f"SKIP: '{name}' — no earnings found (not an Uber receipt or unreadable)"
+
+                # ── Step B: Azure Vision for remaining fields (duration, distance) ──
+                text_for_stats = ""
+                try:
+                    text_for_stats = self.uber.ocr.analyze_image_bytes(content) or ""
+                except Exception:
+                    pass
+                duration_min = self._extract_duration(text_for_stats)
+                distance_mi  = self._extract_distance(text_for_stats)
+                service_type = self._extract_service_type(text_for_stats) or "UberX"
+
                 entry = {
                     "filename": name,
-                    "text": text,
+                    "text": text_for_stats,
                     "card": card,
                     "trip_dt": trip_dt,
                     "pickup": pickup,
                     "dropoff": dropoff,
                     "duration_min": duration_min,
                     "distance_mi": distance_mi,
-                    "service_type": service_type or "UberX",
+                    "service_type": service_type,
                 }
-                msg = f"PARSED: '{name}' — ${card.get('driver_earnings', 0):.2f} @ {str(trip_dt)[:16] if trip_dt else 'no timestamp'}"
+                msg = f"PARSED: '{name}' — ${card.get('driver_earnings', 0):.2f} earned @ {str(trip_dt)[:16] if trip_dt else 'no timestamp'}"
                 return entry, msg
             except Exception as e:
                 log.error(f"Error processing {name}: {e}")
                 return None, f"ERROR: '{name}' — {e}"
+
 
         raw_cards = []
         logs.append(f"INFO: Starting parallel OCR on {len(image_files)} images (8 workers)...")
