@@ -146,23 +146,40 @@ class UberMatcherService:
         }
 
     def _parse_timestamp_from_text(self, text: str) -> Optional[datetime.datetime]:
-        """Extracts 'Month Day, Year . H:MM AM/PM' from OCR text."""
-        # e.g. May 5, 2026 . 5:16 AM
-        m = re.search(r"([A-Z][a-z]+ \d{1,2}, \d{4}) \. (\d{1,2}:\d{2} [APM]{2})", text)
+        """Extracts trip timestamp from OCR text — handles multiple Uber app formats."""
+        # Format 1 (with year): "May 5, 2026 . 5:16 AM"  or  "May 5, 2026 · 5:16 AM"
+        m = re.search(
+            r"([A-Z][a-z]+ \d{1,2},?\s*\d{4})\s*[.\xb7\u00b7\u2022\-–]\s*(\d{1,2}:\d{2}\s*[APM]{2})",
+            text
+        )
         if m:
-            date_str = m.group(1)
-            time_str = m.group(2)
-            try:
-                # Try short month (May) and long month (October)
-                for fmt in ["%b %d, %Y %I:%M %p", "%B %d, %Y %I:%M %p"]:
-                    try:
-                        dt = datetime.datetime.strptime(f"{date_str} {time_str}", fmt)
-                        return dt.replace(tzinfo=self.mdt)
-                    except:
-                        continue
-            except Exception as e:
-                log.warning(f"Failed to parse in-text timestamp '{date_str} {time_str}': {e}")
+            date_str = m.group(1).replace(",", "").strip()
+            time_str = m.group(2).strip()
+            for fmt in ["%b %d %Y %I:%M %p", "%B %d %Y %I:%M %p", "%b %d, %Y %I:%M %p", "%B %d, %Y %I:%M %p"]:
+                try:
+                    dt = datetime.datetime.strptime(f"{date_str} {time_str}", fmt)
+                    return dt.replace(tzinfo=self.mdt)
+                except:
+                    continue
+
+        # Format 2 (no year): "May 8 · 5:41 AM"  — assume current year
+        m2 = re.search(
+            r"([A-Z][a-z]+ \d{1,2})\s*[.\xb7\u00b7\u2022\-–]\s*(\d{1,2}:\d{2}\s*[APM]{2})",
+            text
+        )
+        if m2:
+            date_str = m2.group(1).strip()
+            time_str = m2.group(2).strip()
+            year = datetime.datetime.now(self.mdt).year
+            for fmt in ["%b %d %I:%M %p", "%B %d %I:%M %p"]:
+                try:
+                    dt = datetime.datetime.strptime(f"{date_str} {year} {time_str}", fmt.replace("%b %d", "%b %d %Y").replace("%B %d", "%B %d %Y"))
+                    return dt.replace(tzinfo=self.mdt)
+                except:
+                    continue
+
         return None
+
 
     def _find_match(self, card_dt: datetime.datetime, tolerance_hours: int = 4) -> Optional[Dict[str, Any]]:
         conn = self.db.get_connection()
