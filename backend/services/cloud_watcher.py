@@ -4,6 +4,17 @@ import re
 import json
 from zoneinfo import ZoneInfo
 from typing import Optional
+
+def _calendar_week_of_month(dt: datetime.datetime) -> int:
+    """Calendar week within the month, Mon-Sun. Week 1 covers the first Monday
+    of the month; any days before that first Monday are also Week 1."""
+    first = dt.replace(day=1)
+    days_to_monday = (7 - first.weekday()) % 7
+    first_monday = first + datetime.timedelta(days=days_to_monday)
+    if dt.date() < first_monday.date():
+        return 1
+    return (dt.day - first_monday.day) // 7 + 1
+
 from services.graph import GraphClient
 from services.uber_matcher import UberMatcherService
 from services.database import DatabaseClient
@@ -40,7 +51,7 @@ class CloudWatcherService:
                     dt = datetime.datetime.strptime(target_date, "%Y-%m-%d")
                     year = dt.strftime("%Y")
                     month = dt.strftime("%B")
-                    week_num = (dt.day - 1) // 7 + 1
+                    week_num = _calendar_week_of_month(dt)
                     week = f"Week {week_num}"
                     day = dt.strftime("%d")
                     target_folder = f"{self.target_root}/{year}/{month}/{week}/{day}"
@@ -94,7 +105,7 @@ class CloudWatcherService:
                 dt = datetime.datetime.strptime(date_str, "%Y-%m-%d")
                 year = dt.strftime("%Y")
                 month = dt.strftime("%B")
-                week_num = (dt.day - 1) // 7 + 1
+                week_num = _calendar_week_of_month(dt)
                 week = f"Week {week_num}"
                 day = dt.strftime("%d")
                 explicit_path = f"{self.target_root}/{year}/{month}/{week}/{day}"
@@ -161,8 +172,10 @@ class CloudWatcherService:
         dated_cards = raw_cards
         logs.append(f"INFO: Processing {len(dated_cards)} cards from folder for {date_str}.")
 
-        # 4. Sort chronologically by trip_dt (None last)
-        dated_cards.sort(key=lambda c: c["trip_dt"] if c["trip_dt"] else datetime.datetime.max.replace(tzinfo=c["trip_dt"].tzinfo if c.get("trip_dt") else None))
+        # 4. Sort chronologically by trip_dt (None last) — use tz-aware sentinel to avoid
+        #    "can't compare offset-naive and offset-aware datetimes" crash
+        _tz_aware_max = datetime.datetime.max.replace(tzinfo=MDT)
+        dated_cards.sort(key=lambda c: c["trip_dt"] if c["trip_dt"] else _tz_aware_max)
 
         # 5. Delete any existing TRIP-{YYYYMMDD}-* records so re-scan is idempotent
         date_compact = date_str.replace("-", "")
@@ -427,7 +440,7 @@ class CloudWatcherService:
                     if source_path in [self.camera_roll_path, "Pictures/Screenshots"]:
                         year = now.strftime("%Y")
                         month = now.strftime("%B")
-                        week_num = (now.day - 1) // 7 + 1
+                        week_num = _calendar_week_of_month(now)
                         week = f"Week {week_num}"
                         day = now.strftime("%d")
 
