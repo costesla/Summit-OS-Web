@@ -172,22 +172,20 @@ class CloudWatcherService:
                                     "text": (
                                         "This is a screenshot from the Uber Driver app showing a completed trip receipt. "
                                         "Extract the financial data and return ONLY a JSON object with these keys:\n"
-                                        "  driver_total: the dollar amount shown next to 'Your earnings' — this is base pay BEFORE tip\n"
-                                        "  base_earnings: same as driver_total (Your earnings value)\n"
-                                        "  tip: the dollar amount shown next to 'Tip' (0 if no tip)\n"
-                                        "  rider_payment: the dollar amount shown next to 'Rider payment'\n"
-                                        "  trip_time: the trip date and time exactly as shown (e.g. 'May 8, 2026 · 5:40 AM'). If NOT clearly visible, return null.\n"
-                                        "  pickup: pickup address if visible\n"
-                                        "  dropoff: dropoff address if visible\n"
-                                        "  is_uber_receipt: true if this is an Uber Driver trip receipt, false otherwise\n"
-                                        "Use 0 for any numeric value not found. Return ONLY valid JSON, no markdown, no explanation."
+                                        "  you_earned: the large dollar amount at the very TOP of the screen (Total Driver Payout)\n"
+                                        "  your_earnings: the dollar amount in the breakdown next to 'Your earnings' (Base Pay before tip)\n"
+                                        "  tip: the dollar amount next to 'Tip' or 'Added tip' (0 if none)\n"
+                                        "  rider_payment: the dollar amount next to 'Rider payment'\n"
+                                        "  trip_time: the date and time exactly as shown (e.g. 'May 8, 2026 · 5:40 AM')\n"
+                                        "  is_uber_receipt: true if this is an Uber Driver trip receipt\n"
+                                        "Return ONLY valid JSON, no markdown."
                                     )
                                 },
                                 {
                                     "type": "image_url",
                                     "image_url": {
                                         "url": f"data:image/jpeg;base64,{b64}",
-                                        "detail": "low"
+                                        "detail": "high"
                                     }
                                 }
                             ]
@@ -203,11 +201,15 @@ class CloudWatcherService:
                     if not vdata.get("is_uber_receipt", True):
                         return None, f"SKIP: '{name}' — GPT-4o says not an Uber receipt"
 
-                    # Extraction with tip inclusion
-                    base_earn = float(vdata.get("base_earnings") or vdata.get("driver_total") or 0)
-                    tip_val   = float(vdata.get("tip") or 0)
+                    # Robust Earnings Extraction
+                    you_earned = float(vdata.get("you_earned") or 0)
+                    your_earnings = float(vdata.get("your_earnings") or 0)
+                    tip_val = float(vdata.get("tip") or 0)
                     rider_pay = float(vdata.get("rider_payment") or 0)
-                    final_earnings = round(base_earn + tip_val, 2)
+
+                    # Final driver payout is either the 'you_earned' total at the top,
+                    # or the sum of base 'your_earnings' + 'tip'. We take the max to be safe.
+                    final_earnings = max(you_earned, round(your_earnings + tip_val, 2))
 
                     card = {
                         "driver_earnings": final_earnings,
@@ -215,6 +217,7 @@ class CloudWatcherService:
                         "tip": tip_val,
                         "rider_payment": rider_pay,
                     }
+
 
                     # Prefer Azure for timestamp, fallback to GPT
                     trip_dt = self.uber._parse_timestamp_from_text(text_for_stats)
