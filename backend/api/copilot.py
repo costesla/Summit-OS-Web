@@ -546,6 +546,7 @@ def copilot_tessie_charges(req: func.HttpRequest) -> func.HttpResponse:
 
         # IMPORTANT: Use UTC for UNIX timestamps sent to Tessie API.
         now_utc = datetime.datetime.utcnow()
+        month_param = req.params.get("month", "").strip()   # e.g. "2026-05"
         if month_param:
             try:
                 year, month = int(month_param.split("-")[0]), int(month_param.split("-")[1])
