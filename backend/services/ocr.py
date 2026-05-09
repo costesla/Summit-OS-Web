@@ -141,61 +141,75 @@ class OCRClient:
         if match:
             data["rider"] = match.group(1).strip()
         
-        # 2. Financials
-        # Try primary regexes first (inline values)
-        rider_match = re.search(r"(?:Rider payment|Price|Total charged|Total)\s*[\$]?([0-9]+\.[0-9]{2})", text, re.IGNORECASE)
+        # ── 2. Financials ────────────────────────────────────────────────────────
+        # Uber Driver receipt layout:
+        #   "You earned"     → $20.38  (total driver payout incl. tip)  ← TOP
+        #   "Your earnings"  → $13.38  (base before tip)
+        #   "Tip"            → $7.00
+        #   "Rider payment"  → $21.78  (what rider paid for the ride)
+        #   "Uber service fee" → -$2.90
+        #   "Insurance and other fees" → -$5.50
+
+        # Step 1: "You earned $X" = total driver payout including tip
+        m = re.search(r"You\s+earned\s*\n?\s*\$?\s*([0-9]+\.[0-9]{2})", text, re.IGNORECASE)
+        if m:
+            data["driver_total"] = float(m.group(1))
+
+        # Step 2: "Your earnings $X" = base earnings (before tip) — store separately
+        base_match = re.search(r"Your\s+earnings\s*\n?\s*\$?\s*([0-9]+\.[0-9]{2})", text, re.IGNORECASE)
+        base_earnings = float(base_match.group(1)) if base_match else 0.0
+
+        # If we only found base (no "You earned"), use it as driver_total
+        if data["driver_total"] == 0.0 and base_earnings > 0:
+            data["driver_total"] = base_earnings
+
+        # Step 3: Tip
+        tip_match = re.search(r"Tip\s*\n?\s*\$?\s*([0-9]+\.[0-9]{2})", text, re.IGNORECASE)
+        if tip_match:
+            data["tip"] = float(tip_match.group(1))
+
+        # Step 4: Rider payment (base fare the rider paid)
+        rider_match = re.search(r"Rider\s+payment\s*\n?\s*\$?\s*([0-9]+\.[0-9]{2})", text, re.IGNORECASE)
         if rider_match:
             data["rider_payment"] = float(rider_match.group(1))
 
-        driver_match = re.search(r"(?:Your earnings|You earned|Earned|Net earnings|Net)\s*[\$]?([0-9]+\.[0-9]{2})", text, re.IGNORECASE)
-        if driver_match:
-            data["driver_total"] = float(driver_match.group(1))
-
-        # Fallback for stacked layouts (Labels then values on new lines)
+        # Step 5: Fallback — if still no driver_total, try inline "Earned $X" / "Net $X"
         if data["driver_total"] == 0.0:
-            earnings_label = re.search(r"Your earnings", text, re.IGNORECASE)
-            if earnings_label:
-                after_text = text[earnings_label.end():]
-                amounts = re.findall(r"\$([0-9]+\.[0-9]{2})", after_text)
+            m2 = re.search(r"(?:Earned|Net\s+earnings|Net)\s*\$?\s*([0-9]+\.[0-9]{2})", text, re.IGNORECASE)
+            if m2:
+                data["driver_total"] = float(m2.group(1))
+
+        # Step 6: Stacked layout fallback — "Your earnings\n$13.38\nRider payment\n$21.78"
+        if data["driver_total"] == 0.0:
+            earnings_pos = re.search(r"Your\s+earnings", text, re.IGNORECASE)
+            if earnings_pos:
+                after = text[earnings_pos.end():]
+                amounts = re.findall(r"\$([0-9]+\.[0-9]{2})", after[:100])
                 if amounts:
-                    if "Rider payment" in after_text[:50] and len(amounts) >= 2:
-                        data["driver_total"] = float(amounts[0])
+                    data["driver_total"] = float(amounts[0])
+                    if data["rider_payment"] == 0.0 and "Rider payment" in after and len(amounts) >= 2:
                         data["rider_payment"] = float(amounts[1])
-                    else:
-                        data["driver_total"] = float(amounts[0])
 
-        # Fallback: "You earned\n$13.38" style (amount on next line)
+        # Step 7: Standalone "$X.XX" on its own line (offer/accept screens)
         if data["driver_total"] == 0.0:
-            m = re.search(r"(?:You earned|Earned|Your earnings)\s*\n\s*\$?([0-9]+\.[0-9]{2})", text, re.IGNORECASE)
-            if m:
-                data["driver_total"] = float(m.group(1))
+            standalone = re.search(r"^\s*\$([0-9]+\.[0-9]{2})\s*$", text, re.MULTILINE)
+            if standalone:
+                data["driver_total"] = float(standalone.group(1))
+                if data["rider_payment"] == 0.0:
+                    data["rider_payment"] = data["driver_total"]
 
-        # Fallback for offer/accept screens or standalone amounts
-        if data["driver_total"] == 0.0:
-            match = re.search(r"^\s*[\$]([0-9]+\.[0-9]{2})\s*$", text, re.MULTILINE)
-            if match:
-                data["driver_total"] = float(match.group(1))
-                data["rider_payment"] = max(data["rider_payment"], data["driver_total"])
+        # Private Payment override (Venmo style)
+        venmo_match = re.search(r"\+\s?\$?([0-9]+\.[0-9]{2})", text)
+        if venmo_match and "Venmo" in text:
+            data["driver_total"] = float(venmo_match.group(1))
+            data["rider_payment"] = data["driver_total"]
 
-        # Last resort: any prominent dollar amount in the text if no other data found
-        if data["driver_total"] == 0.0:
-            all_amounts = re.findall(r"\$([0-9]+\.[0-9]{2})", text)
-            uber_amounts = [float(a) for a in all_amounts if 1.0 <= float(a) <= 500.0]
-            if uber_amounts:
-                data["driver_total"] = uber_amounts[0]
-                data["rider_payment"] = max(data["rider_payment"], data["driver_total"])
+        # If rider_payment still unknown, reconstruct from driver_total + uber fees
+        if data["rider_payment"] == 0.0 and data["driver_total"] > 0:
+            # Uber typically takes 25-30%, so rider_payment ≈ driver_total / 0.75 (rough)
+            data["rider_payment"] = data["driver_total"]
 
 
-        # Tip: "Tip $3.00"
-        match = re.search(r"Tip\s*[\$]?([0-9]+\.[0-9]{2})", text, re.IGNORECASE)
-        if match:
-            data["tip"] = float(match.group(1))
-            
-        # Private Payment override (Venmo style "+ $15.00")
-        match = re.search(r"\+\s?\$?([0-9]+\.[0-9]{2})", text)
-        if match and "Venmo" in text: # Simple check for Venmo context
-            data["driver_total"] = float(match.group(1))
-            data["rider_payment"] = data["driver_total"] # Private trip assumption
 
         # 3. Stats
         # Distance: "12.5 mi"
