@@ -161,18 +161,17 @@ class CloudWatcherService:
                                 {
                                     "type": "text",
                                     "text": (
-                                        "This is a screenshot from the Uber Driver app. "
-                                        "Extract ONLY the financial data and trip timestamp. "
-                                        "Return a JSON object with these exact keys:\n"
-                                        "  driver_total: total amount driver received including tip (the 'You earned' value)\n"
-                                        "  base_earnings: driver earnings before tip ('Your earnings')\n"
-                                        "  tip: tip amount\n"
-                                        "  rider_payment: what the rider paid for the ride ('Rider payment')\n"
-                                        "  trip_time: trip time as shown (e.g. 'May 8, 2026 · 6:42 AM')\n"
+                                        "This is a screenshot from the Uber Driver app showing a completed trip receipt. "
+                                        "Extract the financial data and return ONLY a JSON object with these keys:\n"
+                                        "  driver_total: the dollar amount shown next to 'Your earnings' — this is base pay BEFORE tip\n"
+                                        "  base_earnings: same as driver_total (Your earnings value)\n"
+                                        "  tip: the dollar amount shown next to 'Tip' (0 if no tip)\n"
+                                        "  rider_payment: the dollar amount shown next to 'Rider payment'\n"
+                                        "  trip_time: the trip date and time exactly as shown (e.g. 'May 8, 2026 · 5:40 AM')\n"
                                         "  pickup: pickup address if visible\n"
                                         "  dropoff: dropoff address if visible\n"
-                                        "  is_uber_receipt: true if this looks like an Uber trip receipt, false otherwise\n"
-                                        "Use 0 for any value not found. Return ONLY valid JSON, no markdown."
+                                        "  is_uber_receipt: true if this is an Uber Driver trip receipt, false otherwise\n"
+                                        "Use 0 for any numeric value not found. Return ONLY valid JSON, no markdown, no explanation."
                                     )
                                 },
                                 {
@@ -201,19 +200,10 @@ class CloudWatcherService:
                     tip_val      = float(vdata.get("tip") or 0)
                     rider_pay    = float(vdata.get("rider_payment") or 0)
 
-                    # Reconcile: GPT sometimes returns base_earnings as driver_total.
-                    # Rule: final earnings = base + tip. If driver_total already = base+tip → use it.
-                    #        If driver_total ≈ base only → add tip manually.
-                    expected_with_tip = round(base_earn + tip_val, 2)
-                    if driver_total > 0 and abs(driver_total - expected_with_tip) < 0.02:
-                        # driver_total already includes tip — correct
-                        final_earnings = driver_total
-                    elif driver_total > 0 and driver_total > base_earn + 0.01:
-                        # driver_total is higher than base — already includes tip
-                        final_earnings = driver_total
-                    else:
-                        # driver_total == base or 0 — tip was not included, add it
-                        final_earnings = round((driver_total or base_earn) + tip_val, 2)
+                    # Uber Driver receipt: "Your earnings" = base pay (before tip)
+                    # "Tip" is shown separately. Final driver payment = base + tip.
+                    base = driver_total or base_earn  # whichever GPT found
+                    final_earnings = round(base + tip_val, 2)
 
                     card = {
                         "driver_earnings": final_earnings,
