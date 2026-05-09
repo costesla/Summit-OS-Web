@@ -355,7 +355,8 @@ class GraphClient:
         return resp.json()
 
     def create_folder(self, parent_id: str, folder_name: str):
-        """Creates a folder under a parent ID."""
+        """Creates a folder under a parent ID. Uses 'fail' conflict behavior so
+        Graph returns a 409 if the folder already exists (we handle that by re-fetching)."""
         token = self._get_token()
         url = f"https://graph.microsoft.com/v1.0/users/{self.user_email}/drive/items/{parent_id}/children"
         headers = {
@@ -365,9 +366,13 @@ class GraphClient:
         payload = {
             "name": folder_name,
             "folder": {},
-            "@microsoft.graph.conflictBehavior": "rename"
+            "@microsoft.graph.conflictBehavior": "fail"
         }
         resp = requests.post(url, headers=headers, json=payload)
+        if resp.status_code == 409:
+            # Folder already exists — fetch it by path to get the ID
+            logging.info(f"Folder '{folder_name}' already exists under parent {parent_id}, re-fetching.")
+            return None  # Signal to caller to use get_item_by_path instead
         if not resp.ok:
             logging.error(f"Graph Create Folder Error: {resp.text}")
             raise Exception(f"Graph Create Folder Error: {resp.status_code} {resp.text}")
@@ -375,26 +380,35 @@ class GraphClient:
 
     def ensure_path_exists(self, full_path: str):
         """
-        Recursively ensures a path exists in OneDrive. 
+        Recursively ensures a path exists in the user's OneDrive.
         Returns the ID of the final folder.
+        Logs each segment as FOUND or CREATED for diagnostics.
         """
         parts = full_path.strip('/').split('/')
         current_path = ""
         last_id = self.get_drive_root_id()
+        logging.info(f"ensure_path_exists: user={self.user_email}, path='{full_path}'")
 
         for part in parts:
-            if current_path:
-                current_path += "/" + part
-            else:
-                current_path = part
-            
+            current_path = f"{current_path}/{part}" if current_path else part
+
             item = self.get_item_by_path(current_path)
             if item:
                 last_id = item.get("id")
+                logging.info(f"  [FOUND]   {current_path} → {last_id}")
             else:
                 new_folder = self.create_folder(last_id, part)
-                last_id = new_folder.get("id")
-                logging.info(f"Created folder: {current_path}")
+                if new_folder is None:
+                    # 409: folder exists but path lookup missed it — re-fetch
+                    item = self.get_item_by_path(current_path)
+                    if item:
+                        last_id = item.get("id")
+                        logging.info(f"  [FOUND-409] {current_path} → {last_id}")
+                    else:
+                        raise Exception(f"Could not create or find folder: {current_path}")
+                else:
+                    last_id = new_folder.get("id")
+                    logging.info(f"  [CREATED] {current_path} → {last_id}")
 
         return last_id
 

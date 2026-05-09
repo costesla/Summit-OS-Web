@@ -49,10 +49,25 @@ def sync_folders(req: func.HttpRequest) -> func.HttpResponse:
             )
         else:
             logs.append(f"[INFO] MODE: Live Sync")
+            logs.append(f"[INFO] Target user: peter.teehan@costesla.com")
             logs.append(f"[INFO] Ensuring OneDrive path exists: {full_path}")
             graph = GraphClient()
-            folder_id = graph.ensure_path_exists(full_path)
-            logs.append(f"[SUCCESS] OneDrive folder verified: {folder_id}")
+            # Capture segment-level FOUND/CREATED logs via a list handler
+            segment_logs = []
+            import logging as _logging
+            class _ListHandler(_logging.Handler):
+                def emit(self, record):
+                    msg = self.format(record)
+                    if "[FOUND]" in msg or "[CREATED]" in msg or "ensure_path" in msg:
+                        segment_logs.append(msg)
+            _handler = _ListHandler()
+            _logging.getLogger().addHandler(_handler)
+            try:
+                folder_id = graph.ensure_path_exists(full_path)
+            finally:
+                _logging.getLogger().removeHandler(_handler)
+            logs.extend(segment_logs)
+            logs.append(f"[SUCCESS] OneDrive folder ready \u2192 {folder_id}")
 
             return func.HttpResponse(
                 json.dumps({"success": True, "logs": logs}),
