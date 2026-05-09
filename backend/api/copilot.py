@@ -3,10 +3,23 @@ import json
 import azure.functions as func
 import os
 import datetime
+import pytz
 from services.database import DatabaseClient
 from services.tessie import TessieClient
 from services.vector_store import VectorStore
 from services.agent_orchestrator import SystemOrchestrator
+
+# Mountain Time — automatically handles MST (UTC-7) and MDT (UTC-6)
+_MT = pytz.timezone("America/Denver")
+
+def _utc_to_mt(utc_dt: datetime.datetime) -> datetime.datetime:
+    """Convert a naive UTC datetime to aware Mountain Time (handles DST)."""
+    return pytz.utc.localize(utc_dt).astimezone(_MT)
+
+def _ts_to_mt(unix_ts: float) -> datetime.datetime:
+    """Convert a UNIX timestamp to aware Mountain Time datetime."""
+    return datetime.datetime.fromtimestamp(unix_ts, tz=pytz.utc).astimezone(_MT)
+
 
 bp = func.Blueprint()
 
@@ -41,7 +54,7 @@ CORS_HEADERS = {
 }
 
 def copilot_response(payload):
-    current_mt = datetime.datetime.utcnow() - datetime.timedelta(hours=7)
+    current_mt = _utc_to_mt(datetime.datetime.utcnow())
     response_body = {
         "success": True,
         "_system_time_directive": f"CRITICAL: The user is physically in Mountain Time. It is currently {current_mt.strftime('%Y-%m-%d %I:%M %p')}. If asked for 'today', you MUST filter for {current_mt.strftime('%Y-%m-%d')}."
@@ -180,7 +193,7 @@ def copilot_metrics_daily(req: func.HttpRequest) -> func.HttpResponse:
                     return copilot_response({"success": False, "error": f"Invalid date. You MUST reformat the date strictly to YYYY-MM-DD instead of {d} and use the tool again."})
 
         if not start_date or not end_date:
-            end_dt = datetime.datetime.utcnow() - datetime.timedelta(hours=7)
+            end_dt = _utc_to_mt(datetime.datetime.utcnow())
             start_dt = end_dt - datetime.timedelta(days=7)
             end_date = end_dt.strftime("%Y-%m-%d")
             start_date = start_dt.strftime("%Y-%m-%d")
@@ -347,7 +360,7 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
         # IMPORTANT: Use UTC for UNIX timestamps sent to Tessie API.
         # 'now_display' (MST) is only used for date labels in responses.
         now_utc = datetime.datetime.utcnow()
-        now_display = now_utc - datetime.timedelta(hours=7)  # MST, for display only
+        now_display = _utc_to_mt(now_utc)  # Mountain Time (handles MST/MDT)
         if month_param:
             try:
                 year, month = int(month_param.split("-")[0]), int(month_param.split("-")[1])
@@ -413,7 +426,7 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
             
             # Map start time to MST for date grouping (prevents midnight splits)
             start_ts = d.get("started_at", 0)
-            start_dt_mst = (datetime.datetime.utcfromtimestamp(start_ts) - datetime.timedelta(hours=7)) if start_ts else None
+            start_dt_mst = _ts_to_mt(start_ts) if start_ts else None
             date_str = start_dt_mst.strftime("%Y-%m-%d") if start_dt_mst else "Unknown"
             
             # Special Case: If tag was "Uncategorized", treat every drive as unique to avoid blending non-labeled drives
@@ -438,7 +451,7 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
             
             # Calculate MST time for the mission start
             start_ts = first.get("started_at", 0)
-            start_dt_mst = (datetime.datetime.utcfromtimestamp(start_ts) - datetime.timedelta(hours=7)) if start_ts else None
+            start_dt_mst = _ts_to_mt(start_ts) if start_ts else None
             
             # Aggregated Speeds
             max_speed_kph = max((float(d.get("max_speed") or 0) for d in drives), default=0)
@@ -508,8 +521,9 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
             try:
                 drive_start_str = f"{drive['date']}T{drive['time_mst']}:00"
                 drive_dt = datetime.datetime.strptime(drive_start_str, "%Y-%m-%dT%H:%M:%S")
-                # Check UTC: drive_dt is in MST (UTC-7), convert to UTC for SQL comparison
-                drive_dt_utc = drive_dt + datetime.timedelta(hours=7)
+                # drive_dt is Mountain Time (date+time_mst), localize it then convert to UTC for SQL comparison
+                drive_dt_mt = _MT.localize(drive_dt)
+                drive_dt_utc = drive_dt_mt.astimezone(pytz.utc).replace(tzinfo=None)
                 for ride_ts, earnings in earned_rides:
                     if abs((ride_ts - drive_dt_utc).total_seconds()) <= 5400:  # 90 minutes
                         drive["fare_matched"] = True
@@ -569,7 +583,7 @@ def copilot_tessie_charges(req: func.HttpRequest) -> func.HttpResponse:
         sessions = []
         for c in (raw_charges or []):
             start_ts = c.get("started_at") or c.get("start_time") or 0
-            start_dt_mst = (datetime.datetime.utcfromtimestamp(start_ts) - datetime.timedelta(hours=7)) if start_ts else None
+            start_dt_mst = _ts_to_mt(start_ts) if start_ts else None
             sessions.append({
                 "date": start_dt_mst.strftime("%Y-%m-%d") if start_dt_mst else None,
                 "time_mst": start_dt_mst.strftime("%H:%M") if start_dt_mst else None,
@@ -609,7 +623,7 @@ def copilot_tessie_summary(req: func.HttpRequest) -> func.HttpResponse:
             return func.HttpResponse(json.dumps({"error": "Vehicle VIN not configured"}), status_code=500)
 
         month_param = req.params.get("month", "").strip()
-        now = datetime.datetime.utcnow() - datetime.timedelta(hours=7)
+        now = _utc_to_mt(datetime.datetime.utcnow())
         if month_param:
             try:
                 year, month = int(month_param.split("-")[0]), int(month_param.split("-")[1])
