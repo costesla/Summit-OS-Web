@@ -207,7 +207,8 @@ class CloudWatcherService:
                 match = self.uber._find_match(trip_dt, tolerance_hours=2)
                 if match:
                     tessie_drive_id = match["RideID"]
-                    logs.append(f"LINK: {trip_id} matched to {tessie_drive_id} (diff: {abs((match['Timestamp_Start'] - trip_dt).total_seconds())/60:.1f}m)")
+                    trip_dt_naive = trip_dt.replace(tzinfo=None) if trip_dt.tzinfo else trip_dt
+                    logs.append(f"LINK: {trip_id} matched to {tessie_drive_id} (diff: {abs((match['Timestamp_Start'] - trip_dt_naive).total_seconds())/60:.1f}m)")
                     
                     # Update the matched Tessie drive with earnings data (this "labels" it in the UI)
                     try:
