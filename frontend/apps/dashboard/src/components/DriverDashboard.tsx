@@ -758,12 +758,17 @@ const IntelligenceSyncPanel: React.FC<{ selectedDate: string, onRefresh: () => v
     const buildOneDrivePath = (dateStr: string, folderOverride?: string) => {
         // Parse YYYY-MM-DD safely without timezone shifting
         const [y, m, d] = dateStr.split('-').map(Number);
-        const dt = new Date(y, m - 1, d);
-        const year = dt.getFullYear();
-        const month = dt.toLocaleString('default', { month: 'long' });
-        const weekNum = Math.floor((dt.getDate() - 1) / 7) + 1;
+        const year = y;
+        const month = new Date(y, m - 1, d).toLocaleString('default', { month: 'long' });
+
+        // Calendar Mon-Sun week — matches backend _calendar_week_of_month logic
+        const firstOfMonth = new Date(y, m - 1, 1);
+        const daysToFirstMonday = (8 - firstOfMonth.getDay()) % 7;
+        const firstMondayDate = 1 + daysToFirstMonday;
+        const weekNum = d < firstMondayDate ? 1 : Math.floor((d - firstMondayDate) / 7) + 1;
+
         const week = `Week ${weekNum}`;
-        const day = folderOverride ?? String(dt.getDate()).padStart(2, '0');
+        const day = folderOverride ?? String(d).padStart(2, '0');
         return `Uber Driver/${year}/${month}/${week}/${day}`;
     };
 
