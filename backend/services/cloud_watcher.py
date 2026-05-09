@@ -123,8 +123,15 @@ class CloudWatcherService:
         if not files:
             return {"success": True, "trips": [], "logs": [f"INFO: Folder '{explicit_path}' is empty."]}
 
-        image_files = [f for f in files if f.get("name", "").lower().endswith(('.jpg', '.jpeg', '.png', '.heic', '.heif'))]
-        logs.append(f"INFO: Found {len(files)} total files in folder; {len(image_files)} are supported images.")
+        all_images = [f for f in files if f.get("name", "").lower().endswith(('.jpg', '.jpeg', '.png', '.heic', '.heif'))]
+        # Only OCR files that look like Uber Driver screenshots — exclude Starbucks receipts, scan files, etc.
+        _EXCLUDE_KEYWORDS = ('starbucks', 'scan_', 'receipt', 'gas', 'circle k', 'mcdonald')
+        image_files = [
+            f for f in all_images
+            if not any(kw in f.get("name", "").lower() for kw in _EXCLUDE_KEYWORDS)
+        ]
+        skipped = len(all_images) - len(image_files)
+        logs.append(f"INFO: Found {len(all_images)} images; {len(image_files)} are Uber screenshots ({skipped} non-Uber files skipped).")
 
         # 2. OCR each file in parallel — drastically reduces wait time for large day folders
         from concurrent.futures import ThreadPoolExecutor, as_completed
