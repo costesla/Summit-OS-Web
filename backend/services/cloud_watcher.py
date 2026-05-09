@@ -126,29 +126,24 @@ class CloudWatcherService:
         image_files = [f for f in files if f.get("name", "").lower().endswith(('.jpg', '.jpeg', '.png', '.heic', '.heif'))]
         logs.append(f"INFO: Found {len(files)} total files in folder; {len(image_files)} are supported images.")
 
-        # 2. OCR each file and collect raw card data
-        raw_cards = []
-        for file in image_files:
+        # 2. OCR each file in parallel — drastically reduces wait time for large day folders
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        def _ocr_one(file):
             name = file.get("name", "")
             item_id = file.get("id")
-            logs.append(f"OCR: Analyzing '{name}'...")
             try:
                 content = self.graph.get_file_content(item_id)
                 text = self.uber.ocr.analyze_image_bytes(content)
                 if not text:
-                    logs.append(f"SKIP: No OCR text from '{name}'")
-                    continue
-
+                    return None, f"SKIP: No OCR text from '{name}'"
                 card = self.uber._parse_uber_card(text)
                 trip_dt = self.uber._parse_timestamp_from_text(text)
-
-                # Extract additional detail from OCR text
                 pickup, dropoff = self._extract_route(text)
                 duration_min = self._extract_duration(text)
                 distance_mi = self._extract_distance(text)
                 service_type = self._extract_service_type(text)
-
-                raw_cards.append({
+                entry = {
                     "filename": name,
                     "text": text,
                     "card": card,
@@ -158,11 +153,23 @@ class CloudWatcherService:
                     "duration_min": duration_min,
                     "distance_mi": distance_mi,
                     "service_type": service_type or "UberX",
-                })
-                logs.append(f"PARSED: '{name}' — ${card.get('driver_earnings', 0):.2f} @ {str(trip_dt)[:16] if trip_dt else 'no timestamp'}")
+                }
+                msg = f"PARSED: '{name}' — ${card.get('driver_earnings', 0):.2f} @ {str(trip_dt)[:16] if trip_dt else 'no timestamp'}"
+                return entry, msg
             except Exception as e:
-                logs.append(f"ERROR: '{name}' — {e}")
                 log.error(f"Error processing {name}: {e}")
+                return None, f"ERROR: '{name}' — {e}"
+
+        raw_cards = []
+        logs.append(f"INFO: Starting parallel OCR on {len(image_files)} images (8 workers)...")
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            futures = {executor.submit(_ocr_one, f): f for f in image_files}
+            for future in as_completed(futures):
+                entry, msg = future.result()
+                logs.append(msg)
+                if entry:
+                    raw_cards.append(entry)
+
 
         if not raw_cards:
             return {"success": True, "trips": [], "logs": logs + ["INFO: No parseable trip cards found."]}
