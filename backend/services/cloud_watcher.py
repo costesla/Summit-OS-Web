@@ -185,7 +185,7 @@ class CloudWatcherService:
                                     "type": "image_url",
                                     "image_url": {
                                         "url": f"data:image/jpeg;base64,{b64}",
-                                        "detail": "high"
+                                        "detail": "auto"
                                     }
                                 }
                             ]
@@ -207,8 +207,7 @@ class CloudWatcherService:
                     tip_val = float(vdata.get("tip") or 0)
                     rider_pay = float(vdata.get("rider_payment") or 0)
 
-                    # Final driver payout is either the 'you_earned' total at the top,
-                    # or the sum of base 'your_earnings' + 'tip'. We take the max to be safe.
+                    # Final driver payout
                     final_earnings = max(you_earned, round(your_earnings + tip_val, 2))
 
                     card = {
@@ -217,7 +216,6 @@ class CloudWatcherService:
                         "tip": tip_val,
                         "rider_payment": rider_pay,
                     }
-
 
                     # Prefer Azure for timestamp, fallback to GPT
                     trip_dt = self.uber._parse_timestamp_from_text(text_for_stats)
@@ -233,7 +231,8 @@ class CloudWatcherService:
                     log.error(f"Failed processing {name}: {e}")
                     # Final fallback to pure Azure if GPT dies
                     if not text_for_stats:
-                        return None, f"ERROR: '{name}' — both GPT and Azure failed"
+                        return None, f"ERROR: '{name}' — both GPT and Azure failed ({str(e)})"
+                    
                     card_raw = self.uber._parse_uber_card(text_for_stats)
                     card = {
                         "driver_earnings": round((card_raw.get("driver_earnings") or 0) + (card_raw.get("tip") or 0), 2),
@@ -243,6 +242,7 @@ class CloudWatcherService:
                     }
                     trip_dt = self.uber._parse_timestamp_from_text(text_for_stats)
                     pickup, dropoff = self._extract_route(text_for_stats)
+
 
                 if card.get("driver_earnings", 0) == 0:
                     return None, f"SKIP: '{name}' — no earnings found"
@@ -270,8 +270,8 @@ class CloudWatcherService:
 
 
         raw_cards = []
-        logs.append(f"INFO: Starting parallel OCR on {len(image_files)} images (8 workers)...")
-        with ThreadPoolExecutor(max_workers=8) as executor:
+        logs.append(f"INFO: Starting parallel OCR on {len(image_files)} images (4 workers)...")
+        with ThreadPoolExecutor(max_workers=4) as executor:
             futures = {executor.submit(_ocr_one, f): f for f in image_files}
             for future in as_completed(futures):
                 entry, msg = future.result()
