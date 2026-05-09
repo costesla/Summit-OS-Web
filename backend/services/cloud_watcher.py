@@ -201,11 +201,21 @@ class CloudWatcherService:
                     if not vdata.get("is_uber_receipt", True):
                         return None, f"SKIP: '{name}' — GPT-4o says not an Uber receipt"
 
+                    def _to_float(val):
+                        if not val: return 0.0
+                        if isinstance(val, (int, float)): return float(val)
+                        # Remove $, commas, whitespace; keep digits and decimal point
+                        cleaned = re.sub(r"[^\d.]", "", str(val))
+                        try:
+                            return float(cleaned)
+                        except:
+                            return 0.0
+
                     # Robust Earnings Extraction
-                    you_earned = float(vdata.get("you_earned") or 0)
-                    your_earnings = float(vdata.get("your_earnings") or 0)
-                    tip_val = float(vdata.get("tip") or 0)
-                    rider_pay = float(vdata.get("rider_payment") or 0)
+                    you_earned = _to_float(vdata.get("you_earned"))
+                    your_earnings = _to_float(vdata.get("your_earnings"))
+                    tip_val = _to_float(vdata.get("tip"))
+                    rider_pay = _to_float(vdata.get("rider_payment"))
 
                     # Final driver payout
                     final_earnings = max(you_earned, round(your_earnings + tip_val, 2))
