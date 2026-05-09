@@ -201,12 +201,27 @@ class CloudWatcherService:
                     tip_val      = float(vdata.get("tip") or 0)
                     rider_pay    = float(vdata.get("rider_payment") or 0)
 
+                    # Reconcile: GPT sometimes returns base_earnings as driver_total.
+                    # Rule: final earnings = base + tip. If driver_total already = base+tip → use it.
+                    #        If driver_total ≈ base only → add tip manually.
+                    expected_with_tip = round(base_earn + tip_val, 2)
+                    if driver_total > 0 and abs(driver_total - expected_with_tip) < 0.02:
+                        # driver_total already includes tip — correct
+                        final_earnings = driver_total
+                    elif driver_total > 0 and driver_total > base_earn + 0.01:
+                        # driver_total is higher than base — already includes tip
+                        final_earnings = driver_total
+                    else:
+                        # driver_total == base or 0 — tip was not included, add it
+                        final_earnings = round((driver_total or base_earn) + tip_val, 2)
+
                     card = {
-                        "driver_earnings": driver_total or base_earn,
+                        "driver_earnings": final_earnings,
                         "fare": rider_pay,
                         "tip": tip_val,
                         "rider_payment": rider_pay,
                     }
+
 
                     # Parse trip_time from GPT response
                     trip_dt = None
