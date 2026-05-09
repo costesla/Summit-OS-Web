@@ -2,8 +2,25 @@ import logging
 import azure.functions as func
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from services.graph import GraphClient
+
+def calendar_week_of_month(dt: datetime) -> int:
+    """
+    Returns the calendar week number within the month, anchored on Monday.
+    Week 1 = the Mon-Sun span that contains the 1st of the month.
+    Any days before the first Monday are also Week 1.
+    Example: May 2026 (May 1=Fri) → first Monday=May 4
+      May 1-10 = Week 1, May 11-17 = Week 2, etc.
+    """
+    first = dt.replace(day=1)
+    # Days until the first Monday (0 if May 1 is already Monday)
+    days_to_monday = (7 - first.weekday()) % 7
+    first_monday = first + timedelta(days=days_to_monday)
+    if dt.date() < first_monday.date():
+        return 1  # days before the first Monday belong to Week 1
+    return (dt.day - first_monday.day) // 7 + 1
+
 from services.tessie_sync import TessieSyncService
 from services.cloud_watcher import CloudWatcherService
 
@@ -31,8 +48,8 @@ def sync_folders(req: func.HttpRequest) -> func.HttpResponse:
         month = dt.strftime("%B")
         day = dt.strftime("%d")
         
-        # Week calculation: (Day-1)//7 + 1
-        week_num = (dt.day - 1) // 7 + 1
+        # Calendar week: Mon-Sun, Week 1 anchored on first Monday of month
+        week_num = calendar_week_of_month(dt)
         week_folder = f"Week {week_num}"
 
         full_path = f"Uber Driver/{year}/{month}/{week_folder}/{day}"
@@ -223,8 +240,8 @@ def daily_sync(req: func.HttpRequest) -> func.HttpResponse:
         month = now.strftime("%B")
         day = now.strftime("%d")
         
-        # Week calculation: (Day-1)//7 + 1
-        week_num = (now.day - 1) // 7 + 1
+        # Calendar week: Mon-Sun, Week 1 anchored on first Monday of month
+        week_num = calendar_week_of_month(now)
         week_folder = f"Week {week_num}"
         
         # 1. Ensure OneDrive Folders Exist
