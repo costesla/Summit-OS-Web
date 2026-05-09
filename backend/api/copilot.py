@@ -344,26 +344,29 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
         month_param = req.params.get("month", "").strip()   # e.g. "2026-02"
 
         # Determine time range
-        now = datetime.datetime.utcnow() - datetime.timedelta(hours=7)
+        # IMPORTANT: Use UTC for UNIX timestamps sent to Tessie API.
+        # 'now_display' (MST) is only used for date labels in responses.
+        now_utc = datetime.datetime.utcnow()
+        now_display = now_utc - datetime.timedelta(hours=7)  # MST, for display only
         if month_param:
             try:
                 year, month = int(month_param.split("-")[0]), int(month_param.split("-")[1])
-                from_dt = datetime.datetime(year, month, 1)
-                # First day of the NEXT month
+                # Month boundaries at midnight MST = 07:00 UTC
+                from_dt_utc = datetime.datetime(year, month, 1) + datetime.timedelta(hours=7)
                 if month == 12:
-                    to_dt = datetime.datetime(year + 1, 1, 1)
+                    to_dt_utc = datetime.datetime(year + 1, 1, 1) + datetime.timedelta(hours=7)
                 else:
-                    to_dt = datetime.datetime(year, month + 1, 1)
+                    to_dt_utc = datetime.datetime(year, month + 1, 1) + datetime.timedelta(hours=7)
             except Exception:
                 return func.HttpResponse(json.dumps({"error": "Invalid month format. Use YYYY-MM."}), status_code=400)
         else:
             days = int(req.params.get("days", 30))
             if days > 365: days = 365
-            from_dt = now - datetime.timedelta(days=days)
-            to_dt = now
+            from_dt_utc = now_utc - datetime.timedelta(days=days)
+            to_dt_utc = now_utc + datetime.timedelta(hours=1)  # 1h buffer catches drives still in progress
 
-        from_ts = int(from_dt.timestamp())
-        to_ts = int(to_dt.timestamp())
+        from_ts = int(from_dt_utc.timestamp())
+        to_ts = int(to_dt_utc.timestamp())
 
         tessie = TessieClient()
         raw_drives = tessie.get_tagged_drives(vin, from_ts, to_ts)
@@ -541,23 +544,23 @@ def copilot_tessie_charges(req: func.HttpRequest) -> func.HttpResponse:
         if not vin:
             return func.HttpResponse(json.dumps({"error": "Vehicle VIN not configured"}), status_code=500)
 
-        month_param = req.params.get("month", "").strip()
-        now = datetime.datetime.utcnow() - datetime.timedelta(hours=7)
+        # IMPORTANT: Use UTC for UNIX timestamps sent to Tessie API.
+        now_utc = datetime.datetime.utcnow()
         if month_param:
             try:
                 year, month = int(month_param.split("-")[0]), int(month_param.split("-")[1])
-                from_dt = datetime.datetime(year, month, 1)
-                to_dt = datetime.datetime(year + 1, 1, 1) if month == 12 else datetime.datetime(year, month + 1, 1)
+                from_dt_utc = datetime.datetime(year, month, 1) + datetime.timedelta(hours=7)
+                to_dt_utc = (datetime.datetime(year + 1, 1, 1) if month == 12 else datetime.datetime(year, month + 1, 1)) + datetime.timedelta(hours=7)
             except Exception:
                 return func.HttpResponse(json.dumps({"error": "Invalid month format. Use YYYY-MM."}), status_code=400)
         else:
             days = int(req.params.get("days", 30))
             if days > 365: days = 365
-            from_dt = now - datetime.timedelta(days=days)
-            to_dt = now
+            from_dt_utc = now_utc - datetime.timedelta(days=days)
+            to_dt_utc = now_utc + datetime.timedelta(hours=1)
 
-        from_ts = int(from_dt.timestamp())
-        to_ts = int(to_dt.timestamp())
+        from_ts = int(from_dt_utc.timestamp())
+        to_ts = int(to_dt_utc.timestamp())
 
         tessie = TessieClient()
         raw_charges = tessie.get_charges(vin, from_ts, to_ts)
