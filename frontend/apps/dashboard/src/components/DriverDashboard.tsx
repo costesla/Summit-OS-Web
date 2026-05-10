@@ -751,7 +751,12 @@ const UberTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count: n
 };
 
 // ─── Intelligence Sync Panel ─────────────────────────────────────────────────
-const IntelligenceSyncPanel: React.FC<{ selectedDate: string, onRefresh: () => void }> = ({ selectedDate, onRefresh }) => {
+const IntelligenceSyncPanel: React.FC<{ 
+    selectedDate: string, 
+    onRefresh: () => void,
+    hours: number,
+    onHoursChange: (h: number) => void
+}> = ({ selectedDate, onRefresh, hours, onHoursChange }) => {
     const [status, setStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle');
     const [logs, setLogs] = useState<string[]>([]);
 
@@ -951,6 +956,28 @@ const IntelligenceSyncPanel: React.FC<{ selectedDate: string, onRefresh: () => v
                         <span className="text-[9px] font-bold text-cyan-400 uppercase font-mono tracking-tighter">Running</span>
                     </div>
                 )}
+            </div>
+
+            {/* Manual Hours Input */}
+            <div className="mt-4 p-3 rounded-xl bg-black/40 border border-white/5 flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+                    <Clock className="w-4 h-4 text-cyan-400" />
+                </div>
+                <div className="flex-1">
+                    <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">Shift Duration</p>
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="number"
+                            step="0.25"
+                            placeholder="e.g. 6.25"
+                            value={hours || ''}
+                            onChange={(e) => onHoursChange(parseFloat(e.target.value) || 0)}
+                            className="w-20 bg-transparent border-none text-white font-black text-lg focus:outline-none placeholder-gray-800"
+                        />
+                        <span className="text-xs font-mono text-cyan-400/50 font-bold uppercase">h</span>
+                        {hours > 0 && <span className="text-[9px] font-mono text-emerald-500/50 italic ml-auto">// override active</span>}
+                    </div>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 mb-4 mt-4">
@@ -1215,6 +1242,11 @@ const DriverDashboard = () => {
         localStorage.setItem('cos_selected_date', date);
     };
 
+    const [manualHoursMap, setManualHoursMap] = useState<Record<string, number>>(() => {
+        if (typeof window === 'undefined') return {};
+        try { return JSON.parse(localStorage.getItem('cos_manual_hours') ?? '{}'); } catch { return {}; }
+    });
+
     const [privatePayments, setPrivatePayments] = useState<PrivatePayment[]>(() => {
         if (typeof window === 'undefined') return [];
         try { return JSON.parse(localStorage.getItem('cos_private_payments') ?? '[]'); } catch { return []; }
@@ -1241,6 +1273,7 @@ const DriverDashboard = () => {
     // ── Persist ────────────────────────────────────────────────────────────────
     useEffect(() => { localStorage.setItem('cos_private_payments', JSON.stringify(privatePayments)); }, [privatePayments]);
     useEffect(() => { localStorage.setItem('cos_expenses', JSON.stringify(expenses)); }, [expenses]);
+    useEffect(() => { localStorage.setItem('cos_manual_hours', JSON.stringify(manualHoursMap)); }, [manualHoursMap]);
 
     // ── Save daily gross to rolling history ──────────────────────────────────
     useEffect(() => {
@@ -1353,12 +1386,26 @@ const DriverDashboard = () => {
         const totalIncome = uberStats.earnings + privateTotal;
         const profit = totalIncome - totalExpenses;
         const isToday = selectedDate === getTodayMST();
-        const activeHours = isToday
-            ? (Date.now() - sessionStart.getTime()) / 3_600_000
-            : Math.max(6, uberStats.count * 0.4);
+        
+        // Prioritize manual hours override
+        const overrideHours = manualHoursMap[selectedDate];
+        const activeHours = (overrideHours !== undefined && overrideHours > 0)
+            ? overrideHours
+            : (isToday
+                ? (Date.now() - sessionStart.getTime()) / 3_600_000
+                : Math.max(6, uberStats.count * 0.4));
+                
         const hourlyRate = activeHours > 0.5 ? profit / activeHours : 0;
-        return { uberEarnings: uberStats.earnings, uberCount: uberStats.count, privateTotal, food: foodTotal, charging: chargingTotal, totalExpenses, profit, hourlyRate, activeHours };
-    }, [uberStats, privatePayments, expenses, sessionStart, selectedDate]);
+        return { 
+            uberEarnings: uberStats.earnings, 
+            uberCount: uberStats.count, 
+            privateTotal, food: foodTotal, 
+            charging: chargingTotal, 
+            totalExpenses, profit, hourlyRate, 
+            activeHours,
+            isManualHours: overrideHours !== undefined && overrideHours > 0
+        };
+    }, [uberStats, privatePayments, expenses, sessionStart, selectedDate, manualHoursMap]);
 
     const deleteExpense = (cat: keyof Expenses, id: number) =>
         setExpenses((prev) => ({ ...prev, [cat]: prev[cat].filter((e) => e.id !== id) }));
@@ -1540,6 +1587,8 @@ const DriverDashboard = () => {
                             <IntelligenceSyncPanel
                                 selectedDate={selectedDate}
                                 onRefresh={() => fetchFromCloud(selectedDate)}
+                                hours={manualHoursMap[selectedDate] || 0}
+                                onHoursChange={(h) => setManualHoursMap(prev => ({ ...prev, [selectedDate]: h }))}
                             />
                             <PrivatePaymentsPanel
                                 selectedDate={selectedDate}
