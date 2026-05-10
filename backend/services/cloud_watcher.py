@@ -170,14 +170,16 @@ class CloudWatcherService:
                                 {
                                     "type": "text",
                                     "text": (
-                                        "This is a screenshot from the Uber Driver app showing a completed trip receipt. "
-                                        "Extract the financial data and return ONLY a JSON object with these keys:\n"
-                                        "  you_earned: the large dollar amount at the very TOP of the screen (Total Driver Payout)\n"
-                                        "  your_earnings: the dollar amount in the breakdown next to 'Your earnings' (Base Pay before tip)\n"
-                                        "  tip: the dollar amount next to 'Tip' or 'Added tip' (0 if none)\n"
-                                        "  rider_payment: the dollar amount next to 'Rider payment'\n"
-                                        "  trip_time: the date and time exactly as shown (e.g. 'May 8, 2026 · 5:40 AM')\n"
-                                        "  is_uber_receipt: true if this is an Uber Driver trip receipt\n"
+                                        "This is a screenshot from the Uber Driver app. It could be a completed trip receipt OR a daily/weekly summary screen.\n"
+                                        "Extract the data and return ONLY a JSON object with these keys:\n"
+                                        "  is_uber_receipt: true if this is a single trip receipt\n"
+                                        "  is_uber_summary: true if this is a daily/weekly summary screen showing total online time\n"
+                                        "  you_earned: (for receipt) the large dollar amount at the very TOP\n"
+                                        "  your_earnings: (for receipt) the amount next to 'Your earnings'\n"
+                                        "  tip: (for receipt) the amount next to 'Tip' or 'Added tip'\n"
+                                        "  rider_payment: (for receipt) the amount next to 'Rider payment'\n"
+                                        "  trip_time: (for receipt) the date and time (e.g. 'May 8, 2026 · 5:40 AM')\n"
+                                        "  online_time: (for summary) the total 'Online' time exactly as shown (e.g. '6h 15m')\n"
                                         "Return ONLY valid JSON, no markdown."
                                     )
                                 },
@@ -197,6 +199,11 @@ class CloudWatcherService:
                     raw = re.sub(r"^```(?:json)?\s*", "", raw)
                     raw = re.sub(r"\s*```$", "", raw)
                     vdata = _json.loads(raw)
+
+                    if vdata.get("is_uber_summary"):
+                        ot = vdata.get("online_time", "Unknown")
+                        log.info(f"SUMMARY DETECTED: {name} → Online Time: {ot}")
+                        return None, f"SUMMARY: '{name}' — Online Time: {ot}"
 
                     if not vdata.get("is_uber_receipt", True):
                         return None, f"SKIP: '{name}' — GPT-4o says not an Uber receipt"
