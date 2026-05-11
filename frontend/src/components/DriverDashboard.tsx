@@ -787,6 +787,7 @@ const DriverDashboard = () => {
 
     const saveToCloud = async () => {
         try {
+            // 1. Save local state (trips/expenses) to the database
             const res = await fetch(`${AZURE_BASE}/driver/sync`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -796,10 +797,16 @@ const DriverDashboard = () => {
                     expenses: expenses
                 })
             });
+
             if (res.ok) {
                 const now = new Date().toLocaleTimeString();
                 setLastSync(`${now} (${trips.length} trips)`);
                 localStorage.setItem('cos_last_sync', `${now} (${trips.length} trips)`);
+                
+                // 2. Trigger the backend Daily Unified Sync (Folders + Data)
+                await fetch(`${AZURE_BASE}/daily-sync`, {
+                    method: 'POST'
+                });
             }
         } catch (e) {
             console.error("Cloud Save Error:", e);
@@ -995,7 +1002,7 @@ const DriverDashboard = () => {
                         <button onClick={saveToCloud}
                             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20 transition-all text-xs font-bold"
                         >
-                            <Cloud className="w-4 h-4" /> Sync to Cloud
+                            <Cloud className="w-4 h-4" /> Save to Cloud
                         </button>
                         <button onClick={() => setShowResetConfirm(true)}
                             className="p-2 rounded-xl border border-white/10 text-gray-600 hover:text-rose-400 hover:border-rose-500/30 transition-all"
