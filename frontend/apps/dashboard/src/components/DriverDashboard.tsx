@@ -767,15 +767,22 @@ const IntelligenceSyncPanel: React.FC<{
         const year = y;
         const month = new Date(y, m - 1, d).toLocaleString('default', { month: 'long' });
 
-        // Calendar Mon-Sun week — matches backend _calendar_week_of_month logic
+        // Calendar Mon-Sun week — matches backend/reorganize_may.py logic
         const firstOfMonth = new Date(y, m - 1, 1);
         const daysToFirstMonday = (8 - firstOfMonth.getDay()) % 7;
         const firstMondayDate = 1 + daysToFirstMonday;
-        const weekNum = d < firstMondayDate ? 1 : Math.floor((d - firstMondayDate) / 7) + 1;
+        
+        // Correct week calculation to match May 2026 script (Week 1 = 1-3, Week 2 = 4-10 etc)
+        const weekNum = d < firstMondayDate ? 1 : Math.floor((d - firstMondayDate) / 7) + 2;
 
         const week = `Week ${weekNum}`;
-        const day = folderOverride ?? String(d).padStart(2, '0');
-        return `Uber Driver/${year}/${month}/${week}/${day}`;
+        
+        // New standardized folder name: M.DD.YY (e.g. 5.01.26)
+        const shortYear = String(y).slice(-2);
+        const dayPadded = String(d).padStart(2, '0');
+        const folderName = folderOverride ?? `${m}.${dayPadded}.${shortYear}`;
+
+        return `Uber Driver/${year}/${month}/${week}/${folderName}`;
     };
 
     const triggerCloudScan = async (path: string) => {
