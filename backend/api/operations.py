@@ -19,7 +19,8 @@ def calendar_week_of_month(dt: datetime) -> int:
     first_monday = first + timedelta(days=days_to_monday)
     if dt.date() < first_monday.date():
         return 1  # days before the first Monday belong to Week 1
-    return (dt.day - first_monday.day) // 7 + 1
+    # Match reorganize_may.py logic (adding 2 instead of 1)
+    return (dt.day - first_monday.day) // 7 + 2
 
 from services.tessie_sync import TessieSyncService
 from services.cloud_watcher import CloudWatcherService
@@ -52,7 +53,13 @@ def sync_folders(req: func.HttpRequest) -> func.HttpResponse:
         week_num = calendar_week_of_month(dt)
         week_folder = f"Week {week_num}"
 
-        full_path = f"Uber Driver/{year}/{month}/{week_folder}/{day}"
+        # Standardized folder name: M.DD.YY (e.g. 5.01.26)
+        short_year = dt.strftime("%y")
+        month_num = dt.month
+        day_padded = dt.strftime("%d")
+        folder_name = f"{month_num}.{day_padded}.{short_year}"
+
+        full_path = f"Uber Driver/{year}/{month}/{week_folder}/{folder_name}"
         
         if dry_run:
             logs.append(f"[INFO] MODE: Dry Run")
@@ -247,7 +254,13 @@ def daily_sync(req: func.HttpRequest) -> func.HttpResponse:
         # 1. Ensure OneDrive Folders Exist
         try:
             graph = GraphClient()
-            full_path = f"Uber Driver/{year}/{month}/{week_folder}/{day}"
+            # Standardized folder name: M.DD.YY (e.g. 5.01.26)
+            short_year = now.strftime("%y")
+            month_num = now.month
+            day_padded = now.strftime("%d")
+            folder_name = f"{month_num}.{day_padded}.{short_year}"
+            
+            full_path = f"Uber Driver/{year}/{month}/{week_folder}/{folder_name}"
             logs.append(f"[INFO] Ensuring OneDrive path exists: {full_path}")
             
             folder_id = graph.ensure_path_exists(full_path)
