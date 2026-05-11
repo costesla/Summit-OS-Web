@@ -1346,17 +1346,26 @@ const DriverDashboard = () => {
         setIsSyncingCloud(true);
         setSyncMessage(null);
         try {
+            // 1. Save local expenses/data to the database
             const resp = await fetch(`${AZURE_BASE}/driver/sync`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ expenses, trips: [] })
             });
             const data = await resp.json();
+            
             if (data.success) {
                 const now = new Date().toLocaleTimeString();
                 setLastSync(now);
                 localStorage.setItem('cos_last_sync', now);
-                setSyncMessage(`✓ Saved ${(data.results?.expenses_saved ?? 0)} expense(s) at ${now}`);
+                
+                // 2. Trigger the backend Daily Unified Sync (Folders + Operations)
+                // This consolidates all cloud saving into one action as requested
+                await fetch(`${AZURE_BASE}/daily-sync`, {
+                    method: 'POST'
+                });
+
+                setSyncMessage(`✓ Unified Cloud Sync Complete at ${now}`);
             } else {
                 setSyncMessage(`✗ Save failed: ${data.error || 'Unknown error'}`);
             }
@@ -1633,7 +1642,7 @@ const DriverDashboard = () => {
                                     className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20 transition-all disabled:opacity-50"
                                 >
                                     <Cloud className="w-3.5 h-3.5" />
-                                    {isSyncingCloud ? 'Saving...' : 'Save Expenses to Cloud'}
+                                    {isSyncingCloud ? 'Saving...' : 'Save to Cloud'}
                                 </button>
                                 {syncMessage && (
                                     <span className={`text-xs font-mono ${
