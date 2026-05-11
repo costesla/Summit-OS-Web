@@ -765,24 +765,26 @@ const IntelligenceSyncPanel: React.FC<{
         // Parse YYYY-MM-DD safely without timezone shifting
         const [y, m, d] = dateStr.split('-').map(Number);
         const year = y;
-        const month = new Date(y, m - 1, d).toLocaleString('default', { month: 'long' });
+        const monthName = new Date(y, m - 1, d).toLocaleString('default', { month: 'long' });
 
         // Calendar Mon-Sun week — matches backend/reorganize_may.py logic
         const firstOfMonth = new Date(y, m - 1, 1);
         const daysToFirstMonday = (8 - firstOfMonth.getDay()) % 7;
         const firstMondayDate = 1 + daysToFirstMonday;
         
-        // Correct week calculation to match May 2026 script (Week 1 = 1-3, Week 2 = 4-10 etc)
-        const weekNum = d < firstMondayDate ? 1 : Math.floor((d - firstMondayDate) / 7) + 2;
+        // Fully unified week calculation:
+        // If month starts on Monday (firstMondayDate === 1), first week is Week 1.
+        // If month starts later, partial week is Week 1 and first full week is Week 2.
+        const weekNum = d < firstMondayDate ? 1 : Math.floor((d - firstMondayDate) / 7) + (firstMondayDate === 1 ? 1 : 2);
 
         const week = `Week ${weekNum}`;
         
-        // New standardized folder name: M.DD.YY (e.g. 5.01.26)
+        // Standardized folder name: M.DD.YY (e.g. 5.01.26)
         const shortYear = String(y).slice(-2);
         const dayPadded = String(d).padStart(2, '0');
         const folderName = folderOverride ?? `${m}.${dayPadded}.${shortYear}`;
 
-        return `Uber Driver/${year}/${month}/${week}/${folderName}`;
+        return `Uber Driver/${year}/${monthName}/${week}/${folderName}`;
     };
 
     const triggerCloudScan = async (path: string) => {

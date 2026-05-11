@@ -14,13 +14,17 @@ def calendar_week_of_month(dt: datetime) -> int:
       May 1-10 = Week 1, May 11-17 = Week 2, etc.
     """
     first = dt.replace(day=1)
-    # Days until the first Monday (0 if May 1 is already Monday)
+    # Days until the first Monday (0 if Monday)
     days_to_monday = (7 - first.weekday()) % 7
     first_monday = first + timedelta(days=days_to_monday)
+    
     if dt.date() < first_monday.date():
-        return 1  # days before the first Monday belong to Week 1
-    # Match reorganize_may.py logic (adding 2 instead of 1)
-    return (dt.day - first_monday.day) // 7 + 2
+        return 1  # partial week before the first Monday
+        
+    # If the month starts on a Monday, the first week is Week 1.
+    # Otherwise, the first full week (starting on Monday) is Week 2.
+    offset = 1 if first_monday.day == 1 else 2
+    return (dt.day - first_monday.day) // 7 + offset
 
 from services.tessie_sync import TessieSyncService
 from services.cloud_watcher import CloudWatcherService
