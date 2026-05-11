@@ -13,7 +13,8 @@ def _calendar_week_of_month(dt: datetime.datetime) -> int:
     first_monday = first + datetime.timedelta(days=days_to_monday)
     if dt.date() < first_monday.date():
         return 1
-    return (dt.day - first_monday.day) // 7 + 1
+    # Match reorganize_may.py logic (adding 2 instead of 1)
+    return (dt.day - first_monday.day) // 7 + 2
 
 from services.graph import GraphClient
 from services.uber_matcher import UberMatcherService
@@ -53,8 +54,14 @@ class CloudWatcherService:
                     month = dt.strftime("%B")
                     week_num = _calendar_week_of_month(dt)
                     week = f"Week {week_num}"
-                    day = dt.strftime("%d")
-                    target_folder = f"{self.target_root}/{year}/{month}/{week}/{day}"
+                    
+                    # Standardized folder name: M.DD.YY (e.g. 5.01.26)
+                    short_year = dt.strftime("%y")
+                    month_num = dt.month
+                    day_padded = dt.strftime("%d")
+                    folder_name = f"{month_num}.{day_padded}.{short_year}"
+                    
+                    target_folder = f"{self.target_root}/{year}/{month}/{week}/{folder_name}"
                     if target_folder not in scan_paths:
                         scan_paths.append(target_folder)
                 except Exception as e:
@@ -107,8 +114,14 @@ class CloudWatcherService:
                 month = dt.strftime("%B")
                 week_num = _calendar_week_of_month(dt)
                 week = f"Week {week_num}"
-                day = dt.strftime("%d")
-                explicit_path = f"{self.target_root}/{year}/{month}/{week}/{day}"
+                
+                # Standardized folder name: M.DD.YY (e.g. 5.01.26)
+                short_year = dt.strftime("%y")
+                month_num = dt.month
+                day_padded = dt.strftime("%d")
+                folder_name = f"{month_num}.{day_padded}.{short_year}"
+                
+                explicit_path = f"{self.target_root}/{year}/{month}/{week}/{folder_name}"
             except Exception as e:
                 return {"success": False, "error": f"Invalid date format: {e}", "trips": []}
 
@@ -576,9 +589,14 @@ class CloudWatcherService:
                         month = now.strftime("%B")
                         week_num = _calendar_week_of_month(now)
                         week = f"Week {week_num}"
-                        day = now.strftime("%d")
+                        
+                        # Standardized folder name: M.DD.YY (e.g. 5.01.26)
+                        short_year = now.strftime("%y")
+                        month_num = now.month
+                        day_padded = now.strftime("%d")
+                        folder_name = f"{month_num}.{day_padded}.{short_year}"
 
-                        target_dir = f"{self.target_root}/{year}/{month}/{week}/{day}"
+                        target_dir = f"{self.target_root}/{year}/{month}/{week}/{folder_name}"
                         results["logs"].append(f"MOVE: Routing '{name}' to {target_dir}...")
                         target_id = self.graph.ensure_path_exists(target_dir)
                         self.graph.move_file(item_id, target_id)
