@@ -99,7 +99,7 @@ def send_invoice(req: func.HttpRequest) -> func.HttpResponse:
     if distance_miles == 0 or energy_kwh == 0:
         try:
             from services.tessie import TessieClient
-            vin = os.environ.get("TESLA_VIN", "")
+            vin = os.environ.get("TESSIE_VIN") or os.environ.get("TESLA_VIN", "")
             if vin:
                 tessie = TessieClient()
                 import time

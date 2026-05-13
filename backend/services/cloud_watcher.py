@@ -345,29 +345,15 @@ class CloudWatcherService:
             # --- Proximity Matching to Tessie ---
             tessie_drive_id = None
             if trip_dt:
-                match = self.uber._find_match(trip_dt, tolerance_hours=2)
+                match = self.uber._find_match(trip_dt, tolerance_hours=4)
                 if match:
                     tessie_drive_id = match["RideID"]
                     trip_dt_naive = trip_dt.replace(tzinfo=None) if trip_dt.tzinfo else trip_dt
                     logs.append(f"LINK: {trip_id} matched to {tessie_drive_id} (diff: {abs((match['Timestamp_Start'] - trip_dt_naive).total_seconds())/60:.1f}m)")
                     
-                    # Update the matched Tessie drive with earnings data (this "labels" it in the UI)
+                    # --- NEW: Auto-tag the preceding 'Pickup' drive ---
+                    # Look for a drive that ended within 60 mins before this one started
                     try:
-                        cursor.execute("""
-                            UPDATE Rides.Rides
-                            SET Fare = ?, Tip = ?, Driver_Earnings = ?, Platform_Cut = ?,
-                                Classification = 'Uber_Matched', LastUpdated = GETUTCDATE()
-                            WHERE RideID = ?
-                        """, (
-                            card.get("rider_payment") or 0,
-                            card.get("tip") or 0,
-                            card.get("driver_earnings") or 0,
-                            uber_cut,
-                            tessie_drive_id
-                        ))
-
-                        # --- NEW: Auto-tag the preceding 'Pickup' drive ---
-                        # Look for a drive that ended within 30 mins before this one started
                         cursor.execute("""
                             SELECT TOP 1 RideID 
                             FROM Rides.Rides 
@@ -385,9 +371,8 @@ class CloudWatcherService:
                                 WHERE RideID = ?
                             """, (pickup_id,))
                             logs.append(f"AUTO-TAG: {pickup_id} labeled as Uber_Pickup")
-
-                    except Exception as ue:
-                        logs.append(f"WARN: Failed to update Tessie drive {tessie_drive_id}: {ue}")
+                    except Exception as pickup_err:
+                        logs.append(f"WARN: Failed to auto-tag pickup: {pickup_err}")
 
             sidecar = {
                 "source": "scan_and_number",
