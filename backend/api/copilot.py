@@ -639,6 +639,29 @@ def copilot_tessie_charges(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500)
 
 
+def _get_elevations_ft(lat_lons: list) -> list:
+    """
+    Batch-fetches elevations (in feet) for a list of (lat, lon) tuples
+    using the Google Elevation API. Returns a list of floats (or None on failure).
+    Costs 1 API call per invocation regardless of point count (up to 512 points).
+    """
+    api_key = os.environ.get("GOOGLE_MAPS_API_KEY")
+    if not api_key or not lat_lons:
+        return [None] * len(lat_lons)
+    try:
+        import requests as _requests
+        locations = "|".join(f"{lat},{lon}" for lat, lon in lat_lons)
+        url = f"https://maps.googleapis.com/maps/api/elevation/json?locations={locations}&key={api_key}"
+        resp = _requests.get(url, timeout=5)
+        if resp.status_code == 200:
+            results = resp.json().get("results", [])
+            # Google returns meters — convert to feet
+            return [round(r["elevation"] * 3.28084, 0) if r.get("elevation") is not None else None for r in results]
+    except Exception as e:
+        logging.warning(f"Elevation API failed: {e}")
+    return [None] * len(lat_lons)
+
+
 @bp.route(route="copilot/tessie/day-summary", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def copilot_tessie_day_summary(req: func.HttpRequest) -> func.HttpResponse:
     """
@@ -728,26 +751,57 @@ def copilot_tessie_day_summary(req: func.HttpRequest) -> func.HttpResponse:
                 "battery_drain_pct": (b_start - b_end) if (b_start and b_end) else None,
                 "start_location":    d.get("starting_location"),
                 "end_location":      d.get("ending_location"),
+                # lat/lon stored for elevation batch lookup below
+                "_start_lat":        d.get("starting_latitude"),
+                "_start_lon":        d.get("starting_longitude"),
+                "_end_lat":          d.get("ending_latitude"),
+                "_end_lon":          d.get("ending_longitude"),
             })
 
         total_energy_charged = sum(float(c.get("energy_added") or 0) for c in raw_charges)
         battery_drain_total  = (battery_start - battery_end) if (battery_start is not None and battery_end is not None) else None
         efficiency           = round((total_energy_kwh * 1000) / total_miles, 1) if total_miles > 0 else None
 
+        # ── Elevation Lookup (Google Elevation API) ──────────────────────────
+        # Build batch: 2 points per drive (start + end) — cheap single API call
+        elev_points = []
+        for drv in drive_breakdown:
+            s_lat, s_lon = drv.pop("_start_lat", None), drv.pop("_start_lon", None)
+            e_lat, e_lon = drv.pop("_end_lat",   None), drv.pop("_end_lon",   None)
+            elev_points.append((s_lat, s_lon) if (s_lat and s_lon) else None)
+            elev_points.append((e_lat, e_lon) if (e_lat and e_lon) else None)
+
+        valid_points  = [(p if p else (0, 0)) for p in elev_points]
+        elev_results  = _get_elevations_ft(valid_points) if any(elev_points) else [None] * len(elev_points)
+
+        all_elevations = []
+        for i, drv in enumerate(drive_breakdown):
+            s_elev = elev_results[i * 2]     if elev_points[i * 2]     else None
+            e_elev = elev_results[i * 2 + 1] if elev_points[i * 2 + 1] else None
+            drv["start_elevation_ft"] = s_elev
+            drv["end_elevation_ft"]   = e_elev
+            if s_elev: all_elevations.append(s_elev)
+            if e_elev: all_elevations.append(e_elev)
+
+        max_elevation_ft = max(all_elevations) if all_elevations else None
+        min_elevation_ft = min(all_elevations) if all_elevations else None
+
         return copilot_response({
-            "date":                  date_param,
-            "drive_count":           drive_count,
-            "total_miles":           round(total_miles, 2),
-            "total_energy_used_kwh": round(total_energy_kwh, 2),
+            "date":                     date_param,
+            "drive_count":              drive_count,
+            "total_miles":              round(total_miles, 2),
+            "total_energy_used_kwh":    round(total_energy_kwh, 2),
             "total_energy_charged_kwh": round(total_energy_charged, 2),
-            "total_autopilot_miles": round(total_autopilot_miles, 2),
-            "autopilot_pct":         round((total_autopilot_miles / total_miles) * 100, 1) if total_miles > 0 else None,
-            "max_speed_mph":         round(max_speed_mph, 1),
-            "efficiency_wh_mi":      efficiency,
-            "battery_start_pct":     battery_start,
-            "battery_end_pct":       battery_end,
-            "battery_drain_pct":     battery_drain_total,
-            "drives":                drive_breakdown,
+            "total_autopilot_miles":    round(total_autopilot_miles, 2),
+            "autopilot_pct":            round((total_autopilot_miles / total_miles) * 100, 1) if total_miles > 0 else None,
+            "max_speed_mph":            round(max_speed_mph, 1),
+            "efficiency_wh_mi":         efficiency,
+            "battery_start_pct":        battery_start,
+            "battery_end_pct":          battery_end,
+            "battery_drain_pct":        battery_drain_total,
+            "max_elevation_ft":         max_elevation_ft,
+            "min_elevation_ft":         min_elevation_ft,
+            "drives":                   drive_breakdown,
         })
 
     except Exception as e:
