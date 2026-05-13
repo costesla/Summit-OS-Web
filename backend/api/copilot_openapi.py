@@ -16,7 +16,7 @@ def copilot_openapi(req: func.HttpRequest) -> func.HttpResponse:
         "openapi": "3.0.0",
         "info": {
             "title": "Summit Intelligence API",
-            "description": "API for accessing rideshare trip data, earnings metrics, and vehicle status. CRITICAL INSTRUCTION FOR AGENT: All vehicle and trip operations run in Mountain Time (UTC-7). When a user asks about 'today', you MUST calculate today's date by subtracting 7 hours from your current UTC time before passing it to any API parameters.",
+            "description": "API for accessing rideshare trip data, earnings metrics, and vehicle status. CRITICAL INSTRUCTION FOR AGENT: All vehicle and trip operations run in Mountain Time (MDT, UTC-6 in summer). When a user asks about 'today', calculate today's MDT date by subtracting 6 hours from UTC. For ANY question about miles driven, battery, speed, elevation, or driving stats for a specific day — ALWAYS call getDailyDriveSummary first. Do NOT use agenticVectorQuery for driving telemetry questions.",
             "version": "1.0.0"
         },
         "servers": [
@@ -479,7 +479,7 @@ def copilot_openapi(req: func.HttpRequest) -> func.HttpResponse:
                 "get": {
                     "operationId": "getDailyDriveSummary",
                     "summary": "Get a complete driving summary for a single day",
-                    "description": "Returns total miles driven, battery drain, max speed, energy used, autopilot miles, efficiency, and a per-drive breakdown for a specific date. Use this for questions like 'How many miles did I drive today?', 'What was my battery drain today?', 'What was my highest speed today?', 'How efficient was I today?'. Defaults to today in Mountain Time if no date is provided.",
+                    "description": "PRIMARY tool for ANY question about a specific day's driving. Returns total miles driven, battery drain, max speed, highest elevation, lowest elevation, energy used, autopilot miles, efficiency, and a per-drive breakdown. Use this for: 'How many miles did I drive today?', 'What was my battery drain today?', 'What was my highest elevation?', 'What was my highest speed?', 'How efficient was I?', 'How much autopilot did I use?', 'What was my elevation today?'. Elevation is calculated from GPS coordinates via Google Elevation API. Defaults to today in Mountain Time (MDT, UTC-6) if no date provided.",
                     "parameters": [
                         {
                             "name": "date",
