@@ -256,10 +256,34 @@ def copilot_vehicle_status(req: func.HttpRequest) -> func.HttpResponse:
         vin = secrets.get_secret("TESSIE_VIN")
         if not vin:
             return func.HttpResponse(json.dumps({"error": "VIN not configured in Key Vault"}), status_code=500)
-        state = tessie.get_public_state(vin)
-        if not state:
-            return func.HttpResponse(json.dumps({"error": "Vehicle unreachable"}), status_code=404)
-        return copilot_response({"vehicle": state})
+
+        # Always fetch the full raw vehicle state so we can return battery/charge
+        # regardless of location privacy. Only GPS coords are suppressed near home.
+        raw_state = tessie.get_vehicle_state(vin)
+        if not raw_state:
+            return func.HttpResponse(json.dumps({"error": "Vehicle unreachable or asleep"}), status_code=404)
+
+        charge_state = raw_state.get("charge_state", {})
+        climate_state = raw_state.get("climate_state", {})
+        drive_state = raw_state.get("drive_state", {})
+
+        # Apply geofence only to location — never to battery/charge data
+        public_location = tessie.get_public_state(vin)
+        location_hidden = public_location and public_location.get("privacy", False)
+
+        vehicle = {
+            "battery_level": charge_state.get("battery_level"),
+            "battery_range_mi": charge_state.get("battery_range"),
+            "charging_state": charge_state.get("charging_state"),
+            "charge_limit_pct": charge_state.get("charge_limit_soc"),
+            "inside_temp_f": round(climate_state.get("inside_temp", 0) * 9/5 + 32, 1) if climate_state.get("inside_temp") else None,
+            "outside_temp_f": round(climate_state.get("outside_temp", 0) * 9/5 + 32, 1) if climate_state.get("outside_temp") else None,
+            "is_climate_on": climate_state.get("is_climate_on"),
+            "speed_mph": drive_state.get("speed"),
+            "location": "Location hidden (privacy geofence active)" if location_hidden else public_location,
+            "privacy_active": location_hidden,
+        }
+        return copilot_response({"vehicle": vehicle})
     except Exception as e:
         logging.error(f"Copilot API Error: {e}")
         return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500)
