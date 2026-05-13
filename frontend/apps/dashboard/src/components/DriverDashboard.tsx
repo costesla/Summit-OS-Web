@@ -12,7 +12,7 @@ import {
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 const AZURE_BASE = 'https://summitos-api.azurewebsites.net/api';
-const VERSION = "1.4.1";
+const VERSION = "1.4.5";
 
 const TAG_FILTERS = ['Uber', 'Uber_Matched', 'Uber_Pickup', 'Jackie', 'Esmeralda', 'Uncategorized'] as const;
 
@@ -771,12 +771,11 @@ const IntelligenceSyncPanel: React.FC<{
         const firstOfMonth = new Date(y, m - 1, 1);
         const daysToFirstMonday = (8 - firstOfMonth.getDay()) % 7;
         const firstMondayDate = 1 + daysToFirstMonday;
-        
         // Fully unified week calculation:
         // If month starts on Monday (firstMondayDate === 1), first week is Week 1.
         // If month starts later, partial week is Week 1 and first full week is Week 2.
         const weekNum = d < firstMondayDate ? 1 : Math.floor((d - firstMondayDate) / 7) + (firstMondayDate === 1 ? 1 : 2);
-
+        
         const week = `Week ${weekNum}`;
         
         // Standardized folder name: M.DD.YY (e.g. 5.01.26)
@@ -1371,7 +1370,9 @@ const DriverDashboard = () => {
                 // 2. Trigger the backend Daily Unified Sync (Folders + Operations)
                 // This consolidates all cloud saving into one action as requested
                 await fetch(`${AZURE_BASE}/daily-sync`, {
-                    method: 'POST'
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ date: selectedDate })
                 });
 
                 setSyncMessage(`✓ Unified Cloud Sync Complete at ${now}`);
@@ -1648,10 +1649,10 @@ const DriverDashboard = () => {
                                 <button
                                     onClick={syncToCloud}
                                     disabled={isSyncingCloud}
-                                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20 transition-all disabled:opacity-50"
+                                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/30 hover:scale-[1.02] transition-all disabled:opacity-50 shadow-[0_0_20px_rgba(34,211,238,0.1)]"
                                 >
-                                    <Cloud className="w-3.5 h-3.5" />
-                                    {isSyncingCloud ? 'Saving...' : 'Save to Cloud'}
+                                    <Cloud className="w-4 h-4" />
+                                    {isSyncingCloud ? 'Saving Day...' : 'Save Day to Cloud'}
                                 </button>
                                 {syncMessage && (
                                     <span className={`text-xs font-mono ${

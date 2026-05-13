@@ -519,13 +519,13 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
             if not drive.get("date") or not drive.get("time_mst"):
                 continue
             try:
-                drive_start_str = f"{drive['date']}T{drive['time_mst']}:00"
-                drive_dt = datetime.datetime.strptime(drive_start_str, "%Y-%m-%dT%H:%M:%S")
-                # drive_dt is Mountain Time (date+time_mst), localize it then convert to UTC for SQL comparison
-                drive_dt_mt = _MT.localize(drive_dt)
-                drive_dt_utc = drive_dt_mt.astimezone(pytz.utc).replace(tzinfo=None)
+                # drive_dt is Mountain Time (date+time_mst)
+                # Compare as naive MST to match the naive MST stored in SQL
+                drive_dt = datetime.datetime.strptime(f"{drive['date']}T{drive['time_mst']}:00", "%Y-%m-%dT%H:%M:%S")
+                
                 for ride_ts, earnings in earned_rides:
-                    if abs((ride_ts - drive_dt_utc).total_seconds()) <= 5400:  # 90 minutes
+                    # Both are naive MST datetimes
+                    if abs((ride_ts - drive_dt).total_seconds()) <= 14400:  # 4 hours (consistent with backend)
                         drive["fare_matched"] = True
                         drive["driver_earnings"] = earnings
                         break

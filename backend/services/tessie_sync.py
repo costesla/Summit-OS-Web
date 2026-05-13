@@ -79,15 +79,13 @@ class TessieSyncService:
                     "Sidecar_Artifact_JSON": json.dumps(drive)
                 }
                 
-                # Only save to DB if it's tagged with a recognized business label (avoids "ghost" data)
+                # Classification logic (moved from tag check)
                 tag = (drive.get('tag') or '').lower()
-                is_valid_tag = any(label in tag for label in ['uber', 'jackie', 'esmeralda'])
                 
-                if is_valid_tag:
-                    self.db.save_trip(drive_data)
-                    results["drives_saved"] += 1
-                else:
-                    log.info(f"Skipping drive {drive.get('id')} with tag '{drive.get('tag')}' - not a recognized business trip.")
+                # Save all drives to DB (filtered out on dashboard if not business, but useful for matching/mileage)
+                # This ensures "Untagged" drives are available for the Uber Matcher to claim them.
+                self.db.save_trip(drive_data)
+                results["drives_saved"] += 1
                 
                 # Fetch & Analyze Telemetry
                 drive_id = drive.get('id')

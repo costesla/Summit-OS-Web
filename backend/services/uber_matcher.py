@@ -173,6 +173,7 @@ class UberMatcherService:
             year = datetime.datetime.now(self.mdt).year
             for fmt in ["%b %d %I:%M %p", "%B %d %I:%M %p"]:
                 try:
+                    # Parse and convert to aware MST
                     dt = datetime.datetime.strptime(f"{date_str} {year} {time_str}", fmt.replace("%b %d", "%b %d %Y").replace("%B %d", "%B %d %Y"))
                     return dt.replace(tzinfo=self.mdt)
                 except:
@@ -185,23 +186,30 @@ class UberMatcherService:
         conn = self.db.get_connection()
         cursor = conn.cursor()
         
-        # Search for Uber-labeled drives around that time (+/- 4 hours)
-        # Only looking for ones that don't have a fare yet (to avoid double-matching)
+        # CRITICAL: Strip timezone to match naive SQL DATETIME column and prevent 6-hour shift
+        if card_dt.tzinfo:
+            card_dt = card_dt.astimezone(self.mdt).replace(tzinfo=None)
+            
+        start_bound = card_dt - datetime.timedelta(hours=tolerance_hours)
+        end_bound = card_dt + datetime.timedelta(hours=tolerance_hours)
+        
+        log.info(f"Searching for ride match between {start_bound} and {end_bound} (Card time: {card_dt})")
+
+        # Search for Uber-labeled drives around that time
+        # Relaxed classification to include 'Untagged' drives that might belong to the trip
         cursor.execute("""
             SELECT RideID, Timestamp_Start, Classification
             FROM Rides.Rides
-            WHERE (Classification LIKE '%Uber%' OR Classification = 'Manual_Entry')
-              AND (Classification LIKE '%DropOff%' OR Classification LIKE '%Dropoff%' OR Classification = 'Manual_Entry')
-              AND (Fare IS NULL OR Fare = 0)
+            WHERE (Classification IN ('Uber_Dropoff', 'Untagged', 'Uber_Matched'))
               AND Timestamp_Start BETWEEN ? AND ?
-            ORDER BY ABS(DATEDIFF(SECOND, Timestamp_Start, ?)) ASC
-        """, (
-            card_dt - datetime.timedelta(hours=tolerance_hours),
-            card_dt + datetime.timedelta(hours=tolerance_hours),
-            card_dt
-        ))
+            ORDER BY 
+                CASE WHEN Classification IN ('Uber_Dropoff', 'Untagged') THEN 0 ELSE 1 END,
+                ABS(DATEDIFF(SECOND, Timestamp_Start, ?)) ASC
+        """, (start_bound, end_bound, card_dt))
+        
         row = cursor.fetchone()
         if row:
+            # SQL returns naive datetime, ensure we treat it as MST if comparing elsewhere
             return {"RideID": row[0], "Timestamp_Start": row[1]}
         return None
 
