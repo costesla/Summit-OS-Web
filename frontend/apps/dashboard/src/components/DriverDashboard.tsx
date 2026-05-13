@@ -335,63 +335,68 @@ const tagStyle = (tag: string | null) => {
 // ─── Tessie Drives Panel ─────────────────────────────────────────────────────
 const TessieDrivesPanel = ({
     onImport,
-    selectedDate
+    selectedDate,
+    refreshKey
 }: {
     onImport: (drive: TessieDrive) => void;
     selectedDate: string;
+    refreshKey?: number;
 }) => {
     const [drives, setDrives] = useState<TessieDrive[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
     const [importedIds, setImportedIds] = useState<Set<string>>(new Set());
 
-    useEffect(() => {
+    const fetchAll = useCallback(async () => {
         setLoading(true);
         setError(false);
-        const fetchAll = async () => {
-            try {
-                const today = new Date();
-                const target = new Date(selectedDate + 'T12:00:00');
-                const diffMs = today.getTime() - target.getTime();
-                const daysBack = Math.max(1, Math.ceil(diffMs / 86_400_000) + 1);
-                const results = await Promise.all(
-                    TAG_FILTERS.map((tag) =>
-                        fetch(`${AZURE_BASE}/copilot/tessie/drives?tag=${tag}&days=${daysBack}&t=${Date.now()}`, {
-                            signal: AbortSignal.timeout(12_000),
-                            cache: 'no-store'
-                        })
-                            .then((r) => (r.ok ? r.json() : { drives: [] }))
-                            .then((d) => (d.drives ?? []) as TessieDrive[])
-                            .catch(() => [] as TessieDrive[])
-                    )
-                );
+        try {
+            const today = new Date();
+            const target = new Date(selectedDate + 'T12:00:00');
+            const diffMs = today.getTime() - target.getTime();
+            // +2 buffer: one for MDT edge-cases, one to cover any Tessie processing lag
+            const daysBack = Math.max(1, Math.ceil(diffMs / 86_400_000) + 2);
+            const results = await Promise.all(
+                TAG_FILTERS.map((tag) =>
+                    fetch(`${AZURE_BASE}/copilot/tessie/drives?tag=${tag}&days=${daysBack}&t=${Date.now()}`, {
+                        signal: AbortSignal.timeout(12_000),
+                        cache: 'no-store'
+                    })
+                        .then((r) => (r.ok ? r.json() : { drives: [] }))
+                        .then((d) => (d.drives ?? []) as TessieDrive[])
+                        .catch(() => [] as TessieDrive[])
+                )
+            );
 
-                // Merge & deduplicate by tessie_drive_id
-                const seen = new Set<string>();
-                const merged: TessieDrive[] = [];
-                for (const batch of results) {
-                    for (const d of batch) {
-                        if (!seen.has(d.tessie_drive_id)) {
-                            seen.add(d.tessie_drive_id);
-                            merged.push(d);
-                        }
+            // Merge & deduplicate by tessie_drive_id (coerce to string — Tessie API may return int)
+            const seen = new Set<string>();
+            const merged: TessieDrive[] = [];
+            for (const batch of results) {
+                for (const d of batch) {
+                    const key = String(d.tessie_drive_id);
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        merged.push({ ...d, tessie_drive_id: key });
                     }
                 }
-                // Filter to selected date, sort newest-first
-                const filtered = merged
-                    .filter((d) => d.date === selectedDate)
-                    .sort((a, b) => (b.time_mst ?? '00:00').localeCompare(a.time_mst ?? '00:00'));
-
-                setDrives(filtered);
-                setError(false);
-            } catch {
-                setError(true);
-            } finally {
-                setLoading(false);
             }
-        };
-        fetchAll();
+            // Filter to selected date, sort newest-first
+            const filtered = merged
+                .filter((d) => d.date === selectedDate)
+                .sort((a, b) => (b.time_mst ?? '00:00').localeCompare(a.time_mst ?? '00:00'));
+
+            setDrives(filtered);
+            setError(false);
+        } catch {
+            setError(true);
+        } finally {
+            setLoading(false);
+        }
     }, [selectedDate]);
+
+    useEffect(() => {
+        fetchAll();
+    }, [fetchAll, refreshKey]);
 
     const handleImport = (drive: TessieDrive) => {
         onImport(drive);
@@ -417,6 +422,15 @@ const TessieDrivesPanel = ({
                             {t}
                         </span>
                     ))}
+                    <button
+                        onClick={() => fetchAll()}
+                        disabled={loading}
+                        title="Refresh drives from Tessie"
+                        className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border border-white/10 text-gray-400 hover:text-cyan-400 hover:border-cyan-500/30 transition-all disabled:opacity-40"
+                    >
+                        <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+                        Refresh
+                    </button>
                 </div>
             </div>
 
@@ -848,6 +862,8 @@ const IntelligenceSyncPanel: React.FC<{
             if (data.success) {
                 setStatus('success');
                 setLogs(prev => [...prev, ...(data.logs || []), `> [SUCCESS] Daily Sync Complete.`]);
+                // Refresh the drives & trips panels so newly synced data appears immediately
+                onRefresh();
             } else {
                 setStatus('error');
                 setLogs(prev => [...prev, ...(data.logs || []), `> [ERROR] ${data.error}`]);
@@ -1277,6 +1293,8 @@ const DriverDashboard = () => {
     });
     const [showResetConfirm, setShowResetConfirm] = useState(false);
     const expenseFormRef = useRef<HTMLDivElement>(null);
+    // Bumped by IntelligenceSyncPanel callbacks to force TessieDrivesPanel to re-fetch
+    const [drivesRefreshKey, setDrivesRefreshKey] = useState(0);
 
     // ── Persist ────────────────────────────────────────────────────────────────
     useEffect(() => { localStorage.setItem('cos_private_payments', JSON.stringify(privatePayments)); }, [privatePayments]);
@@ -1605,7 +1623,10 @@ const DriverDashboard = () => {
                         <div className="space-y-5">
                             <IntelligenceSyncPanel
                                 selectedDate={selectedDate}
-                                onRefresh={() => fetchFromCloud(selectedDate)}
+                                onRefresh={() => {
+                                    fetchFromCloud(selectedDate);
+                                    setDrivesRefreshKey(k => k + 1);
+                                }}
                                 hours={manualHoursMap[selectedDate] || 0}
                                 onHoursChange={(h) => setManualHoursMap(prev => ({ ...prev, [selectedDate]: h }))}
                             />
@@ -1673,7 +1694,7 @@ const DriverDashboard = () => {
                 />
 
                 {/* ── Tessie Drives Panel (full width) ── */}
-                <TessieDrivesPanel onImport={() => {}} selectedDate={selectedDate} />
+                <TessieDrivesPanel onImport={() => {}} selectedDate={selectedDate} refreshKey={drivesRefreshKey} />
 
 
                 {/* Footer */}
