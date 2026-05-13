@@ -114,8 +114,8 @@ def copilot_openapi(req: func.HttpRequest) -> func.HttpResponse:
             "/copilot/metrics/daily": {
                 "get": {
                     "operationId": "getDailyMetrics",
-                    "summary": "Get daily earnings metrics",
-                    "description": "Retrieve aggregated metrics by day for a date range",
+                    "summary": "Get daily Uber earnings and revenue metrics",
+                    "description": "FINANCIAL DATA ONLY. Returns Uber earnings, trip count, and revenue per day from the SQL database. Do NOT use this for miles driven, speed, battery, elevation, or vehicle telemetry — use getDailyDriveSummary for those. Use this only when the user asks about earnings, revenue, money, or Uber trip counts.",
                     "parameters": [
                         {
                             "name": "start_date",
@@ -159,8 +159,8 @@ def copilot_openapi(req: func.HttpRequest) -> func.HttpResponse:
             "/copilot/metrics/summary": {
                 "get": {
                     "operationId": "getMetricsSummary",
-                    "summary": "Get summary metrics",
-                    "description": "Get aggregated summary for a time period",
+                    "summary": "Get summary earnings metrics for a period",
+                    "description": "FINANCIAL DATA ONLY. Returns aggregated Uber earnings and revenue summary for a time period from the SQL database. Do NOT use this for miles, speed, battery, elevation, or vehicle telemetry — use getDailyDriveSummary or getTessieSummary for those.",
                     "parameters": [
                         {
                             "name": "days",
