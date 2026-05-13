@@ -475,6 +475,49 @@ def copilot_openapi(req: func.HttpRequest) -> func.HttpResponse:
                     }
                 }
             },
+            "/copilot/tessie/day-summary": {
+                "get": {
+                    "operationId": "getDailyDriveSummary",
+                    "summary": "Get a complete driving summary for a single day",
+                    "description": "Returns total miles driven, battery drain, max speed, energy used, autopilot miles, efficiency, and a per-drive breakdown for a specific date. Use this for questions like 'How many miles did I drive today?', 'What was my battery drain today?', 'What was my highest speed today?', 'How efficient was I today?'. Defaults to today in Mountain Time if no date is provided.",
+                    "parameters": [
+                        {
+                            "name": "date",
+                            "in": "query",
+                            "description": "Date to summarize (YYYY-MM-DD). Defaults to today in Mountain Time.",
+                            "required": False,
+                            "schema": {"type": "string", "format": "date"}
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "Daily drive summary",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "date": {"type": "string"},
+                                            "drive_count": {"type": "integer"},
+                                            "total_miles": {"type": "number"},
+                                            "total_energy_used_kwh": {"type": "number"},
+                                            "total_energy_charged_kwh": {"type": "number"},
+                                            "total_autopilot_miles": {"type": "number"},
+                                            "autopilot_pct": {"type": "number"},
+                                            "max_speed_mph": {"type": "number"},
+                                            "efficiency_wh_mi": {"type": "number"},
+                                            "battery_start_pct": {"type": "integer"},
+                                            "battery_end_pct": {"type": "integer"},
+                                            "battery_drain_pct": {"type": "integer"},
+                                            "drives": {"type": "array", "items": {"type": "object"}}
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
             "/copilot/tessie/summary": {
                 "get": {
                     "operationId": "getTessieSummary",
@@ -524,6 +567,7 @@ def copilot_openapi(req: func.HttpRequest) -> func.HttpResponse:
                     }
                 }
             },
+
             "/copilot/banking/accounts": {
                 "get": {
                     "operationId": "getBankAccounts",

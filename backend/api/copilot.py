@@ -379,13 +379,22 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
 
         tag_filter = req.params.get("tag", "").strip()
         month_param = req.params.get("month", "").strip()   # e.g. "2026-02"
+        date_param = req.params.get("date", "").strip()     # e.g. "2026-05-12" (specific day)
 
         # Determine time range
         # IMPORTANT: Use UTC for UNIX timestamps sent to Tessie API.
         # 'now_display' (MST) is only used for date labels in responses.
         now_utc = datetime.datetime.utcnow()
         now_display = _utc_to_mt(now_utc)  # Mountain Time (handles MST/MDT)
-        if month_param:
+        if date_param:
+            # Single-day filter: midnight-to-midnight MST (offset +7h for UTC)
+            try:
+                day_dt = datetime.datetime.strptime(date_param, "%Y-%m-%d")
+                from_dt_utc = day_dt + datetime.timedelta(hours=7)   # MST midnight -> UTC
+                to_dt_utc   = day_dt + datetime.timedelta(hours=31)  # next MST midnight -> UTC
+            except Exception:
+                return func.HttpResponse(json.dumps({"error": "Invalid date format. Use YYYY-MM-DD."}), status_code=400)
+        elif month_param:
             try:
                 year, month = int(month_param.split("-")[0]), int(month_param.split("-")[1])
                 # Month boundaries at midnight MST = 07:00 UTC
@@ -627,6 +636,122 @@ def copilot_tessie_charges(req: func.HttpRequest) -> func.HttpResponse:
 
     except Exception as e:
         logging.error(f"Tessie Charges API Error: {e}")
+        return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500)
+
+
+@bp.route(route="copilot/tessie/day-summary", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+def copilot_tessie_day_summary(req: func.HttpRequest) -> func.HttpResponse:
+    """
+    Returns a rich single-day driving summary.
+    Answers: 'How many miles today?', 'What was my battery drain?', 'What was my highest speed?'
+    Param: date=YYYY-MM-DD (defaults to today MST)
+    """
+    if req.method == "OPTIONS": return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
+    if not check_rate_limit(req):
+        return func.HttpResponse(json.dumps({"error": "Rate limit exceeded"}), status_code=429)
+
+    try:
+        vin = os.environ.get("TESSIE_VIN")
+        if not vin:
+            return func.HttpResponse(json.dumps({"error": "Vehicle VIN not configured"}), status_code=500)
+
+        now_mt = _utc_to_mt(datetime.datetime.utcnow())
+        date_param = req.params.get("date", now_mt.strftime("%Y-%m-%d")).strip()
+
+        try:
+            day_dt = datetime.datetime.strptime(date_param, "%Y-%m-%d")
+        except Exception:
+            return func.HttpResponse(json.dumps({"error": "Invalid date. Use YYYY-MM-DD."}), status_code=400)
+
+        # MST midnight -> UTC window
+        from_dt_utc = day_dt + datetime.timedelta(hours=7)
+        to_dt_utc   = day_dt + datetime.timedelta(hours=31)
+        from_ts = int(from_dt_utc.timestamp())
+        to_ts   = int(to_dt_utc.timestamp())
+
+        tessie = TessieClient()
+        raw_drives = tessie.get_tagged_drives(vin, from_ts, to_ts)
+        raw_charges = tessie.get_charges(vin, from_ts, to_ts) or []
+
+        total_miles = 0.0
+        total_energy_kwh = 0.0
+        total_autopilot_miles = 0.0
+        max_speed_mph = 0.0
+        drive_count = 0
+        battery_start = None
+        battery_end = None
+        drive_breakdown = []
+
+        # Sort chronologically to correctly track battery start -> end
+        raw_drives_sorted = sorted(raw_drives, key=lambda d: d.get("started_at", 0))
+
+        for d in raw_drives_sorted:
+            dist   = float(d.get("odometer_distance") or 0)
+            energy = float(d.get("energy_used") or 0)
+            ap     = float(d.get("autopilot_distance") or 0)
+            spd_kph = float(d.get("max_speed") or 0)
+            spd_mph = round(spd_kph * 0.621371, 1)
+            avg_mph = round(float(d.get("average_speed") or 0) * 0.621371, 1)
+
+            total_miles          += dist
+            total_energy_kwh     += energy
+            total_autopilot_miles += ap
+            if spd_mph > max_speed_mph:
+                max_speed_mph = spd_mph
+            drive_count += 1
+
+            b_start = d.get("starting_battery")
+            b_end   = d.get("ending_battery")
+            if battery_start is None and b_start is not None:
+                battery_start = b_start
+            if b_end is not None:
+                battery_end = b_end
+
+            start_ts = d.get("started_at", 0)
+            end_ts   = d.get("ended_at", 0)
+            start_mst = _ts_to_mt(start_ts) if start_ts else None
+            end_mst   = _ts_to_mt(end_ts)   if end_ts   else None
+            duration_min = round((end_ts - start_ts) / 60, 1) if start_ts and end_ts else None
+
+            drive_breakdown.append({
+                "tag":               d.get("tag") or "Untagged",
+                "start_time_mst":    start_mst.strftime("%I:%M %p") if start_mst else None,
+                "end_time_mst":      end_mst.strftime("%I:%M %p")   if end_mst   else None,
+                "duration_minutes":  duration_min,
+                "distance_miles":    round(dist, 2),
+                "energy_used_kwh":   round(energy, 2),
+                "avg_speed_mph":     avg_mph,
+                "max_speed_mph":     spd_mph,
+                "autopilot_miles":   round(ap, 2),
+                "starting_battery":  b_start,
+                "ending_battery":    b_end,
+                "battery_drain_pct": (b_start - b_end) if (b_start and b_end) else None,
+                "start_location":    d.get("starting_location"),
+                "end_location":      d.get("ending_location"),
+            })
+
+        total_energy_charged = sum(float(c.get("energy_added") or 0) for c in raw_charges)
+        battery_drain_total  = (battery_start - battery_end) if (battery_start is not None and battery_end is not None) else None
+        efficiency           = round((total_energy_kwh * 1000) / total_miles, 1) if total_miles > 0 else None
+
+        return copilot_response({
+            "date":                  date_param,
+            "drive_count":           drive_count,
+            "total_miles":           round(total_miles, 2),
+            "total_energy_used_kwh": round(total_energy_kwh, 2),
+            "total_energy_charged_kwh": round(total_energy_charged, 2),
+            "total_autopilot_miles": round(total_autopilot_miles, 2),
+            "autopilot_pct":         round((total_autopilot_miles / total_miles) * 100, 1) if total_miles > 0 else None,
+            "max_speed_mph":         round(max_speed_mph, 1),
+            "efficiency_wh_mi":      efficiency,
+            "battery_start_pct":     battery_start,
+            "battery_end_pct":       battery_end,
+            "battery_drain_pct":     battery_drain_total,
+            "drives":                drive_breakdown,
+        })
+
+    except Exception as e:
+        logging.error(f"Day Summary API Error: {e}")
         return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500)
 
 
