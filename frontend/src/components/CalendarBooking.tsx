@@ -94,7 +94,7 @@ export default function CalendarBooking({
 
     // Check if a slot start time is within HOP for its weekday
     const withinHop = (dateObj: Date): boolean => {
-        if (!hop) return false;
+        if (!hop) return true;
         const w = dateObj.getDay();
         const dayHop = hop[w];
         if (!dayHop || !dayHop.start || !dayHop.end) return false; // Day is off or malformed
