@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
+import CalendarBooking from "./CalendarBooking";
 import styles from "./BookingForm.module.css";
 import { calculateDistance, getCoordinates } from "../utils/distance";
 
@@ -20,7 +21,7 @@ export default function BookingForm() {
     const [priceQuote, setPriceQuote] = useState<string | null>(null);
     const [isCalculating, setIsCalculating] = useState(false);
     const [tripDetails, setTripDetails] = useState<{ dist: string, time: string } | null>(null);
-    const [bookingStep, setBookingStep] = useState<'quote' | 'details' | 'handoff'>('quote');
+    const [bookingStep, setBookingStep] = useState<'quote' | 'details' | 'handoff' | 'done'>('quote');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -215,18 +216,6 @@ export default function BookingForm() {
                             </div>
                         </div>
                         <div className={styles.group}>
-                            <label>Preferred Pickup Date & Time</label>
-                            <input
-                                type="datetime-local"
-                                name="pickupDateTime"
-                                value={formData.pickupDateTime}
-                                onChange={handleChange}
-                                className="w-full p-3 rounded bg-white/10 border border-white/20 text-white"
-                                min={new Date().toISOString().slice(0, 16)}
-                            />
-                            <small className="text-gray-400 text-xs mt-1 block">Optional - You can also select a time slot later</small>
-                        </div>
-                        <div className={styles.group}>
                             <label>Passengers</label>
                             <select name="passengers" value={formData.passengers} onChange={handleChange} className="w-full p-3 rounded bg-white/10 border border-white/20 text-white">
                                 <option value="1">1 Passenger</option>
@@ -250,49 +239,28 @@ export default function BookingForm() {
 
             {/* Step 3: Handoff to Bookings */}
             {bookingStep === 'handoff' && (
-                <div className="mt-8 mb-2 p-6 bg-green-500/10 rounded-xl border border-green-500/30 text-center animate-in zoom-in-95 duration-300 relative">
-                    <div className="text-4xl mb-2">✅</div>
-                    <h4 className="text-xl font-bold text-white mb-2">Details Received!</h4>
-                    <p className="text-sm text-gray-300 mb-6">We have your trip info. Now simply choose your time slot.</p>
+                <div className="mt-8 mb-2 animate-in zoom-in-95 duration-300">
+                    <CalendarBooking
+                        customerName={formData.name}
+                        customerEmail={formData.email}
+                        customerPhone={formData.phone}
+                        passengers={parseInt(formData.passengers)}
+                        pickup={formData.pickup}
+                        dropoff={formData.dropoff}
+                        price={priceQuote || "$0.00"}
+                        tripDistance={tripDetails?.dist}
+                        tripDuration={tripDetails?.time}
+                        onBookingComplete={(eventId) => {
+                            setBookingStep('done');
+                        }}
+                    />
+                </div>
+            )}
 
-                    <a
-                        href="https://outlook.office.com/book/SummitOS@costesla.com/?ismsaljsauthenabled"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center justify-center gap-2 bg-cyan-600 text-white px-6 py-4 rounded-lg font-bold hover:bg-cyan-700 transition-colors w-full text-lg shadow-lg hover:shadow-cyan-500/20 mb-6"
-                    >
-                        📅 Select Time Slot
-                    </a>
-
-                    <div className="border-t border-white/10 pt-4">
-                        <p className="text-sm font-semibold text-gray-400 mb-3 uppercase tracking-wider">Payment Options</p>
-                        <div className="grid grid-cols-3 gap-3">
-                            <a
-                                href="https://www.venmo.com/u/costesla"
-                                target="_blank"
-                                rel="noreferrer"
-                                onClick={() => handlePaymentSelection('Venmo')}
-                                className="bg-[#008CFF] text-white py-3 px-2 rounded-lg font-bold hover:bg-[#0074D4] transition-colors flex items-center justify-center gap-1 text-sm"
-                            >
-                                Venmo
-                            </a>
-                            <button
-                                onClick={() => {
-                                    handlePaymentSelection('Zelle');
-                                    setShowZelle(true);
-                                }}
-                                className="bg-[#6d1ed4] text-white py-3 px-2 rounded-lg font-bold hover:bg-[#5b19b0] transition-colors flex items-center justify-center gap-1 text-sm"
-                            >
-                                Zelle
-                            </button>
-                            <button
-                                onClick={() => handlePaymentSelection('Cash')}
-                                className="bg-emerald-600 text-white py-3 px-2 rounded-lg font-bold hover:bg-emerald-700 transition-colors flex items-center justify-center gap-1 text-sm"
-                            >
-                                Cash
-                            </button>
-                        </div>
-                    </div>
+            {bookingStep === 'done' && (
+                <div className="mt-8 p-6 bg-green-500/20 border border-green-500/30 rounded-xl text-center">
+                    <h4 className="text-green-400 font-bold mb-2 text-2xl">✅ Booking Confirmed!</h4>
+                    <p className="text-sm text-gray-300">Your calendar reservation is confirmed. We will email you a receipt shortly.</p>
                 </div>
             )}
 
