@@ -197,18 +197,18 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
         # Use centralized ID generation
         booking_id = build_invoice_id(name, pickup_time)
 
-        # Generate Stripe Link for "Invoice" (Pay Later) flow
+        # Generate Stripe Link for all flows to ensure it appears on the receipt
         stripe_url = None
         payment_method = data.get('paymentMethod', 'Venmo')
-        if payment_method == "Invoice":
-            try:
-                # Format price to float
-                import re
-                amount_num = float(re.sub(r'[^0-9.]', '', str(price)))
+        try:
+            # Format price to float
+            import re
+            amount_num = float(re.sub(r'[^0-9.]', '', str(price)))
+            if amount_num > 0:
                 trip_label = f"{pickup} -> {dropoff} ({pickup_time})"
                 stripe_url = create_stripe_payment_link(name, amount_num, trip_label)
-            except Exception as se:
-                logging.error(f"Failed to generate pre-trip Stripe link: {se}")
+        except Exception as se:
+            logging.error(f"Failed to generate pre-trip Stripe link: {se}")
 
         stripe_button_html = ""
         if stripe_url:
@@ -297,7 +297,7 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
                                 <td style="padding: 30px 20px;">
                                     <p style="margin: 0 0 20px; font-size: 16px; color: #333333;">Hello {name},</p>
                                     <p style="margin: 0 0 25px; font-size: 14px; color: #666666; line-height: 1.5;">
-                                        Thank you for choosing SummitOS. Your booking has been confirmed. Please review the details below:
+                                        Thank you for choosing COS Tesla. Your booking has been confirmed. Please review the details below:
                                     </p>
                                     
                                     <!-- Trip Details -->
