@@ -358,6 +358,11 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
                                                     <span style="font-size: 12px; color: #888;">Recipient: COS TESLA LLC</span>
                                                 </p>
                                                 
+                                                <p style="margin: 0 0 10px; font-weight: 600; color: #333333;">🟢 Cash App</p>
+                                                <p style="margin: 0 0 15px; padding-left: 20px;">
+                                                    Send payment to: <a href="https://cash.app/$peteteehan" style="color: #00D632; text-decoration: none; font-weight: 600;">$peteteehan</a>
+                                                </p>
+                                                
                                                 <p style="margin: 0 0 10px; font-weight: 600; color: #333333;">💵 Cash</p>
                                                 <p style="margin: 0; padding-left: 20px;">
                                                     Pay your driver directly at pickup or dropoff
