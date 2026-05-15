@@ -151,14 +151,14 @@ export default function CalendarBooking({
     // Clients who pay via Venmo/Zelle and should bypass Stripe entirely
     const VENMO_CLIENTS = new Set<string>([]);
 
-    const handleBooking = async (method: 'stripe' | 'invoice') => {
+    const handleBooking = async (method: 'stripe' | 'invoice' | 'cash') => {
         if (!selectedTime) return;
 
         setBooking(true);
         setError(null);
 
         // --- DIRECT INVOICE / PAY LATER ---
-        if (method === 'invoice' || VENMO_CLIENTS.has(customerEmail.toLowerCase().trim())) {
+        if (method === 'invoice' || method === 'cash' || VENMO_CLIENTS.has(customerEmail.toLowerCase().trim())) {
             try {
                 const res = await fetch("https://summitos-api.azurewebsites.net/api/book", {
                     method: "POST",
@@ -175,7 +175,7 @@ export default function CalendarBooking({
                         tripDistance,
                         tripDuration,
                         quoteType,
-                        paymentMethod: method === 'invoice' ? "Invoice" : "Venmo",
+                        paymentMethod: method === 'invoice' ? "Invoice" : (method === 'cash' ? "Cash" : "Venmo"),
                     }),
                 });
                 const data = await res.json();
@@ -410,6 +410,14 @@ export default function CalendarBooking({
                     className={`w-full bg-white/10 text-white font-bold py-4 rounded-xl border border-white/20 hover:bg-white/20 flex justify-center items-center gap-2 text-lg transition-all ${!selectedTime || booking ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
                     ✉️ Pay Later (Post-Trip Invoice)
+                </button>
+
+                <button
+                    onClick={() => handleBooking('cash')}
+                    disabled={!selectedTime || booking}
+                    className={`w-full bg-green-500/10 text-green-400 font-bold py-4 rounded-xl border border-green-500/30 hover:bg-green-500/20 flex justify-center items-center gap-2 text-lg transition-all ${!selectedTime || booking ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                    💵 Pay Cash to Driver
                 </button>
             </div>
         </div>

@@ -225,7 +225,7 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
 
         # --- NEW: Create Calendar Event for Invoice/Venmo flows ---
         # (Paid flow handles this in finalize-booking calling calendar-book)
-        if payment_method in ["Invoice", "Venmo"] and raw_time:
+        if payment_method in ["Invoice", "Venmo", "Cash"] and raw_time:
             try:
                 from services.bookings import BookingsClient
                 bookings = BookingsClient()
