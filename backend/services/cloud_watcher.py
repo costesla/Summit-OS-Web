@@ -140,11 +140,15 @@ class CloudWatcherService:
             return {"success": True, "trips": [], "logs": [f"INFO: Folder '{explicit_path}' is empty."]}
 
         all_images = [f for f in files if f.get("name", "").lower().endswith(('.jpg', '.jpeg', '.png', '.heic', '.heif'))]
-        # Only OCR files that look like Uber Driver screenshots — exclude Starbucks receipts, scan files,
-        # printer spooler screenshots, Samsung Wallet, and similar non-Uber images.
+        # Only OCR files that look like Uber Driver screenshots. Exclude by filename:
+        #  - Starbucks/fast-food receipts, gas, scan files (unrelated expenses)
+        #  - Samsung Print Spooler screenshots (printer confirmations parsed as Private trips)
+        #  - Samsung Wallet specifically (payment app; never an Uber receipt)
+        # NOTE: plain 'wallet' is intentionally NOT excluded — Uber has an in-app wallet screen
+        #       that might be screenshot legitimately. Only 'samsung wallet' is excluded.
         _EXCLUDE_KEYWORDS = (
             'starbucks', 'scan_', 'receipt', 'gas', 'circle k', 'mcdonald',
-            'print spooler', 'print_spooler', 'samsung wallet', 'wallet',
+            'print spooler', 'print_spooler', 'samsung wallet',
         )
         image_files = [
             f for f in all_images
@@ -169,8 +173,23 @@ class CloudWatcherService:
                 except Exception as ae:
                     log.warning(f"Azure OCR failed for {name}: {ae}")
 
-                # Check if it is a website reservation confirmation from COS Tesla / SummitOS
                 text_lower = text_for_stats.lower()
+
+                # ── Content-based charging screen guard ─────────────────────────────
+                # Tessie/Tesla charging screenshots (kWh, odometer, SOC) have no Uber
+                # content and should be discarded. This catches them even when they have
+                # a generic Samsung filename (e.g. Screenshot_20260514_084843.jpg).
+                _EV_MARKERS   = ('total used', 'total added', 'kwh', 'odometer', 'since last charge',
+                                 'electric cost', 'energy added', 'charging session', 'supercharger',
+                                 'battery level', 'efficiency')
+                _UBER_MARKERS = ('your earnings', 'you earned', 'uber driver', 'rider payment',
+                                 'cos tesla', 'summitos', 'trip fare')
+                _ev_hits   = sum(1 for m in _EV_MARKERS   if m in text_lower)
+                _uber_hits = sum(1 for m in _UBER_MARKERS if m in text_lower)
+                if _ev_hits >= 2 and _uber_hits == 0:
+                    return None, f"SKIP: '{name}' — detected Tesla/EV charging screenshot ({_ev_hits} EV markers, 0 Uber markers)"
+
+                # Check if it is a website reservation confirmation from COS Tesla / SummitOS
                 is_website_booking = False
                 if "cos tesla" in text_lower or "summitos" in text_lower:
                     if "booking" in text_lower and ("confirmed" in text_lower or "hello" in text_lower or "thank you for choosing" in text_lower):
@@ -430,6 +449,37 @@ class CloudWatcherService:
         # (Be less strict with date check since it's already in the targeted day folder)
         dated_cards = raw_cards
         logs.append(f"INFO: Processing {len(dated_cards)} cards from folder for {date_str}.")
+
+        # 3b. Deduplication — if two screenshots of the SAME trip were captured
+        #     (same driver_earnings ± $0.01 AND timestamps within 5 minutes), keep only the first.
+        #     This prevents the "two screenshots of one receipt → two TRIP records" bug.
+        import datetime as _dt
+        deduped_cards = []
+        for card in dated_cards:
+            is_dup = False
+            for existing in deduped_cards:
+                earn_match = abs((card["card"].get("driver_earnings") or 0) - (existing["card"].get("driver_earnings") or 0)) <= 0.01
+                if earn_match:
+                    c_dt  = card["trip_dt"]
+                    e_dt  = existing["trip_dt"]
+                    if c_dt and e_dt:
+                        # Normalise to naive for comparison
+                        c_naive = c_dt.replace(tzinfo=None) if c_dt.tzinfo else c_dt
+                        e_naive = e_dt.replace(tzinfo=None) if e_dt.tzinfo else e_dt
+                        if abs((c_naive - e_naive).total_seconds()) <= 300:  # 5-minute window
+                            is_dup = True
+                            logs.append(f"DEDUP: '{card['filename']}' is a duplicate of '{existing['filename']}' (earn=${card['card'].get('driver_earnings'):.2f}, diff<5min) — skipped.")
+                            break
+                    elif not c_dt and not e_dt and earn_match:
+                        # Both timestamps unknown — treat same-earnings as duplicate
+                        is_dup = True
+                        logs.append(f"DEDUP: '{card['filename']}' is a duplicate of '{existing['filename']}' (earn=${card['card'].get('driver_earnings'):.2f}, both no timestamp) — skipped.")
+                        break
+            if not is_dup:
+                deduped_cards.append(card)
+        if len(deduped_cards) < len(dated_cards):
+            logs.append(f"INFO: Removed {len(dated_cards) - len(deduped_cards)} duplicate trip(s). {len(deduped_cards)} unique trips remain.")
+        dated_cards = deduped_cards
 
         # 4. Sort chronologically by trip_dt (None last) — use tz-aware sentinel to avoid
         #    "can't compare offset-naive and offset-aware datetimes" crash

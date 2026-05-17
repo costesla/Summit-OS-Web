@@ -387,31 +387,35 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
         now_utc = datetime.datetime.utcnow()
         now_display = _utc_to_mt(now_utc)  # Mountain Time (handles MST/MDT)
         if date_param:
-            # Single-day filter: midnight-to-midnight MST (offset +7h for UTC)
+            # Single-day filter: midnight-to-midnight Mountain Time.
+            # Use UTC-6 (MDT, in effect Mar–Nov) as the lower bound so early-morning
+            # drives are never clipped. An extra 2-hour buffer on both ends is safe.
             try:
                 day_dt = datetime.datetime.strptime(date_param, "%Y-%m-%d")
-                from_dt_utc = day_dt + datetime.timedelta(hours=7)   # MST midnight -> UTC
-                to_dt_utc   = day_dt + datetime.timedelta(hours=31)  # next MST midnight -> UTC
+                from_dt_utc = day_dt + datetime.timedelta(hours=6)   # midnight MDT -> UTC
+                to_dt_utc   = day_dt + datetime.timedelta(hours=30)  # next midnight MDT -> UTC
             except Exception:
                 return func.HttpResponse(json.dumps({"error": "Invalid date format. Use YYYY-MM-DD."}), status_code=400)
         elif month_param:
             try:
                 year, month = int(month_param.split("-")[0]), int(month_param.split("-")[1])
-                # Month boundaries at midnight MST = 07:00 UTC
-                from_dt_utc = datetime.datetime(year, month, 1) + datetime.timedelta(hours=7)
+                # Month boundaries at midnight MDT (UTC-6 = +6h). Safe for all months since
+                # Colorado observes MDT (UTC-6) through November.
+                from_dt_utc = datetime.datetime(year, month, 1) + datetime.timedelta(hours=6)
                 if month == 12:
-                    to_dt_utc = datetime.datetime(year + 1, 1, 1) + datetime.timedelta(hours=7)
+                    to_dt_utc = datetime.datetime(year + 1, 1, 1) + datetime.timedelta(hours=6)
                 else:
-                    to_dt_utc = datetime.datetime(year, month + 1, 1) + datetime.timedelta(hours=7)
+                    to_dt_utc = datetime.datetime(year, month + 1, 1) + datetime.timedelta(hours=6)
             except Exception:
                 return func.HttpResponse(json.dumps({"error": "Invalid month format. Use YYYY-MM."}), status_code=400)
         else:
             days = int(req.params.get("days", 30))
             if days > 365: days = 365
-            # Snap from_dt_utc to midnight MST (= 07:00 UTC) of the start date so early-morning
-            # drives (e.g. 05:56 AM MST) are NOT clipped by a rolling hour-exact cutoff.
+            # Snap from_dt_utc to midnight MDT (= 06:00 UTC) of the start date so early-morning
+            # drives (e.g. 05:56 AM MDT) are NEVER clipped by a rolling hour-exact cutoff.
+            # Using UTC-6 (MDT) is safe year-round: in MST winter it just adds a 1h buffer.
             start_day_utc = (now_utc - datetime.timedelta(days=days)).replace(
-                hour=7, minute=0, second=0, microsecond=0
+                hour=6, minute=0, second=0, microsecond=0
             )
             from_dt_utc = start_day_utc
             to_dt_utc = now_utc + datetime.timedelta(hours=1)  # 1h buffer catches drives still in progress
