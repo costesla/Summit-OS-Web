@@ -28,6 +28,13 @@ class UberMatcherService:
         if not text:
             return {"status": "ERROR", "message": "OCR failed to extract text"}
 
+        # Check if it is a website booking confirmation from COS Tesla / SummitOS
+        text_lower = text.lower()
+        if "cos tesla" in text_lower or "summitos" in text_lower:
+            if "booking" in text_lower and ("confirmed" in text_lower or "hello" in text_lower or "thank you for choosing" in text_lower):
+                log.info(f"Skipping website booking confirmation in Uber processing: {filename}")
+                return {"status": "SKIP", "reason": "COS Tesla / SummitOS website booking confirmation"}
+
         # 2. Parse Uber Card
         card = self._parse_uber_card(text)
         log.info(f"Parsed Card: {card['driver_earnings']} earned | {card['rider_payment']} rider paid")

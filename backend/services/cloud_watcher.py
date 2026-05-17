@@ -2,6 +2,7 @@ import logging
 import datetime
 import re
 import json
+import os
 from zoneinfo import ZoneInfo
 from typing import Optional
 
@@ -164,6 +165,111 @@ class CloudWatcherService:
                 except Exception as ae:
                     log.warning(f"Azure OCR failed for {name}: {ae}")
 
+                # Check if it is a website reservation confirmation from COS Tesla / SummitOS
+                text_lower = text_for_stats.lower()
+                is_website_booking = False
+                if "cos tesla" in text_lower or "summitos" in text_lower:
+                    if "booking" in text_lower and ("confirmed" in text_lower or "hello" in text_lower or "thank you for choosing" in text_lower):
+                        is_website_booking = True
+
+                if is_website_booking:
+                    # ── Parse Private Website Booking ──
+                    m_hello = re.search(r"Hello\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)\s*,", text_for_stats)
+                    passenger_name = m_hello.group(1).strip() if m_hello else "Private Client"
+                    
+                    m_total = re.search(r"Total\s*:?\s*\n?\s*\$?([0-9]+(?:\.[0-9]{2})?)", text_for_stats, re.IGNORECASE)
+                    total_amount = float(m_total.group(1)) if m_total else 0.0
+                    
+                    m_dist = re.search(r"Distance\s*:?\s*\n?\s*([0-9.]+)\s*miles?", text_for_stats, re.IGNORECASE)
+                    distance_mi = float(m_dist.group(1)) if m_dist else 0.0
+                    
+                    m_dur = re.search(r"Duration\s*:?\s*\n?\s*([0-9.]+)\s*minutes?", text_for_stats, re.IGNORECASE)
+                    duration_min = float(m_dur.group(1)) if m_dur else 0.0
+                    
+                    pickup, dropoff = self._extract_route(text_for_stats)
+                    
+                    m_pickup_loc = re.search(r"Pickup Location\s*:?\s*\n?\s*(.+?)(?=\n\s*(?:Dropoff Location|Vehicle Type|Total|$))", text_for_stats, re.DOTALL | re.IGNORECASE)
+                    if m_pickup_loc:
+                        pickup = " ".join([line.strip() for line in m_pickup_loc.group(1).split("\n") if line.strip()])
+                    
+                    m_dropoff_loc = re.search(r"Dropoff Location\s*:?\s*\n?\s*(.+?)(?=\n\s*(?:Vehicle Type|Distance|Total|$))", text_for_stats, re.DOTALL | re.IGNORECASE)
+                    if m_dropoff_loc:
+                        dropoff = " ".join([line.strip() for line in m_dropoff_loc.group(1).split("\n") if line.strip()])
+                        
+                    # Extract Timestamp
+                    trip_dt = None
+                    m_pickup_time = re.search(r"Pickup\s*(?:Time)?\s*:?\s*\n?\s*([A-Za-z]+,\s*[A-Za-z]+\s+\d{1,2}\s+at\s+\d{1,2}:\d{2}\s*[APM]{2})", text_for_stats, re.IGNORECASE)
+                    if m_pickup_time:
+                        time_str = m_pickup_time.group(1).strip()
+                        time_str_clean = re.sub(r"^[A-Za-z]+,\s*", "", time_str) 
+                        time_str_clean = re.sub(r"\s+at\s+", " ", time_str_clean) 
+                        
+                        year = datetime.datetime.now(MDT).year
+                        if date_str:
+                            try:
+                                year = datetime.datetime.strptime(date_str, "%Y-%m-%d").year
+                            except:
+                                pass
+                        
+                        m_hour = re.search(r"(\d{1,2}):(\d{2})", time_str_clean)
+                        if m_hour:
+                            hour = int(m_hour.group(1))
+                            if hour > 12:
+                                time_str_clean = re.sub(r"\s*[APM]{2}", "", time_str_clean)
+                                fmt = "%B %d %H:%M"
+                            else:
+                                fmt = "%B %d %I:%M %p"
+                        else:
+                            fmt = "%B %d %I:%M %p"
+                            
+                        try:
+                            trip_dt = datetime.datetime.strptime(f"{time_str_clean} {year}", f"{fmt} %Y")
+                            trip_dt = trip_dt.replace(tzinfo=MDT)
+                        except Exception as pe:
+                            log.warning(f"Failed to parse booking time '{time_str_clean}': {pe}")
+                            try:
+                                trip_dt = datetime.datetime.strptime(f"{time_str_clean} {year}", f"{fmt.replace('%B', '%b')} %Y")
+                                trip_dt = trip_dt.replace(tzinfo=MDT)
+                            except Exception as pe2:
+                                log.warning(f"Failed fallback parse: {pe2}")
+                    
+                    if not trip_dt:
+                        try:
+                            trip_dt = datetime.datetime.strptime(date_str, "%Y-%m-%d").replace(hour=12, minute=0, tzinfo=MDT)
+                        except:
+                            trip_dt = datetime.datetime.now(MDT)
+                            
+                    classification = "Private_Trip"
+                    if passenger_name and any(k in passenger_name.lower() for k in ["jacquelyn", "jackie"]):
+                        classification = "Jackie"
+                    elif passenger_name and any(k in passenger_name.lower() for k in ["nancy", "hernandez"]):
+                        classification = "Private_Trip"
+                        
+                    card = {
+                        "driver_earnings": total_amount,
+                        "fare": total_amount,
+                        "tip": 0.0,
+                        "rider_payment": total_amount,
+                        "is_private": True,
+                        "passenger_name": passenger_name,
+                        "classification": classification
+                    }
+                    
+                    entry = {
+                        "filename": name,
+                        "text": text_for_stats,
+                        "card": card,
+                        "trip_dt": trip_dt,
+                        "pickup": pickup,
+                        "dropoff": dropoff,
+                        "duration_min": duration_min,
+                        "distance_mi": distance_mi,
+                        "service_type": "Private Sedan" if "sedan" in text_lower else ("Private SUV" if "suv" in text_lower else "Private"),
+                        "is_private": True
+                    }
+                    msg = f"PARSED: '{name}' (Private Booking) — Hello {passenger_name}, Total: ${total_amount:.2f} earned @ {str(trip_dt)[:16]}"
+                    return entry, msg
+
                 # ── Step A: GPT-4o Vision — accurate financial extraction ──────────
                 import base64
                 from openai import OpenAI
@@ -293,6 +399,7 @@ class CloudWatcherService:
                     "duration_min": duration_min,
                     "distance_mi": distance_mi,
                     "service_type": service_type,
+                    "is_private": False
                 }
                 msg = f"PARSED: '{name}' — ${card.get('driver_earnings', 0):.2f} earned @ {str(trip_dt)[:16] if trip_dt else 'no timestamp'}"
                 return entry, msg
@@ -389,19 +496,26 @@ class CloudWatcherService:
                 "scanned_at": datetime.datetime.now(MDT).isoformat(),
             }
 
+            # If it is a private trip, we should use 'Private' and the specific classification
+            is_private = c.get("is_private", False)
+            trip_type = "Private" if is_private else "Uber"
+            classification = card.get("classification", "Uber_Matched") if is_private else "Uber_Matched"
+
             try:
                 cursor.execute("""
                     INSERT INTO Rides.Rides
                     (RideID, TripType, Timestamp_Start, Fare, Driver_Earnings, Tip, Platform_Cut,
                      Classification, Sidecar_Artifact_JSON, Tessie_DriveID, CreatedAt, LastUpdated)
-                    VALUES (?, 'Uber', ?, ?, ?, ?, ?, 'Uber_Matched', ?, ?, GETUTCDATE(), GETUTCDATE())
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETUTCDATE(), GETUTCDATE())
                 """, (
                     trip_id,
+                    trip_type,
                     trip_dt or datetime.datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=MDT),
                     card.get("rider_payment") or 0,
                     card.get("driver_earnings") or 0,
                     card.get("tip") or 0,
                     uber_cut,
+                    classification,
                     json.dumps(sidecar),
                     tessie_drive_id
                 ))
@@ -415,7 +529,7 @@ class CloudWatcherService:
                 "trip_id": trip_id,
                 "trip_number": i,
                 "timestamp": trip_dt.isoformat() if trip_dt else None,
-                "time_display": trip_dt.strftime("%-I:%M %p") if trip_dt else "Unknown",
+                "time_display": trip_dt.strftime("%#I:%M %p" if os.name == "nt" else "%-I:%M %p") if trip_dt else "Unknown",
                 "service_type": c["service_type"] or "UberX",
                 "driver_earnings": card.get("driver_earnings") or 0,
                 "rider_payment": card.get("rider_payment") or 0,
@@ -454,7 +568,7 @@ class CloudWatcherService:
         cursor.execute("""
             SELECT RideID, Timestamp_Start, Fare, Driver_Earnings, Tip, Platform_Cut, Sidecar_Artifact_JSON
             FROM Rides.Rides
-            WHERE RideID LIKE ?
+            WHERE RideID LIKE ? AND (TripType = 'Uber' OR TripType IS NULL)
             ORDER BY RideID ASC
         """, (f"TRIP-{date_compact}-%",))
         rows = cursor.fetchall()
