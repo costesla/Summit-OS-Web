@@ -583,7 +583,7 @@ class CloudWatcherService:
             trip_num = sidecar.get("trip_number", 0)
             ts = r[1]
             ts_iso = ts.isoformat() if ts else None
-            time_display = ts.strftime("%-I:%M %p") if ts else "Unknown"
+            time_display = ts.strftime("%#I:%M %p" if os.name == "nt" else "%-I:%M %p") if ts else "Unknown"
 
             trips.append({
                 "trip_id": r[0],
