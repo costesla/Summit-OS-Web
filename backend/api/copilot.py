@@ -408,7 +408,12 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
         else:
             days = int(req.params.get("days", 30))
             if days > 365: days = 365
-            from_dt_utc = now_utc - datetime.timedelta(days=days)
+            # Snap from_dt_utc to midnight MST (= 07:00 UTC) of the start date so early-morning
+            # drives (e.g. 05:56 AM MST) are NOT clipped by a rolling hour-exact cutoff.
+            start_day_utc = (now_utc - datetime.timedelta(days=days)).replace(
+                hour=7, minute=0, second=0, microsecond=0
+            )
+            from_dt_utc = start_day_utc
             to_dt_utc = now_utc + datetime.timedelta(hours=1)  # 1h buffer catches drives still in progress
 
         from_ts = int(from_dt_utc.timestamp())

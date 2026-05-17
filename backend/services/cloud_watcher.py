@@ -140,8 +140,12 @@ class CloudWatcherService:
             return {"success": True, "trips": [], "logs": [f"INFO: Folder '{explicit_path}' is empty."]}
 
         all_images = [f for f in files if f.get("name", "").lower().endswith(('.jpg', '.jpeg', '.png', '.heic', '.heif'))]
-        # Only OCR files that look like Uber Driver screenshots — exclude Starbucks receipts, scan files, etc.
-        _EXCLUDE_KEYWORDS = ('starbucks', 'scan_', 'receipt', 'gas', 'circle k', 'mcdonald')
+        # Only OCR files that look like Uber Driver screenshots — exclude Starbucks receipts, scan files,
+        # printer spooler screenshots, Samsung Wallet, and similar non-Uber images.
+        _EXCLUDE_KEYWORDS = (
+            'starbucks', 'scan_', 'receipt', 'gas', 'circle k', 'mcdonald',
+            'print spooler', 'print_spooler', 'samsung wallet', 'wallet',
+        )
         image_files = [
             f for f in all_images
             if not any(kw in f.get("name", "").lower() for kw in _EXCLUDE_KEYWORDS)
