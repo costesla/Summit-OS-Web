@@ -45,6 +45,9 @@ jobs:
       - name: Secret scan
         run: node scripts/scan-secrets.mjs --all
 
+      - name: Artifact cleanliness check
+        run: npm run check:clean
+
       - name: Type check
         run: npm run type-check
 

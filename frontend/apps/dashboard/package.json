@@ -10,7 +10,10 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "ci": "npm run type-check && npm run lint && npm run build",
-    "audit:report": "npm audit --audit-level=moderate"
+    "audit:report": "npm audit --audit-level=moderate",
+    "check:clean": "node scripts/check-clean-artifacts.mjs",
+    "check:secrets": "node scripts/scan-secrets.mjs --all",
+    "check": "npm run type-check && npm run lint && npm run check:clean && npm run check:secrets"
   },
   "dependencies": {
     "react": "^19.2.0",
