@@ -48,6 +48,7 @@ export const EVENTS = {
   SYNC_COMPLETED:           'sync_completed',
   SYNC_FAILED:              'sync_failed',
   SYNC_REQUESTED:           'sync_requested',         // ← spec required
+  REBUILD_DAY_CLICKED:      'rebuild_day_clicked',    // ← agent signal
 
   // Tessie
   TESSIE_TAGS_CONFIRMED:    'tessie_tags_confirmed',  // ← spec required (tessie_tagging_confirmed also aliased)

@@ -5,7 +5,48 @@
 
 ---
 
-## Dev → Build → Deploy
+## Definition of Done (DoD)
+
+These criteria must ALL be true before any push to `master` is accepted.
+
+### A — Repo Hygiene
+
+| Criterion | Verification |
+|---|---|
+| `npm run build` leaves git status clean | `git status` after build shows no new files |
+| `dist/` is untracked | `git ls-files dist/` → empty |
+| No `index-*.js` / `index-*.css` outside `dist/` | `npm run check:clean` → exit 0 |
+| No `*.tsbuildinfo` committed | `git ls-files "*.tsbuildinfo"` → empty |
+| No `.env` / `.env.local` committed | `git ls-files ".env*"` → empty |
+
+```bash
+# Run this after every build to prove hygiene:
+git ls-files dist/              # must return nothing
+git ls-files "*.tsbuildinfo"    # must return nothing
+npm run check:clean             # must exit 0
+```
+
+### B — Guardrails
+
+| Script | Purpose | Behaviour on violation |
+|---|---|---|
+| `npm run check` | Full local gate (type-check → lint → clean → secrets) | exit 1 |
+| `npm run check:clean` | Fail if bundles / tsbuildinfo exist outside `dist/` | exit 1 |
+| `npm run check:secrets` | Fail if secret-like patterns found in source | exit 1 |
+| `npm run ci` | Replicates CI: type-check → lint → build | exit 1 |
+
+### C — Observability
+
+| Requirement | Location |
+|---|---|
+| `ErrorBoundary` at app root | `src/main.tsx` wraps `<App />` |
+| `window.onerror` → telemetry | `src/main.tsx` |
+| `window.onunhandledrejection` → telemetry | `src/main.tsx` |
+| Key workflow actions emit events | `src/lib/telemetry.ts` (EVENTS vocabulary) |
+| SummitOS Intelligence contract | See **Telemetry Events** section below |
+
+---
+
 
 ### Local Development
 
@@ -78,7 +119,8 @@ See `.env.template` for all supported `VITE_*` variables.
 
 | Variable | Purpose | Default |
 |---|---|---|
-| `VITE_API_BASE_URL` | Backend base URL | Azure prod URL |
+| `VITE_PUBLIC_API_BASE_URL` | Backend base URL _(spec-required name)_ | Azure prod URL |
+| `VITE_API_BASE_URL` | Backend base URL _(legacy fallback)_ | Azure prod URL |
 | `VITE_TELEMETRY_ENABLED` | Enable console telemetry | `true` |
 | `VITE_TELEMETRY_SINK_URL` | Optional remote sink URL | _(blank = console only)_ |
 | `VITE_APP_VERSION` | Injected by CI | `1.4.5` |
@@ -89,17 +131,48 @@ Use Azure Static Web App managed identity or backend-side secrets only.
 
 ---
 
-## Telemetry
+## Telemetry Events
 
-The dashboard emits structured operational events to the console (and optionally a sink):
+The dashboard emits structured operational events (console + optional sink). These are the **SummitOS Intelligence contract** — the agent reads these to understand driver workflow state.
 
 ```
-[SummitOS:INFO] sync_started { date: "2026-05-18", ... }
-[SummitOS:INFO] tessie_drives_loaded { count: 4, ... }
-[SummitOS:ERROR] api_failure { endpoint: "/daily-sync", status: 504 }
+[SummitOS:INFO]  app_init            { version, session }
+[SummitOS:INFO]  workflow_ready      { date }
+[SummitOS:INFO]  sync_started        { date }
+[SummitOS:INFO]  sync_completed      { date, duration_ms }
+[SummitOS:ERROR] api_request_failed  { endpoint, status, duration_ms }
 ```
 
-The event vocabulary (`src/lib/telemetry/index.ts → EVENTS`) is the contract with SummitOS Intelligence.
+### Full EVENTS Vocabulary (`src/lib/telemetry.ts`)
+
+| Event name | Trigger | Category |
+|---|---|---|
+| `app_init` | App mounts | Lifecycle |
+| `page_view` | Route renders | Lifecycle |
+| `workflow_ready` | Dashboard ready for daily ops | **Agent signal** |
+| `sync_started` | Rebuild Day initiated | Sync |
+| `sync_completed` | Rebuild Day finished successfully | **Agent signal** |
+| `sync_failed` | Rebuild Day error | Sync |
+| `sync_requested` | Any sync button clicked | Sync |
+| `rebuild_day_clicked` | Rebuild Day button pressed | **Agent signal** |
+| `tessie_tags_confirmed` | Tessie drive tags verified | **Agent signal** |
+| `tessie_drives_loaded` | Tessie panel data loaded | Tessie |
+| `tessie_drive_imported` | Individual drive imported | Tessie |
+| `uber_cards_uploaded` | Screenshot batch uploaded | **Agent signal** |
+| `screenshot_match_started` | OCR match process begins | OCR |
+| `screenshot_match_completed` | OCR match process ends | OCR |
+| `screenshot_no_match` | Screenshot had no match | OCR |
+| `manual_expense_added` | Expense logged manually | **Agent signal** |
+| `expense_deleted` | Expense removed | Expenses |
+| `api_request_failed` | Any API call fails | **Agent signal** |
+| `api_call_started` | API request begins | API |
+| `api_call_completed` | API request succeeds | API |
+| `api_failure` | API error (alias) | API |
+| `js_error` | Uncaught JS exception | Errors |
+| `unhandled_rejection` | Unhandled promise rejection | Errors |
+
+> Events marked **Agent signal** are the primary observability hooks for SummitOS Intelligence.
+
 
 ---
 
