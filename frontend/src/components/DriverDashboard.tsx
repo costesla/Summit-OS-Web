@@ -6,7 +6,7 @@ import {
     TrendingUp, Car, Zap, Utensils, Plus, Trash2,
     Navigation, Receipt, RotateCcw, Clock,
     Battery, BatteryCharging, WifiOff, Download,
-    MapPin, Gauge, LogOut, ShieldCheck, Cpu, Play, Search, RefreshCw, Settings, Cloud
+    MapPin, Gauge, LogOut, ShieldCheck, Cpu, Play, Search, RefreshCw, Settings, Cloud, FolderPlus
 } from 'lucide-react';
 import TellerConnectButton from './TellerConnectButton';
 
@@ -606,11 +606,13 @@ const IntelligenceSyncPanel = ({ selectedDate }: { selectedDate: string }) => {
     const runDailySync = async () => {
         setStatus('running');
         setError(null);
-        setLogs(prev => [...prev, `> Initializing Daily Unified Sync (Folders + Data)...`]);
+        setLogs(prev => [...prev, `> Initializing Daily Unified Sync for ${selectedDate}...`]);
 
         try {
             const resp = await fetch(`${AZURE_BASE}/daily-sync`, {
-                method: 'POST'
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ date: selectedDate })
             });
 
             const data = await resp.json();
@@ -645,7 +647,7 @@ const IntelligenceSyncPanel = ({ selectedDate }: { selectedDate: string }) => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-3 gap-3 mb-4">
                 <button
                     disabled={status === 'running'}
                     onClick={runDailySync}
@@ -673,6 +675,21 @@ const IntelligenceSyncPanel = ({ selectedDate }: { selectedDate: string }) => {
                         <span className="text-[9px] text-cyan-500/60 font-mono uppercase tracking-widest">Cloud Scan Only</span>
                     </div>
                 </button>
+
+                <button
+                    disabled={status === 'running'}
+                    onClick={() => runSync(false)}
+                    className="flex flex-col items-center justify-center gap-2 py-4 rounded-2xl font-bold bg-violet-500/15 border border-violet-500/30 text-violet-400 hover:bg-violet-500/25 transition-all disabled:opacity-50 group/btn"
+                    title={`Create OneDrive folder for ${selectedDate}`}
+                >
+                    <div className="p-2 rounded-xl bg-violet-500/10 group-hover/btn:bg-violet-500/20 transition-colors">
+                        <FolderPlus className={`w-5 h-5 ${status === 'running' ? 'animate-spin' : ''}`} />
+                    </div>
+                    <div className="text-center">
+                        <span className="text-sm block">Create Folder</span>
+                        <span className="text-[9px] text-violet-500/60 font-mono uppercase tracking-widest">OneDrive Setup</span>
+                    </div>
+                </button>
             </div>
 
             {/* Console Log Window */}
@@ -683,7 +700,7 @@ const IntelligenceSyncPanel = ({ selectedDate }: { selectedDate: string }) => {
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                     <span className="text-[9px] font-mono text-gray-600 uppercase ml-auto">Terminal v2.0-Alpha</span>
                 </div>
-                <div className="p-3 h-32 overflow-y-auto font-mono text-[10px] space-y-1">
+                <div className="p-3 h-40 overflow-y-auto font-mono text-[10px] space-y-1">
                     {logs.length === 0 ? (
                         <p className="text-gray-700 italic">// High-Tech Autonomous Router Status: ACTIVE
 // Monitoring: 'Pictures/Camera Roll'
@@ -693,8 +710,10 @@ const IntelligenceSyncPanel = ({ selectedDate }: { selectedDate: string }) => {
                         logs.map((log, i) => (
                             <p key={i} className={
                                 log.startsWith('[ERROR]') || log.startsWith('[EXCEPTION]') || log.startsWith('ERROR:') ? 'text-rose-400' :
+                                log.startsWith('[SUCCESS]') ? 'text-emerald-400' :
                                 log.startsWith('[NEW]') || log.startsWith('MATCH:') || log.startsWith('ROUTED:') ? 'text-emerald-400 font-bold' :
-                                log.startsWith('[EXISTING]') || log.startsWith('SKIP:') ? 'text-gray-500' :
+                                log.startsWith('[EXISTING]') || log.startsWith('SKIP:') || log.startsWith('[SKIP]') ? 'text-gray-500' :
+                                log.startsWith('DEDUP:') ? 'text-amber-500/70' :
                                 log.startsWith('MODE:') || log.startsWith('>') ? 'text-cyan-400 font-bold border-t border-white/5 pt-1 mt-1' :
                                 'text-gray-300'
                             }>
