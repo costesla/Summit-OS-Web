@@ -150,8 +150,7 @@ jobs:
           action: "upload"
           app_location: "frontend"
           api_location: ""           # No SWA-managed Functions; backend is a standalone Azure Function App
-          output_location: "out"     # Pre-built static export — SWA uploads this directory directly
-          skip_app_build: true       # We already built above; prevent Oryx double-build
+          output_location: "out"     # Pre-built static export directory (relative to app_location)
 
   # ─────────────────────────────────────────────────────────────
   # PHASE 2: Post-deploy verification
