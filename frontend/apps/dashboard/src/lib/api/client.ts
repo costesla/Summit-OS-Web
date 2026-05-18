@@ -10,8 +10,12 @@
 import telemetry, { EVENTS } from '../telemetry'
 
 // ─── Config ───────────────────────────────────────────────────────────────────
+// Supports both the spec-required VITE_PUBLIC_API_BASE_URL and the
+// existing VITE_API_BASE_URL (for backward compatibility with current Azure config).
 export const BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? 'https://summitos-api.azurewebsites.net/api'
+  import.meta.env.VITE_PUBLIC_API_BASE_URL ??
+  import.meta.env.VITE_API_BASE_URL ??
+  'https://summitos-api.azurewebsites.net/api'
 
 const DEFAULT_TIMEOUT_MS = 15_000
 const DEFAULT_RETRIES = 1

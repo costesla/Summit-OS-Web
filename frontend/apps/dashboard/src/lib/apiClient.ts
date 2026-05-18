@@ -1,15 +1,14 @@
 /**
  * SummitOS API Client — public entry point
  *
- * This flat re-export keeps the import path consistent with the
- * Phase 4 spec (import from 'src/lib/apiClient') while the
- * implementation lives in api/client.ts + api/endpoints.ts.
+ * Flat re-export matching the Phase 4 spec import path:
+ *   import { getDailySummary, fetchDriverSync } from '../lib/apiClient'
+ *   import { api, apiGet, apiPost, ApiError } from '../lib/apiClient'
+ *   import { logEvent, logError, logTiming } from '../lib/apiClient'
  *
- * Usage:
- *   import { apiGet, apiPost, ApiError } from '../lib/apiClient'
- *   import { api } from '../lib/apiClient'          // typed endpoint wrappers
- *   import { BASE_URL } from '../lib/apiClient'     // base URL for diagnostics
+ * Implementation lives in api/client.ts + api/endpoints.ts + telemetry.ts
  */
 export { apiGet, apiPost, apiRequest, BASE_URL, ApiError } from './api/client'
-export { api } from './api/endpoints'
-export type { TeslaStatus, UberTripsResponse, SyncResponse } from './api/endpoints'
+export { api, getDailySummary, fetchDriverSync } from './api/endpoints'
+export type { TeslaStatus, UberTripsResponse, SyncResponse, TessieDrivesResponse } from './api/endpoints'
+export { logEvent, logError, logTiming, telemetry, EVENTS } from './telemetry'

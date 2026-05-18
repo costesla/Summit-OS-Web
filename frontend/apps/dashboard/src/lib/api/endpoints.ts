@@ -99,4 +99,66 @@ export const api = {
     apiPost<SyncResponse>('/operations/scan-day-trips', { date, path }),
 }
 
+// ─── Phase 4 spec-required named wrappers ────────────────────────────────────
+
+/**
+ * Fetch the aggregated daily summary for a given date.
+ * Returns drive metrics, Uber earnings, and expense totals.
+ *
+ * @example const summary = await getDailySummary('2026-05-18')
+ */
+export async function getDailySummary(date: string): Promise<{
+  date: string
+  uber_earnings: number
+  trip_count: number
+  total_miles: number
+  battery_drain_kwh: number
+  net_earnings: number
+  drives?: TessieDrivesResponse['drives']
+  trips?: UberTripsResponse['trips']
+}> {
+  const [drives, trips] = await Promise.allSettled([
+    apiGet<TessieDrivesResponse>(`/copilot/tessie/drives?tag=Uber&days=1`),
+    apiGet<UberTripsResponse>(`/operations/get-day-trips?date=${date}`),
+  ])
+
+  const driveList = drives.status === 'fulfilled' ? drives.value.drives : []
+  const tripList  = trips.status === 'fulfilled'  ? trips.value.trips   : []
+
+  const uberEarnings  = tripList.reduce((s, t) => s + t.driver_earnings, 0)
+  const totalMiles    = driveList.reduce((s, d) => s + d.distance_miles, 0)
+  const batteryDrain  = driveList.reduce((s, d) => s + d.energy_used_kwh, 0)
+
+  return {
+    date,
+    uber_earnings: uberEarnings,
+    trip_count: tripList.length,
+    total_miles: totalMiles,
+    battery_drain_kwh: batteryDrain,
+    net_earnings: uberEarnings, // extended by caller if private payments known
+    drives: driveList,
+    trips: tripList,
+  }
+}
+
+/**
+ * Fetch and sync the driver state for a given date from the cloud.
+ * Returns saved expenses, sync metadata, and success flag.
+ *
+ * @example const sync = await fetchDriverSync('2026-05-18')
+ */
+export async function fetchDriverSync(date: string): Promise<{
+  success: boolean
+  date: string
+  expenses?: { fastfood: unknown[]; charging: unknown[] }
+  error?: string
+}> {
+  return apiGet<{
+    success: boolean
+    date: string
+    expenses?: { fastfood: unknown[]; charging: unknown[] }
+    error?: string
+  }>(`/driver/sync?date=${date}`)
+}
+
 export default api
