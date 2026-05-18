@@ -5,6 +5,7 @@ on:
       - master
     paths:
       - 'frontend/apps/dashboard/**'
+      - '.github/workflows/azure-static-web-apps-dashboard.yml'
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches:
@@ -21,11 +22,38 @@ jobs:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Build and Deploy Dashboard
+    defaults:
+      run:
+        working-directory: frontend/apps/dashboard
+
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
           lfs: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/apps/dashboard/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Secret scan
+        run: node scripts/scan-secrets.mjs --all
+
+      - name: Type check
+        run: npm run type-check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Dependency audit (report only)
+        run: npm run audit:report
+        continue-on-error: true
 
       - name: Deploy to Azure Static Web Apps
         id: builddeploy

@@ -6,8 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "type-check": "tsc --noEmit",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "ci": "npm run type-check && npm run lint && npm run build",
+    "audit:report": "npm audit --audit-level=moderate"
   },
   "dependencies": {
     "react": "^19.2.0",
