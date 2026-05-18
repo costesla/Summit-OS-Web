@@ -11,7 +11,9 @@ interface TellerConnectButtonProps {
 
 declare global {
     interface Window {
-        TellerConnect: any;
+        TellerConnect: {
+            setup: (opts: Record<string, unknown>) => { open: () => void };
+        } | undefined;
     }
 }
 
@@ -22,18 +24,21 @@ const TellerConnectButton: React.FC<TellerConnectButtonProps> = ({ applicationId
     const [copied, setCopied] = useState(false);
 
     useEffect(() => {
-        // Load Teller SDK dynamically
-        if (window.TellerConnect) {
-            setStatus('ready');
-            return;
-        }
+        // Load Teller SDK dynamically — check after mount to avoid SSR issues
+        const timer = setTimeout(() => {
+            if (window.TellerConnect) {
+                setStatus('ready');
+                return;
+            }
 
-        const script = document.createElement('script');
-        script.src = 'https://cdn.teller.io/connect/connect.js';
-        script.async = true;
-        script.onload = () => setStatus('ready');
-        script.onerror = () => setStatus('error');
-        document.head.appendChild(script);
+            const script = document.createElement('script');
+            script.src = 'https://cdn.teller.io/connect/connect.js';
+            script.async = true;
+            script.onload = () => setStatus('ready');
+            script.onerror = () => setStatus('error');
+            document.head.appendChild(script);
+        }, 0);
+        return () => clearTimeout(timer);
     }, []);
 
     const updateKeyVault = async (accessToken: string) => {
@@ -62,7 +67,7 @@ const TellerConnectButton: React.FC<TellerConnectButtonProps> = ({ applicationId
         const teller = window.TellerConnect.setup({
             applicationId: applicationId,
             environment: environment || 'production',
-            onSuccess: (enrollment: any) => {
+            onSuccess: (enrollment: { accessToken?: string }) => {
                 const accessToken = enrollment.accessToken;
                 if (accessToken) {
                     setToken(accessToken);
@@ -73,7 +78,7 @@ const TellerConnectButton: React.FC<TellerConnectButtonProps> = ({ applicationId
             onExit: () => {
                 console.log('Teller Connect closed');
             }
-        });
+        } as Record<string, unknown>);
 
         teller.open();
     }, [applicationId, environment, onTokenReceived]);

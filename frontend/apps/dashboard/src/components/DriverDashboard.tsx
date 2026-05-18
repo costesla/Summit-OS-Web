@@ -644,7 +644,7 @@ const UberTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count: n
     const [loading, setLoading] = useState(true);
     const [totalEarnings, setTotalEarnings] = useState(0);
 
-    const fetchTrips = async () => {
+    const fetchTrips = useCallback(async () => {
         setLoading(true);
         try {
             const resp = await fetch(`${AZURE_BASE}/operations/get-day-trips?date=${selectedDate}&t=${Date.now()}`, {
@@ -657,9 +657,9 @@ const UberTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count: n
             setTotalEarnings(earnings);
             onTripsLoaded?.(tripList.length, earnings);
         } catch { setTrips([]); onTripsLoaded?.(0, 0); } finally { setLoading(false); }
-    };
+    }, [selectedDate, onTripsLoaded]);
 
-    useEffect(() => { fetchTrips(); }, [selectedDate]);
+    useEffect(() => { fetchTrips(); }, [fetchTrips]);
 
 
     return (
@@ -817,7 +817,7 @@ const IntelligenceSyncPanel: React.FC<{
         
         try {
             return await resp.json();
-        } catch (e) {
+        } catch {
             throw new Error('TIMEOUT_EXPECTED');
         }
     };
@@ -841,9 +841,9 @@ const IntelligenceSyncPanel: React.FC<{
                 setStatus('error');
                 setLogs(prev => [...prev, `> [ERROR] ${data.error}`]);
             }
-        } catch (e: any) {
+        } catch (err: unknown) {
             setStatus('error');
-            setLogs(prev => [...prev, `> [CRITICAL] ${e.message}`]);
+            setLogs(prev => [...prev, `> [CRITICAL] ${err instanceof Error ? err.message : String(err)}`]);
         }
     };
 
@@ -868,9 +868,9 @@ const IntelligenceSyncPanel: React.FC<{
                 setStatus('error');
                 setLogs(prev => [...prev, ...(data.logs || []), `> [ERROR] ${data.error}`]);
             }
-        } catch (e: any) {
+        } catch (err: unknown) {
             setStatus('error');
-            setLogs(prev => [...prev, `> [CRITICAL] ${e.message}`]);
+            setLogs(prev => [...prev, `> [CRITICAL] ${err instanceof Error ? err.message : String(err)}`]);
         }
     };
 
@@ -917,8 +917,9 @@ const IntelligenceSyncPanel: React.FC<{
                 setStatus('error');
                 setLogs(prev => [...prev, `> [ERROR] ${data.error}`]);
             }
-        } catch (e: any) {
-            if (e.message === 'TIMEOUT_EXPECTED') {
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err);
+            if (msg === 'TIMEOUT_EXPECTED') {
                 setStatus('success'); // Mark as success because background job is running
                 setLogs(prev => [...prev, 
                     `> [NOTICE] Large scan detected (>45s).`,
@@ -927,7 +928,7 @@ const IntelligenceSyncPanel: React.FC<{
                 ]);
             } else {
                 setStatus('error');
-                setLogs(prev => [...prev, `> [CRITICAL] ${e.message}`]);
+                setLogs(prev => [...prev, `> [CRITICAL] ${msg}`]);
             }
         }
     };
@@ -948,8 +949,9 @@ const IntelligenceSyncPanel: React.FC<{
                 setStatus('error');
                 setLogs(prev => [...prev, `> [ERROR] ${data.error}`]);
             }
-        } catch (e: any) {
-            if (e.message === 'TIMEOUT_EXPECTED') {
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err);
+            if (msg === 'TIMEOUT_EXPECTED') {
                 setStatus('success');
                 setLogs(prev => [...prev, 
                     `> [NOTICE] Large scan detected.`,
@@ -958,7 +960,7 @@ const IntelligenceSyncPanel: React.FC<{
                 ]);
             } else {
                 setStatus('error');
-                setLogs(prev => [...prev, `> [CRITICAL] ${e.message}`]);
+                setLogs(prev => [...prev, `> [CRITICAL] ${msg}`]);
             }
         }
     };
@@ -1165,6 +1167,36 @@ const MONTHLY_GOAL = 6500;
 const WEEKLY_GOAL = Math.round(MONTHLY_GOAL / 4);
 const DAILY_GOAL = Math.round(MONTHLY_GOAL / 28);
 
+// Declared at module scope to satisfy react-hooks/static-components
+const Bar = ({ label, earned, target, color }: { label: string; earned: number; target: number; color: string }) => {
+    const pct = Math.min(100, (earned / target) * 100);
+    const done = earned >= target;
+    const barColor = done ? '#10b981' : pct > 60 ? '#f59e0b' : color;
+    return (
+        <div className="flex-1 min-w-0">
+            <div className="flex justify-between items-baseline mb-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 font-mono">{label}</span>
+                <div className="flex items-baseline gap-1.5">
+                    <span className="text-sm font-black tabular-nums" style={{ color: barColor }}>${earned.toFixed(0)}</span>
+                    <span className="text-[9px] text-gray-600 font-mono">/ ${target.toLocaleString()}</span>
+                </div>
+            </div>
+            <div className="h-2 rounded-full bg-white/5 overflow-hidden relative">
+                <div
+                    className="h-full rounded-full transition-all duration-700"
+                    style={{ width: `${pct}%`, background: barColor, boxShadow: `0 0 8px ${barColor}88` }}
+                />
+            </div>
+            <div className="flex justify-between mt-1">
+                <span className="text-[8px] text-gray-700 font-mono">{pct.toFixed(0)}%</span>
+                {done
+                    ? <span className="text-[8px] font-bold text-emerald-500 font-mono">TARGET MET ✓</span>
+                    : <span className="text-[8px] text-gray-700 font-mono">${(target - earned).toFixed(0)} to go</span>}
+            </div>
+        </div>
+    );
+};
+
 const GoalTrackerPanel: React.FC<{ todayEarnings: number; selectedDate: string }> = ({ todayEarnings, selectedDate }) => {
     const getHistory = (): Record<string, number> => {
         try { return JSON.parse(localStorage.getItem('cos_daily_history') ?? '{}'); } catch { return {}; }
@@ -1191,34 +1223,7 @@ const GoalTrackerPanel: React.FC<{ todayEarnings: number; selectedDate: string }
         .filter(([d]) => d.startsWith(ym))
         .reduce((s, [, v]) => s + v, 0);
 
-    const Bar = ({ label, earned, target, color }: { label: string; earned: number; target: number; color: string }) => {
-        const pct = Math.min(100, (earned / target) * 100);
-        const done = earned >= target;
-        const barColor = done ? '#10b981' : pct > 60 ? '#f59e0b' : color;
-        return (
-            <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-baseline mb-1.5">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 font-mono">{label}</span>
-                    <div className="flex items-baseline gap-1.5">
-                        <span className="text-sm font-black tabular-nums" style={{ color: barColor }}>${earned.toFixed(0)}</span>
-                        <span className="text-[9px] text-gray-600 font-mono">/ ${target.toLocaleString()}</span>
-                    </div>
-                </div>
-                <div className="h-2 rounded-full bg-white/5 overflow-hidden relative">
-                    <div
-                        className="h-full rounded-full transition-all duration-700"
-                        style={{ width: `${pct}%`, background: barColor, boxShadow: `0 0 8px ${barColor}88` }}
-                    />
-                </div>
-                <div className="flex justify-between mt-1">
-                    <span className="text-[8px] text-gray-700 font-mono">{pct.toFixed(0)}%</span>
-                    {done
-                        ? <span className="text-[8px] font-bold text-emerald-500 font-mono">TARGET MET ✓</span>
-                        : <span className="text-[8px] text-gray-700 font-mono">${(target - earned).toFixed(0)} to go</span>}
-                </div>
-            </div>
-        );
-    };
+    // Bar is defined at module level (below) to satisfy react-hooks/static-components
 
     return (
         <div className="p-5 rounded-2xl border border-cyan-500/15 relative overflow-hidden"
@@ -1311,7 +1316,7 @@ const DriverDashboard = () => {
             const history = JSON.parse(localStorage.getItem('cos_daily_history') ?? '{}');
             history[selectedDate] = gross;
             localStorage.setItem('cos_daily_history', JSON.stringify(history));
-        } catch { }
+        } catch { /* localStorage write failure — non-critical */ }
     }, [uberStats, privatePayments, selectedDate]);
 
     // ── Auto-advance to a new day at midnight ────────────────────────────────
@@ -1397,13 +1402,13 @@ const DriverDashboard = () => {
             } else {
                 setSyncMessage(`✗ Save failed: ${data.error || 'Unknown error'}`);
             }
-        } catch (err: any) {
-            setSyncMessage(`✗ Network error: ${err.message}`);
+        } catch (err: unknown) {
+            setSyncMessage(`✗ Network error: ${err instanceof Error ? err.message : String(err)}`);
         } finally {
             setIsSyncingCloud(false);
             setTimeout(() => setSyncMessage(null), 4000);
         }
-    }, [expenses]);
+    }, [expenses, selectedDate]);
 
     useEffect(() => {
         fetchFromCloud(selectedDate);
@@ -1706,13 +1711,13 @@ const DriverDashboard = () => {
             </div>
         </div>
         );
-    } catch (e: any) {
+    } catch (e: unknown) {
         return (
             <div className="min-h-screen bg-black flex items-center justify-center p-10">
                 <div className="max-w-xl w-full bg-rose-500/10 border border-rose-500/20 p-8 rounded-2xl">
                     <h1 className="text-xl font-bold text-rose-400 mb-4">Dashboard Crash</h1>
                     <p className="text-gray-400 font-mono text-xs mb-6 bg-black/40 p-4 rounded-xl border border-white/5 whitespace-pre-wrap">
-                        {e.message}
+                        {e instanceof Error ? e.message : String(e)}
                     </p>
                     <button onClick={() => window.location.reload()} className="px-6 py-2 bg-rose-500 text-white rounded-xl font-bold text-sm">
                         Refresh Dashboard
