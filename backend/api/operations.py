@@ -4,6 +4,7 @@ import json
 import os
 from datetime import datetime, timedelta
 from services.graph import GraphClient
+from services.auth_guard import cors_headers as _get_cors
 
 def calendar_week_of_month(dt: datetime) -> int:
     """
@@ -31,16 +32,14 @@ from services.cloud_watcher import CloudWatcherService
 
 bp = func.Blueprint()
 
-CORS_HEADERS = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type"
-}
+
+def _cors(req: func.HttpRequest) -> dict:
+    return _get_cors(req)
 
 @bp.route(route="operations/sync-folders", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def sync_folders(req: func.HttpRequest) -> func.HttpResponse:
     if req.method == "OPTIONS":
-        return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
+        return func.HttpResponse(status_code=204, headers=_cors(req))
 
     logs = []
     try:
@@ -72,7 +71,7 @@ def sync_folders(req: func.HttpRequest) -> func.HttpResponse:
             return func.HttpResponse(
                 json.dumps({"success": True, "logs": logs}),
                 status_code=200,
-                headers=CORS_HEADERS,
+                headers=_cors(req),
                 mimetype="application/json"
             )
         else:
@@ -100,7 +99,7 @@ def sync_folders(req: func.HttpRequest) -> func.HttpResponse:
             return func.HttpResponse(
                 json.dumps({"success": True, "logs": logs}),
                 status_code=200,
-                headers=CORS_HEADERS,
+                headers=_cors(req),
                 mimetype="application/json"
             )
     except Exception as e:
@@ -108,14 +107,14 @@ def sync_folders(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(
             json.dumps({"success": False, "error": str(e), "logs": logs + [f"[ERROR] {str(e)}"]}),
             status_code=500,
-            headers=CORS_HEADERS,
+            headers=_cors(req),
             mimetype="application/json"
         )
 
 @bp.route(route="operations/trigger-cloud-scan", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def trigger_cloud_scan(req: func.HttpRequest) -> func.HttpResponse:
     if req.method == "OPTIONS":
-        return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
+        return func.HttpResponse(status_code=204, headers=_cors(req))
 
     try:
         data = req.get_json() if req.get_body() else {}
@@ -132,7 +131,7 @@ def trigger_cloud_scan(req: func.HttpRequest) -> func.HttpResponse:
                 "logs": results.get("logs", [])
             }),
             status_code=200,
-            headers=CORS_HEADERS,
+            headers=_cors(req),
             mimetype="application/json"
         )
     except Exception as e:
@@ -140,7 +139,7 @@ def trigger_cloud_scan(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(
             json.dumps({"success": False, "error": str(e)}),
             status_code=500,
-            headers=CORS_HEADERS,
+            headers=_cors(req),
             mimetype="application/json"
         )
 
@@ -149,7 +148,7 @@ def scan_day_trips(req: func.HttpRequest) -> func.HttpResponse:
     """OCRs all screenshots in a day's OneDrive folder, sorts by trip time,
     and saves numbered TRIP-{YYYYMMDD}-{N} records to Rides.Rides."""
     if req.method == "OPTIONS":
-        return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
+        return func.HttpResponse(status_code=204, headers=_cors(req))
     try:
         data = req.get_json() if req.get_body() else {}
         date_str = data.get("date")
@@ -157,55 +156,55 @@ def scan_day_trips(req: func.HttpRequest) -> func.HttpResponse:
         if not date_str:
             return func.HttpResponse(
                 json.dumps({"success": False, "error": "date is required (YYYY-MM-DD)"}),
-                status_code=400, headers=CORS_HEADERS, mimetype="application/json"
+                status_code=400, headers=_cors(req), mimetype="application/json"
             )
         service = CloudWatcherService()
         result = service.scan_and_number_trips(date_str, explicit_path=explicit_path)
         return func.HttpResponse(
             json.dumps(result),
-            status_code=200, headers=CORS_HEADERS, mimetype="application/json"
+            status_code=200, headers=_cors(req), mimetype="application/json"
         )
     except Exception as e:
         logging.error(f"Scan Day Trips Error: {e}")
         return func.HttpResponse(
             json.dumps({"success": False, "error": str(e)}),
-            status_code=500, headers=CORS_HEADERS, mimetype="application/json"
+            status_code=500, headers=_cors(req), mimetype="application/json"
         )
 
 @bp.route(route="operations/get-day-trips", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def get_day_trips(req: func.HttpRequest) -> func.HttpResponse:
     """Returns saved TRIP-{YYYYMMDD}-* records from SQL for a given date."""
     if req.method == "OPTIONS":
-        return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
+        return func.HttpResponse(status_code=204, headers=_cors(req))
     try:
         date_str = req.params.get("date")
         if not date_str:
             return func.HttpResponse(
                 json.dumps({"success": False, "error": "date param required"}),
-                status_code=400, headers=CORS_HEADERS, mimetype="application/json"
+                status_code=400, headers=_cors(req), mimetype="application/json"
             )
         service = CloudWatcherService()
         trips = service.get_trips_for_date(date_str)
         return func.HttpResponse(
             json.dumps({"success": True, "date": date_str, "trips": trips, "trip_count": len(trips)}),
-            status_code=200, headers=CORS_HEADERS, mimetype="application/json"
+            status_code=200, headers=_cors(req), mimetype="application/json"
         )
     except Exception as e:
         logging.error(f"Get Day Trips Error: {e}")
         return func.HttpResponse(
             json.dumps({"success": False, "error": str(e)}),
-            status_code=500, headers=CORS_HEADERS, mimetype="application/json"
+            status_code=500, headers=_cors(req), mimetype="application/json"
         )
 
 @bp.route(route="operations/upload-screenshot", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def upload_screenshot(req: func.HttpRequest) -> func.HttpResponse:
     if req.method == "OPTIONS":
-        return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
+        return func.HttpResponse(status_code=204, headers=_cors(req))
     
     try:
         file = req.files.get("file")
         if not file:
-            return func.HttpResponse(json.dumps({"success": False, "error": "No file provided"}), status_code=400, headers=CORS_HEADERS, mimetype="application/json")
+            return func.HttpResponse(json.dumps({"success": False, "error": "No file provided"}), status_code=400, headers=_cors(req), mimetype="application/json")
         
         filename = file.filename
         image_bytes = file.read()
@@ -217,7 +216,7 @@ def upload_screenshot(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(
             json.dumps({"success": result.get("status") == "MATCHED", "result": result}),
             status_code=200,
-            headers=CORS_HEADERS,
+            headers=_cors(req),
             mimetype="application/json"
         )
     except Exception as e:
@@ -225,14 +224,14 @@ def upload_screenshot(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(
             json.dumps({"success": False, "error": str(e)}),
             status_code=500,
-            headers=CORS_HEADERS,
+            headers=_cors(req),
             mimetype="application/json"
         )
 
 @bp.route(route="daily-sync", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def daily_sync(req: func.HttpRequest) -> func.HttpResponse:
     if req.method == "OPTIONS":
-        return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
+        return func.HttpResponse(status_code=204, headers=_cors(req))
         
     logging.info("Cloud Daily Sync Triggered")
     logs = []
@@ -309,7 +308,7 @@ def daily_sync(req: func.HttpRequest) -> func.HttpResponse:
                 "logs": logs
             }),
             status_code=200,
-            headers=CORS_HEADERS,
+            headers=_cors(req),
             mimetype="application/json"
         )
 
@@ -322,6 +321,6 @@ def daily_sync(req: func.HttpRequest) -> func.HttpResponse:
                 "logs": logs + [f"[CRITICAL] {str(e)}"]
             }),
             status_code=500,
-            headers=CORS_HEADERS,
+            headers=_cors(req),
             mimetype="application/json"
         )

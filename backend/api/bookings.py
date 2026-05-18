@@ -11,14 +11,19 @@ from services.database import DatabaseClient
 from services.flight import AviationStackClient
 from services.datetime_utils import normalize_to_utc
 from services.invoice import create_stripe_payment_link, build_invoice_id
+from services.auth_guard import cors_headers as _get_cors
 
 bp = func.Blueprint()
 
-def _cors_headers():
+def _cors_headers(req: func.HttpRequest = None):
+    """CORS headers with allow-listed origin reflection (no wildcard)."""
+    if req is not None:
+        return _get_cors(req)
+    # Fallback for call sites that don't pass req (legacy compatibility)
     return {
-        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Origin": "https://www.costesla.com",
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type"
+        "Access-Control-Allow-Headers": "Content-Type",
     }
 
 @bp.route(route="calendar-availability", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)

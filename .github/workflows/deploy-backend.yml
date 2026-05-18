@@ -10,31 +10,97 @@ on:
 
 env:
   AZURE_FUNCTIONAPP_NAME: 'summitos-api'
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: 'backend' 
-  PYTHON_VERSION: '3.11' 
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: 'backend'
+  PYTHON_VERSION: '3.11'
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  build-and-deploy:
+  # ─────────────────────────────────────────────────────────────
+  # PHASE 0: Secret scan — fail if local.settings.json or secrets in zip
+  # ─────────────────────────────────────────────────────────────
+  secret_scan:
+    name: Secret Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify local.settings.json is NOT committed
+        run: |
+          if find backend -name "local.settings.json" | grep -q .; then
+            echo "🚨 CRITICAL: local.settings.json found in repository!"
+            echo "   Remove it immediately: git rm --cached backend/local.settings.json"
+            exit 1
+          fi
+          echo "✅ local.settings.json not present in repo."
+
+      - name: Scan backend for embedded secret patterns
+        run: |
+          FAIL=0
+          PATTERNS=(
+            "AccountKey=[A-Za-z0-9+/=]\{20\}"
+            "OPENAI_API_KEY=sk-"
+            "OAUTH_CLIENT_SECRET="
+            "Pwd=.*Azure"
+            "sk_live_[A-Za-z0-9]\{20\}"
+          )
+          for pat in "${PATTERNS[@]}"; do
+            if grep -r --include="*.py" --include="*.json" --include="*.env" \
+                       -l "$pat" backend/ 2>/dev/null | grep -q .; then
+              echo "🚨 Secret pattern found in backend source: $pat"
+              FAIL=1
+            fi
+          done
+          if [ $FAIL -eq 1 ]; then
+            echo "❌ Remove embedded secrets and use environment variables."
+            exit 1
+          fi
+          echo "✅ No embedded secret patterns found."
+
+  # ─────────────────────────────────────────────────────────────
+  # PHASE 1: Package and verify the deployment zip
+  # ─────────────────────────────────────────────────────────────
+  build_and_deploy:
+    name: Build and Deploy
+    needs: secret_scan
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Python version
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Create and start virtual environment
-        run: |
-          python -m venv venv
-          source venv/bin/activate
+          cache: 'pip'
 
       - name: Install dependencies
-        run: pip install -r ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/requirements.txt
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/requirements.txt
 
-      - name: 'Deploy to Azure Functions'
+      - name: Verify package structure
+        run: |
+          echo "=== Backend directory contents ==="
+          ls -la ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/
+          echo ""
+          echo "=== Checking for required files ==="
+          for f in "function_app.py" "host.json" "requirements.txt"; do
+            if [ -f "${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/$f" ]; then
+              echo "✅ $f present"
+            else
+              echo "❌ MISSING: $f"
+              exit 1
+            fi
+          done
+          echo ""
+          echo "=== Verifying local.settings.json NOT in package ==="
+          if [ -f "${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/local.settings.json" ]; then
+            echo "🚨 CRITICAL: local.settings.json would be deployed!"
+            exit 1
+          fi
+          echo "✅ No local.settings.json in deployment package."
+
+      - name: Deploy to Azure Functions
         uses: Azure/functions-action@v1
         id: deploy-to-function
         with:
@@ -43,3 +109,15 @@ jobs:
           publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE_SUMMITOS_API }}
           scm-do-build-during-deployment: true
           enable-oryx-build: true
+
+      - name: Post-deploy smoke test
+        run: |
+          sleep 20  # wait for cold start
+          echo "=== Pinging /api/ping ==="
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://${{ env.AZURE_FUNCTIONAPP_NAME }}.azurewebsites.net/api/ping" || echo "000")
+          if [ "$STATUS" -eq 200 ]; then
+            echo "✅ Backend API is live"
+          else
+            echo "⚠️  Backend returned HTTP $STATUS (may still be warming up)"
+          fi

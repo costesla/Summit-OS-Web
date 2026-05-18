@@ -7,13 +7,95 @@ on:
     paths:
       - 'frontend/**'
       - '!frontend/apps/dashboard/**'
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    branches:
+      - master
+    paths:
+      - 'frontend/**'
+      - '!frontend/apps/dashboard/**'
   workflow_dispatch:
 
+# Node 24 compat for all actions that use Node.js runners
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
-  build_and_deploy_job:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event_name != 'closed')
+  # ─────────────────────────────────────────────────────────────
+  # PHASE 0: Secret Scan — fail fast if secrets slip into the build
+  # ─────────────────────────────────────────────────────────────
+  secret_scan:
+    name: Secret Scan
     runs-on: ubuntu-latest
-    name: Build and Deploy Job
+    if: github.event_name != 'pull_request' || github.event.action != 'closed'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan for committed secret files
+        run: |
+          echo "=== Checking for forbidden secret files ==="
+          FAIL=0
+
+          for pattern in \
+            "local.settings.json" \
+            "*.env.production" \
+            "*.env.development"; do
+            if find . -name "$pattern" -not -path "./.git/*" | grep -q .; then
+              echo "🚨 FAIL: Found forbidden file matching: $pattern"
+              find . -name "$pattern" -not -path "./.git/*"
+              FAIL=1
+            fi
+          done
+
+          if [ $FAIL -eq 1 ]; then
+            echo ""
+            echo "❌ Secret scan failed. Remove the above files and do NOT commit them."
+            exit 1
+          fi
+          echo "✅ No forbidden secret files found."
+
+      - name: Scan for secret patterns in frontend source
+        run: |
+          echo "=== Scanning source for embedded secret patterns ==="
+          FAIL=0
+
+          # Patterns that should NEVER be in committed source
+          PATTERNS=(
+            "AccountKey=[A-Za-z0-9+/=]\{20\}"
+            "OPENAI_API_KEY=sk-"
+            "OAUTH_CLIENT_SECRET="
+            "SQL_CONNECTION_STRING=.*Pwd="
+            "sk_live_[A-Za-z0-9]\{20\}"
+            "sk_test_51"
+          )
+
+          for pat in "${PATTERNS[@]}"; do
+            if grep -r --include="*.ts" --include="*.tsx" --include="*.js" \
+                      --include="*.json" --include="*.env" \
+                      -l "$pat" frontend/ 2>/dev/null | grep -q .; then
+              echo "🚨 FAIL: Secret pattern found: $pat"
+              grep -r --include="*.ts" --include="*.tsx" --include="*.js" \
+                       --include="*.json" --include="*.env" \
+                       -l "$pat" frontend/ 2>/dev/null
+              FAIL=1
+            fi
+          done
+
+          if [ $FAIL -eq 1 ]; then
+            echo ""
+            echo "❌ Embedded secrets detected. Use environment variables only."
+            exit 1
+          fi
+          echo "✅ No embedded secret patterns found."
+
+  # ─────────────────────────────────────────────────────────────
+  # PHASE 1: Build & Deploy
+  # ─────────────────────────────────────────────────────────────
+  build_and_deploy_job:
+    name: Build and Deploy
+    needs: secret_scan
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -23,15 +105,41 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Install Dependencies
-        run: cd frontend && npm ci
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run npm audit (report only, non-blocking)
+        working-directory: frontend
+        run: npm audit --audit-level=high || true
+        # Non-blocking — review output in logs. Resolve manually via npm audit fix.
 
       - name: Build Static Site
-        run: cd frontend && npm run build
+        working-directory: frontend
+        run: npm run build
         env:
+          # Public env vars (baked into static bundle at build time)
           NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
+          NEXT_PUBLIC_AZURE_FUNCTION_URL: ${{ secrets.NEXT_PUBLIC_AZURE_FUNCTION_URL }}
+          NEXT_PUBLIC_AZURE_FUNCTION_KEY: ${{ secrets.NEXT_PUBLIC_AZURE_FUNCTION_KEY }}
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+
+      - name: Verify output directory
+        run: |
+          echo "=== Build output contents ==="
+          ls -la frontend/out/
+          echo ""
+          echo "=== Checking for API routes in output (should NOT exist in static build) ==="
+          if [ -d "frontend/out/api" ]; then
+            echo "⚠️  WARNING: /api directory found in static output — these routes are NOT served by SWA."
+            echo "   This is expected for static export. Clients must call Azure Functions directly."
+          else
+            echo "✅ No /api directory in output — correct for static SWA deployment."
+          fi
 
       - name: Deploy to Azure Static Web Apps
         id: builddeploy
@@ -41,17 +149,52 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
           app_location: "frontend"
-          api_location: ""
-          output_location: "out"
-        env:
-          NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
-  close_pull_request_job:
-    if: github.event_name == 'pull_request' && github.event_name == 'closed'
+          api_location: ""           # No SWA-managed Functions; backend is a standalone Azure Function App
+          output_location: "out"     # Pre-built static export — SWA uploads this directory directly
+          skip_app_build: true       # We already built above; prevent Oryx double-build
+
+  # ─────────────────────────────────────────────────────────────
+  # PHASE 2: Post-deploy verification
+  # ─────────────────────────────────────────────────────────────
+  verify_deployment:
+    name: Post-Deploy Verification
+    needs: build_and_deploy_job
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    name: Close Pull Request Job
+    steps:
+      - name: Wait for SWA propagation
+        run: sleep 30
+
+      - name: Verify frontend is reachable
+        run: |
+          SITE_URL="https://gentle-plant-0f873710f.2.azurestaticapps.net"
+          echo "=== Checking $SITE_URL ==="
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$SITE_URL")
+          if [ "$STATUS" -ne 200 ]; then
+            echo "⚠️  Site returned $STATUS (may still be propagating)"
+          else
+            echo "✅ Site is reachable (HTTP 200)"
+          fi
+
+      - name: Verify Azure Function backend is reachable
+        run: |
+          BACKEND="https://summitos-api.azurewebsites.net/api/ping"
+          echo "=== Checking backend ping: $BACKEND ==="
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BACKEND" || echo "000")
+          if [ "$STATUS" -eq 200 ]; then
+            echo "✅ Backend API is reachable"
+          else
+            echo "⚠️  Backend returned $STATUS — check Azure Function App status"
+          fi
+
+  # ─────────────────────────────────────────────────────────────
+  close_pull_request_job:
+  # ─────────────────────────────────────────────────────────────
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    name: Close Pull Request
     steps:
       - name: Close Pull Request
-        id: closepullrequest
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_GENTLE_PLANT_0F873710F }}

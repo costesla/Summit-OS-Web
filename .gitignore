@@ -1,31 +1,11 @@
-# Dependencies
-/node_modules
-frontend/node_modules/
-/.pnp
-.pnp.js
+# ============================================================
+# SummitOS / COS Tesla — Hardened .gitignore
+# DO NOT commit secrets, build artifacts, or local state
+# ============================================================
 
-# Testing
-/coverage
-
-# Next.js
-/.next/
-frontend/.next/
-frontend/out/
-
-# Production
-/build
-frontend/build
-
-# Misc
-.DS_Store
-*.pem
-
-# Debug
-npm-debug.log*
-yarn-debug.log*
-pnpm-debug.log*
-
-# Local Env Files - NEVER commit secrets
+# ========================
+# SECRETS — NEVER COMMIT
+# ========================
 .env
 .env.*
 !.env.example
@@ -38,21 +18,109 @@ pnpm-debug.log*
 *.env.production
 *.env.development
 local.settings.json
-.vercel
+.env.sharepoint
+.env.test
+.env.receipt-engine.template
+*-settings.json
+*_settings.json
+device_code_secret.txt
+auth_code*.txt
+ropc_*.txt
+token.pickle
 
-.vercel
+# ========================
+# BUILD ARTIFACTS
+# ========================
+/.next/
+frontend/.next/
+frontend/.next_old/
+frontend/out/
+/build
+frontend/build
+.vercel/
 
-# Python Backend
+# ========================
+# DEPENDENCIES
+# ========================
+/node_modules
+frontend/node_modules/
+backend/.python_packages/
+backend/venv32/
+backend/.venv/
+.venv/
+/.pnp
+.pnp.js
+
+# ========================
+# PYTHON
+# ========================
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.venv/
-backend/.venv
-backend/venv32
-backend/.python_packages
+.pytest_cache/
+*.pyd
+*.egg-info/
+
+# ========================
+# DEPLOYMENT ZIPS (large binary artifacts)
+# ========================
 *.zip
 backend/deploy.zip
 backend_deploy.zip
-token.pickle
+
+# ========================
+# LOGS & DEBUG OUTPUT
+# ========================
+*.log
+*.ndjson
+Audit_Log.ndjson
+run_log*.txt
+debug_*.txt
+process_trips*.log
+swa_*.txt
+push_output.txt
+diag_output.json
+forms_output.txt
+graph_output.json
+schema_output.txt
+debug_output.txt
+test_write.txt
+
+# ========================
+# OS / EDITOR
+# ========================
+.DS_Store
+*.pem
+desktop.ini
+.vscode/settings.json
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# ========================
+# SCRATCH & TEMP
+# ========================
+scratch/
+temp.json
+to_cloud_search.txt
+0
+=
+
+# ========================
+# MISC / SENSITIVE
+# ========================
+graph_roles.json
+app_perms.json
+func-summit-sync-prod-settings.json
+summitos-api-settings.json
+summitsyncfunc-settings.json
+Sales_Report_*.csv
+sample-trip.json
+diag_*.json
+diag_v*.json
+swa-cli.config.json
+
+# ========================
+# DEBUG / DIAGNOSTIC SCRIPTS (project root)
+# ========================
 backend/diag_bookings.py
