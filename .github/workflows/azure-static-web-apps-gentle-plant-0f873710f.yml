@@ -118,29 +118,6 @@ jobs:
         run: npm audit --audit-level=high || true
         # Non-blocking — review output in logs. Resolve manually via npm audit fix.
 
-      - name: Build Static Site
-        working-directory: frontend
-        run: npm run build
-        env:
-          # Public env vars (baked into static bundle at build time)
-          NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
-          NEXT_PUBLIC_AZURE_FUNCTION_URL: ${{ secrets.NEXT_PUBLIC_AZURE_FUNCTION_URL }}
-          NEXT_PUBLIC_AZURE_FUNCTION_KEY: ${{ secrets.NEXT_PUBLIC_AZURE_FUNCTION_KEY }}
-          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
-
-      - name: Verify output directory
-        run: |
-          echo "=== Build output contents ==="
-          ls -la frontend/out/
-          echo ""
-          echo "=== Checking for API routes in output (should NOT exist in static build) ==="
-          if [ -d "frontend/out/api" ]; then
-            echo "⚠️  WARNING: /api directory found in static output — these routes are NOT served by SWA."
-            echo "   This is expected for static export. Clients must call Azure Functions directly."
-          else
-            echo "✅ No /api directory in output — correct for static SWA deployment."
-          fi
-
       - name: Deploy to Azure Static Web Apps
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -148,9 +125,15 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_GENTLE_PLANT_0F873710F }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
-          app_location: "frontend"
-          api_location: ""           # No SWA-managed Functions; backend is a standalone Azure Function App
-          output_location: "out"     # Pre-built static export directory (relative to app_location)
+          app_location: "frontend"   # SWA/Oryx builds from here
+          api_location: ""           # No SWA-managed Functions; standalone Azure Function App
+          output_location: "out"     # next build output_export dir (next.config.js: output:'export')
+        env:
+          # Public env vars baked into static bundle at build time
+          NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
+          NEXT_PUBLIC_AZURE_FUNCTION_URL: ${{ secrets.NEXT_PUBLIC_AZURE_FUNCTION_URL }}
+          NEXT_PUBLIC_AZURE_FUNCTION_KEY: ${{ secrets.NEXT_PUBLIC_AZURE_FUNCTION_KEY }}
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
 
   # ─────────────────────────────────────────────────────────────
   # PHASE 2: Post-deploy verification
