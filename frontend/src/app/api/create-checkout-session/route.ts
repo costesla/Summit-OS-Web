@@ -1,66 +1,58 @@
-import { NextResponse } from 'next/server';
-import Stripe from 'stripe';
+/**
+ * app/api/create-checkout-session/route.ts
+ *
+ * LOCAL DEV PROXY — This route only runs during `next dev`.
+ *
+ * In PRODUCTION (Azure Static Web Apps static export), this file is NOT executed.
+ * The frontend calls the Azure Function backend directly via lib/api.ts.
+ *
+ * This proxy forwards the request to the Python Azure Function so that
+ * local development works without needing to run the Python backend locally.
+ */
+import { NextResponse } from "next/server";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder', {
-    apiVersion: '2023-10-16' as any,
-});
+const BACKEND =
+  process.env.AZURE_FUNCTION_URL ||
+  "https://summitos-api.azurewebsites.net";
+
+const FUNCTION_KEY = process.env.AZURE_FUNCTION_KEY || "";
 
 export async function POST(req: Request) {
-    try {
-        const body = await req.json();
-        const { 
-            customerName, 
-            customerEmail, 
-            customerPhone, 
-            pickup, 
-            dropoff, 
-            appointmentStart, 
-            price, 
-            passengers,
-            tripDistance,
-            tripDuration
-        } = body;
+  try {
+    const body = await req.json();
 
-        // Convert formatted price string (e.g., "$100.00") to number for Stripe
-        const amountNum = parseFloat(price.replace(/[^0-9.]/g, ''));
-        const amountCents = Math.round(amountNum * 100);
+    const response = await fetch(`${BACKEND}/api/create-checkout-session`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(FUNCTION_KEY ? { "x-functions-key": FUNCTION_KEY } : {}),
+      },
+      body: JSON.stringify({
+        ...body,
+        successUrl:
+          body.successUrl ||
+          `${req.headers.get("origin")}/book/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl:
+          body.cancelUrl ||
+          `${req.headers.get("origin")}/book?payment_cancelled=true`,
+      }),
+    });
 
-        const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card'],
-            customer_email: customerEmail,
-            line_items: [
-                {
-                    price_data: {
-                        currency: 'usd',
-                        product_data: {
-                            name: 'SummitOS Booking',
-                            description: `${pickup} \n-> ${dropoff}`,
-                        },
-                        unit_amount: amountCents,
-                    },
-                    quantity: 1,
-                },
-            ],
-            mode: 'payment',
-            success_url: `${req.headers.get('origin')}/book/success?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${req.headers.get('origin')}/book?payment_cancelled=true`,
-            metadata: {
-                customerName,
-                customerEmail,
-                customerPhone,
-                pickup,
-                dropoff,
-                appointmentStart,
-                passengers: passengers.toString(),
-                tripDistance: tripDistance || 'N/A',
-                tripDuration: tripDuration || 'N/A',
-                fareString: price
-            }
-        });
+    const data = await response.json();
 
-        return NextResponse.json({ id: session.id, url: session.url });
-    } catch (err: any) {
-        console.error("Stripe Checkout Error:", err);
-        return NextResponse.json({ error: err.message }, { status: 500 });
+    if (!response.ok) {
+      return NextResponse.json(
+        { error: data.error || "Backend error" },
+        { status: response.status }
+      );
     }
+
+    return NextResponse.json(data);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("create-checkout-session proxy error:", message);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
+
+export const runtime = "edge"; // use edge runtime (compatible with static export dev mode)
