@@ -326,7 +326,13 @@ class TessieClient:
             "speed": drive_state.get('speed') or 0,
             "heading": drive_state.get('heading'),
             "ignition": drive_state.get('shift_state') is not None,
-            "updatedAt": datetime.now().isoformat()
+            "updatedAt": (lambda: (
+                import_pytz := __import__('pytz'),
+                import_dt := __import__('datetime'),
+                mt_tz := import_pytz.timezone("America/Denver"),
+                now_mt := import_dt.datetime.now(import_dt.timezone.utc).astimezone(mt_tz),
+                now_mt.isoformat()
+            )[-1])()
         }
 
     def get_live_charging_state(self, vin):
@@ -354,7 +360,20 @@ class TessieClient:
             "inside_temp": state.get('climate_state', {}).get('inside_temp'),
             "outside_temp": state.get('climate_state', {}).get('outside_temp'),
             "location": self._resolve_address(drive_state.get('latitude'), drive_state.get('longitude')),
-            "timestamp": datetime.now().isoformat()
+            "timestamp": (lambda: (
+                import_pytz := __import__('pytz'),
+                import_dt := __import__('datetime'),
+                mt_tz := import_pytz.timezone("America/Denver"),
+                now_mt := import_dt.datetime.now(import_dt.timezone.utc).astimezone(mt_tz),
+                now_mt.isoformat()
+            )[-1])(),
+            "formatted_time": (lambda: (
+                import_pytz := __import__('pytz'),
+                import_dt := __import__('datetime'),
+                mt_tz := import_pytz.timezone("America/Denver"),
+                now_mt := import_dt.datetime.now(import_dt.timezone.utc).astimezone(mt_tz),
+                now_mt.strftime("%I:%M %p %Z")
+            )[-1])()
         }
 
     # ─── Cabin Controls ───────────────────────────────────────────────
