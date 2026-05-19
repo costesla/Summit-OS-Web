@@ -173,7 +173,7 @@ class VectorStore:
         if not evidence:
             return "No verifiable patterns detected in the system for this query."
             
-        context = "\\n".join([f"Evidence {i+1}: Pointer={e['source_pointer']}, Confidence={e['original_confidence']}, Reason={e['derivation_reason']}" for i, e in enumerate(evidence)])
+        context = "\n".join([f"Evidence {i+1}: Pointer={e['source_pointer']}, Confidence={e['original_confidence']}, Reason={e['derivation_reason']}" for i, e in enumerate(evidence)])
         
         prompt = f"Detect patterns and correlations from the following systemic evidence based on the query: '{query_text}'.\\n\\nEvidence:\\n{context}"
         try:
@@ -195,7 +195,7 @@ class VectorStore:
         if not evidence:
             return "Hypothesis rejected: Claims cannot be supported by verifiable data."
             
-        context = "\\n".join([f"Source {e['source_pointer']} (Hash: {e['raw_text_hash']}): {e['derivation_reason']}" for e in evidence])
+        context = "\n".join([f"Source {e['source_pointer']} (Hash: {e['raw_text_hash']}): {e['derivation_reason']}" for e in evidence])
         
         prompt = f"Synthesize an investor-facing report answering: '{query_text}'.\\nYou MUST explicitly cite the Source pointers (e.g., [Source R-12345]) for every claim made.\\n\\nValidated Data:\\n{context}"
         try:

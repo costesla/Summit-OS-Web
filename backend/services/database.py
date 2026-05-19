@@ -348,14 +348,27 @@ class DatabaseClient:
 
     def get_daily_metrics(self, start_date, end_date):
         query = """
-        SELECT 
-            Format([Date], 'yyyy-MM-dd') as DateStr,
-            TotalEarnings, TotalTips, RideCount AS TripCount
-        FROM Reports.DailyKPIs
-        WHERE [Date] >= CAST(? AS DATE) AND [Date] <= CAST(? AS DATE)
-        ORDER BY [Date] DESC
+        SELECT
+            Format(kpi.[Date], 'yyyy-MM-dd') as DateStr,
+            kpi.TotalEarnings, kpi.TotalTips, kpi.RideCount AS TripCount,
+            ISNULL(rd.TotalMiles, 0.0) AS TotalMiles,
+            ISNULL(rd.DriveTime_Hours, 0.0) AS DriveTime_Hours
+        FROM Reports.DailyKPIs kpi
+        LEFT JOIN (
+            SELECT
+                CAST(Timestamp_Start AS DATE) AS RideDate,
+                SUM(Distance_mi) AS TotalMiles,
+                SUM(Duration_min) / 60.0 AS DriveTime_Hours
+            FROM Rides.Rides
+            WHERE Timestamp_Start >= CAST(? AS DATE)
+              AND Timestamp_Start <= DATEADD(day, 1, CAST(? AS DATE))
+            GROUP BY CAST(Timestamp_Start AS DATE)
+        ) rd ON kpi.[Date] = rd.RideDate
+        WHERE kpi.[Date] >= CAST(? AS DATE) AND kpi.[Date] <= CAST(? AS DATE)
+        ORDER BY kpi.[Date] DESC
         """
-        return self.execute_query_params(query, (start_date, end_date))
+        return self.execute_query_params(query, (start_date, end_date, start_date, end_date))
+
 
     def get_summary_metrics(self, days=30):
         query = """
