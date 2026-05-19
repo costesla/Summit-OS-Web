@@ -657,18 +657,28 @@ def _get_elevations_ft(lat_lons: list) -> list:
     api_key = os.environ.get("GOOGLE_MAPS_API_KEY")
     if not api_key or not lat_lons:
         return [None] * len(lat_lons)
+    fallback = [None] * len(lat_lons)
     try:
         import requests as _requests
         locations = "|".join(f"{lat},{lon}" for lat, lon in lat_lons)
         url = f"https://maps.googleapis.com/maps/api/elevation/json?locations={locations}&key={api_key}"
         resp = _requests.get(url, timeout=5)
         if resp.status_code == 200:
-            results = resp.json().get("results", [])
-            # Google returns meters — convert to feet
-            return [round(r["elevation"] * 3.28084, 0) if r.get("elevation") is not None else None for r in results]
+            data = resp.json()
+            if data.get("status") == "OK":
+                results = data.get("results", [])
+                out = []
+                for r in results:
+                    out.append(round(r["elevation"] * 3.28084, 0) if r.get("elevation") is not None else None)
+                # Pad out to match requested input length
+                while len(out) < len(lat_lons):
+                    out.append(None)
+                return out[:len(lat_lons)]
+            else:
+                logging.warning(f"Elevation API status not OK: {data.get('status')}")
     except Exception as e:
         logging.warning(f"Elevation API failed: {e}")
-    return [None] * len(lat_lons)
+    return fallback
 
 
 @bp.route(route="copilot/tessie/day-summary", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
@@ -785,8 +795,8 @@ def copilot_tessie_day_summary(req: func.HttpRequest) -> func.HttpResponse:
 
         all_elevations = []
         for i, drv in enumerate(drive_breakdown):
-            s_elev = elev_results[i * 2]     if elev_points[i * 2]     else None
-            e_elev = elev_results[i * 2 + 1] if elev_points[i * 2 + 1] else None
+            s_elev = elev_results[i * 2]     if (i * 2 < len(elev_results) and elev_points[i * 2])     else None
+            e_elev = elev_results[i * 2 + 1] if (i * 2 + 1 < len(elev_results) and elev_points[i * 2 + 1]) else None
             drv["start_elevation_ft"] = s_elev
             drv["end_elevation_ft"]   = e_elev
             if s_elev: all_elevations.append(s_elev)
