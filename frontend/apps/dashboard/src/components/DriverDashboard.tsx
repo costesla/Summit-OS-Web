@@ -644,6 +644,9 @@ const UberTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count: n
     const [loading, setLoading] = useState(true);
     const [totalEarnings, setTotalEarnings] = useState(0);
 
+    const onTripsLoadedRef = useRef(onTripsLoaded);
+    onTripsLoadedRef.current = onTripsLoaded;
+
     const fetchTrips = useCallback(async () => {
         setLoading(true);
         try {
@@ -655,9 +658,14 @@ const UberTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count: n
             setTrips(tripList);
             const earnings = tripList.reduce((s, t) => s + t.driver_earnings, 0);
             setTotalEarnings(earnings);
-            onTripsLoaded?.(tripList.length, earnings);
-        } catch { setTrips([]); onTripsLoaded?.(0, 0); } finally { setLoading(false); }
-    }, [selectedDate, onTripsLoaded]);
+            onTripsLoadedRef.current?.(tripList.length, earnings);
+        } catch { 
+            setTrips([]); 
+            onTripsLoadedRef.current?.(0, 0); 
+        } finally { 
+            setLoading(false); 
+        }
+    }, [selectedDate]);
 
     useEffect(() => { fetchTrips(); }, [fetchTrips]);
 
