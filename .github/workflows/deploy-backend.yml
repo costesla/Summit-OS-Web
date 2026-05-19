@@ -101,6 +101,26 @@ jobs:
           fi
           echo "✅ No local.settings.json in deployment package."
 
+      - name: Clear WEBSITE_RUN_FROM_PACKAGE (pre-deploy guardrail)
+        # The Azure/functions-action zipdeploy fails if this is set to a blob URL.
+        # Uses the Kudu REST API with publish profile SCM credentials — no az login needed.
+        env:
+          PUBLISH_PROFILE: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE_SUMMITOS_API }}
+        run: |
+          SCM_USER=$(echo "$PUBLISH_PROFILE" | grep -oP '(?<=userName=")[^"]+' | head -1)
+          SCM_PASS=$(echo "$PUBLISH_PROFILE" | grep -oP '(?<=userPWD=")[^"]+' | head -1)
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -u "$SCM_USER:$SCM_PASS" \
+            -X DELETE \
+            "https://${{ env.AZURE_FUNCTIONAPP_NAME }}.scm.azurewebsites.net/api/settings/WEBSITE_RUN_FROM_PACKAGE" \
+            --max-time 15 || echo "000")
+          echo "WEBSITE_RUN_FROM_PACKAGE delete status: $HTTP_STATUS"
+          if [ "$HTTP_STATUS" = "204" ] || [ "$HTTP_STATUS" = "200" ] || [ "$HTTP_STATUS" = "404" ]; then
+            echo "✅ WEBSITE_RUN_FROM_PACKAGE cleared (or was not set)"
+          else
+            echo "⚠️  Could not clear via Kudu API (status $HTTP_STATUS) — proceeding anyway"
+          fi
+
       - name: Deploy to Azure Functions
         uses: Azure/functions-action@v1
         id: deploy-to-function
@@ -113,12 +133,18 @@ jobs:
 
       - name: Post-deploy smoke test
         run: |
-          sleep 20  # wait for cold start
-          echo "=== Pinging /api/ping ==="
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            "https://${{ env.AZURE_FUNCTIONAPP_NAME }}.azurewebsites.net/api/ping" || echo "000")
-          if [ "$STATUS" -eq 200 ]; then
-            echo "✅ Backend API is live"
-          else
-            echo "⚠️  Backend returned HTTP $STATUS (may still be warming up)"
-          fi
+          sleep 25
+          BASE="https://${{ env.AZURE_FUNCTIONAPP_NAME }}.azurewebsites.net/api"
+          PASS=0; FAIL=0
+          check() {
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$2" --max-time 20 || echo "000")
+            if [ "$STATUS" = "200" ]; then echo "  ✅ $1 → $STATUS"; PASS=$((PASS+1))
+            else echo "  ⚠️  $1 → $STATUS"; FAIL=$((FAIL+1)); fi
+          }
+          echo "=== Smoke Test ==="
+          check "ping"               "$BASE/ping"
+          check "vehicle/status"     "$BASE/copilot/vehicle/status"
+          check "tessie/day-summary" "$BASE/copilot/tessie/day-summary"
+          check "metrics/summary"    "$BASE/copilot/metrics/summary?days=7"
+          check "openapi.json"       "$BASE/copilot/openapi.json"
+          echo "Results: $PASS passed, $FAIL warnings — Deployment complete"
