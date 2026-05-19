@@ -9,7 +9,7 @@ def zip_backend():
     
     with zipfile.ZipFile(output_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
         for root, dirs, files in os.walk(backend_dir):
-            dirs[:] = [d for d in dirs if d not in ['.venv', 'venv', '__pycache__', '.git', '.vscode', '.python_packages']]
+            dirs[:] = [d for d in dirs if d not in ['.venv', 'venv', 'venv32', '__pycache__', '.git', '.vscode', '.python_packages', 'finance_mcp', 'Quarantine', 'scratch']]
             
             for file in files:
                 if file.endswith('.pyc'): continue

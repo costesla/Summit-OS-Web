@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 
 // ─── Constants ─────────────────────────────────────────────────────────────
-const AZURE_BASE = 'https://summitos-api.azurewebsites.net/api';
+const AZURE_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://summitos-api.azurewebsites.net/api';
 const TAG_FILTERS = ['Uber', 'Jackie', 'Esmeralda'] as const;
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -563,9 +563,10 @@ const IntelligenceSyncPanel = ({ selectedDate }: { selectedDate: string }) => {
                 setError(data.error || 'Unknown error occurred');
                 setLogs(prev => [...prev, `[ERROR] ${data.error}`]);
             }
-        } catch (e: any) {
-            setError(e.message);
-            setLogs(prev => [...prev, `[EXCEPTION] ${e.message}`]);
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : String(e);
+            setError(msg);
+            setLogs(prev => [...prev, `[EXCEPTION] ${msg}`]);
         } finally {
             setStatus('idle');
         }
@@ -594,9 +595,10 @@ const IntelligenceSyncPanel = ({ selectedDate }: { selectedDate: string }) => {
                 setError(data.error || 'Scan failed');
                 setLogs(prev => [...prev, `[ERROR] ${data.error}`]);
             }
-        } catch (e: any) {
-            setError(e.message);
-            setLogs(prev => [...prev, `[EXCEPTION] ${e.message}`]);
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : String(e);
+            setError(msg);
+            setLogs(prev => [...prev, `[EXCEPTION] ${msg}`]);
         } finally {
             setStatus('idle');
         }
@@ -621,9 +623,10 @@ const IntelligenceSyncPanel = ({ selectedDate }: { selectedDate: string }) => {
                 setError(data.error || 'Sync failed');
                 setLogs(prev => [...prev, ...(data.logs || []), `[ERROR] ${data.error}`]);
             }
-        } catch (e: any) {
-            setError(e.message);
-            setLogs(prev => [...prev, `[EXCEPTION] ${e.message}`]);
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : String(e);
+            setError(msg);
+            setLogs(prev => [...prev, `[EXCEPTION] ${msg}`]);
         } finally {
             setStatus('idle');
         }
@@ -726,11 +729,19 @@ const IntelligenceSyncPanel = ({ selectedDate }: { selectedDate: string }) => {
     );
 };
 
+interface CopilotResponse {
+    agentic_response?: {
+        source?: string;
+        schema?: string;
+        data?: unknown;
+    } | string;
+}
+
 // ─── Summit Copilot NLP Console ──────────────────────────────────────────────
 const SummitCopilotConsole = ({ selectedDate }: { selectedDate: string }) => {
     const [query, setQuery] = useState('');
     const [mode, setMode] = useState<'evidence' | 'insight' | 'narrative'>('evidence');
-    const [response, setResponse] = useState<any>(null);
+    const [response, setResponse] = useState<CopilotResponse | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -742,10 +753,10 @@ const SummitCopilotConsole = ({ selectedDate }: { selectedDate: string }) => {
         try {
             const res = await fetch(`${AZURE_BASE}/copilot/agentic-query?q=${encodeURIComponent(qText)}&mode=${mode}`);
             if (!res.ok) throw new Error('Query execution failed');
-            const data = await res.json();
+            const data = (await res.json()) as CopilotResponse;
             setResponse(data);
-        } catch (e: any) {
-            setError(e.message);
+        } catch (e: unknown) {
+            setError(e instanceof Error ? e.message : String(e));
         } finally {
             setLoading(false);
         }
@@ -847,54 +858,102 @@ const SummitCopilotConsole = ({ selectedDate }: { selectedDate: string }) => {
                         <p className="text-gray-600 italic">// Terminal idle. Enter a query or select a preset to analyze real-time business telemetry.</p>
                     )}
 
-                    {!loading && !error && response && (
-                        <div className="space-y-2">
-                            {/* Traceability envelope badge */}
-                            {response.agentic_response && response.agentic_response.source && (
-                                <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 space-y-1">
-                                    <p className="font-bold flex items-center gap-1.5">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                                        TRACEABILITY VERIFIED
-                                    </p>
-                                    <p className="text-[9px] text-gray-400">
-                                        Source: <span className="text-white font-bold">{response.agentic_response.source}</span> · 
-                                        Schema: <span className="text-white font-bold">{response.agentic_response.schema}</span>
-                                    </p>
-                                </div>
-                            )}
+                    {!loading && !error && response && (() => {
+                        const agenticResponse = response.agentic_response;
+                        const isObj = agenticResponse && typeof agenticResponse === 'object';
+                        const source = isObj ? (agenticResponse as Record<string, unknown>).source as string : undefined;
+                        const schema = isObj ? (agenticResponse as Record<string, unknown>).schema as string : undefined;
+                        return (
+                            <div className="space-y-2">
+                                {/* Traceability envelope badge */}
+                                {isObj && typeof source === 'string' && source && (
+                                    <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 space-y-1">
+                                        <p className="font-bold flex items-center gap-1.5">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                                            TRACEABILITY VERIFIED
+                                        </p>
+                                        <p className="text-[9px] text-gray-400">
+                                            Source: <span className="text-white font-bold">{source}</span> · 
+                                            Schema: <span className="text-white font-bold">{schema || ''}</span>
+                                        </p>
+                                    </div>
+                                )}
 
-                            {/* Raw Data */}
-                            <pre className="text-cyan-300 leading-snug whitespace-pre-wrap">
-                                {typeof response.agentic_response === 'string' 
-                                    ? response.agentic_response 
-                                    : JSON.stringify(response.agentic_response, null, 2)}
-                            </pre>
-                        </div>
-                    )}
+                                {/* Raw Data */}
+                                <pre className="text-cyan-300 leading-snug whitespace-pre-wrap">
+                                    {typeof agenticResponse === 'string' 
+                                        ? agenticResponse 
+                                        : JSON.stringify(agenticResponse, null, 2)}
+                                </pre>
+                            </div>
+                        );
+                    })()}
                 </div>
             </div>
         </div>
     );
 };
 
+interface DashboardStats {
+    gross: number;
+    fees: number;
+    net: number;
+    food: number;
+    charging: number;
+    profit: number;
+    uberCount: number;
+    privateCount: number;
+    hourlyRate: number;
+}
+
+interface AuditTrip {
+    trip_id: string;
+    earnings: number;
+    profit: number;
+}
+
+interface AuditCharge {
+    session_id: string;
+    cost: number;
+    kwh_added: number;
+}
+
+interface AuditExpense {
+    expense_id: string;
+    category: string;
+    amount: number;
+}
+
+interface AuditData {
+    trips?: AuditTrip[];
+    charging_sessions?: AuditCharge[];
+    expenses?: AuditExpense[];
+}
+
 // ─── Interactive Audit Ledger Modal ──────────────────────────────────────────
-const AuditLedgerModal = ({ isOpen, onClose, stats, selectedDate }: { isOpen: boolean; onClose: () => void; stats: any; selectedDate: string }) => {
-    const [auditData, setAuditData] = useState<any>(null);
+const AuditLedgerModal = ({ isOpen, onClose, stats, selectedDate }: { isOpen: boolean; onClose: () => void; stats: DashboardStats; selectedDate: string }) => {
+    const [auditData, setAuditData] = useState<AuditData | null>(null);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
-            setLoading(true);
+            Promise.resolve().then(() => setLoading(true));
+            let active = true;
             // Fetch live audit data from orchestrated agent
             fetch(`${AZURE_BASE}/copilot/agentic-query?q=Run%20Master%20Orchestrator%20daily%20summary%20for%20${selectedDate}&mode=evidence`)
                 .then(res => res.ok ? res.json() : null)
                 .then(data => {
-                    if (data && data.agentic_response && data.agentic_response.data) {
-                        setAuditData(data.agentic_response.data);
+                    if (active && data && data.agentic_response && data.agentic_response.data) {
+                        setAuditData(data.agentic_response.data as AuditData);
                     }
                 })
                 .catch(() => {})
-                .finally(() => setLoading(false));
+                .finally(() => {
+                    if (active) setLoading(false);
+                });
+            return () => {
+                active = false;
+            };
         }
     }, [isOpen, selectedDate]);
 
@@ -1014,26 +1073,26 @@ const AuditLedgerModal = ({ isOpen, onClose, stats, selectedDate }: { isOpen: bo
                             <div className="bg-black/45 rounded-xl border border-white/6 max-h-[220px] overflow-y-auto font-mono text-[9px] p-4 divide-y divide-white/5 space-y-2">
                                 <div>
                                     <p className="text-cyan-400 font-bold uppercase mb-1">Rides Table Logs ({auditData.trips?.length || 0} entries)</p>
-                                    {auditData.trips?.slice(0, 3).map((t: any) => (
+                                    {auditData.trips?.slice(0, 3).map((t: AuditTrip) => (
                                         <p key={t.trip_id} className="text-gray-400">Ride ID: {t.trip_id} | Earnings: ${t.earnings.toFixed(2)} | Profit: ${t.profit.toFixed(2)}</p>
                                     ))}
-                                    {auditData.trips?.length > 3 && <p className="text-gray-600">... and {auditData.trips.length - 3} more rows</p>}
+                                    {(auditData.trips?.length ?? 0) > 3 && <p className="text-gray-600">... and {(auditData.trips?.length ?? 0) - 3} more rows</p>}
                                 </div>
 
                                 <div className="pt-2">
                                     <p className="text-amber-400 font-bold uppercase mb-1">Charging Sessions Logs ({auditData.charging_sessions?.length || 0} entries)</p>
-                                    {auditData.charging_sessions?.slice(0, 3).map((cs: any) => (
+                                    {auditData.charging_sessions?.slice(0, 3).map((cs: AuditCharge) => (
                                         <p key={cs.session_id} className="text-gray-400">Session ID: {cs.session_id} | Cost: ${cs.cost.toFixed(2)} | Energy: {cs.kwh_added.toFixed(1)} kWh</p>
                                     ))}
-                                    {auditData.charging_sessions?.length > 3 && <p className="text-gray-600">... and {auditData.charging_sessions.length - 3} more rows</p>}
+                                    {(auditData.charging_sessions?.length ?? 0) > 3 && <p className="text-gray-600">... and {(auditData.charging_sessions?.length ?? 0) - 3} more rows</p>}
                                 </div>
 
                                 <div className="pt-2">
                                     <p className="text-rose-400 font-bold uppercase mb-1">Manual Expenses Logs ({auditData.expenses?.length || 0} entries)</p>
-                                    {auditData.expenses?.slice(0, 3).map((e: any) => (
+                                    {auditData.expenses?.slice(0, 3).map((e: AuditExpense) => (
                                         <p key={e.expense_id} className="text-gray-400">Expense ID: {e.expense_id} | Cat: {e.category} | Amount: ${e.amount.toFixed(2)}</p>
                                     ))}
-                                    {auditData.expenses?.length > 3 && <p className="text-gray-600">... and {auditData.expenses.length - 3} more rows</p>}
+                                    {(auditData.expenses?.length ?? 0) > 3 && <p className="text-gray-600">... and {(auditData.expenses?.length ?? 0) - 3} more rows</p>}
                                 </div>
                             </div>
                         </div>
@@ -1051,25 +1110,41 @@ const AuditLedgerModal = ({ isOpen, onClose, stats, selectedDate }: { isOpen: bo
 };
 
 // ─── SVG Telemetry Curves ────────────────────────────────────────────────────
+interface TelemetryRecord {
+    soc_pct: number;
+    efficiency_wh_per_mi: number;
+    label: string;
+}
+
 const TelemetrySparklines = ({ selectedDate }: { selectedDate: string }) => {
-    const [telemetry, setTelemetry] = useState<any[]>([]);
+    const [telemetry, setTelemetry] = useState<TelemetryRecord[]>([]);
     const [loading, setLoading] = useState(false);
     const [expanded, setExpanded] = useState(false);
 
     useEffect(() => {
         if (expanded) {
-            setLoading(true);
+            Promise.resolve().then(() => setLoading(true));
+            let active = true;
             fetch(`${AZURE_BASE}/copilot/agentic-query?q=vehicle%20telemetry%20for%20${selectedDate}&mode=evidence`)
                 .then(res => res.ok ? res.json() : null)
                 .then(data => {
-                    if (data && data.agentic_response && data.agentic_response.data) {
-                        setTelemetry(data.agentic_response.data);
-                    } else {
-                        setTelemetry([]);
+                    if (active) {
+                        if (data && data.agentic_response && data.agentic_response.data) {
+                            setTelemetry(data.agentic_response.data as TelemetryRecord[]);
+                        } else {
+                            setTelemetry([]);
+                        }
                     }
                 })
-                .catch(() => setTelemetry([]))
-                .finally(() => setLoading(false));
+                .catch(() => {
+                    if (active) setTelemetry([]);
+                })
+                .finally(() => {
+                    if (active) setLoading(false);
+                });
+            return () => {
+                active = false;
+            };
         }
     }, [expanded, selectedDate]);
 

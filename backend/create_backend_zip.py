@@ -7,7 +7,7 @@ Run from the /backend directory.
 import os
 import zipfile
 
-EXCLUDE_DIRS  = {"venv32", "venv", ".venv", "__pycache__", ".git", "scratch", ".python_packages", "Quarantine"}
+EXCLUDE_DIRS  = {"venv32", "venv", ".venv", "__pycache__", ".git", "scratch", ".python_packages", "Quarantine", "finance_mcp"}
 EXCLUDE_FILES = {"local.settings.json", "create_backend_zip.py"}
 EXCLUDE_EXTS  = {".zip", ".pyc", ".pyo"}
 

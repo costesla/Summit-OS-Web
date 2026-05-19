@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { ShieldCheck, ExternalLink, Copy, Check, Loader2, RefreshCw } from 'lucide-react';
+import { ShieldCheck, ExternalLink, Check, Loader2, RefreshCw } from 'lucide-react';
+
+const AZURE_BASE = import.meta.env.VITE_PUBLIC_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://summitos-api.azurewebsites.net/api';
 
 interface TellerConnectButtonProps {
     applicationId: string;
@@ -21,7 +23,6 @@ const TellerConnectButton: React.FC<TellerConnectButtonProps> = ({ applicationId
     const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
     const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
     const [token, setToken] = useState<string | null>(null);
-    const [copied, setCopied] = useState(false);
 
     useEffect(() => {
         // Load Teller SDK dynamically — check after mount to avoid SSR issues
@@ -44,7 +45,7 @@ const TellerConnectButton: React.FC<TellerConnectButtonProps> = ({ applicationId
     const updateKeyVault = async (accessToken: string) => {
         setSyncStatus('syncing');
         try {
-            const response = await fetch('https://summitos-api.azurewebsites.net/api/copilot/banking/token', {
+            const response = await fetch(`${AZURE_BASE}/copilot/banking/token`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ token: accessToken })
@@ -83,13 +84,7 @@ const TellerConnectButton: React.FC<TellerConnectButtonProps> = ({ applicationId
         teller.open();
     }, [applicationId, environment, onTokenReceived]);
 
-    const copyToClipboard = () => {
-        if (token) {
-            navigator.clipboard.writeText(token);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        }
-    };
+
 
     if (status === 'error') {
         return (
@@ -141,24 +136,11 @@ const TellerConnectButton: React.FC<TellerConnectButtonProps> = ({ applicationId
                         </div>
                     </div>
                     
-                    <p className="text-[11px] text-gray-400 font-mono leading-relaxed mb-4">
+                    <p className="text-[11px] text-gray-400 font-mono leading-relaxed">
                         {syncStatus === 'success' 
                             ? "Your production token has been securely stored in Azure Key Vault. The sync service is now active."
                             : "Account linked! We are securely synchronizing your credentials to Azure."}
                     </p>
-
-                    <div className="flex items-center gap-2 group/token">
-                        <code className="flex-1 p-2 bg-black/40 rounded-lg border border-white/10 text-[10px] text-gray-400 break-all font-mono truncate">
-                            {token}
-                        </code>
-                        <button
-                            onClick={copyToClipboard}
-                            className="p-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 transition-all border border-transparent hover:border-white/10"
-                            title="Copy Backup Token"
-                        >
-                            {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                        </button>
-                    </div>
                     
                     {syncStatus === 'error' && (
                         <p className="mt-3 text-[10px] text-rose-400 font-mono font-bold uppercase tracking-tighter">
