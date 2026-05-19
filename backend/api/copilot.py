@@ -487,9 +487,9 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
             first = drives[0]
             last = drives[-1]
             
-            total_dist = sum(float(d.get("odometer_distance") or 0) for d in drives)
+            total_dist = sum(float(d.get("distance") or d.get("distance_miles") or d.get("odometer_distance") or 0) for d in drives)
             total_energy = sum(float(d.get("energy_used") or 0) for d in drives)
-            total_autopilot = sum(float(d.get("autopilot_distance") or 0) for d in drives)
+            total_autopilot = sum(float(d.get("autopilot_distance") or d.get("autopilot") or 0) for d in drives)
             
             # Calculate MST time for the mission start
             start_ts = first.get("started_at", 0)
@@ -498,7 +498,7 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
             # Aggregated Speeds
             max_speed_kph = max((float(d.get("max_speed") or 0) for d in drives), default=0)
             if total_dist > 0:
-                weighted_speed_sum = sum((float(d.get("average_speed") or 0) * float(d.get("odometer_distance") or 0)) for d in drives)
+                weighted_speed_sum = sum((float(d.get("average_speed") or 0) * float(d.get("distance") or d.get("distance_miles") or d.get("odometer_distance") or 0)) for d in drives)
                 avg_speed_kph = weighted_speed_sum / total_dist
             else:
                 avg_speed_kph = sum(float(d.get("average_speed") or 0) for d in drives) / len(drives)
@@ -534,9 +534,8 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
         processed.sort(key=lambda x: (x['date'], x['time_mst']), reverse=True)
 
         # ─── Fare Match Lookup ──────────────────────────────────────────────
-        # Match each drive to a ride with earnings using timestamp proximity.
-        # Rides.Rides.Tessie_DriveID is rarely populated, so we use time-based
-        # matching instead: any ride within 90 min of the drive start counts.
+        # Match each drive to a ride with earnings using exact ID matching,
+        # with a tight 30-minute time-based fallback.
         try:
             from services.database import DatabaseClient
             db = DatabaseClient()
@@ -544,13 +543,21 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
             cur = conn.cursor()
             # Fetch all rides with earnings for the relevant date range
             cur.execute("""
-                SELECT Timestamp_Start, Driver_Earnings
+                SELECT RideID, Tessie_DriveID, Timestamp_Start, Driver_Earnings
                 FROM Rides.Rides
                 WHERE Driver_Earnings > 0
                   AND Timestamp_Start IS NOT NULL
             """)
-            earned_rides = [(row[0], float(row[1])) for row in cur.fetchall()]
+            earned_rides = []
+            for row in cur.fetchall():
+                earned_rides.append({
+                    "RideID": row[0],
+                    "Tessie_DriveID": row[1],
+                    "Timestamp_Start": row[2],
+                    "Driver_Earnings": float(row[3])
+                })
             cur.close()
+            conn.close()
         except Exception as db_err:
             logging.warning(f"Could not fetch fare match data: {db_err}")
             earned_rides = []
@@ -558,21 +565,38 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
         for drive in processed:
             drive["fare_matched"] = False
             drive["driver_earnings"] = None
-            if not drive.get("date") or not drive.get("time_mst"):
+            
+            drive_id = drive.get("tessie_drive_id")
+            if not drive_id:
                 continue
-            try:
-                # drive_dt is Mountain Time (date+time_mst)
-                # Compare as naive MST to match the naive MST stored in SQL
-                drive_dt = datetime.datetime.strptime(f"{drive['date']}T{drive['time_mst']}:00", "%Y-%m-%dT%H:%M:%S")
                 
-                for ride_ts, earnings in earned_rides:
-                    # Both are naive MST datetimes
-                    if abs((ride_ts - drive_dt).total_seconds()) <= 14400:  # 4 hours (consistent with backend)
-                        drive["fare_matched"] = True
-                        drive["driver_earnings"] = earnings
-                        break
-            except Exception:
-                pass
+            drive_id_str = str(drive_id)
+            matched_ride = None
+            
+            # 1. Exact ID Match (highly accurate)
+            for ride in earned_rides:
+                r_id = str(ride["RideID"] or "")
+                t_id = str(ride["Tessie_DriveID"] or "")
+                if drive_id_str in r_id or drive_id_str in t_id:
+                    matched_ride = ride
+                    break
+            
+            # 2. Tight Proximity Match (within 30 minutes fallback)
+            if not matched_ride and drive.get("date") and drive.get("time_mst"):
+                try:
+                    drive_dt = datetime.datetime.strptime(f"{drive['date']}T{drive['time_mst']}:00", "%Y-%m-%dT%H:%M:%S")
+                    best_diff = 999999
+                    for ride in earned_rides:
+                        diff = abs((ride["Timestamp_Start"] - drive_dt).total_seconds())
+                        if diff <= 1800 and diff < best_diff: # 30 minutes
+                            best_diff = diff
+                            matched_ride = ride
+                except Exception:
+                    pass
+            
+            if matched_ride:
+                drive["fare_matched"] = True
+                drive["driver_earnings"] = matched_ride["Driver_Earnings"]
 
         return copilot_response({
             "tag_filter": tag_filter or None,
@@ -728,9 +752,9 @@ def copilot_tessie_day_summary(req: func.HttpRequest) -> func.HttpResponse:
         raw_drives_sorted = sorted(raw_drives, key=lambda d: d.get("started_at", 0))
 
         for d in raw_drives_sorted:
-            dist   = float(d.get("odometer_distance") or 0)
+            dist   = float(d.get("distance") or d.get("distance_miles") or d.get("odometer_distance") or 0)
             energy = float(d.get("energy_used") or 0)
-            ap     = float(d.get("autopilot_distance") or 0)
+            ap     = float(d.get("autopilot_distance") or d.get("autopilot") or 0)
             spd_kph = float(d.get("max_speed") or 0)
             spd_mph = round(spd_kph * 0.621371, 1)
             avg_mph = round(float(d.get("average_speed") or 0) * 0.621371, 1)
@@ -877,10 +901,10 @@ def copilot_tessie_summary(req: func.HttpRequest) -> func.HttpResponse:
         max_speed_mph = 0.0
 
         for d in raw_drives:
-            dist = float(d.get("odometer_distance") or 0)
+            dist = float(d.get("distance") or d.get("distance_miles") or d.get("odometer_distance") or 0)
             total_miles += dist
             total_energy_kwh += float(d.get("energy_used") or 0)
-            total_autopilot_miles += float(d.get("autopilot_distance") or 0)
+            total_autopilot_miles += float(d.get("autopilot_distance") or d.get("autopilot") or 0)
             avg_kph = d.get("average_speed") or 0
             max_kph = d.get("max_speed") or 0
             if avg_kph:
