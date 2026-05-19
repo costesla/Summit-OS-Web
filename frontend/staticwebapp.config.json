@@ -70,14 +70,6 @@
     }
   },
   "auth": {
-    "identityProviders": {
-      "azureActiveDirectory": {
-        "registration": {
-          "openIdConnectConfiguration": {
-            "wellKnownConfigEndpoint": "https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration"
-          }
-        }
-      }
-    }
+    "identityProviders": {}
   }
 }

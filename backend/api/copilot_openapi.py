@@ -114,19 +114,19 @@ def copilot_openapi(req: func.HttpRequest) -> func.HttpResponse:
             "/copilot/metrics/daily": {
                 "get": {
                     "operationId": "getDailyMetrics",
-                    "summary": "Get daily Uber earnings and revenue metrics",
-                    "description": "FINANCIAL DATA ONLY. Returns Uber earnings, trip count, and revenue per day from the SQL database. Do NOT use this for miles driven, speed, battery, elevation, or vehicle telemetry — use getDailyDriveSummary for those. Use this only when the user asks about earnings, revenue, money, or Uber trip counts.",
+                    "summary": "Get daily Uber earnings and revenue metrics in Mountain Time",
+                    "description": "FINANCIAL DATA ONLY. Note: All dates and calculations are strictly in local Mountain Time (America/Denver) and NEVER in UTC. Always interpret start_date/end_date and present metrics in local Mountain Time, never UTC. Returns Uber earnings, trip count, and revenue per day from the SQL database. Do NOT use this for miles driven, speed, battery, elevation, or vehicle telemetry — use getDailyDriveSummary for those. Use this only when the user asks about earnings, revenue, money, or Uber trip counts.",
                     "parameters": [
                         {
                             "name": "start_date",
                             "in": "query",
-                            "description": "Start date (YYYY-MM-DD)",
+                            "description": "Start date (YYYY-MM-DD) in local Mountain Time (America/Denver).",
                             "schema": {"type": "string", "format": "date"}
                         },
                         {
                             "name": "end_date",
                             "in": "query",
-                            "description": "End date (YYYY-MM-DD)",
+                            "description": "End date (YYYY-MM-DD) in local Mountain Time (America/Denver).",
                             "schema": {"type": "string", "format": "date"}
                         }
                     ],
@@ -302,7 +302,8 @@ def copilot_openapi(req: func.HttpRequest) -> func.HttpResponse:
                                             "current_soc": {"type": "integer"},
                                             "charge_power_kw": {"type": "number"},
                                             "location": {"type": "string"},
-                                            "timestamp": {"type": "string", "format": "date-time"}
+                                            "timestamp": {"type": "string", "format": "date-time"},
+                                            "formatted_time": {"type": "string", "description": "The local Mountain Time (MST/MDT) string for the charging state. ALWAYS use this friendly formatted string when presenting the telemetry time to the user."}
                                         }
                                     }
                                 }
@@ -478,13 +479,13 @@ def copilot_openapi(req: func.HttpRequest) -> func.HttpResponse:
             "/copilot/tessie/day-summary": {
                 "get": {
                     "operationId": "getDailyDriveSummary",
-                    "summary": "Get a complete driving summary for a single day",
-                    "description": "PRIMARY tool for ANY question about a specific day's driving. Returns total miles driven, battery drain, max speed, highest elevation, lowest elevation, energy used, autopilot miles, efficiency, and a per-drive breakdown. Use this for: 'How many miles did I drive today?', 'What was my battery drain today?', 'What was my highest elevation?', 'What was my highest speed?', 'How efficient was I?', 'How much autopilot did I use?', 'What was my elevation today?'. Elevation is calculated from GPS coordinates via Google Elevation API. Defaults to today in Mountain Time (MDT, UTC-6) if no date provided.",
+                    "summary": "Get a complete driving summary for a single day in Mountain Time",
+                    "description": "PRIMARY tool for ANY question about a specific day's driving. Note: All calculations, dates, and times are strictly in local Mountain Time (MST/MDT, America/Denver). ALWAYS interpret dates and report results in Mountain Time (America/Denver) and NEVER in UTC. Never mention UTC to the user. Returns total miles driven, battery drain, max speed, highest elevation, lowest elevation, energy used, autopilot miles, efficiency, and a per-drive breakdown. Use this for: 'How many miles did I drive today?', 'What was my battery drain today?', 'What was my highest elevation?', 'What was my highest speed?', 'How efficient was I?', 'How much autopilot did I use?', 'What was my elevation today?'. Defaults to today in Mountain Time (MDT, UTC-6) if no date provided.",
                     "parameters": [
                         {
                             "name": "date",
                             "in": "query",
-                            "description": "Date to summarize (YYYY-MM-DD). Defaults to today in Mountain Time.",
+                            "description": "Date to summarize (YYYY-MM-DD) in local Mountain Time (America/Denver). Defaults to today in Mountain Time.",
                             "required": False,
                             "schema": {"type": "string", "format": "date"}
                         }
@@ -720,6 +721,279 @@ def copilot_openapi(req: func.HttpRequest) -> func.HttpResponse:
                                             "stripeGenerated":  {"type": "boolean"},
                                             "stripeUrl":        {"type": "string"},
                                             "telemetry":        {"type": "object"}
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "/copilot/skills/trip-query": {
+                "get": {
+                    "operationId": "TripQuery",
+                    "summary": "Trip Query Skill",
+                    "description": "Returns a list of validated Trip objects within the specified date range. Scope: Trips Agent.",
+                    "parameters": [
+                        {
+                            "name": "start_date",
+                            "in": "query",
+                            "description": "Start of the date range (YYYY-MM-DD)",
+                            "required": True,
+                            "schema": {"type": "string", "format": "date"}
+                        },
+                        {
+                            "name": "end_date",
+                            "in": "query",
+                            "description": "End of the date range (YYYY-MM-DD)",
+                            "required": True,
+                            "schema": {"type": "string", "format": "date"}
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "List of validated trip objects",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "source": {"type": "string", "example": "trips"},
+                                            "schema": {"type": "string", "example": "trip_schema"},
+                                            "data": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "trip_id": {"type": "string"},
+                                                        "date": {"type": "string"},
+                                                        "type": {"type": "string", "enum": ["uber", "private"]},
+                                                        "distance_mi": {"type": "number"},
+                                                        "duration_min": {"type": "number"},
+                                                        "earnings": {"type": "number"},
+                                                        "energy_cost": {"type": "number"},
+                                                        "profit": {"type": "number"},
+                                                        "profit_margin": {"type": "number"},
+                                                        "dollars_per_mile": {"type": "number"},
+                                                        "dollars_per_min": {"type": "number"}
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "/copilot/skills/charging-query": {
+                "get": {
+                    "operationId": "ChargingQuery",
+                    "summary": "Charging Query Skill",
+                    "description": "Returns a list of supercharging sessions within the specified date range. Scope: Charging Agent.",
+                    "parameters": [
+                        {
+                            "name": "start_date",
+                            "in": "query",
+                            "description": "Start of the date range (YYYY-MM-DD)",
+                            "required": True,
+                            "schema": {"type": "string", "format": "date"}
+                        },
+                        {
+                            "name": "end_date",
+                            "in": "query",
+                            "description": "End of the date range (YYYY-MM-DD)",
+                            "required": True,
+                            "schema": {"type": "string", "format": "date"}
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "List of validated charging session objects",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "source": {"type": "string", "example": "charging"},
+                                            "schema": {"type": "string", "example": "charging_schema"},
+                                            "data": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "session_id": {"type": "string"},
+                                                        "date": {"type": "string"},
+                                                        "kwh_added": {"type": "number"},
+                                                        "cost": {"type": "number"},
+                                                        "duration_min": {"type": "number"},
+                                                        "rate_per_kwh": {"type": "number"}
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "/copilot/skills/expense-query": {
+                "get": {
+                    "operationId": "ExpenseQuery",
+                    "summary": "Expense Query Skill",
+                    "description": "Returns manual dining, supplies, and operational expenses within the specified date range. Scope: Expenses Agent.",
+                    "parameters": [
+                        {
+                            "name": "start_date",
+                            "in": "query",
+                            "description": "Start of the date range (YYYY-MM-DD)",
+                            "required": True,
+                            "schema": {"type": "string", "format": "date"}
+                        },
+                        {
+                            "name": "end_date",
+                            "in": "query",
+                            "description": "End of the date range (YYYY-MM-DD)",
+                            "required": True,
+                            "schema": {"type": "string", "format": "date"}
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "List of validated expense objects",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "source": {"type": "string", "example": "expenses"},
+                                            "schema": {"type": "string", "example": "expenses_schema"},
+                                            "data": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "expense_id": {"type": "string"},
+                                                        "date": {"type": "string"},
+                                                        "category": {"type": "string"},
+                                                        "amount": {"type": "number"}
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "/copilot/skills/vehicle-query": {
+                "get": {
+                    "operationId": "VehicleQuery",
+                    "summary": "Vehicle Query Skill",
+                    "description": "Returns high-resolution Tesla battery, odometer, and efficiency telemetry. Scope: Vehicle Agent.",
+                    "parameters": [
+                        {
+                            "name": "start_date",
+                            "in": "query",
+                            "description": "Start of the timestamp range (YYYY-MM-DD)",
+                            "required": True,
+                            "schema": {"type": "string", "format": "date"}
+                        },
+                        {
+                            "name": "end_date",
+                            "in": "query",
+                            "description": "End of the timestamp range (YYYY-MM-DD)",
+                            "required": True,
+                            "schema": {"type": "string", "format": "date"}
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "List of validated telemetry objects",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "source": {"type": "string", "example": "vehicle"},
+                                            "schema": {"type": "string", "example": "vehicle_schema"},
+                                            "data": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "timestamp": {"type": "string"},
+                                                        "soc_pct": {"type": "number"},
+                                                        "efficiency_wh_per_mi": {"type": "number"},
+                                                        "odometer_mi": {"type": "number"}
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "/copilot/skills/daily-summary": {
+                "get": {
+                    "operationId": "DailySummary",
+                    "summary": "Daily Summary Skill",
+                    "description": "Sequentially invokes TripQuery, ChargingQuery, ExpenseQuery, and VehicleQuery to compute a combined financial & operational dashboard summary. Scope: Orchestrator Agent.",
+                    "parameters": [
+                        {
+                            "name": "date",
+                            "in": "query",
+                            "description": "Specific date to summarize (YYYY-MM-DD)",
+                            "required": False,
+                            "schema": {"type": "string", "format": "date"}
+                        },
+                        {
+                            "name": "start_date",
+                            "in": "query",
+                            "description": "Optional start of a date range (YYYY-MM-DD)",
+                            "required": False,
+                            "schema": {"type": "string", "format": "date"}
+                        },
+                        {
+                            "name": "end_date",
+                            "in": "query",
+                            "description": "Optional end of a date range (YYYY-MM-DD)",
+                            "required": False,
+                            "schema": {"type": "string", "format": "date"}
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "Computed dashboard summary",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "source": {"type": "string", "example": "orchestrator"},
+                                            "schema": {"type": "string", "example": "dashboard_schema"},
+                                            "data": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "total_earnings": {"type": "number"},
+                                                    "total_charging_cost": {"type": "number"},
+                                                    "total_expenses": {"type": "number"},
+                                                    "total_energy_cost": {"type": "number"},
+                                                    "net_profit": {"type": "number"},
+                                                    "trips": {"type": "array", "items": {"type": "object"}},
+                                                    "charging_sessions": {"type": "array", "items": {"type": "object"}},
+                                                    "expenses": {"type": "array", "items": {"type": "object"}},
+                                                    "vehicle_metrics": {"type": "array", "items": {"type": "object"}}
+                                                }
+                                            }
                                         }
                                     }
                                 }

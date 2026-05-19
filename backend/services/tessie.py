@@ -247,7 +247,7 @@ class TessieClient:
             logging.error(f"Error fetching Tessie telemetry: {str(e)}")
             return None
 
-    def get_charges(self, vin, from_ts, to_ts):
+    def get_charges(self, vin, from_ts, to_ts, limit=100):
         """
         Fetches charging sessions for the specified VIN within a time range.
         """
@@ -261,7 +261,7 @@ class TessieClient:
             params = {
                 "from": from_ts,
                 "to": to_ts,
-                "limit": 5
+                "limit": limit
             }
             
             response = requests.get(url, headers=headers, params=params, timeout=self.timeout)

@@ -39,6 +39,10 @@ class UberMatcherService:
         card = self._parse_uber_card(text)
         log.info(f"Parsed Card: {card['driver_earnings']} earned | {card['rider_payment']} rider paid")
 
+        if card["driver_earnings"] <= 0.0:
+            log.info(f"Skipping screenshot {filename} because parsed driver earnings are $0.00 (likely not an Uber receipt).")
+            return {"status": "SKIP", "reason": "No driver earnings parsed (not a valid Uber receipt)"}
+
         # 2.5 Check if already processed (Idempotency)
         conn = self.db.get_connection()
         cursor = conn.cursor()

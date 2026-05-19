@@ -1028,3 +1028,185 @@ def copilot_artifact_raw(req: func.HttpRequest) -> func.HttpResponse:
     except Exception as e:
         logging.error(f"Rehydration API Error: {e}")
         return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500)
+
+
+# ─── SUMMIT INTELLIGENCE SKILLS ENDPOINTS ─────────────────────────────────────
+
+@bp.route(route="copilot/skills/trip-query", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+def copilot_skill_trip_query(req: func.HttpRequest) -> func.HttpResponse:
+    if not check_rate_limit(req):
+        return func.HttpResponse(json.dumps({"error": "Rate limit exceeded"}), status_code=429)
+
+    start_date = req.params.get("start_date")
+    end_date = req.params.get("end_date")
+
+    if not start_date or not end_date:
+        return func.HttpResponse(
+            json.dumps({"error": "Missing required date_range inputs: 'start_date' and 'end_date' are required."}),
+            status_code=400,
+            mimetype="application/json",
+            headers=CORS_HEADERS
+        )
+
+    try:
+        from services.agents.summit_intelligence import TripsAgent
+        db = DatabaseClient()
+        agent = TripsAgent(db)
+        data = agent.query(start_date=start_date, end_date=end_date)
+        
+        # Returns trip objects ONLY, wrapped in standard traceability
+        return func.HttpResponse(
+            json.dumps({
+                "source": "trips",
+                "schema": "trip_schema",
+                "data": data
+            }),
+            mimetype="application/json",
+            headers=CORS_HEADERS
+        )
+    except Exception as e:
+        logging.error(f"TripQuery Skill Error: {e}")
+        return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500, mimetype="application/json", headers=CORS_HEADERS)
+
+
+@bp.route(route="copilot/skills/charging-query", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+def copilot_skill_charging_query(req: func.HttpRequest) -> func.HttpResponse:
+    if not check_rate_limit(req):
+        return func.HttpResponse(json.dumps({"error": "Rate limit exceeded"}), status_code=429)
+
+    start_date = req.params.get("start_date")
+    end_date = req.params.get("end_date")
+
+    if not start_date or not end_date:
+        return func.HttpResponse(
+            json.dumps({"error": "Missing required date_range inputs: 'start_date' and 'end_date' are required."}),
+            status_code=400,
+            mimetype="application/json",
+            headers=CORS_HEADERS
+        )
+
+    try:
+        from services.agents.summit_intelligence import ChargingAgent
+        db = DatabaseClient()
+        agent = ChargingAgent(db)
+        data = agent.query(start_date=start_date, end_date=end_date)
+        
+        # Returns charging session objects ONLY, wrapped in standard traceability
+        return func.HttpResponse(
+            json.dumps({
+                "source": "charging",
+                "schema": "charging_schema",
+                "data": data
+            }),
+            mimetype="application/json",
+            headers=CORS_HEADERS
+        )
+    except Exception as e:
+        logging.error(f"ChargingQuery Skill Error: {e}")
+        return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500, mimetype="application/json", headers=CORS_HEADERS)
+
+
+@bp.route(route="copilot/skills/expense-query", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+def copilot_skill_expense_query(req: func.HttpRequest) -> func.HttpResponse:
+    if not check_rate_limit(req):
+        return func.HttpResponse(json.dumps({"error": "Rate limit exceeded"}), status_code=429)
+
+    start_date = req.params.get("start_date")
+    end_date = req.params.get("end_date")
+
+    if not start_date or not end_date:
+        return func.HttpResponse(
+            json.dumps({"error": "Missing required date_range inputs: 'start_date' and 'end_date' are required."}),
+            status_code=400,
+            mimetype="application/json",
+            headers=CORS_HEADERS
+        )
+
+    try:
+        from services.agents.summit_intelligence import ExpensesAgent
+        db = DatabaseClient()
+        agent = ExpensesAgent(db)
+        data = agent.query(start_date=start_date, end_date=end_date)
+        
+        # Returns expense objects ONLY, wrapped in standard traceability
+        return func.HttpResponse(
+            json.dumps({
+                "source": "expenses",
+                "schema": "expenses_schema",
+                "data": data
+            }),
+            mimetype="application/json",
+            headers=CORS_HEADERS
+        )
+    except Exception as e:
+        logging.error(f"ExpenseQuery Skill Error: {e}")
+        return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500, mimetype="application/json", headers=CORS_HEADERS)
+
+
+@bp.route(route="copilot/skills/vehicle-query", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+def copilot_skill_vehicle_query(req: func.HttpRequest) -> func.HttpResponse:
+    if not check_rate_limit(req):
+        return func.HttpResponse(json.dumps({"error": "Rate limit exceeded"}), status_code=429)
+
+    start_date = req.params.get("start_date")
+    end_date = req.params.get("end_date")
+
+    if not start_date or not end_date:
+        return func.HttpResponse(
+            json.dumps({"error": "Missing required timestamp_range inputs: 'start_date' and 'end_date' are required."}),
+            status_code=400,
+            mimetype="application/json",
+            headers=CORS_HEADERS
+        )
+
+    try:
+        from services.agents.summit_intelligence import VehicleAgent
+        db = DatabaseClient()
+        agent = VehicleAgent(db)
+        data = agent.query(start_date=start_date, end_date=end_date)
+        
+        # Returns telemetry objects ONLY, wrapped in standard traceability
+        return func.HttpResponse(
+            json.dumps({
+                "source": "vehicle",
+                "schema": "vehicle_schema",
+                "data": data
+            }),
+            mimetype="application/json",
+            headers=CORS_HEADERS
+        )
+    except Exception as e:
+        logging.error(f"VehicleQuery Skill Error: {e}")
+        return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500, mimetype="application/json", headers=CORS_HEADERS)
+
+
+@bp.route(route="copilot/skills/daily-summary", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+def copilot_skill_daily_summary(req: func.HttpRequest) -> func.HttpResponse:
+    if not check_rate_limit(req):
+        return func.HttpResponse(json.dumps({"error": "Rate limit exceeded"}), status_code=429)
+
+    date = req.params.get("date")
+    start_date = req.params.get("start_date")
+    end_date = req.params.get("end_date")
+
+    try:
+        from services.agents.summit_intelligence import MasterOrchestrator
+        db = DatabaseClient()
+        orchestrator = MasterOrchestrator(db)
+        
+        # Performs TripQuery, ChargingQuery, ExpenseQuery, and VehicleQuery sequentially under the hood
+        data = orchestrator.aggregate_dashboard(date_str=date, start_date=start_date, end_date=end_date)
+        
+        return func.HttpResponse(
+            json.dumps({
+                "source": "orchestrator",
+                "schema": "dashboard_schema",
+                "data": data
+            }),
+            mimetype="application/json",
+            headers=CORS_HEADERS
+        )
+    except Exception as e:
+        logging.error(f"DailySummary Skill Error: {e}")
+        return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500, mimetype="application/json", headers=CORS_HEADERS)
+
