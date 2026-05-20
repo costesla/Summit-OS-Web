@@ -37,6 +37,9 @@ class TessieClient:
     def get_vehicle_state(self, vin):
         """
         Fetches the current real-time state of the vehicle (battery, location, temperature, etc).
+        Returns a dict with vehicle data on success.
+        If the vehicle is asleep/inactive, returns a dict with '_vehicle_asleep': True
+        and any available cached data so callers can provide partial information.
         """
         if not self.api_key:
             return None
@@ -48,9 +51,50 @@ class TessieClient:
             headers = {"Authorization": f"Bearer {self.api_key}"}
             
             response = requests.get(url, headers=headers, timeout=self.timeout)
-            response.raise_for_status()
             
-            return response.json()
+            # Parse JSON regardless of status code
+            try:
+                data = response.json()
+            except Exception:
+                data = {}
+            
+            # If successful, return normally
+            if response.status_code == 200 and "error" not in data:
+                return data
+            
+            # Handle "Vehicle is not active" or similar asleep states
+            error_msg = data.get("error", "") if isinstance(data, dict) else ""
+            if "not active" in error_msg.lower() or "asleep" in error_msg.lower() or response.status_code in (408, 504):
+                logging.warning(f"Vehicle {vin} is asleep/inactive: {error_msg}")
+                
+                # Try to get the last known state from Tessie's status endpoint
+                try:
+                    status_url = f"{self.base_url}/{vin}/status"
+                    status_resp = requests.get(status_url, headers=headers, timeout=self.timeout)
+                    if status_resp.status_code == 200:
+                        status_data = status_resp.json()
+                        vehicle_status = status_data.get("status", "asleep")
+                    else:
+                        vehicle_status = "asleep"
+                except Exception:
+                    vehicle_status = "asleep"
+                
+                # Return a marker dict so callers know the vehicle is asleep
+                # but can still render a meaningful UI state
+                return {
+                    "_vehicle_asleep": True,
+                    "_vehicle_status": vehicle_status,
+                    "charge_state": {},
+                    "climate_state": {},
+                    "drive_state": {},
+                }
+            
+            # For any other error, log and return None
+            logging.error(f"Tessie API error (HTTP {response.status_code}): {error_msg or data}")
+            return None
+        except requests.exceptions.Timeout:
+            logging.error(f"Timeout fetching vehicle state for VIN: {vin}")
+            return {"_vehicle_asleep": True, "_vehicle_status": "timeout", "charge_state": {}, "climate_state": {}, "drive_state": {}}
         except Exception as e:
             logging.error(f"Error fetching vehicle state: {str(e)}")
             return None
@@ -338,10 +382,34 @@ class TessieClient:
     def get_live_charging_state(self, vin):
         """
         Fetches specific live charging metrics from vehicle state.
+        Returns a dict with charging data on success.
+        If the vehicle is asleep, returns a dict with charging_state='Asleep'
+        so the frontend can display a meaningful status.
         """
         state = self.get_vehicle_state(vin)
         if not state:
             return None
+        
+        # Handle asleep/inactive vehicle — return a valid response with "Asleep" state
+        if state.get("_vehicle_asleep"):
+            import pytz as _pytz
+            _mt = _pytz.timezone("America/Denver")
+            now_mt = datetime.now(_pytz.utc).astimezone(_mt)
+            return {
+                "is_charging": False,
+                "charging_state": "Asleep",
+                "current_soc": None,
+                "charge_power_kw": 0,
+                "charge_rate_mph": None,
+                "minutes_to_full": None,
+                "battery_range_mi": None,
+                "inside_temp": None,
+                "outside_temp": None,
+                "location": None,
+                "vehicle_asleep": True,
+                "timestamp": now_mt.isoformat(),
+                "formatted_time": now_mt.strftime("%I:%M %p %Z"),
+            }
             
         charge_state = state.get('charge_state', {})
         drive_state = state.get('drive_state', {})
@@ -360,6 +428,7 @@ class TessieClient:
             "inside_temp": state.get('climate_state', {}).get('inside_temp'),
             "outside_temp": state.get('climate_state', {}).get('outside_temp'),
             "location": self._resolve_address(drive_state.get('latitude'), drive_state.get('longitude')),
+            "vehicle_asleep": False,
             "timestamp": (lambda: (
                 import_pytz := __import__('pytz'),
                 import_dt := __import__('datetime'),

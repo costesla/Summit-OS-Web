@@ -6,7 +6,7 @@ import {
     Navigation, Receipt, RotateCcw, Clock,
     Battery, BatteryCharging, WifiOff, Download,
     MapPin, Gauge, LogOut, Cpu, RefreshCw, Loader2,
-    DollarSign, Cloud
+    DollarSign, Cloud, Moon
 } from 'lucide-react';
 
 // ─── Constants ─────────────────────────────────────────────────────────────
@@ -47,6 +47,8 @@ interface TeslaStatus {
     location: string | null;
     inside_temp: number | null;
     outside_temp: number | null;
+    vehicle_asleep?: boolean;
+    formatted_time?: string;
 }
 
 interface TessieDrive {
@@ -203,6 +205,7 @@ const TeslaStatusBar = () => {
         return () => clearInterval(iv);
     }, [fetchStatus]);
 
+    const isAsleep = status?.vehicle_asleep ?? false;
     const soc = status?.current_soc ?? null;
     const range = status?.battery_range_mi ?? null;
     const isCharging = status?.is_charging ?? false;
@@ -218,6 +221,15 @@ const TeslaStatusBar = () => {
         ? soc > 50 ? 'text-emerald-600' : soc > 20 ? 'text-amber-600' : 'text-rose-600'
         : 'text-slate-400';
 
+    // Determine indicator state: green = charging, blue = online, amber = sleeping, grey = offline
+    const pulseColor = isCharging
+        ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]'
+        : isAsleep
+            ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.4)]'
+            : offline
+                ? 'bg-slate-400'
+                : 'bg-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.5)]';
+
     return (
         <div
             className="flex flex-wrap md:flex-nowrap items-center gap-4 px-5 py-3 rounded-2xl border border-slate-200/80 shadow-sm"
@@ -227,11 +239,13 @@ const TeslaStatusBar = () => {
             <div className="flex items-center gap-2 shrink-0">
                 {isCharging
                     ? <BatteryCharging className="w-4 h-4 text-emerald-500" />
-                    : offline ? <WifiOff className="w-4 h-4 text-slate-400" />
-                        : <Battery className="w-4 h-4 text-blue-600" />}
+                    : isAsleep
+                        ? <Moon className="w-4 h-4 text-amber-400" />
+                        : offline ? <WifiOff className="w-4 h-4 text-slate-400" />
+                            : <Battery className="w-4 h-4 text-blue-600" />}
                 <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-2">
-                    Tesla Live
-                    <span className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-pulse shadow-[0_0_8px_rgba(37,99,235,0.5)]" />
+                    {isAsleep ? 'Tesla' : 'Tesla Live'}
+                    <span className={`w-1.5 h-1.5 rounded-full ${offline ? '' : 'animate-pulse'} ${pulseColor}`} />
                 </span>
             </div>
 
@@ -243,10 +257,21 @@ const TeslaStatusBar = () => {
             )}
 
             {!loading && offline && (
-                <span className="text-xs text-slate-400 font-mono italic">Vehicle offline or sleeping</span>
+                <span className="text-xs text-slate-400 font-mono italic">Vehicle offline — unable to reach telemetry</span>
             )}
 
-            {!loading && !offline && status && (
+            {/* Asleep state — shows a clean sleeping indicator with timestamp */}
+            {!loading && !offline && isAsleep && (
+                <div className="flex items-center gap-3 flex-1">
+                    <span className="text-xs text-amber-600 font-semibold">Vehicle Sleeping</span>
+                    {status?.formatted_time && (
+                        <span className="text-[10px] text-slate-400 font-mono">as of {status.formatted_time}</span>
+                    )}
+                </div>
+            )}
+
+            {/* Active state — shows full telemetry */}
+            {!loading && !offline && status && !isAsleep && (
                 <>
                     {/* Battery bar + % */}
                     <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
