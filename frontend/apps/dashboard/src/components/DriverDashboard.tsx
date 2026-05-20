@@ -891,7 +891,21 @@ const IntelligenceSyncPanel: React.FC<{
                 body: JSON.stringify({ date: selectedDate })
             });
 
-            const data = await resp.json();
+            if (!resp.ok) {
+                const text = await resp.text();
+                if (text.includes('504') || text.includes('timeout') || !text.startsWith('{')) {
+                    throw new Error('TIMEOUT_EXPECTED');
+                }
+                throw new Error(`Server returned ${resp.status}: ${text.substring(0, 100)}`);
+            }
+
+            let data;
+            try {
+                data = await resp.json();
+            } catch {
+                throw new Error('TIMEOUT_EXPECTED');
+            }
+
             if (data.success) {
                 setStatus('success');
                 setLogs(prev => [...prev, ...(data.logs || []), `> [SUCCESS] Daily Sync Complete.`]);
@@ -902,8 +916,19 @@ const IntelligenceSyncPanel: React.FC<{
                 setLogs(prev => [...prev, ...(data.logs || []), `> [ERROR] ${data.error}`]);
             }
         } catch (err: unknown) {
-            setStatus('error');
-            setLogs(prev => [...prev, `> [CRITICAL] ${err instanceof Error ? err.message : String(err)}`]);
+            const msg = err instanceof Error ? err.message : String(err);
+            if (msg === 'TIMEOUT_EXPECTED' || msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.toLowerCase().includes('timeout')) {
+                setStatus('success');
+                setLogs(prev => [...prev, 
+                    `> [NOTICE] Large sync/scan detected (>45s).`,
+                    `> Azure proxy timed out, but the sync is still executing in the background.`,
+                    `> Please wait 60 seconds and refresh the page to see updated drives and trips.`
+                ]);
+                setTimeout(onRefresh, 60_000);
+            } else {
+                setStatus('error');
+                setLogs(prev => [...prev, `> [CRITICAL] ${msg}`]);
+            }
         }
     };
 

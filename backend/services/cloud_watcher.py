@@ -140,6 +140,10 @@ class CloudWatcherService:
             return {"success": True, "trips": [], "logs": [f"INFO: Folder '{explicit_path}' is empty."]}
 
         all_images = [f for f in files if f.get("name", "").lower().endswith(('.jpg', '.jpeg', '.png', '.heic', '.heif'))]
+        non_images = [f for f in files if not f.get("name", "").lower().endswith(('.jpg', '.jpeg', '.png', '.heic', '.heif'))]
+        if non_images:
+            logs.append(f"INFO: Skipped {len(non_images)} non-image file(s) in folder (e.g. {', '.join([f.get('name') for f in non_images[:3]])}).")
+
         # Only OCR files that look like Uber Driver screenshots. Exclude by filename:
         #  - Starbucks/fast-food receipts, gas, scan files (unrelated expenses)
         #  - Samsung Print Spooler screenshots (printer confirmations parsed as Private trips)
@@ -337,7 +341,8 @@ class CloudWatcherService:
                             ]
                         }],
                         max_tokens=300,
-                        temperature=0
+                        temperature=0,
+                        timeout=15.0
                     )
                     raw = vision_resp.choices[0].message.content.strip()
                     raw = re.sub(r"^```(?:json)?\s*", "", raw)
@@ -656,6 +661,299 @@ class CloudWatcherService:
                 "filename": sidecar.get("filename"),
             })
         return trips
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # PUBLIC: Scan daily OneDrive folder for expense receipts and process them
+    # ─────────────────────────────────────────────────────────────────────────
+    def scan_and_log_expenses(self, date_str: str, explicit_path: str = None) -> dict:
+        """
+        Scans an Uber Driver OneDrive folder, OCRs/Vision processes every receipt screenshot,
+        and writes records to Rides.ManualExpenses and System_Vectors.
+        """
+        if not explicit_path:
+            try:
+                dt = datetime.datetime.strptime(date_str, "%Y-%m-%d")
+                year = dt.strftime("%Y")
+                month = dt.strftime("%B")
+                week_num = _calendar_week_of_month(dt)
+                week = f"Week {week_num}"
+                
+                # Standardized folder name: M.DD.YY (e.g. 5.01.26)
+                short_year = dt.strftime("%y")
+                month_num = dt.month
+                day_padded = dt.strftime("%d")
+                folder_name = f"{month_num}.{day_padded}.{short_year}"
+                
+                explicit_path = f"{self.target_root}/{year}/{month}/{week}/{folder_name}"
+            except Exception as e:
+                return {"success": False, "error": f"Invalid date format: {e}", "expenses": [], "logs": [f"ERROR: {e}"]}
+
+        logs = [f"START: Expense receipt scan for {date_str} in '{explicit_path}'"]
+
+        # 1. List the folder
+        try:
+            files = self.graph.list_folder_files(explicit_path)
+        except Exception as e:
+            return {"success": False, "error": str(e), "expenses": [], "logs": [f"ERROR: {e}"]}
+
+        if not files:
+            return {"success": True, "expenses": [], "logs": logs + [f"INFO: Folder '{explicit_path}' is empty."]}
+
+        # Filter for all images
+        all_images = [f for f in files if f.get("name", "").lower().endswith(('.jpg', '.jpeg', '.png', '.heic', '.heif'))]
+        non_images = [f for f in files if not f.get("name", "").lower().endswith(('.jpg', '.jpeg', '.png', '.heic', '.heif'))]
+        if non_images:
+            logs.append(f"INFO: Skipped {len(non_images)} non-image file(s) in folder (e.g. {', '.join([f.get('name') for f in non_images[:3]])}).")
+        
+        # Consider all unique images as expense candidates. 
+        # Filename pre-filtering is avoided so that generic camera/screenshot filenames (e.g. Screenshot_*.jpg) are not missed.
+        # The Vision AI model will accurately determine whether an image is indeed an expense receipt using is_expense_receipt.
+        seen_ids = set()
+        expense_files = []
+        for f in all_images:
+            if f.get("id") not in seen_ids:
+                seen_ids.add(f.get("id"))
+                expense_files.append(f)
+
+        logs.append(f"INFO: Found {len(all_images)} images to process as potential expense receipts.")
+
+        if not expense_files:
+            return {"success": True, "expenses": [], "logs": logs + ["INFO: No image files found in folder."]}
+
+        # OCR/Vision processing nested function
+        def _ocr_and_extract_expense(file):
+            name = file.get("name", "")
+            item_id = file.get("id")
+            try:
+                content = self.graph.get_file_content(item_id)
+                import base64
+                from openai import OpenAI
+                import json as _json
+
+                _oai = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+                b64 = base64.b64encode(content).decode("utf-8")
+                
+                prompt = (
+                    "This is an image of a business expense receipt or proof of payment. This includes paper/digital receipts (e.g. coffee, food, gas, parts, maintenance), AND mobile banking/credit card transaction screenshots (e.g. Chase, Amex, Apple Pay) that clearly document a business-related charge (such as 'TESLA SUPERCHARGER', fuel, tolls, or supplies).\n"
+                    "Analyze the image and extract the transaction details.\n"
+                    "Return ONLY a JSON object with these keys:\n"
+                    "  is_expense_receipt: true if this is a business expense receipt or a mobile banking transaction screenshot of a business-related charge (e.g. Tesla Supercharger, Starbucks, gas, shop maintenance). Return false if it is a completed Uber/ride-hailing trip receipt (where you earned money), a generic personal screen, or unrelated.\n"
+                    "  merchant: Name of the business (e.g. 'Starbucks', 'McDonald\'s', 'Circle K', 'Shell', 'Tesla Supercharger')\n"
+                    "  amount: Total transaction amount as a number (e.g. 15.45)\n"
+                    "  tax: Tax amount as a number, if visible (otherwise 0.0)\n"
+                    "  category: Select one from: 'Meal_Receipt', 'Fuel_Receipt', 'Maintenance', 'Charging_Session', 'ATM_Receipt', 'General_Expense'\n"
+                    "  date_time: The date and time of the transaction in YYYY-MM-DD HH:MM:SS format (e.g. '2026-05-19 08:32:00'). If time is not visible, use '12:00:00'. If date is not visible, estimate from context or use the current year/month/day.\n"
+                    "  items: List of items purchased, if readable (e.g. ['Grande Latte', 'Croissant']). For banking transactions with no items, return an empty list.\n"
+                    "  currency: 'USD'\n"
+                    "Return ONLY valid JSON, no markdown."
+                )
+
+                vision_resp = _oai.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[{
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": prompt},
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{b64}",
+                                    "detail": "auto"
+                                }
+                            }
+                        ]
+                    }],
+                    max_tokens=400,
+                    temperature=0,
+                    timeout=15.0
+                )
+                
+                raw = vision_resp.choices[0].message.content.strip()
+                raw = re.sub(r"^```(?:json)?\s*", "", raw)
+                raw = re.sub(r"\s*```$", "", raw)
+                vdata = _json.loads(raw)
+                
+                if not vdata.get("is_expense_receipt", True):
+                    return None, f"SKIP: '{name}' — GPT classified as NOT an expense receipt"
+
+                merchant = vdata.get("merchant", "Unknown Merchant").strip()
+                amount = float(vdata.get("amount") or 0.0)
+                tax = float(vdata.get("tax") or 0.0)
+                category = vdata.get("category", "General_Expense")
+                dt_str = vdata.get("date_time", "")
+                items = vdata.get("items", [])
+                
+                if amount <= 0.0:
+                    return None, f"SKIP: '{name}' — extracted amount is $0.00 or negative"
+                
+                # Parse date_time
+                import datetime as _dt
+                try:
+                    parsed_dt = _dt.datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S")
+                except:
+                    try:
+                        parsed_dt = _dt.datetime.strptime(dt_str.split(" ")[0], "%Y-%m-%d")
+                    except:
+                        try:
+                            parsed_dt = _dt.datetime.strptime(date_str, "%Y-%m-%d")
+                        except:
+                            parsed_dt = _dt.datetime.now()
+                            
+                parsed_dt = parsed_dt.replace(tzinfo=MDT)
+                
+                entry = {
+                    "filename": name,
+                    "item_id": item_id,
+                    "content_bytes": content,
+                    "merchant": merchant,
+                    "amount": amount,
+                    "tax": tax,
+                    "category": category,
+                    "date_time": parsed_dt,
+                    "items": items
+                }
+                
+                return entry, f"PARSED: '{name}' — {merchant} ${amount:.2f} ({category}) @ {dt_str}"
+            except Exception as e:
+                log.error(f"Error processing expense {name}: {e}")
+                return None, f"ERROR: '{name}' — {e}"
+
+        # 2. Parallel Processing with ThreadPoolExecutor
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        raw_expenses = []
+        logs.append(f"INFO: Starting parallel Vision analysis on {len(expense_files)} receipts (4 workers)...")
+        
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            futures = {executor.submit(_ocr_and_extract_expense, f): f for f in expense_files}
+            for future in as_completed(futures):
+                entry, msg = future.result()
+                logs.append(msg)
+                if entry:
+                    raw_expenses.append(entry)
+
+        if not raw_expenses:
+            return {"success": True, "expenses": [], "logs": logs + ["INFO: No valid expense receipts parsed."]}
+
+        # 3. Deduplication (same merchant, same amount, and within 10 minutes)
+        deduped_expenses = []
+        for exp in raw_expenses:
+            is_dup = False
+            for existing in deduped_expenses:
+                same_merchant = exp["merchant"].lower() == existing["merchant"].lower()
+                same_amount = abs(exp["amount"] - existing["amount"]) <= 0.01
+                if same_merchant and same_amount:
+                    # If both have valid datetimes, only treat as duplicate if within 10 minutes
+                    t1 = exp.get("date_time")
+                    t2 = existing.get("date_time")
+                    if t1 and t2:
+                        # Normalize to naive for comparison
+                        t1_naive = t1.replace(tzinfo=None) if t1.tzinfo else t1
+                        t2_naive = t2.replace(tzinfo=None) if t2.tzinfo else t2
+                        time_diff = abs((t1_naive - t2_naive).total_seconds())
+                        if time_diff <= 600:  # 10-minute window
+                            is_dup = True
+                            logs.append(f"DEDUP: '{exp['filename']}' is a duplicate of '{existing['filename']}' (same merchant/amount, diff {time_diff/60:.1f}m <= 10m) — skipped.")
+                            break
+                    else:
+                        # Fallback if datetimes aren't both present: treat as duplicate
+                        is_dup = True
+                        logs.append(f"DEDUP: '{exp['filename']}' is a duplicate of '{existing['filename']}' (same merchant/amount, time missing) — skipped.")
+                        break
+            if not is_dup:
+                deduped_expenses.append(exp)
+        
+        logs.append(f"INFO: {len(deduped_expenses)} unique expenses out of {len(raw_expenses)} parsed.")
+
+        # 4. Clear existing manual expenses for the given date to ensure idempotence
+        date_compact = date_str.replace("-", "")
+        conn = self.db.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT ExpenseID FROM Rides.ManualExpenses WHERE ExpenseID LIKE ?", (f"EXP-{date_compact}-%",))
+        existing_rows = cursor.fetchall()
+        if existing_rows:
+            cursor.execute("DELETE FROM Rides.ManualExpenses WHERE ExpenseID LIKE ?", (f"EXP-{date_compact}-%",))
+            conn.commit()
+            logs.append(f"INFO: Cleared {len(existing_rows)} existing expense records in database for {date_str}.")
+
+        try:
+            cursor.execute("DELETE FROM System_Vectors WHERE source_pointer LIKE ?", (f"OneDrive://{explicit_path}/%",))
+            conn.commit()
+            if cursor.rowcount:
+                logs.append(f"INFO: Cleared {cursor.rowcount} existing vector records for {date_str}.")
+        except Exception as ve_err:
+            log.warning(f"Failed to clear system vectors: {ve_err}")
+
+        # 5. Persist to SQL and Vectorize
+        from services.vector_store import VectorStore
+        vs = VectorStore()
+        
+        expenses_out = []
+        for i, exp in enumerate(deduped_expenses, start=1):
+            exp_id = f"EXP-{date_compact}-{i:02d}"
+            
+            expense_data = {
+                "id": exp_id,
+                "category": exp["category"],
+                "amount": exp["amount"],
+                "note": f"Merchant: {exp['merchant']}. Items: {', '.join(exp['items'])}. File: {exp['filename']}",
+                "timestamp": exp["date_time"]
+            }
+            
+            try:
+                self.db.save_manual_expense(expense_data)
+                logs.append(f"SAVED: {exp_id} — {exp['merchant']} — ${exp['amount']:.2f}")
+            except Exception as se_err:
+                logs.append(f"ERROR saving expense {exp_id} to SQL: {se_err}")
+                continue
+            
+            try:
+                import hashlib
+                timestamp_epoch = exp["date_time"].timestamp()
+                raw_hash = hashlib.sha256(exp["content_bytes"]).hexdigest()
+                
+                vector_data = {
+                    "vector_id": f"VEC-EXP-{hashlib.md5(exp['filename'].encode()).hexdigest()[:8]}-{int(timestamp_epoch)}",
+                    "source_type": "Artifact",
+                    "timestamp_utc": exp["date_time"],
+                    "raw_text_hash": raw_hash,
+                    "source_pointer": f"OneDrive://{explicit_path}/{exp['filename']}",
+                    "derivation_reason": f"Verified Expense Receipt: {exp['merchant']} on {exp['date_time'].strftime('%Y-%m-%d')} for ${exp['amount']:.2f}. Items: {', '.join(exp['items'])}. Category: {exp['category']}. Filename: {exp['filename']}"
+                }
+                
+                v_success = vs.add_vector(vector_data)
+                if v_success:
+                    logs.append(f"VECTOR: Vectorized and indexed '{exp['filename']}' successfully.")
+                else:
+                    logs.append(f"WARN: Failed to vectorize '{exp['filename']}'.")
+            except Exception as vs_err:
+                logs.append(f"ERROR vectorizing '{exp['filename']}': {vs_err}")
+                
+            expenses_out.append({
+                "expense_id": exp_id,
+                "merchant": exp["merchant"],
+                "amount": exp["amount"],
+                "tax": exp["tax"],
+                "category": exp["category"],
+                "date_time": exp["date_time"].isoformat(),
+                "time_display": exp["date_time"].strftime("%#I:%M %p" if os.name == "nt" else "%-I:%M %p"),
+                "items": exp["items"],
+                "filename": exp["filename"]
+            })
+            
+        cursor.close()
+        
+        total_amount = round(sum(e["amount"] for e in expenses_out), 2)
+        logs.append(f"DONE: {len(expenses_out)} expenses saved/vectorized. Total amount: ${total_amount}")
+        
+        return {
+            "success": True,
+            "date": date_str,
+            "expense_count": len(expenses_out),
+            "total_amount": total_amount,
+            "expenses": expenses_out,
+            "logs": logs
+        }
 
     # ─────────────────────────────────────────────────────────────────────────
     # PRIVATE helpers

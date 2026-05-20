@@ -196,6 +196,33 @@ def get_day_trips(req: func.HttpRequest) -> func.HttpResponse:
             status_code=500, headers=_cors(req), mimetype="application/json"
         )
 
+@bp.route(route="operations/scan-day-expenses", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+def scan_day_expenses(req: func.HttpRequest) -> func.HttpResponse:
+    """Scans and extracts expense receipts from OneDrive daily folders, saving them to SQL and Vector Store."""
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=_cors(req))
+    try:
+        data = req.get_json() if req.get_body() else {}
+        date_str = data.get("date")
+        explicit_path = data.get("path")
+        if not date_str:
+            return func.HttpResponse(
+                json.dumps({"success": False, "error": "date is required (YYYY-MM-DD)"}),
+                status_code=400, headers=_cors(req), mimetype="application/json"
+            )
+        service = CloudWatcherService()
+        result = service.scan_and_log_expenses(date_str, explicit_path=explicit_path)
+        return func.HttpResponse(
+            json.dumps(result),
+            status_code=200, headers=_cors(req), mimetype="application/json"
+        )
+    except Exception as e:
+        logging.error(f"Scan Day Expenses Error: {e}")
+        return func.HttpResponse(
+            json.dumps({"success": False, "error": str(e)}),
+            status_code=500, headers=_cors(req), mimetype="application/json"
+        )
+
 @bp.route(route="operations/upload-screenshot", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def upload_screenshot(req: func.HttpRequest) -> func.HttpResponse:
     if req.method == "OPTIONS":
@@ -301,6 +328,21 @@ def daily_sync(req: func.HttpRequest) -> func.HttpResponse:
             logging.error(f"Cloud Scan Error: {sce}")
             logs.append(f"[ERROR] Cloud Scan Error: {str(sce)}")
         
+        # 5. Integrated Expense Scanning (Identify and parse receipts)
+        try:
+            target_date = target_date_str or now.strftime('%Y-%m-%d')
+            logs.append(f"[INFO] Running Expense Receipt Scan for {target_date}...")
+            cw_service = CloudWatcherService()
+            expense_result = cw_service.scan_and_log_expenses(target_date)
+            if expense_result.get("success"):
+                logs.append(f"[SUCCESS] Expense Scan: {expense_result.get('expense_count', 0)} receipts scanned, total ${expense_result.get('total_amount', 0.0):.2f}")
+                logs.extend(expense_result.get("logs", []))
+            else:
+                logs.append(f"[WARNING] Expense Scan Notice: {expense_result.get('error')}")
+        except Exception as ece:
+            logging.error(f"Expense Scan Error: {ece}")
+            logs.append(f"[ERROR] Expense Scan Error: {str(ece)}")
+
         return func.HttpResponse(
             json.dumps({
                 "success": True,
