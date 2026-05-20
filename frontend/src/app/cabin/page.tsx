@@ -75,10 +75,12 @@ function CabinContent() {
     const [state, setState] = useState<CabinState>(INITIAL_STATE);
     const [connected, setConnected] = useState(false);
     const [sending, setSending] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
         if (manualToken.trim()) {
+            setError(null);
             router.push(`/cabin?token=${manualToken.trim()}`);
         }
     };
@@ -88,16 +90,29 @@ function CabinContent() {
         if (!token) return;
         try {
             const res = await fetch(`${API_BASE}/api/cabin/state?token=${token}`);
+            if (res.status === 401) {
+                setAuthorized(false);
+                setError("Invalid or expired access code.");
+                router.push("/cabin");
+                return;
+            }
             if (!res.ok) throw new Error(res.statusText);
             const data = await res.json();
+            if (data && data.error === "Unauthorized") {
+                setAuthorized(false);
+                setError("Invalid or expired access code.");
+                router.push("/cabin");
+                return;
+            }
             if (data && !data.error) {
                 setState((prev) => ({ ...prev, ...data }));
                 setConnected(true);
+                setError(null);
             }
         } catch {
             setConnected(false);
         }
-    }, [token]);
+    }, [token, router]);
 
     // ── Auth + Polling ───────────────────────────────────────────────
     useEffect(() => {
@@ -173,6 +188,12 @@ function CabinContent() {
                             </p>
                         </div>
                     </div>
+
+                    {error && (
+                        <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-xl p-3 text-center font-medium animate-pulse">
+                            {error}
+                        </div>
+                    )}
 
                     <form onSubmit={handleLogin} className="space-y-4">
                         <div className="space-y-2">
