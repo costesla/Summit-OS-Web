@@ -3,7 +3,7 @@ import './index.css'
 
 function App() {
   return (
-    <div className="w-full min-h-screen bg-[#111]">
+    <div className="w-full min-h-screen bg-[#f8fafc]">
       <DriverDashboard />
     </div>
   )

@@ -3,30 +3,29 @@
 @tailwind utilities;
 
 :root {
-  --color-text-main: #ffffff;
-  --color-text-muted: #a0a0a0;
-  --color-background: #05080a;
+  --color-text-main: #0f172a;
+  --color-text-muted: #475569;
+  --color-background: #f8fafc;
 
-  /* HSL Base for Glows (Cyan/Teal) */
-  --primary-hsl: 185, 90%, 55%;
-  --secondary-hsl: 195, 80%, 40%;
+  /* HSL Base for Glows (Cobalt Blue/Indigo) */
+  --primary-hsl: 221, 83%, 53%;
+  --secondary-hsl: 215, 60%, 40%;
 
-  /* Gradients - Shifted from Red to metallic Teal/Cyan */
-  --gradient-metallic: linear-gradient(135deg, hsl(185, 70%, 40%) 0%, hsl(190, 100%, 60%) 50%, hsl(185, 70%, 40%) 100%);
-  --gradient-dark: linear-gradient(to bottom, var(--color-background), #000000);
+  /* Gradients - Shifted to Premium Cobalt/Vibrant Blue */
+  --gradient-metallic: linear-gradient(135deg, hsl(221, 83%, 45%) 0%, hsl(217, 91%, 60%) 50%, hsl(221, 83%, 45%) 100%);
+  --gradient-dark: linear-gradient(to bottom, var(--color-background), #ffffff);
 
   /* Shadows & Glows */
-  --glow-primary: 0 0 30px hsla(185, 100%, 50%, 0.4);
-  --shadow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+  --glow-primary: 0 0 30px hsla(221, 83%, 53%, 0.15);
+  --shadow-card: 0 10px 40px -10px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.04);
 
   /* Border Radius */
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 20px;
 
-  /* Legacy Red mappings (for components still using them) */
-  --tesla-red: #00f2ff;
-  /* Now Cyan */
+  /* Legacy Red mappings - now mapped to vibrant royal blue */
+  --tesla-red: #3b82f6;
 }
 
 * {
@@ -39,7 +38,7 @@ body {
   background-color: var(--color-background);
   color: var(--color-text-main);
   background-image:
-    radial-gradient(circle at 50% 0%, hsla(var(--primary-hsl), 0.15), transparent 60%),
+    radial-gradient(circle at 50% 0%, hsla(var(--primary-hsl), 0.06), transparent 60%),
     var(--gradient-dark);
   min-height: 100vh;
   font-family: var(--font-outfit), sans-serif;
@@ -66,7 +65,7 @@ h1 {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  text-shadow: 0 0 40px hsla(var(--primary-hsl), 0.3);
+  text-shadow: 0 0 40px hsla(var(--primary-hsl), 0.15);
 }
 
 .title-animate {
@@ -94,17 +93,17 @@ p {
 
 /* Utilities */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
   box-shadow: var(--shadow-card);
   border-radius: var(--radius-lg);
 }
 
 .btn-primary {
   background: var(--gradient-metallic);
-  color: #000;
+  color: #ffffff;
   font-weight: 600;
   padding: 1rem 2rem;
   border-radius: var(--radius-md);
@@ -113,13 +112,13 @@ p {
   transition: all 0.3s ease;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  box-shadow: 0 4px 15px hsla(var(--primary-hsl), 0.3);
+  box-shadow: 0 4px 15px hsla(var(--primary-hsl), 0.2);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px hsla(var(--primary-hsl), 0.5);
-  filter: brightness(1.2);
+  box-shadow: 0 8px 25px hsla(var(--primary-hsl), 0.3);
+  filter: brightness(1.1);
 }
 
 .container {
@@ -134,10 +133,10 @@ select,
 textarea {
   width: 100%;
   padding: 1rem;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(15, 23, 42, 0.12);
   border-radius: var(--radius-sm);
-  color: #fff;
+  color: var(--color-text-main);
   font-family: inherit;
   transition: all 0.3s ease;
 }
@@ -146,14 +145,14 @@ input:focus,
 select:focus,
 textarea:focus {
   outline: none;
-  border-color: hsla(185, 100%, 50%, 0.5);
-  box-shadow: 0 0 15px hsla(185, 100%, 50%, 0.2);
+  border-color: hsla(221, 83%, 53%, 0.4);
+  box-shadow: 0 0 15px hsla(221, 83%, 53%, 0.15);
 }
 
 label {
   display: block;
   margin-bottom: 0.5rem;
   font-size: 0.9rem;
-  color: var(--color-secondary);
+  color: var(--color-text-muted);
   font-weight: 500;
 }
