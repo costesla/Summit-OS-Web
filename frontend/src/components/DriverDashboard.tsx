@@ -1643,7 +1643,7 @@ const TelemetrySparklines = ({ selectedDate }: { selectedDate: string }) => {
         if (expanded) {
             Promise.resolve().then(() => setLoading(true));
             let active = true;
-            fetch(`${AZURE_BASE}/copilot/agentic-query?q=vehicle%20telemetry%20for%20${selectedDate}&mode=evidence`)
+            fetch(`${AZURE_BASE}/copilot/agentic-query?q=vehicle%20telemetry%20for%20${selectedDate}&mode=evidence&t=${Date.now()}`)
                 .then(res => res.ok ? res.json() : null)
                 .then(data => {
                     if (active) {
@@ -1693,8 +1693,8 @@ const TelemetrySparklines = ({ selectedDate }: { selectedDate: string }) => {
 
     const getSvgPath = (points: number[], isSoc: boolean) => {
         if (points.length < 2) return '';
-        const minVal = isSoc ? 0 : Math.min(...points) - 10;
-        const maxVal = isSoc ? 100 : Math.max(...points) + 10;
+        const minVal = isSoc ? Math.max(0, Math.min(...points) - 2) : Math.max(0, Math.min(...points) - 10);
+        const maxVal = isSoc ? Math.min(100, Math.max(...points) + 2) : Math.max(...points) + 10;
         const range = maxVal - minVal || 1;
 
         const coords = points.map((val, idx) => {
@@ -1928,10 +1928,16 @@ const DriverDashboard = () => {
         finally { setIsFetchingCloud(false); }
     }, []);
 
+    const triggerRefresh = useCallback(() => {
+        fetchFromCloud(selectedDate);
+        setDrivesRefreshKey(k => k + 1);
+    }, [selectedDate, fetchFromCloud]);
+
     const syncToCloud = useCallback(async () => {
         setIsSyncingCloud(true);
         setSyncMessage(null);
         try {
+            // 1. Save local expenses/data to the database
             const resp = await fetch(`${AZURE_BASE}/driver/sync`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1944,13 +1950,45 @@ const DriverDashboard = () => {
                 setLastSync(now);
                 localStorage.setItem('cos_last_sync', now);
                 
-                await fetch(`${AZURE_BASE}/daily-sync`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ date: selectedDate })
-                });
+                // 2. Trigger the backend Daily Unified Sync (Folders + Operations)
+                try {
+                    const syncResp = await fetch(`${AZURE_BASE}/daily-sync`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ date: selectedDate })
+                    });
 
-                setSyncMessage(`✓ Unified Cloud Sync Complete at ${now}`);
+                    if (!syncResp.ok) {
+                        const text = await syncResp.text();
+                        if (text.includes('504') || text.includes('timeout') || !text.startsWith('{')) {
+                            throw new Error('TIMEOUT_EXPECTED');
+                        }
+                        throw new Error(`Server returned ${syncResp.status}: ${text.substring(0, 100)}`);
+                    }
+
+                    let syncData;
+                    try {
+                        syncData = await syncResp.json();
+                    } catch {
+                        throw new Error('TIMEOUT_EXPECTED');
+                    }
+
+                    if (syncData.success) {
+                        setSyncMessage(`✓ Unified Cloud Sync Complete at ${now}`);
+                    } else {
+                        setSyncMessage(`✓ Saved (Cloud Sync Note: ${syncData.error || 'Check console'})`);
+                    }
+                } catch (syncErr: unknown) {
+                    const msg = syncErr instanceof Error ? syncErr.message : String(syncErr);
+                    if (msg === 'TIMEOUT_EXPECTED' || msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.toLowerCase().includes('timeout')) {
+                        // Gateway timeout is expected for long-running daily sync OCR operations.
+                        // The Azure function executes in the background.
+                        setSyncMessage(`✓ Saved & Syncing in Background...`);
+                        setTimeout(triggerRefresh, 60_000);
+                    } else {
+                        setSyncMessage(`✓ Saved (Cloud Sync Error: ${msg})`);
+                    }
+                }
             } else {
                 setSyncMessage(`✗ Save failed: ${data.error || 'Unknown error'}`);
             }
@@ -1958,9 +1996,9 @@ const DriverDashboard = () => {
             setSyncMessage(`✗ Network error: ${err instanceof Error ? err.message : String(err)}`);
         } finally {
             setIsSyncingCloud(false);
-            setTimeout(() => setSyncMessage(null), 4000);
+            setTimeout(() => setSyncMessage(null), 5000);
         }
-    }, [expenses, selectedDate]);
+    }, [expenses, selectedDate, triggerRefresh]);
 
     useEffect(() => {
         fetchFromCloud(selectedDate);

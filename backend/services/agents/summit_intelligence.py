@@ -288,20 +288,6 @@ class VehicleAgent:
     def query(self, date_str: Optional[str] = None, start_date: Optional[str] = None, end_date: Optional[str] = None) -> List[Dict[str, Any]]:
         logging.info(f"VehicleAgent querying telemetry. Date: {date_str}, Range: [{start_date}, {end_date}]")
         
-        # Telemetry is stored as raw JSON payloads containing arrays of points in dbo.Drive_Telemetry
-        # We query the drives table to find matching drive timestamps
-        sql = """
-            SELECT DriveID, RawJSONPayload, LastUpdated
-            FROM dbo.Drive_Telemetry
-            WHERE RawJSONPayload IS NOT NULL
-        """
-        # Because the telemetry is inside a blob, we load and parse it
-        results = self.db.execute_query_with_results(sql)
-        if not results:
-            return []
-            
-        telemetry_points = []
-        
         # Determine target date filters
         target_dates = set()
         if date_str:
@@ -316,6 +302,30 @@ class VehicleAgent:
             except Exception as e:
                 logging.error(f"Error parsing dates in VehicleAgent: {e}")
                 
+        # Telemetry is stored as raw JSON payloads containing arrays of points in dbo.Drive_Telemetry
+        # To avoid pulling all rows from the database, we pre-filter by joining Rides.Rides on target_dates if active
+        if target_dates:
+            date_list = ", ".join(f"'{d}'" for d in target_dates)
+            sql = f"""
+                SELECT dt.DriveID, dt.RawJSONPayload, dt.LastUpdated
+                FROM dbo.Drive_Telemetry dt
+                INNER JOIN Rides.Rides r ON dt.DriveID = r.RideID
+                WHERE dt.RawJSONPayload IS NOT NULL
+                  AND CAST(r.Timestamp_Start AS DATE) IN ({date_list})
+            """
+        else:
+            sql = """
+                SELECT DriveID, RawJSONPayload, LastUpdated
+                FROM dbo.Drive_Telemetry
+                WHERE RawJSONPayload IS NOT NULL
+            """
+
+        # Because the telemetry is inside a blob, we load and parse it
+        results = self.db.execute_query_with_results(sql)
+        if not results:
+            return []
+            
+        telemetry_points = []
         for r in results:
             try:
                 payload = json.loads(r.get("RawJSONPayload") or "{}")
@@ -334,7 +344,9 @@ class VehicleAgent:
                         dt = datetime.datetime.fromtimestamp(ts, tz=datetime.timezone.utc)
                         # Shift to MDT (UTC-6)
                         mdt_dt = dt - datetime.timedelta(hours=6)
-                        mdt_date_str = mdt_dt.strftime("%Y-%m-%d")
+                        # Remove timezone info to prevent dual-timezone offset like +00:00-06:00
+                        mdt_naive = mdt_dt.replace(tzinfo=None)
+                        mdt_date_str = mdt_naive.strftime("%Y-%m-%d")
                         
                         # Apply date filter
                         if target_dates and mdt_date_str not in target_dates:
@@ -343,13 +355,31 @@ class VehicleAgent:
                         soc = float(battery_levels[idx] if idx < len(battery_levels) else 0.0)
                         odo = float(odometers[idx] if idx < len(odometers) else 0.0)
                         
-                        # Generate default or estimated efficiency
-                        eff = 250.0 # Wh/mi default
+                        # Calculate dynamic efficiency based on real-time voltage, current, and speed
+                        eff = 250.0 # baseline fallback
+                        speeds = payload.get("speeds", [])
+                        pack_current = payload.get("pack_current", [])
+                        pack_voltage = payload.get("pack_voltage", [])
+                        
+                        if idx < len(speeds) and idx < len(pack_current) and idx < len(pack_voltage):
+                            speed = float(speeds[idx] or 0.0)
+                            curr = float(pack_current[idx] or 0.0)
+                            volt = float(pack_voltage[idx] or 0.0)
+                            
+                            # Power in Watts (discharging is negative current)
+                            power_w = abs(curr) * volt
+                            if speed > 2.0:
+                                calculated_eff = power_w / speed
+                                # Cap it between 100.0 and 800.0 to keep the graph beautifully scaled
+                                eff = max(100.0, min(800.0, calculated_eff))
+                            else:
+                                # When stationary, use standard baseline
+                                eff = 250.0
                         
                         point_data = {
-                            "timestamp": mdt_dt.isoformat() + "-06:00",
+                            "timestamp": mdt_naive.isoformat() + "-06:00",
                             "soc_pct": soc,
-                            "efficiency_wh_per_mi": eff,
+                            "efficiency_wh_per_mi": round(eff, 1),
                             "odometer_mi": odo
                         }
                         # Enforce schema using Pydantic

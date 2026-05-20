@@ -1,6 +1,6 @@
 $appName = "summitos-api"
 $resourceGroup = "rg-summitos-prod"
-$zipName = "deploy.zip"
+$zipName = "backend_deploy.zip"
 
 Write-Host "Preparing deployment for $appName (Monorepo Backend)..."
 
@@ -10,10 +10,19 @@ if (Test-Path $zipName) { Remove-Item $zipName }
 # Create Zip using Python script (preserves structure correctly)
 Write-Host "Zipping files from /backend using python script..."
 python create_backend_zip.py
-$zipName = "backend_deploy.zip"
 
-# Deploy
-Write-Host "Deploying to Azure..."
-az functionapp deployment source config-zip --resource-group $resourceGroup --name $appName --src $zipName
+# Clear WEBSITE_RUN_FROM_PACKAGE first to avoid read-only mount issues
+Write-Host "Clearing WEBSITE_RUN_FROM_PACKAGE setting..."
+az functionapp config appsettings delete --name $appName --resource-group $resourceGroup --setting-names WEBSITE_RUN_FROM_PACKAGE
 
-Write-Host "Deployment command sent."
+# Deploy with remote build
+Write-Host "Deploying to Azure with remote build..."
+az functionapp deployment source config-zip --resource-group $resourceGroup --name $appName --src $zipName --build-remote true --timeout 600
+
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "Deployment successful! Syncing function triggers..." -ForegroundColor Green
+    az functionapp function sync --name $appName --resource-group $resourceGroup
+} else {
+    Write-Host "Deployment failed with exit code $LASTEXITCODE" -ForegroundColor Red
+}
+
