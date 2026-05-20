@@ -1815,7 +1815,9 @@ const TelemetrySparklines = ({ selectedDate }: { selectedDate: string }) => {
                                 <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2 py-0.5 bg-blue-100 border border-blue-200 rounded-full">
                                     <span className="text-[8px] font-bold text-blue-600 font-mono uppercase tracking-tighter">Battery Timeline</span>
                                 </div>
-                                <h4 className="text-[10px] font-bold font-mono text-slate-505 uppercase tracking-widest">SOC % Curve (0-100%)</h4>
+                                <h4 className="text-[10px] font-bold font-mono text-slate-505 uppercase tracking-widest">
+                                    SOC % Curve ({Math.max(0, Math.min(...socPoints) - 2)}% - {Math.min(100, Math.max(...socPoints) + 2)}%)
+                                </h4>
                                 
                                 {/* SVG Chart */}
                                 <div className="relative h-[110px] w-full mt-2">
