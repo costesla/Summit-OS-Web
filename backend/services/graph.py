@@ -45,14 +45,34 @@ class GraphClient:
 
     def get_calendar_events(self, date_obj: datetime):
         token = self._get_token()
+        from services.datetime_utils import get_timezone, normalize_to_utc
+        mt_tz = get_timezone("CO")  # Mountain Time
         
-        # Start of day
-        start_dt = date_obj.replace(hour=0, minute=0, second=0, microsecond=0)
-        # End of day
-        end_dt = date_obj.replace(hour=23, minute=59, second=59, microsecond=999999)
+        # Decouple date extraction from timezone shift
+        if date_obj.hour == 0 and date_obj.minute == 0 and date_obj.second == 0:
+            year = date_obj.year
+            month = date_obj.month
+            day = date_obj.day
+        else:
+            # It's a full timestamp, convert to local MT to determine the target day
+            if date_obj.tzinfo is None:
+                # If naive, treat it as UTC first to make it aware
+                date_obj = date_obj.replace(tzinfo=pytz.UTC)
+            date_obj_utc = normalize_to_utc(date_obj)
+            date_obj_mt = date_obj_utc.astimezone(mt_tz)
+            year = date_obj_mt.year
+            month = date_obj_mt.month
+            day = date_obj_mt.day
+            
+        # Construct exact Mountain Time start/end for this day
+        # Start of Mountain Time day: 00:00:00
+        start_mt = mt_tz.localize(datetime(year, month, day, 0, 0, 0, 0))
+        # End of Mountain Time day: 23:59:59
+        end_mt = mt_tz.localize(datetime(year, month, day, 23, 59, 59, 999999))
         
-        start_iso = self._format_iso_z(start_dt)
-        end_iso = self._format_iso_z(end_dt)
+        # Format both to UTC ISO Z strings
+        start_iso = self._format_iso_z(start_mt)
+        end_iso = self._format_iso_z(end_mt)
 
         # Graph API expects ISO strings
         url = f"https://graph.microsoft.com/v1.0/users/{self.user_email}/calendar/calendarView"

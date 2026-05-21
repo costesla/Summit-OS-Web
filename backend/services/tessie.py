@@ -458,11 +458,11 @@ class TessieClient:
 
         logging.info(f"Setting seat heater {seat} to {level} for {vin}")
         try:
-            url = f"{self.base_url}/{vin}/command/set_seat_heater"
+            url = f"{self.base_url}/{vin}/command/set_seat_heat"
             headers = {"Authorization": f"Bearer {self.api_key}"}
             params = {"seat": seat, "level": level}
 
-            response = requests.get(url, headers=headers, params=params, timeout=self.timeout)
+            response = requests.post(url, headers=headers, params=params, timeout=self.timeout)
             response.raise_for_status()
             return response.json()
         except Exception as e:
@@ -483,7 +483,7 @@ class TessieClient:
             url = f"{self.base_url}/{vin}/command/{action}"
             headers = {"Authorization": f"Bearer {self.api_key}"}
 
-            response = requests.get(url, headers=headers, timeout=self.timeout)
+            response = requests.post(url, headers=headers, timeout=self.timeout)
             response.raise_for_status()
             return response.json()
         except Exception as e:
@@ -497,7 +497,7 @@ class TessieClient:
         try:
             url = f"{self.base_url}/{vin}/command/start_climate"
             headers = {"Authorization": f"Bearer {self.api_key}"}
-            response = requests.get(url, headers=headers, timeout=self.timeout)
+            response = requests.post(url, headers=headers, timeout=self.timeout)
             response.raise_for_status()
             return response.json()
         except Exception as e:
@@ -511,7 +511,7 @@ class TessieClient:
         try:
             url = f"{self.base_url}/{vin}/command/stop_climate"
             headers = {"Authorization": f"Bearer {self.api_key}"}
-            response = requests.get(url, headers=headers, timeout=self.timeout)
+            response = requests.post(url, headers=headers, timeout=self.timeout)
             response.raise_for_status()
             return response.json()
         except Exception as e:
@@ -529,10 +529,10 @@ class TessieClient:
         temp_c = round((temp_f - 32) * 5 / 9, 1)
         logging.info(f"Setting climate temp to {temp_f}°F ({temp_c}°C) for {vin}")
         try:
-            url = f"{self.base_url}/{vin}/command/set_temperature"
+            url = f"{self.base_url}/{vin}/command/set_temperatures"
             headers = {"Authorization": f"Bearer {self.api_key}"}
             params = {"temperature": temp_c}
-            response = requests.get(url, headers=headers, params=params, timeout=self.timeout)
+            response = requests.post(url, headers=headers, params=params, timeout=self.timeout)
             response.raise_for_status()
             return response.json()
         except Exception as e:
@@ -544,9 +544,9 @@ class TessieClient:
         if not self.api_key:
             return None
         try:
-            url = f"{self.base_url}/{vin}/command/open_trunk"
+            url = f"{self.base_url}/{vin}/command/activate_rear_trunk"
             headers = {"Authorization": f"Bearer {self.api_key}"}
-            response = requests.get(url, headers=headers, timeout=self.timeout)
+            response = requests.post(url, headers=headers, timeout=self.timeout)
             response.raise_for_status()
             return response.json()
         except Exception as e:
@@ -558,9 +558,9 @@ class TessieClient:
         if not self.api_key:
             return None
         try:
-            url = f"{self.base_url}/{vin}/command/open_frunk"
+            url = f"{self.base_url}/{vin}/command/activate_front_trunk"
             headers = {"Authorization": f"Bearer {self.api_key}"}
-            response = requests.get(url, headers=headers, timeout=self.timeout)
+            response = requests.post(url, headers=headers, timeout=self.timeout)
             response.raise_for_status()
             return response.json()
         except Exception as e:

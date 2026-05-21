@@ -463,6 +463,11 @@ class GovernedQueryRouter:
         self.client = OpenAI(api_key=self.api_key) if self.api_key else None
 
     def parse_query(self, query: str) -> Dict[str, Any]:
+        # Calculate dynamic dates in Mountain Time (UTC-6)
+        mt_now = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=6)
+        today_str = mt_now.strftime("%Y-%m-%d")
+        yesterday_str = (mt_now - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+
         parsed = None
         if self.client:
             try:
@@ -470,18 +475,18 @@ class GovernedQueryRouter:
                 prompt = f"""
                 You are the routing and parameter extraction engine for Summit Intelligence.
                 Analyze the user query: "{query}"
-                Today's date is 2026-05-19.
+                Today's date is {today_str}.
                 
                 Extract:
                 1. target_agent: Must be exactly one of: ["trips", "charging", "expenses", "vehicle", "orchestrator"].
                    - Select "orchestrator" ONLY if the query requires aggregations or combination across multiple domains (e.g. net profit, dashboard, total expenses and trips, etc.).
                    - Otherwise, map to the specific isolated domain engine.
-                2. date_str: A date string formatted as "YYYY-MM-DD" if a single specific day is referenced (e.g. "today" -> "2026-05-19", "yesterday" -> "2026-05-18", "May 10" -> "2026-05-10"). Return null if not specific.
+                2. date_str: A date string formatted as "YYYY-MM-DD" if a single specific day is referenced (e.g. "today" -> "{today_str}", "yesterday" -> "{yesterday_str}", "May 10" -> "2026-05-10"). Return null if not specific.
                 3. start_date: Start of a range formatted as "YYYY-MM-DD" or null.
                 4. end_date: End of a range formatted as "YYYY-MM-DD" or null.
                 
                 Respond ONLY with a valid JSON object. Do not include markdown code block syntax. Example:
-                {{"target_agent": "trips", "date_str": "2026-05-19", "start_date": null, "end_date": null}}
+                {{"target_agent": "trips", "date_str": "{today_str}", "start_date": null, "end_date": null}}
                 """
                 response = self.client.chat.completions.create(
                     model="gpt-4o",
@@ -504,6 +509,113 @@ class GovernedQueryRouter:
             
         return parsed
 
+    def _parse_date_from_text(self, text: str, current_year: int) -> Optional[str]:
+        # 1. Check for YYYY-MM-DD pattern
+        match_iso = re.search(r"\b(\d{4})[./-](\d{1,2})[./-](\d{1,2})\b", text)
+        if match_iso:
+            try:
+                y = int(match_iso.group(1))
+                m = int(match_iso.group(2))
+                d = int(match_iso.group(3))
+                # Validate date
+                datetime.date(y, m, d)
+                return f"{y:04d}-{m:02d}-{d:02d}"
+            except ValueError:
+                pass
+
+        # 2. Check for M.D.YY or M.D.YYYY pattern (e.g. 5.20.26, 5/20/2026, 05-20-26)
+        match_short = re.search(r"\b(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})\b", text)
+        if match_short:
+            try:
+                m = int(match_short.group(1))
+                d = int(match_short.group(2))
+                y = int(match_short.group(3))
+                if y < 100:
+                    y += 2000
+                # Validate date
+                datetime.date(y, m, d)
+                return f"{y:04d}-{m:02d}-{d:02d}"
+            except ValueError:
+                pass
+
+        # Worded date mapping
+        months_map = {
+            "january": 1, "jan": 1,
+            "february": 2, "feb": 2,
+            "march": 3, "mar": 3,
+            "april": 4, "apr": 4,
+            "may": 5,
+            "june": 6, "jun": 6,
+            "july": 7, "jul": 7,
+            "august": 8, "aug": 8,
+            "september": 9, "sep": 9, "sept": 9,
+            "october": 10, "oct": 10,
+            "november": 11, "nov": 11,
+            "december": 12, "dec": 12
+        }
+
+        # 3. Pattern A: [Month] [Day] [Year] (e.g. may 20, 2026 or may 20 26)
+        pattern_a = r"\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2})(?:st|nd|rd|th)?(?:\s*,\s*|\s+)(\d{2,4})\b"
+        match_a = re.search(pattern_a, text)
+        if match_a:
+            try:
+                m_str = match_a.group(1)
+                m = months_map[m_str]
+                d = int(match_a.group(2))
+                y = int(match_a.group(3))
+                if y < 100:
+                    y += 2000
+                datetime.date(y, m, d)
+                return f"{y:04d}-{m:02d}-{d:02d}"
+            except ValueError:
+                pass
+
+        # 4. Pattern A without year: [Month] [Day] (e.g. may 20 or may 20th)
+        pattern_a_no_year = r"\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2})(?:st|nd|rd|th)?\b"
+        match_a_ny = re.search(pattern_a_no_year, text)
+        if match_a_ny:
+            try:
+                m_str = match_a_ny.group(1)
+                m = months_map[m_str]
+                d = int(match_a_ny.group(2))
+                y = current_year
+                datetime.date(y, m, d)
+                return f"{y:04d}-{m:02d}-{d:02d}"
+            except ValueError:
+                pass
+
+        # 5. Pattern B: [Day] [Month] [Year] (e.g. 20th of may 2026 or 20 may 26)
+        pattern_b = r"\b(\d{1,2})(?:st|nd|rd|th)?\s+(?:of\s+)?(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)(?:\s*,\s*|\s+)(\d{2,4})\b"
+        match_b = re.search(pattern_b, text)
+        if match_b:
+            try:
+                d = int(match_b.group(1))
+                m_str = match_b.group(2)
+                m = months_map[m_str]
+                y = int(match_b.group(3))
+                if y < 100:
+                    y += 2000
+                datetime.date(y, m, d)
+                return f"{y:04d}-{m:02d}-{d:02d}"
+            except ValueError:
+                pass
+
+        # 6. Pattern B without year: [Day] [Month] (e.g. 20th of may or 20 may)
+        pattern_b_no_year = r"\b(\d{1,2})(?:st|nd|rd|th)?\s+(?:of\s+)?(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)\b"
+        match_b_ny = re.search(pattern_b_no_year, text)
+        if match_b_ny:
+            try:
+                d = int(match_b_ny.group(1))
+                m_str = match_b_ny.group(2)
+                m = months_map[m_str]
+                y = current_year
+                datetime.date(y, m, d)
+                return f"{y:04d}-{m:02d}-{d:02d}"
+            except ValueError:
+                pass
+
+        return None
+
     def _rule_based_fallback(self, query: str) -> Dict[str, Any]:
         q = query.lower()
         target = "trips" # default
@@ -525,15 +637,17 @@ class GovernedQueryRouter:
         start_date = None
         end_date = None
         
+        # Calculate dynamic dates in Mountain Time
+        mt_now = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=6)
+        today_str = mt_now.strftime("%Y-%m-%d")
+        yesterday_str = (mt_now - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+        
         if "today" in q:
-            date_str = "2026-05-19"
+            date_str = today_str
         elif "yesterday" in q:
-            date_str = "2026-05-18"
+            date_str = yesterday_str
         else:
-            # Check for YYYY-MM-DD pattern
-            match = re.search(r"(\d{4}-\d{2}-\d{2})", q)
-            if match:
-                date_str = match.group(1)
+            date_str = self._parse_date_from_text(q, mt_now.year)
                 
         return {
             "target_agent": target,

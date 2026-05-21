@@ -122,7 +122,7 @@ export default function CalendarBooking({
             setError(null);
             try {
                 const response = await fetch(
-                    `https://summitos-api.azurewebsites.net/api/calendar-availability?date=${selectedDate.toISOString()}`
+                    `https://summitos-api.azurewebsites.net/api/calendar-availability?date=${selectedDate.toLocaleDateString("en-CA")}`
                 );
                 const data = await response.json();
 

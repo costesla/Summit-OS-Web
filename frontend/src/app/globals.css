@@ -156,3 +156,21 @@ label {
   color: var(--color-text-muted);
   font-weight: 500;
 }
+
+/* Enforce white text color for autofill fields in dark-themed/glassmorphic containers */
+input[class*="text-white"]:-webkit-autofill,
+input[class*="text-white"]:-webkit-autofill:hover,
+input[class*="text-white"]:-webkit-autofill:focus,
+input[class*="!text-white"]:-webkit-autofill,
+input[class*="!text-white"]:-webkit-autofill:hover,
+input[class*="!text-white"]:-webkit-autofill:focus,
+textarea[class*="text-white"]:-webkit-autofill,
+textarea[class*="text-white"]:-webkit-autofill:hover,
+textarea[class*="text-white"]:-webkit-autofill:focus,
+textarea[class*="!text-white"]:-webkit-autofill,
+textarea[class*="!text-white"]:-webkit-autofill:hover,
+textarea[class*="!text-white"]:-webkit-autofill:focus {
+  -webkit-text-fill-color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0 1000px #1c1c1e inset !important;
+  transition: background-color 9999s ease-in-out 0s;
+}

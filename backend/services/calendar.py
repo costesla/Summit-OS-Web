@@ -50,36 +50,47 @@ def time_ranges_overlap(start1, end1, start2, end2):
 
 def generate_time_slots_for_day(date_obj: datetime):
     """Generate time slots for a given day in Mountain Time, return as UTC."""
-    from .datetime_utils import utc_to_local, get_timezone
+    from .datetime_utils import get_timezone
     import pytz
     
-    # Convert input to Mountain Time to determine the correct day and HOP
     mt_tz = get_timezone("CO")  # Mountain Time
-    date_obj_utc = normalize_to_utc(date_obj)
-    date_obj_mt = date_obj_utc.astimezone(mt_tz)
     
+    # Decouple date extraction from timezone shift.
+    # If the date_obj has time components of zero (meaning it was parsed from YYYY-MM-DD),
+    # or if we are checking the UTC representation, we want the exact date digits.
+    if date_obj.hour == 0 and date_obj.minute == 0 and date_obj.second == 0:
+        year = date_obj.year
+        month = date_obj.month
+        day = date_obj.day
+    else:
+        # It's a full timestamp, convert to local MT to determine the target day
+        date_obj_utc = normalize_to_utc(date_obj)
+        date_obj_mt = date_obj_utc.astimezone(mt_tz)
+        year = date_obj_mt.year
+        month = date_obj_mt.month
+        day = date_obj_mt.day
+        
     # Get HOP for this day in Mountain Time
-    hours = get_hours_for_day(date_obj_mt)
+    # We construct a local naive datetime to determine weekday/hours
+    local_day = datetime(year, month, day)
+    hours = get_hours_for_day(local_day)
     if not hours:
         return []
-    
+        
     start_str = hours["start"]
     end_str = hours["end"]
     
     start_h, start_m = map(int, start_str.split(":"))
     end_h, end_m = map(int, end_str.split(":"))
     
-    # Create start/end times in Mountain Time for this specific date
-    # Use the date component from date_obj_mt
-    current_start_mt = date_obj_mt.replace(hour=start_h, minute=start_m, second=0, microsecond=0)
+    # Construct localized datetimes in Mountain Time using mt_tz.localize
+    current_start_mt = mt_tz.localize(datetime(year, month, day, start_h, start_m))
     
-    # Handle end time
     if end_h == 0 and end_str == "00:00":
-        # Midnight next day
-        current_end_mt = date_obj_mt.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
+        current_end_mt = mt_tz.localize(datetime(year, month, day, 0, 0)) + timedelta(days=1)
     else:
-        current_end_mt = date_obj_mt.replace(hour=end_h, minute=end_m, second=0, microsecond=0)
-    
+        current_end_mt = mt_tz.localize(datetime(year, month, day, end_h, end_m))
+        
     # Generate slots in Mountain Time, then convert to UTC
     slots = []
     while current_start_mt < current_end_mt:

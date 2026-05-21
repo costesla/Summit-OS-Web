@@ -313,10 +313,9 @@ class DatabaseClient:
             ExpenseID AS id, Category AS category, Amount AS amount, Note AS note, 
             Format(Timestamp, 'yyyy-MM-ddTHH:mm:ss') as timestamp
         FROM Rides.ManualExpenses
-        WHERE Timestamp >= DATEADD(hour, 4, CAST(? AS DATETIME2))
-          AND Timestamp < DATEADD(hour, 28, CAST(? AS DATETIME2))
+        WHERE CAST(Timestamp AS DATE) = CAST(? AS DATE)
         """
-        manual = self.execute_query_params(manual_query, (date_str, date_str))
+        manual = self.execute_query_params(manual_query, (date_str,))
         
         # 2. Charging Sessions
         charge_query = """
@@ -324,10 +323,9 @@ class DatabaseClient:
             SessionID AS id, 'charging' AS category, Cost AS amount, Location_Name AS note, 
             Format(Start_Time, 'yyyy-MM-ddTHH:mm:ss') as timestamp
         FROM Rides.ChargingSessions
-        WHERE Start_Time >= DATEADD(hour, 4, CAST(? AS DATETIME2))
-          AND Start_Time < DATEADD(hour, 28, CAST(? AS DATETIME2))
+        WHERE CAST(Start_Time AS DATE) = CAST(? AS DATE)
         """
-        charging = self.execute_query_params(charge_query, (date_str, date_str))
+        charging = self.execute_query_params(charge_query, (date_str,))
         
         return {
             "fastfood": manual, # Return all manual/banking expenses to the UI
