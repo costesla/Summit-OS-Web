@@ -86,14 +86,14 @@ export default function Home() {
       {/* 2. PRECISION QUOTE (Floating Overlay) */}
       <section className="relative z-20 -mt-24 lg:-mt-32 px-4 mb-32">
         <div className="max-w-5xl mx-auto">
-          <div className="bg-white/80 backdrop-blur-2xl border border-slate-200/60 rounded-[3rem] p-1 shadow-2xl shadow-slate-200/40">
-            <div className="bg-white/50 rounded-[2.8rem] p-8 lg:p-12 border border-slate-100/50">
+          <div className="bg-[#0a0a0a]/80 backdrop-blur-2xl border border-white/10 rounded-[3rem] p-1 shadow-2xl shadow-black/80">
+            <div className="bg-[#111]/50 rounded-[2.8rem] p-8 lg:p-12 border border-white/5 text-white">
               <div className="flex flex-col lg:flex-row items-center justify-between mb-8 gap-4">
-                <h3 className="text-xl font-medium tracking-wide text-slate-950">
-                  <span className="font-bold text-blue-600">01.</span> Instant Quote
+                <h3 className="text-xl font-medium tracking-wide text-white">
+                  <span className="font-bold text-cyan-400">01.</span> Instant Quote
                 </h3>
-                <div className="h-[1px] flex-1 bg-slate-200/80 mx-6 hidden lg:block"></div>
-                <span className="text-xs font-mono text-slate-500 uppercase tracking-widest">Powered by Google Distance Matrix</span>
+                <div className="h-[1px] flex-1 bg-white/10 mx-6 hidden lg:block"></div>
+                <span className="text-xs font-mono text-gray-400 uppercase tracking-widest">Powered by Google Distance Matrix</span>
               </div>
               <BookingEngine />
             </div>
