@@ -87,6 +87,7 @@ export default function ReceiptPage() {
                                 <option value="Zelle">Zelle</option>
                                 <option value="Cash">Cash</option>
                                 <option value="Card">Card</option>
+                                <option value="Invoice">Pay Later (Post-Trip Invoice)</option>
                             </select>
                         </div>
                     </div>
