@@ -195,7 +195,7 @@ class DatabaseClient:
         cursor = conn.cursor()
         
         try:
-            # Idempotent table creation
+            # Idempotent table creation with strict check constraint
             cursor.execute("""
                 IF OBJECT_ID('Rides.ManualExpenses', 'U') IS NULL
                 CREATE TABLE Rides.ManualExpenses (
@@ -207,8 +207,9 @@ class DatabaseClient:
                     LastUpdated DATETIME DEFAULT GETDATE(),
                     IncludedInKPI BIT NOT NULL DEFAULT 1,
                     CONSTRAINT CK_ManualExpenses_KPI_Isolation CHECK (
-                        Category IN ('Maintenance', 'General_Expense')
-                        OR IncludedInKPI = 1
+                        (Category IN ('Maintenance', 'General_Expense') AND IncludedInKPI = 0)
+                        OR
+                        (Category NOT IN ('Maintenance', 'General_Expense') AND IncludedInKPI = 1)
                     )
                 )
             """)
@@ -230,7 +231,16 @@ class DatabaseClient:
             amt = float(expense_data.get('amount') or 0)
             note = expense_data.get('note')
             ts = expense_data.get('timestamp') or datetime.datetime.now()
-            kpi = 0 if cat in ["Maintenance", "General_Expense"] else 1
+            
+            # Strict Fail-Fast Validation
+            kpi_passed = expense_data.get('included_in_kpi')
+            expected_kpi = 0 if cat in ["Maintenance", "General_Expense"] else 1
+            if kpi_passed is not None and int(kpi_passed) != expected_kpi:
+                raise ValueError(
+                    f"FAIL-FAST KPI CONTAMINATION DETECTED: Expense category '{cat}' cannot have "
+                    f"included_in_kpi = {kpi_passed} (expected {expected_kpi}). Fail-fast triggered!"
+                )
+            kpi = expected_kpi
             
             p = (cat, amt, note, ts, kpi)
             params = (eid,) + p + (eid,) + p
@@ -332,6 +342,10 @@ class DatabaseClient:
         WHERE CAST(Start_Time AS DATE) = CAST(? AS DATE)
         """
         charging = self.execute_query_params(charge_query, (date_str,))
+        
+        # Ensure every charging session has included_in_kpi = 1
+        for ch in charging:
+            ch["included_in_kpi"] = 1
         
         fastfood = []
         capital_maintenance = []

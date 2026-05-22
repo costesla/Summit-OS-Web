@@ -57,6 +57,8 @@ class ExpenseModel(BaseModel):
     category: str
     amount: float
     included_in_kpi: Optional[int] = 1
+    note: Optional[str] = ""
+    amortization_days: Optional[int] = None
 
 class VehicleModel(BaseModel):
     timestamp: str  # ISO Format
@@ -237,7 +239,7 @@ class ExpensesAgent:
         logging.info(f"ExpensesAgent querying expenses. Date: {date_str}, Range: [{start_date}, {end_date}]")
         
         sql = """
-            SELECT ExpenseID, Category, Amount, Timestamp, IncludedInKPI
+            SELECT ExpenseID, Category, Amount, Timestamp, IncludedInKPI, Note
             FROM Rides.ManualExpenses
             WHERE 1=1
         """
@@ -265,13 +267,22 @@ class ExpensesAgent:
             category = str(r.get("Category") or "General")
             amount = float(r.get("Amount") or 0.0)
             kpi = 1 if r.get("IncludedInKPI") is None or r.get("IncludedInKPI") else 0
+            note = str(r.get("Note") or "")
+            
+            # Check if note contains amortization override e.g. amortization_days=45
+            amort_days = None
+            match = re.search(r"amortization_days[:=]\s*(\d+)", note, re.IGNORECASE)
+            if match:
+                amort_days = int(match.group(1))
             
             expense_data = {
                 "expense_id": eid,
                 "date": date_val,
                 "category": category,
                 "amount": amount,
-                "included_in_kpi": kpi
+                "included_in_kpi": kpi,
+                "note": note,
+                "amortization_days": amort_days
             }
             # Enforce schema using Pydantic
             validated = ExpenseModel(**expense_data)

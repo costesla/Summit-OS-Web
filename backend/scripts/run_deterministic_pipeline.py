@@ -83,10 +83,10 @@ def run_deterministic_pipeline(date_str: str) -> Dict[str, Any]:
         cat = (exp.get("category") or "General").strip()
         record = {
             "id": exp.get("expense_id"),
-            "category": cat,
+            "category": "capital_maintenance" if cat in capital_cats else "fastfood",
             "amount": float(exp.get("amount") or 0.0),
             "timestamp": iso_noon_local(exp_date),
-            "included_in_kpi": exp.get("included_in_kpi", 1),
+            "included_in_kpi": int(exp.get("included_in_kpi", 1)),
         }
         if cat in capital_cats:
             capital_maintenance.append(record)
@@ -101,6 +101,7 @@ def run_deterministic_pipeline(date_str: str) -> Dict[str, Any]:
             "category": "charging",
             "amount": float(charge.get("cost") or 0.0),
             "timestamp": iso_noon_local(ch_date),
+            "included_in_kpi": int(charge.get("included_in_kpi", 1)),
         })
 
     # 3) NORMALIZE DATASETS
@@ -152,7 +153,80 @@ def run_deterministic_pipeline(date_str: str) -> Dict[str, Any]:
         if ride_id and start_t:
             trip_timestamps[str(ride_id)] = (start_t, start_t + datetime.timedelta(minutes=dur))
 
-    # 5) KPI COMPUTATION (STRICT EXCLUSION)
+    # 5) CAPITAL AMORTIZATION LAYER
+    # Retrieve all manual expenses up to target date to compute active amortizations
+    all_raw_expenses = expenses_agent.query()
+    
+    amortization_records_today = []
+    total_amortized_today = 0.0
+    
+    target_date_obj = datetime.date.fromisoformat(date_str)
+    
+    for exp in all_raw_expenses:
+        cat = (exp.get("category") or "").strip()
+        # Only apply amortization to category in ('Maintenance', 'General_Expense')
+        if cat not in ("Maintenance", "General_Expense"):
+            continue
+            
+        original_id = exp.get("expense_id")
+        amount = float(exp.get("amount") or 0.0)
+        exp_date_str = exp.get("date")
+        
+        # Default rule: amortization_days = 90
+        # Allow override if present: exp.get("amortization_days")
+        amort_days = exp.get("amortization_days") or 90
+        try:
+            amort_days = int(amort_days)
+        except Exception:
+            amort_days = 90
+            
+        if amort_days <= 0:
+            amort_days = 90
+            
+        # Compute schedule: daily_cost = amount / amortization_days
+        daily_cost = amount / amort_days
+        
+        # Validation checks on schedule
+        schedule_sum = 0.0
+        for i in range(amort_days):
+            if i == amort_days - 1:
+                # Last day gets remaining balance to ensure perfect mathematical reconciliation
+                cost_val = amount - schedule_sum
+            else:
+                cost_val = daily_cost
+                schedule_sum += cost_val
+                
+            # Perform Validation: No amortized value exceeds original amount
+            if cost_val > amount:
+                raise ValueError(
+                    f"AMORTIZATION VALIDATION FAIL: Amortized daily cost ({cost_val}) exceeds "
+                    f"original amount ({amount}) for expense ID: {original_id}!"
+                )
+                
+            amort_date = datetime.date.fromisoformat(exp_date_str) + datetime.timedelta(days=i)
+            
+            # If the amortized date is exactly target_date_obj, record it
+            if amort_date == target_date_obj:
+                cost_val_rounded = round(cost_val, 4)
+                amortization_records_today.append({
+                    "id": f"{original_id}-amort-{i}",
+                    "date": amort_date.isoformat(),
+                    "daily_amortized_cost": cost_val_rounded,
+                    "source_expense_id": original_id
+                })
+                total_amortized_today += cost_val
+                
+        # Validate that the sum of schedule matches the original amount exactly
+        reconciled_sum = schedule_sum + (amount - schedule_sum)
+        if abs(reconciled_sum - amount) > 0.00001:
+            raise ValueError(
+                f"AMORTIZATION VALIDATION FAIL: Reconciled sum ({reconciled_sum}) does not equal "
+                f"original amount ({amount}) for expense ID: {original_id}!"
+            )
+            
+    total_amortized_today = round(total_amortized_today, 2)
+
+    # 6) KPI COMPUTATION (STRICT EXCLUSION & DUAL KPI SYSTEM)
     totalRevenue = round(sum(t["earnings"] for t in normalized_trips), 2)
     food_sum = sum(e["amount"] for e in fastfood)
     charge_sum = sum(e["amount"] for e in charging_expenses)
@@ -160,6 +234,14 @@ def run_deterministic_pipeline(date_str: str) -> Dict[str, Any]:
 
     capitalMaintenanceTotal = round(sum(e["amount"] for e in capital_maintenance), 2)
     netProfit = round(totalRevenue - totalExpenses, 2)
+
+    # Operating Profit and Margin (pure daily operations)
+    operatingProfit = netProfit
+    operatingMargin = round(operatingProfit / totalRevenue, 4) if totalRevenue > 0 else 0.0
+
+    # True Profit and Margin (including capital amortization)
+    trueProfit = round(totalRevenue - totalExpenses - total_amortized_today, 2)
+    trueMargin = round(trueProfit / totalRevenue, 4) if totalRevenue > 0 else 0.0
 
     output_data = {
         "Trips": normalized_trips,
@@ -175,10 +257,18 @@ def run_deterministic_pipeline(date_str: str) -> Dict[str, Any]:
             "totalExpenses": totalExpenses,
             "capitalMaintenanceTotal": capitalMaintenanceTotal,
             "netProfit": netProfit,
+            "operatingProfit": operatingProfit,
+            "operatingMargin": operatingMargin,
+            "trueProfit": trueProfit,
+            "trueMargin": trueMargin,
         },
+        "Amortization": {
+            "daily_costs": amortization_records_today,
+            "total_amortized_today": total_amortized_today,
+        }
     }
 
-    # 6) VALIDATION PASS (MANDATORY)
+    # 7) VALIDATION PASS (MANDATORY)
 
     # A) No duplicate trip IDs
     trip_ids = [t["trip_id"] for t in normalized_trips if t.get("trip_id")]
@@ -209,30 +299,65 @@ def run_deterministic_pipeline(date_str: str) -> Dict[str, Any]:
                         f"(Start SOC: {start_soc}%, End SOC: {end_soc}%)"
                     )
 
-    # C) Expenses are correctly categorized
+    # C) Expenses are correctly categorized and schemas are consistent
+    required_expense_keys = {"id", "category", "amount", "timestamp", "included_in_kpi"}
+    
     for e in fastfood:
-        if e["category"] in capital_cats:
+        if e["category"] != "fastfood":
             raise ValueError(
-                f"VALIDATION FAILURE: Capital maintenance expense (ID: {e['id']}) present in fastfood operational list!"
+                f"VALIDATION FAILURE: Non-fastfood expense (ID: {e.get('id')}) present in fastfood operational list!"
+            )
+        if set(e.keys()) != required_expense_keys:
+            missing = required_expense_keys - set(e.keys())
+            extra = set(e.keys()) - required_expense_keys
+            raise ValueError(
+                f"VALIDATION FAILURE: fastfood expense schema is inconsistent (ID: {e.get('id')})! "
+                f"Missing keys: {missing}, Extra keys: {extra}"
+            )
+            
+    for e in charging_expenses:
+        if e["category"] != "charging":
+            raise ValueError(
+                f"VALIDATION FAILURE: Non-charging expense (ID: {e.get('id')}) present in charging list!"
+            )
+        if set(e.keys()) != required_expense_keys:
+            missing = required_expense_keys - set(e.keys())
+            extra = set(e.keys()) - required_expense_keys
+            raise ValueError(
+                f"VALIDATION FAILURE: charging expense schema is inconsistent (ID: {e.get('id')})! "
+                f"Missing keys: {missing}, Extra keys: {extra}"
             )
             
     for e in capital_maintenance:
-        if e["category"] not in capital_cats:
+        if e["category"] != "capital_maintenance":
             raise ValueError(
-                f"VALIDATION FAILURE: Operational expense (ID: {e['id']}) present in capital_maintenance list!"
+                f"VALIDATION FAILURE: Non-capital_maintenance expense (ID: {e.get('id')}) present in capital_maintenance list!"
+            )
+        if set(e.keys()) != required_expense_keys:
+            missing = required_expense_keys - set(e.keys())
+            extra = set(e.keys()) - required_expense_keys
+            raise ValueError(
+                f"VALIDATION FAILURE: capital_maintenance expense schema is inconsistent (ID: {e.get('id')})! "
+                f"Missing keys: {missing}, Extra keys: {extra}"
             )
 
-    # D) capital_maintenance is NOT included in KPI totals
+    # D) capital_maintenance is NOT included in KPI totals (Math Purity)
     expected_ops = round(sum(e["amount"] for e in fastfood) + sum(e["amount"] for e in charging_expenses), 2)
     if totalExpenses != expected_ops:
-        raise ValueError("VALIDATION FAILURE: Total Expenses math is skewed or polluted!")
+        raise ValueError(
+            f"VALIDATION FAILURE (MATH PURITY): totalExpenses ({totalExpenses}) does not equal expected "
+            f"operational expenses (fastfood + charging = {expected_ops})! KPI is contaminated!"
+        )
         
     expected_profit = round(totalRevenue - expected_ops, 2)
     if netProfit != expected_profit:
-        raise ValueError("VALIDATION FAILURE: Net Profit is polluted by capital maintenance expenses!")
+        raise ValueError(
+            f"VALIDATION FAILURE (MATH PURITY): netProfit ({netProfit}) does not equal expected operational "
+            f"profit (totalRevenue - expected_ops = {expected_profit})! KPI is contaminated by capital maintenance expenses!"
+        )
 
     # E) Output schema matches dashboard contract exactly (no extra, no missing fields)
-    expected_keys = {"Trips", "ChargingSessions", "Expenses", "TessieMetrics", "KPIs"}
+    expected_keys = {"Trips", "ChargingSessions", "Expenses", "TessieMetrics", "KPIs", "Amortization"}
     if set(output_data.keys()) != expected_keys:
         raise ValueError("VALIDATION FAILURE: Output JSON schema keys do not match dashboard contract exactly!")
         
@@ -240,18 +365,57 @@ def run_deterministic_pipeline(date_str: str) -> Dict[str, Any]:
     if set(output_data["Expenses"].keys()) != expected_expense_keys:
         raise ValueError("VALIDATION FAILURE: Expenses category layout does not match dashboard contract exactly!")
 
-    # F) Assert kpi constraint logic (category IN capital_cats OR included_in_kpi = 1)
+    # F) Hard KPI Isolation & Fail-Fast Verification
     for e in fastfood:
         if e.get("included_in_kpi") != 1:
             raise ValueError(
-                f"VALIDATION FAILURE: Operational expense (ID: {e['id']}) must be included in KPI (included_in_kpi must be 1)!"
+                f"VALIDATION FAILURE: Operational fastfood expense (ID: {e.get('id')}) "
+                f"must be included in KPI (included_in_kpi is {e.get('included_in_kpi')}, expected 1)!"
+            )
+            
+    for e in charging_expenses:
+        if e.get("included_in_kpi") != 1:
+            raise ValueError(
+                f"VALIDATION FAILURE: Operational charging expense (ID: {e.get('id')}) "
+                f"must be included in KPI (included_in_kpi is {e.get('included_in_kpi')}, expected 1)!"
             )
             
     for e in capital_maintenance:
+        if e.get("included_in_kpi") == 1:
+            raise ValueError(
+                f"CRITICAL VALIDATION ERROR: Capital maintenance expense (ID: {e.get('id')}) "
+                f"has included_in_kpi = 1! Contamination detected!"
+            )
         if e.get("included_in_kpi") != 0:
             raise ValueError(
-                f"VALIDATION FAILURE: Capital maintenance expense (ID: {e['id']}) must be excluded from KPI (included_in_kpi must be 0)!"
+                f"VALIDATION FAILURE: Capital maintenance expense (ID: {e.get('id')}) "
+                f"must be excluded from KPI (included_in_kpi is {e.get('included_in_kpi')}, expected 0)!"
             )
+
+    # G) Dual KPI & Amortization Layer Purity Assertions (Fail-Fast)
+    if operatingProfit != netProfit:
+        raise ValueError("CRITICAL VALIDATION FAILURE: operatingProfit does not equal netProfit!")
+        
+    expected_true_profit = round(totalRevenue - totalExpenses - total_amortized_today, 2)
+    if trueProfit != expected_true_profit:
+        raise ValueError(
+            f"CRITICAL VALIDATION FAILURE: trueProfit ({trueProfit}) does not equal expected true profit "
+            f"(revenue - expenses - amortization = {expected_true_profit})!"
+        )
+        
+    # Verify capitalMaintenanceTotal was not used directly in operatingProfit math
+    if abs(operatingProfit - (totalRevenue - totalExpenses)) > 0.00001:
+        raise ValueError(
+            "CRITICAL VALIDATION FAILURE: operatingProfit math is contaminated! It must equal (totalRevenue - totalExpenses) exactly."
+        )
+        
+    # Verify capital_maintenance was not added to totalExpenses
+    if totalExpenses != round(sum(e["amount"] for e in fastfood) + sum(e["amount"] for e in charging_expenses), 2):
+        raise ValueError("CRITICAL VALIDATION FAILURE: totalExpenses modified or contaminated by capital maintenance!")
+
+    # Verify no double counting of amortization
+    if abs(trueProfit - (totalRevenue - totalExpenses - total_amortized_today)) > 0.00001:
+        raise ValueError("CRITICAL VALIDATION FAILURE: trueProfit double-counting or math contamination detected!")
 
     logging.info("Deterministic data pipeline validation PASS successfully!")
     return output_data

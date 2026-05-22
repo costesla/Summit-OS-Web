@@ -155,7 +155,8 @@ def driver_sync(req: func.HttpRequest) -> func.HttpResponse:
                 "category": "FastFood",
                 "amount": float(exp.get("amount") or exp.get("Amount") or 0),
                 "note": exp.get("note") or exp.get("Note"),
-                "timestamp": exp.get("timestamp") or exp.get("Timestamp")
+                "timestamp": exp.get("timestamp") or exp.get("Timestamp"),
+                "included_in_kpi": 1
             })
             results["expenses_saved"] += 1
 
@@ -178,7 +179,8 @@ def driver_sync(req: func.HttpRequest) -> func.HttpResponse:
                 "category": exp.get("category") or "Maintenance",
                 "amount": float(exp.get("amount") or exp.get("Amount") or 0),
                 "note": exp.get("note") or exp.get("Note"),
-                "timestamp": exp.get("timestamp") or exp.get("Timestamp")
+                "timestamp": exp.get("timestamp") or exp.get("Timestamp"),
+                "included_in_kpi": 0
             })
             results["expenses_saved"] += 1
 
