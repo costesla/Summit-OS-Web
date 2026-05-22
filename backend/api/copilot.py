@@ -4,6 +4,7 @@ import azure.functions as func
 import os
 import datetime
 import pytz
+import re
 from services.database import DatabaseClient
 from services.tessie import TessieClient
 from services.vector_store import VectorStore
@@ -83,6 +84,27 @@ def format_currency(amount):
 def sanitize_location(location_name):
     if not location_name: return "Unknown"
     return location_name
+
+def _sanitize_pii_address(address: str) -> str:
+    if not address or not isinstance(address, str):
+        return address
+    
+    address = address.strip()
+    
+    # We want to match street numbers.
+    # Refined pattern:
+    # 1. Word boundary \b
+    # 2. Negative lookahead to ensure the word starting with digits does NOT end with st, nd, rd, th (case-insensitive)
+    # 3. Match the digits \d+
+    # 4. Match any trailing parts of the street number like letters, dashes, slashes [-/\w]*
+    # 5. Match the space \s+
+    # 6. Followed by either:
+    #    - A letter [a-zA-Z]
+    #    - An ordinal number starting with digits (e.g. 1st, 2nd, 3rd, 16th)
+    pattern = r'\b(?!\d+(?:st|nd|rd|th|ST|ND|RD|TH)\b)\d+[-/\w]*\s+(?=[a-zA-Z]|\d+(?:st|nd|rd|th|ST|ND|RD|TH)\b)'
+    
+    # Replace matches with empty string
+    return re.sub(pattern, '', address)
 
 def classify_drive(tag, location):
     tag_lower = (tag or "").lower()
@@ -352,6 +374,9 @@ def copilot_charging_live(req: func.HttpRequest) -> func.HttpResponse:
         
         if not charging_state:
             return func.HttpResponse(json.dumps({"error": "Live charging data is not available right now"}), status_code=404)
+
+        if charging_state and "location" in charging_state:
+            charging_state["location"] = _sanitize_pii_address(charging_state["location"])
 
         return copilot_response(charging_state)
     except Exception as e:
@@ -634,8 +659,8 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
                 "energy_used_kwh": round(total_energy, 2),
                 "efficiency_wh_mi": efficiency,
                 "autopilot_miles": round(total_autopilot, 2),
-                "start": first.get("starting_location"),
-                "end": last.get("ending_location"),
+                "start": _sanitize_pii_address(first.get("starting_location")),
+                "end": _sanitize_pii_address(last.get("ending_location")),
                 "starting_battery": first.get("starting_battery"),
                 "ending_battery": last.get("ending_battery"),
                 "duration_minutes": round((last.get("ended_at", 0) - first.get("started_at", 0)) / 60, 1) if first.get("started_at") and last.get("ended_at") else 0,
@@ -769,7 +794,7 @@ def copilot_tessie_charges(req: func.HttpRequest) -> func.HttpResponse:
                 "starting_soc": c.get("starting_battery_level") or c.get("battery_level"),
                 "ending_soc": c.get("ending_battery_level") or c.get("battery_level_end"),
                 "duration_minutes": round(float(c.get("duration") or 0) / 60, 1) if c.get("duration") else None,
-                "location": c.get("location") or c.get("charging_location"),
+                "location": _sanitize_pii_address(c.get("location") or c.get("charging_location")),
                 "charge_type": c.get("charger_type") or c.get("connector_type"),
                 "tessie_charge_id": c.get("id")
             })
@@ -904,8 +929,8 @@ def copilot_tessie_day_summary(req: func.HttpRequest) -> func.HttpResponse:
                 "starting_battery":  b_start,
                 "ending_battery":    b_end,
                 "battery_drain_pct": (b_start - b_end) if (b_start and b_end) else None,
-                "start_location":    d.get("starting_location"),
-                "end_location":      d.get("ending_location"),
+                "start_location":    _sanitize_pii_address(d.get("starting_location")),
+                "end_location":      _sanitize_pii_address(d.get("ending_location")),
                 # lat/lon stored for elevation batch lookup below
                 "_start_lat":        d.get("starting_latitude"),
                 "_start_lon":        d.get("starting_longitude"),

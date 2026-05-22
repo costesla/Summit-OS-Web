@@ -327,9 +327,19 @@ class DatabaseClient:
         """
         charging = self.execute_query_params(charge_query, (date_str,))
         
+        fastfood = []
+        capital_maintenance = []
+        for exp in manual:
+            cat = exp.get("category")
+            if cat in ["Maintenance", "General_Expense"]:
+                capital_maintenance.append(exp)
+            else:
+                fastfood.append(exp)
+        
         return {
-            "fastfood": manual, # Return all manual/banking expenses to the UI
-            "charging": charging
+            "fastfood": fastfood,
+            "charging": charging,
+            "capital_maintenance": capital_maintenance
         }
 
     def get_trip_by_id(self, ride_id):

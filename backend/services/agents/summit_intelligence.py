@@ -429,7 +429,7 @@ class MasterOrchestrator:
         # STEP 5: Compute Aggregations
         total_earnings = round(sum(t["earnings"] for t in trips), 2)
         total_charging = round(sum(c["cost"] for c in charges), 2)
-        total_expenses = round(sum(e["amount"] for e in expenses), 2)
+        total_expenses = round(sum(e["amount"] for e in expenses if e.get("category") not in ["Maintenance", "General_Expense"]), 2)
         total_energy_cost = round(sum(t["energy_cost"] for t in trips), 2)
         
         net_profit = round(total_earnings - total_charging - total_expenses, 2)

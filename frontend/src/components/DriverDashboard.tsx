@@ -30,11 +30,13 @@ interface Expense {
     amount: number;
     note: string;
     timestamp: string;
+    category?: string;
 }
 
 interface Expenses {
     fastfood: Expense[];
     charging: Expense[];
+    capital_maintenance: Expense[];
 }
 
 interface TeslaStatus {
@@ -108,12 +110,13 @@ const StatCard = ({
 );
 
 const ExpenseList = ({
-    title, data, icon, onDelete, onAdd, accentColor,
+    title, data, icon, onDelete, onAdd, accentColor, subtitle,
 }: {
     title: string; data: Expense[]; icon: React.ReactNode;
     onDelete: (id: number) => void;
     onAdd?: (amount: number, note: string) => void;
     accentColor: string;
+    subtitle?: string;
 }) => {
     const [amount, setAmount] = React.useState('');
     const [note, setNote] = React.useState('');
@@ -130,13 +133,24 @@ const ExpenseList = ({
     return (
         <div className="rounded-2xl overflow-hidden border border-slate-200/80 shadow-sm"
             style={{ background: 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(16px)' }}>
-            <div className="p-4 border-b border-slate-200/80 flex items-center gap-2">
-                {icon}
-                <h3 className="font-bold text-sm text-slate-800">{title}</h3>
-                {data.length > 0 && (
-                    <span className={`ml-auto text-xs font-mono font-bold ${accentColor.replace('text-amber-400', 'text-amber-700').replace('text-rose-400', 'text-rose-700')}`}>
-                        ${data.reduce((s, e) => s + e.amount, 0).toFixed(2)}
-                    </span>
+            <div className="p-4 border-b border-slate-200/80 flex flex-col gap-1">
+                <div className="flex items-center gap-2 w-full">
+                    {icon}
+                    <h3 className="font-bold text-sm text-slate-800">{title}</h3>
+                    {data.length > 0 && (
+                        <span className={`ml-auto text-xs font-mono font-bold ${
+                            accentColor.replace('text-amber-400', 'text-amber-700')
+                                       .replace('text-rose-400', 'text-rose-700')
+                                       .replace('text-blue-600', 'text-blue-700')
+                        }`}>
+                            ${data.reduce((s, e) => s + e.amount, 0).toFixed(2)}
+                        </span>
+                    )}
+                </div>
+                {subtitle && (
+                    <p className="text-[10px] font-sans font-medium text-blue-600/80 pl-6 leading-none select-none">
+                        {subtitle}
+                    </p>
                 )}
             </div>
             <div className="max-h-[200px] overflow-y-auto">
@@ -170,7 +184,13 @@ const ExpenseList = ({
                         className={`${inputBase} flex-1 p-2`}
                     />
                     <button type="submit"
-                        className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${accentColor.includes('amber') ? 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100' : 'border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100'}`}>
+                        className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${
+                            accentColor.includes('amber') 
+                                ? 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100' 
+                                : accentColor.includes('blue')
+                                    ? 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
+                                    : 'border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100'
+                        }`}>
                         +
                     </button>
                 </form>
@@ -1840,8 +1860,17 @@ const DriverDashboard = () => {
         try { return JSON.parse(localStorage.getItem('cos_private_payments') ?? '[]'); } catch { return []; }
     });
     const [expenses, setExpenses] = useState<Expenses>(() => {
-        if (typeof window === 'undefined') return { fastfood: [], charging: [] };
-        try { return JSON.parse(localStorage.getItem('cos_expenses') ?? 'null') ?? { fastfood: [], charging: [] }; } catch { return { fastfood: [], charging: [] }; }
+        if (typeof window === 'undefined') return { fastfood: [], charging: [], capital_maintenance: [] };
+        try {
+            const parsed = JSON.parse(localStorage.getItem('cos_expenses') ?? 'null');
+            return {
+                fastfood: parsed?.fastfood || [],
+                charging: parsed?.charging || [],
+                capital_maintenance: parsed?.capital_maintenance || []
+            };
+        } catch {
+            return { fastfood: [], charging: [], capital_maintenance: [] };
+        }
     });
     const [uberStats, setUberStats] = useState({ count: 0, earnings: 0 });
     const [sessionStart, setSessionStart] = useState<Date>(() => {
@@ -1892,7 +1921,7 @@ const DriverDashboard = () => {
                     localStorage.setItem('cos_session_date', today);
                     localStorage.setItem('cos_selected_date', today);
                     setPrivatePayments([]);
-                    setExpenses({ fastfood: [], charging: [] });
+                    setExpenses({ fastfood: [], charging: [], capital_maintenance: [] });
                     const d = new Date();
                     setSessionStart(d);
                     localStorage.setItem('cos_session_start', d.toISOString());
@@ -1918,8 +1947,13 @@ const DriverDashboard = () => {
                 if (data.success && data.expenses) {
                     const cloudFood = data.expenses.fastfood || [];
                     const cloudCharging = data.expenses.charging || [];
-                    if (cloudFood.length > 0 || cloudCharging.length > 0) {
-                        setExpenses({ fastfood: cloudFood, charging: cloudCharging });
+                    const cloudMaintenance = data.expenses.capital_maintenance || [];
+                    if (cloudFood.length > 0 || cloudCharging.length > 0 || cloudMaintenance.length > 0) {
+                        setExpenses({
+                            fastfood: cloudFood,
+                            charging: cloudCharging,
+                            capital_maintenance: cloudMaintenance
+                        });
                         const now = new Date().toLocaleTimeString();
                         setLastSync(now);
                         localStorage.setItem('cos_last_sync', now);
@@ -2016,6 +2050,9 @@ const DriverDashboard = () => {
         const chargingTotal = expenses.charging
             .filter(e => e.timestamp.startsWith(selectedDate))
             .reduce((s, e) => s + (e.amount || 0), 0);
+        const capitalMaintenanceTotal = (expenses.capital_maintenance || [])
+            .filter(e => e.timestamp.startsWith(selectedDate))
+            .reduce((s, e) => s + (e.amount || 0), 0);
         const totalExpenses = foodTotal + chargingTotal;
         const totalIncome = uberStats.earnings + privateTotal;
         const profit = totalIncome - totalExpenses;
@@ -2034,6 +2071,7 @@ const DriverDashboard = () => {
             uberCount: uberStats.count, 
             privateTotal, food: foodTotal, 
             charging: chargingTotal, 
+            capitalMaintenanceTotal,
             totalExpenses, profit, hourlyRate, 
             activeHours,
             isManualHours: overrideHours !== undefined && overrideHours > 0
@@ -2057,7 +2095,9 @@ const DriverDashboard = () => {
         const d = new Date();
         setSessionStart(d);
         localStorage.setItem('cos_session_start', d.toISOString());
-        setPrivatePayments([]); setExpenses({ fastfood: [], charging: [] }); setShowResetConfirm(false);
+        setPrivatePayments([]);
+        setExpenses({ fastfood: [], charging: [], capital_maintenance: [] });
+        setShowResetConfirm(false);
     };
 
     const handleImportCharge = (charge: TessieCharge) => {
@@ -2187,7 +2227,7 @@ const DriverDashboard = () => {
                         </div>
                     )}
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                         <StatCard label="Uber Earnings" value={`$${(stats.uberEarnings || 0).toFixed(2)}`}
                             sub={`${stats.uberCount || 0} OCR trips`}
                             icon={<Receipt className="text-blue-600 w-5 h-5" />} highlight />
@@ -2197,6 +2237,9 @@ const DriverDashboard = () => {
                         <StatCard label="Expenses" value={`$${(stats.totalExpenses || 0).toFixed(2)}`}
                             sub={`Food $${(stats.food||0).toFixed(2)} · Charge $${(stats.charging||0).toFixed(2)}`}
                             icon={<Zap className="text-amber-600 w-5 h-5" />} />
+                        <StatCard label="Capital & Maintenance" value={`$${(stats.capitalMaintenanceTotal || 0).toFixed(2)}`}
+                            sub="Excluded from daily shift metrics"
+                            icon={<Cpu className="text-blue-600 w-5 h-5" />} />
                         <StatCard label="Net Profit" value={`$${(stats.profit || 0).toFixed(2)}`}
                             sub={`≈ $${(stats.hourlyRate || 0).toFixed(2)}/hr`}
                             icon={<TrendingUp className="text-emerald-600 w-5 h-5" />} highlight />
@@ -2229,7 +2272,7 @@ const DriverDashboard = () => {
 
                         <div className="lg:col-span-2 space-y-6" ref={expenseFormRef}>
                             <TessieChargesPanel onImport={handleImportCharge} selectedDate={selectedDate} />
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                                 <ExpenseList
                                     title="Charging Sessions"
                                     data={expenses.charging.filter(e => e.timestamp.startsWith(selectedDate))}
@@ -2251,6 +2294,18 @@ const DriverDashboard = () => {
                                         fastfood: [{ id: Date.now(), amount, note, timestamp: `${selectedDate}T${new Date().toTimeString().split(' ')[0]}` }, ...prev.fastfood]
                                     }))}
                                     accentColor="text-rose-600"
+                                />
+                                <ExpenseList
+                                    title="Capital & Maintenance"
+                                    subtitle="Excluded from Daily Shift Stats"
+                                    data={(expenses.capital_maintenance || []).filter(e => e.timestamp.startsWith(selectedDate))}
+                                    icon={<Cpu className="w-4 h-4 text-blue-600" />}
+                                    onDelete={(id) => deleteExpense('capital_maintenance', id)}
+                                    onAdd={(amount, note) => setExpenses(prev => ({
+                                        ...prev,
+                                        capital_maintenance: [{ id: Date.now(), amount, note, category: 'Maintenance', timestamp: `${selectedDate}T${new Date().toTimeString().split(' ')[0]}` }, ...(prev.capital_maintenance || [])]
+                                    }))}
+                                    accentColor="text-blue-600"
                                 />
                             </div>
                             <div className="flex items-center gap-3 pt-1">

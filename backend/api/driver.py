@@ -98,7 +98,7 @@ def driver_sync(req: func.HttpRequest) -> func.HttpResponse:
     try:
         data = req.get_json()
         trips = data.get("trips", [])
-        expenses = data.get("expenses", {}) # { fastfood: [], charging: [] }
+        expenses = data.get("expenses", {}) # { fastfood: [], charging: [], capital_maintenance: [] }
         
         from services.semantic_ingestion import SemanticIngestionService
         semantic = SemanticIngestionService()
@@ -109,7 +109,7 @@ def driver_sync(req: func.HttpRequest) -> func.HttpResponse:
             "vectors_created": 0
         }
 
-        logging.info(f"Driver Sync POST: Received {len(trips)} trips and {len(expenses.get('fastfood', [])) + len(expenses.get('charging', []))} expenses.")
+        logging.info(f"Driver Sync POST: Received {len(trips)} trips and {len(expenses.get('fastfood', [])) + len(expenses.get('charging', [])) + len(expenses.get('capital_maintenance', []))} expenses.")
 
         # 1. Save Trips
         for trip in trips:
@@ -168,6 +168,17 @@ def driver_sync(req: func.HttpRequest) -> func.HttpResponse:
                 "location": charge.get("note") or charge.get("Note") or "Manual Entry",
                 "energy_added": 0, 
                 "cost": float(charge.get("amount") or charge.get("Amount") or 0)
+            })
+            results["expenses_saved"] += 1
+
+        # 4. Save Capital & Maintenance Expenses
+        for exp in expenses.get("capital_maintenance", []):
+            db.save_manual_expense({
+                "id": str(exp.get("id") or exp.get("ExpenseID")),
+                "category": exp.get("category") or "Maintenance",
+                "amount": float(exp.get("amount") or exp.get("Amount") or 0),
+                "note": exp.get("note") or exp.get("Note"),
+                "timestamp": exp.get("timestamp") or exp.get("Timestamp")
             })
             results["expenses_saved"] += 1
 
