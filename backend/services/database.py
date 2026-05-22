@@ -204,7 +204,12 @@ class DatabaseClient:
                     Amount DECIMAL(10,2),
                     Note NVARCHAR(500),
                     Timestamp DATETIME DEFAULT GETDATE(),
-                    LastUpdated DATETIME DEFAULT GETDATE()
+                    LastUpdated DATETIME DEFAULT GETDATE(),
+                    IncludedInKPI BIT NOT NULL DEFAULT 1,
+                    CONSTRAINT CK_ManualExpenses_KPI_Isolation CHECK (
+                        Category IN ('Maintenance', 'General_Expense')
+                        OR IncludedInKPI = 1
+                    )
                 )
             """)
             conn.commit()
@@ -214,10 +219,10 @@ class DatabaseClient:
             USING (SELECT ? AS ExpenseID) AS source
             ON (target.ExpenseID = source.ExpenseID)
             WHEN MATCHED THEN
-                UPDATE SET Category = ?, Amount = ?, Note = ?, Timestamp = ?, LastUpdated = GETDATE()
+                UPDATE SET Category = ?, Amount = ?, Note = ?, Timestamp = ?, IncludedInKPI = ?, LastUpdated = GETDATE()
             WHEN NOT MATCHED THEN
-                INSERT (ExpenseID, Category, Amount, Note, Timestamp, LastUpdated)
-                VALUES (?, ?, ?, ?, ?, GETDATE());
+                INSERT (ExpenseID, Category, Amount, Note, Timestamp, IncludedInKPI, LastUpdated)
+                VALUES (?, ?, ?, ?, ?, ?, GETDATE());
             """
             
             eid = str(expense_data.get('id'))
@@ -225,8 +230,9 @@ class DatabaseClient:
             amt = float(expense_data.get('amount') or 0)
             note = expense_data.get('note')
             ts = expense_data.get('timestamp') or datetime.datetime.now()
+            kpi = 0 if cat in ["Maintenance", "General_Expense"] else 1
             
-            p = (cat, amt, note, ts)
+            p = (cat, amt, note, ts, kpi)
             params = (eid,) + p + (eid,) + p
             
             cursor.execute(query, params)
@@ -311,7 +317,7 @@ class DatabaseClient:
         manual_query = """
         SELECT 
             ExpenseID AS id, Category AS category, Amount AS amount, Note AS note, 
-            Format(Timestamp, 'yyyy-MM-ddTHH:mm:ss') as timestamp
+            Format(Timestamp, 'yyyy-MM-ddTHH:mm:ss') as timestamp, IncludedInKPI as included_in_kpi
         FROM Rides.ManualExpenses
         WHERE CAST(Timestamp AS DATE) = CAST(? AS DATE)
         """
@@ -330,6 +336,8 @@ class DatabaseClient:
         fastfood = []
         capital_maintenance = []
         for exp in manual:
+            # Ensure included_in_kpi is present as a standard integer (1 or 0)
+            exp["included_in_kpi"] = 1 if exp.get("included_in_kpi") else 0
             cat = exp.get("category")
             if cat in ["Maintenance", "General_Expense"]:
                 capital_maintenance.append(exp)

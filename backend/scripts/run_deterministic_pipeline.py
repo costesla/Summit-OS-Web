@@ -86,6 +86,7 @@ def run_deterministic_pipeline(date_str: str) -> Dict[str, Any]:
             "category": cat,
             "amount": float(exp.get("amount") or 0.0),
             "timestamp": iso_noon_local(exp_date),
+            "included_in_kpi": exp.get("included_in_kpi", 1),
         }
         if cat in capital_cats:
             capital_maintenance.append(record)
@@ -238,6 +239,19 @@ def run_deterministic_pipeline(date_str: str) -> Dict[str, Any]:
     expected_expense_keys = {"fastfood", "charging", "capital_maintenance"}
     if set(output_data["Expenses"].keys()) != expected_expense_keys:
         raise ValueError("VALIDATION FAILURE: Expenses category layout does not match dashboard contract exactly!")
+
+    # F) Assert kpi constraint logic (category IN capital_cats OR included_in_kpi = 1)
+    for e in fastfood:
+        if e.get("included_in_kpi") != 1:
+            raise ValueError(
+                f"VALIDATION FAILURE: Operational expense (ID: {e['id']}) must be included in KPI (included_in_kpi must be 1)!"
+            )
+            
+    for e in capital_maintenance:
+        if e.get("included_in_kpi") != 0:
+            raise ValueError(
+                f"VALIDATION FAILURE: Capital maintenance expense (ID: {e['id']}) must be excluded from KPI (included_in_kpi must be 0)!"
+            )
 
     logging.info("Deterministic data pipeline validation PASS successfully!")
     return output_data

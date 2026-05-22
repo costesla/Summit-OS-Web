@@ -56,6 +56,7 @@ class ExpenseModel(BaseModel):
     date: str  # YYYY-MM-DD
     category: str
     amount: float
+    included_in_kpi: Optional[int] = 1
 
 class VehicleModel(BaseModel):
     timestamp: str  # ISO Format
@@ -236,7 +237,7 @@ class ExpensesAgent:
         logging.info(f"ExpensesAgent querying expenses. Date: {date_str}, Range: [{start_date}, {end_date}]")
         
         sql = """
-            SELECT ExpenseID, Category, Amount, Timestamp
+            SELECT ExpenseID, Category, Amount, Timestamp, IncludedInKPI
             FROM Rides.ManualExpenses
             WHERE 1=1
         """
@@ -263,12 +264,14 @@ class ExpensesAgent:
             
             category = str(r.get("Category") or "General")
             amount = float(r.get("Amount") or 0.0)
+            kpi = 1 if r.get("IncludedInKPI") is None or r.get("IncludedInKPI") else 0
             
             expense_data = {
                 "expense_id": eid,
                 "date": date_val,
                 "category": category,
-                "amount": amount
+                "amount": amount,
+                "included_in_kpi": kpi
             }
             # Enforce schema using Pydantic
             validated = ExpenseModel(**expense_data)
