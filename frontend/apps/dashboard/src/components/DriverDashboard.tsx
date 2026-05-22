@@ -8,6 +8,7 @@ import {
     MapPin, Gauge, LogOut, Cpu, RefreshCw, Loader2,
     DollarSign, Cloud, Moon
 } from 'lucide-react';
+import { isBackgroundableError, devDebugError, getAsyncExecutionLogs, pollJobStatus } from '../../../../src/lib/intelligenceUtils';
 
 
 // ─── Constants ─────────────────────────────────────────────────────────────
@@ -826,6 +827,16 @@ const IntelligenceSyncPanel: React.FC<{
 }> = ({ selectedDate, onRefresh, hours, onHoursChange }) => {
     const [status, setStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle');
     const [logs, setLogs] = useState<string[]>([]);
+    const activePollRef = useRef<(() => void) | null>(null);
+
+    // Clean up active polling on unmount
+    useEffect(() => {
+        return () => {
+            if (activePollRef.current) {
+                activePollRef.current();
+            }
+        };
+    }, []);
 
     // Helper: build Uber Driver OneDrive path from a date string
     const buildOneDrivePath = (dateStr: string, folderOverride?: string) => {
@@ -875,10 +886,19 @@ const IntelligenceSyncPanel: React.FC<{
         }
     };
 
+    const cleanupActivePoll = () => {
+        if (activePollRef.current) {
+            activePollRef.current();
+            activePollRef.current = null;
+        }
+    };
 
     const runSync = async (dryRun: boolean) => {
+        cleanupActivePoll();
         setStatus('running');
-        setLogs([`> Starting ${dryRun ? 'Dry Run' : 'Actual Sync'} for ${selectedDate}...`]);
+        const initialLog = `> Starting ${dryRun ? 'Dry Run' : 'Actual Sync'} for ${selectedDate}...`;
+        setLogs([initialLog]);
+        
         try {
             const resp = await fetch(`${AZURE_BASE}/operations/sync-folders`, {
                 method: 'POST',
@@ -886,8 +906,34 @@ const IntelligenceSyncPanel: React.FC<{
                 body: JSON.stringify({ processDate: selectedDate, dryRun })
             });
 
+            if (!resp.ok) {
+                throw new Error(`Server returned ${resp.status}`);
+            }
+
             const data = await resp.json();
-            if (data.success) {
+            if (data.status === 'accepted' && data.jobId) {
+                const baseLogs = [initialLog];
+                const initialJobLogs = getAsyncExecutionLogs(data.jobId);
+                setLogs([...baseLogs, ...initialJobLogs]);
+
+                const stop = pollJobStatus(
+                    AZURE_BASE,
+                    data.jobId,
+                    (jobLogs) => {
+                        setLogs([...baseLogs, ...initialJobLogs, ...jobLogs]);
+                    },
+                    () => {
+                        setStatus('success');
+                        setLogs(prev => [...prev, `> [SUCCESS] Folder sync finalized.`]);
+                        onRefresh();
+                    },
+                    (errorMsg) => {
+                        setStatus('error');
+                        setLogs(prev => [...prev, `> [ERROR] ${errorMsg}`]);
+                    }
+                );
+                activePollRef.current = stop;
+            } else if (data.success) {
                 setStatus('success');
                 setLogs(prev => [...prev, ...(data.logs || []), `> [SUCCESS] Folder sync finalized.`]);
             } else {
@@ -895,14 +941,27 @@ const IntelligenceSyncPanel: React.FC<{
                 setLogs(prev => [...prev, `> [ERROR] ${data.error}`]);
             }
         } catch (err: unknown) {
-            setStatus('error');
-            setLogs(prev => [...prev, `> [CRITICAL] ${err instanceof Error ? err.message : String(err)}`]);
+            devDebugError(err);
+            if (isBackgroundableError(err)) {
+                setStatus('success');
+                setLogs(prev => [...prev, 
+                    `> [NOTICE] Large folder sync triggered.`,
+                    `> Folder sync is running in the background.`,
+                    `> Please wait 60 seconds and refresh to see results.`
+                ]);
+                setTimeout(onRefresh, 60_000);
+            } else {
+                setStatus('error');
+                setLogs(prev => [...prev, `> [CRITICAL] ${err instanceof Error ? err.message : String(err)}`]);
+            }
         }
     };
 
     const runDailySync = async () => {
+        cleanupActivePoll();
         setStatus('running');
-        setLogs([`> Initializing Daily Unified Sync (Folders + Data)...`]);
+        const initialLog = `> Initializing Daily Unified Sync (Folders + Data)...`;
+        setLogs([initialLog]);
 
         try {
             const resp = await fetch(`${AZURE_BASE}/daily-sync`, {
@@ -926,18 +985,39 @@ const IntelligenceSyncPanel: React.FC<{
                 throw new Error('TIMEOUT_EXPECTED');
             }
 
-            if (data.success) {
+            if (data.status === 'accepted' && data.jobId) {
+                const baseLogs = [initialLog];
+                const initialJobLogs = getAsyncExecutionLogs(data.jobId);
+                setLogs([...baseLogs, ...initialJobLogs]);
+
+                const stop = pollJobStatus(
+                    AZURE_BASE,
+                    data.jobId,
+                    (jobLogs) => {
+                        setLogs([...baseLogs, ...initialJobLogs, ...jobLogs]);
+                    },
+                    () => {
+                        setStatus('success');
+                        setLogs(prev => [...prev, `> [SUCCESS] Daily Sync Complete.`]);
+                        onRefresh();
+                    },
+                    (errorMsg) => {
+                        setStatus('error');
+                        setLogs(prev => [...prev, `> [ERROR] ${errorMsg}`]);
+                    }
+                );
+                activePollRef.current = stop;
+            } else if (data.success) {
                 setStatus('success');
                 setLogs(prev => [...prev, ...(data.logs || []), `> [SUCCESS] Daily Sync Complete.`]);
-                // Refresh the drives & trips panels so newly synced data appears immediately
                 onRefresh();
             } else {
                 setStatus('error');
                 setLogs(prev => [...prev, ...(data.logs || []), `> [ERROR] ${data.error}`]);
             }
         } catch (err: unknown) {
-            const msg = err instanceof Error ? err.message : String(err);
-            if (msg === 'TIMEOUT_EXPECTED' || msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.toLowerCase().includes('timeout')) {
+            devDebugError(err);
+            if (isBackgroundableError(err)) {
                 setStatus('success');
                 setLogs(prev => [...prev, 
                     `> [NOTICE] Large sync/scan detected (>45s).`,
@@ -947,98 +1027,200 @@ const IntelligenceSyncPanel: React.FC<{
                 setTimeout(onRefresh, 60_000);
             } else {
                 setStatus('error');
-                setLogs(prev => [...prev, `> [CRITICAL] ${msg}`]);
+                setLogs(prev => [...prev, `> [CRITICAL] ${err instanceof Error ? err.message : String(err)}`]);
             }
         }
     };
 
-    // Scan the auto-calculated OneDrive folder for the selected date — no prompt
+    // Scan the auto-calculated OneDrive folder for the selected date
     const runScanDay = async () => {
+        cleanupActivePoll();
         const path = buildOneDrivePath(selectedDate);
         setStatus('running');
-        setLogs([`> Initializing Unified Day Scan: ${path}...`]);
+        const initialLog = `> Initializing Unified Day Scan: ${path}...`;
+        setLogs([initialLog]);
+        
         try {
             // 1. General Cloud Scan & Routing
             const data = await triggerCloudScan(path);
-            if (data.success) {
-                setLogs(prev => [...prev, `> [STEP 1] Folder organization complete.`]);
-                
-                // 2. OCR Trip Numbering & Auto-tagging
-                setLogs(prev => [...prev, `> [STEP 2] Starting OCR trip extraction...`]);
-                const ocrResp = await fetch(`${AZURE_BASE}/operations/scan-day-trips`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ date: selectedDate, path })
-                });
-                
-                if (ocrResp.ok) {
+            
+            // Helper function to run Step 2 (OCR Trip extraction)
+            const proceedToOcrExtraction = async (step1Logs: string[]) => {
+                const step2Log = `> [STEP 2] Starting OCR trip extraction...`;
+                const currentLogs = [...step1Logs, step2Log];
+                setLogs(currentLogs);
+
+                try {
+                    const ocrResp = await fetch(`${AZURE_BASE}/operations/scan-day-trips`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ date: selectedDate, path })
+                    });
+                    
+                    if (!ocrResp.ok) {
+                        throw new Error(`OCR Server returned ${ocrResp.status}`);
+                    }
+
                     const ocrData = await ocrResp.json();
-                    if (ocrData.success) {
+                    if (ocrData.status === 'accepted' && ocrData.jobId) {
+                        const baseLogs = [...step1Logs, step2Log];
+                        const initialJobLogs = getAsyncExecutionLogs(ocrData.jobId);
+                        setLogs([...baseLogs, ...initialJobLogs]);
+
+                        const stop = pollJobStatus(
+                            AZURE_BASE,
+                            ocrData.jobId,
+                            (jobLogs) => {
+                                setLogs([...baseLogs, ...initialJobLogs, ...jobLogs]);
+                            },
+                            (finalJobData) => {
+                                setStatus('success');
+                                const tripCount = finalJobData?.result?.trip_count ?? 0;
+                                setLogs(prev => [...prev, 
+                                    `> [SUCCESS] Full Day Scan Complete.`,
+                                    `> ${tripCount} Uber trips extracted and labeled.`
+                                ]);
+                                onRefresh();
+                            },
+                            (errorMsg) => {
+                                setStatus('error');
+                                setLogs(prev => [...prev, `> [OCR ERROR] ${errorMsg}`]);
+                            }
+                        );
+                        activePollRef.current = stop;
+                    } else if (ocrData.success) {
                         setStatus('success');
                         setLogs(prev => [...prev, 
                             ...(ocrData.logs || []),
                             `> [SUCCESS] Full Day Scan Complete.`,
                             `> ${ocrData.trip_count} Uber trips extracted and labeled.`
                         ]);
-                        // Refresh everything
                         onRefresh();
                     } else {
                         setStatus('error');
                         setLogs(prev => [...prev, `> [OCR ERROR] ${ocrData.error}`]);
                     }
-                } else {
-                    setLogs(prev => [...prev, `> [NOTICE] OCR scan is continuing in background due to size.`]);
-                    setStatus('success');
-                    setTimeout(onRefresh, 60_000);
+                } catch (ocrErr: unknown) {
+                    devDebugError(ocrErr);
+                    if (isBackgroundableError(ocrErr)) {
+                        setStatus('success');
+                        setLogs(prev => [...prev, 
+                            `> [NOTICE] OCR scan is continuing in background due to size.`,
+                            `> Please wait 60 seconds and refresh to see your checkmarks.`
+                        ]);
+                        setTimeout(onRefresh, 60_000);
+                    } else {
+                        setStatus('error');
+                        setLogs(prev => [...prev, `> [OCR CRITICAL ERROR] ${ocrErr instanceof Error ? ocrErr.message : String(ocrErr)}`]);
+                    }
                 }
+            };
+
+            // Now handle Step 1's response (Cloud scan)
+            if (data.status === 'accepted' && data.jobId) {
+                const baseLogs = [initialLog];
+                const initialJobLogs = getAsyncExecutionLogs(data.jobId);
+                setLogs([...baseLogs, ...initialJobLogs]);
+
+                const stop = pollJobStatus(
+                    AZURE_BASE,
+                    data.jobId,
+                    (jobLogs) => {
+                        setLogs([...baseLogs, ...initialJobLogs, ...jobLogs]);
+                    },
+                    () => {
+                        const step1DoneLogs = [...baseLogs, `> [STEP 1] Folder organization complete.`];
+                        setLogs(step1DoneLogs);
+                        // Trigger Step 2
+                        proceedToOcrExtraction(step1DoneLogs);
+                    },
+                    (errorMsg) => {
+                        setStatus('error');
+                        setLogs(prev => [...prev, `> [ERROR] ${errorMsg}`]);
+                    }
+                );
+                activePollRef.current = stop;
+            } else if (data.success) {
+                const step1DoneLogs = [initialLog, `> [STEP 1] Folder organization complete.`];
+                setLogs(step1DoneLogs);
+                // Trigger Step 2
+                await proceedToOcrExtraction(step1DoneLogs);
             } else {
                 setStatus('error');
                 setLogs(prev => [...prev, `> [ERROR] ${data.error}`]);
             }
         } catch (err: unknown) {
-            const msg = err instanceof Error ? err.message : String(err);
-            if (msg === 'TIMEOUT_EXPECTED') {
+            devDebugError(err);
+            if (isBackgroundableError(err)) {
                 setStatus('success'); // Mark as success because background job is running
                 setLogs(prev => [...prev, 
                     `> [NOTICE] Large scan detected (>45s).`,
                     `> Azure proxy timed out, but the scan is still running in the background.`,
                     `> Please wait 60 seconds and refresh the page to see your checkmarks.`
                 ]);
+                setTimeout(onRefresh, 60_000);
             } else {
                 setStatus('error');
-                setLogs(prev => [...prev, `> [CRITICAL] ${msg}`]);
+                setLogs(prev => [...prev, `> [CRITICAL] ${err instanceof Error ? err.message : String(err)}`]);
             }
         }
     };
 
     // Scan a custom-named folder (for edge cases where folder name differs from day number)
     const runOneDriveSyncCustom = async () => {
+        cleanupActivePoll();
         const folderName = prompt('Enter folder name (e.g. 03):');
         if (!folderName) return;
         const path = buildOneDrivePath(selectedDate, folderName);
         setStatus('running');
-        setLogs([`> Scanning custom folder: ${path}...`]);
+        const initialLog = `> Scanning custom folder: ${path}...`;
+        setLogs([initialLog]);
+        
         try {
             const data = await triggerCloudScan(path);
-            if (data.success) {
+            if (data.status === 'accepted' && data.jobId) {
+                const baseLogs = [initialLog];
+                const initialJobLogs = getAsyncExecutionLogs(data.jobId);
+                setLogs([...baseLogs, ...initialJobLogs]);
+
+                const stop = pollJobStatus(
+                    AZURE_BASE,
+                    data.jobId,
+                    (jobLogs) => {
+                        setLogs([...baseLogs, ...initialJobLogs, ...jobLogs]);
+                    },
+                    () => {
+                        setStatus('success');
+                        setLogs(prev => [...prev, `> [SUCCESS] Custom scan complete.`]);
+                        onRefresh();
+                    },
+                    (errorMsg) => {
+                        setStatus('error');
+                        setLogs(prev => [...prev, `> [ERROR] ${errorMsg}`]);
+                    }
+                );
+                activePollRef.current = stop;
+            } else if (data.success) {
                 setStatus('success');
                 setLogs(prev => [...prev, ...(data.logs || []), `> [SUCCESS] Custom scan complete.`]);
+                onRefresh();
             } else {
                 setStatus('error');
                 setLogs(prev => [...prev, `> [ERROR] ${data.error}`]);
             }
         } catch (err: unknown) {
-            const msg = err instanceof Error ? err.message : String(err);
-            if (msg === 'TIMEOUT_EXPECTED') {
+            devDebugError(err);
+            if (isBackgroundableError(err)) {
                 setStatus('success');
                 setLogs(prev => [...prev, 
                     `> [NOTICE] Large scan detected.`,
                     `> Proxy timed out, but background sync is likely still active.`,
                     `> Refresh in 60 seconds.`
                 ]);
+                setTimeout(onRefresh, 60_000);
             } else {
                 setStatus('error');
-                setLogs(prev => [...prev, `> [CRITICAL] ${msg}`]);
+                setLogs(prev => [...prev, `> [CRITICAL] ${err instanceof Error ? err.message : String(err)}`]);
             }
         }
     };
@@ -2301,9 +2483,15 @@ const DriverDashboard = () => {
                     </header>
 
                     {/* ── Stats Bar ── */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-5">
                         <StatCard label="Gross Earnings" value={`$${(stats.uberEarnings + stats.privateTotal || 0).toFixed(2)}`}
                             sub={`Uber $${(stats.uberEarnings || 0).toFixed(2)} · Private $${(stats.privateTotal || 0).toFixed(2)}`}
+                            icon={<DollarSign className="text-purple-600 w-5 h-5" />} />
+                        <StatCard label="Uber Earnings" value={`$${(stats.uberEarnings || 0).toFixed(2)}`}
+                            sub={`${stats.uberCount || 0} OCR trips`}
+                            icon={<Receipt className="text-blue-600 w-5 h-5" />} highlight />
+                        <StatCard label="Private Income" value={`$${(stats.privateTotal || 0).toFixed(2)}`}
+                            sub="Jackie · Esmeralda · Other"
                             icon={<DollarSign className="text-purple-600 w-5 h-5" />} />
                         <StatCard label="Expenses" value={`$${(stats.totalExpenses || 0).toFixed(2)}`}
                             sub={`Food $${(stats.food||0).toFixed(2)} · Charge $${(stats.charging||0).toFixed(2)}`}
@@ -2326,22 +2514,6 @@ const DriverDashboard = () => {
                             </div>
                         </div>
                     )}
-
-                    {/* ── Stat Cards ── */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <StatCard label="Uber Earnings" value={`$${(stats.uberEarnings || 0).toFixed(2)}`}
-                            sub={`${stats.uberCount || 0} OCR trips`}
-                            icon={<Receipt className="text-blue-600 w-5 h-5" />} highlight />
-                        <StatCard label="Private Income" value={`$${(stats.privateTotal || 0).toFixed(2)}`}
-                            sub="Jackie · Esmeralda · Other"
-                            icon={<DollarSign className="text-purple-600 w-5 h-5" />} />
-                        <StatCard label="Expenses" value={`$${(stats.totalExpenses || 0).toFixed(2)}`}
-                            sub={`Food $${(stats.food||0).toFixed(2)} · Charge $${(stats.charging||0).toFixed(2)}`}
-                            icon={<Zap className="text-amber-600 w-5 h-5" />} />
-                        <StatCard label="Net Profit" value={`$${(stats.profit || 0).toFixed(2)}`}
-                            sub={`≈ $${(stats.hourlyRate || 0).toFixed(2)}/hr`}
-                            icon={<TrendingUp className="text-emerald-600 w-5 h-5" />} highlight />
-                    </div>
 
                     {/* ── Goal Tracker ── */}
                     <GoalTrackerPanel
