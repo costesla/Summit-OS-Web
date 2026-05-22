@@ -113,16 +113,32 @@ jobs:
         run: |
           SCM_USER=$(echo "$PUBLISH_PROFILE" | grep -oP '(?<=userName=")[^"]+' | head -1)
           SCM_PASS=$(echo "$PUBLISH_PROFILE" | grep -oP '(?<=userPWD=")[^"]+' | head -1)
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            -u "$SCM_USER:$SCM_PASS" \
-            -X DELETE \
+          
+          # Check current value
+          CURRENT_VAL=$(curl -s -u "$SCM_USER:$SCM_PASS" \
             "https://${{ env.AZURE_FUNCTIONAPP_NAME }}.scm.azurewebsites.net/api/settings/WEBSITE_RUN_FROM_PACKAGE" \
-            --max-time 15 || echo "000")
-          echo "WEBSITE_RUN_FROM_PACKAGE delete status: $HTTP_STATUS"
-          if [ "$HTTP_STATUS" = "204" ] || [ "$HTTP_STATUS" = "200" ] || [ "$HTTP_STATUS" = "404" ]; then
-            echo "✅ WEBSITE_RUN_FROM_PACKAGE cleared (or was not set)"
+            --max-time 10 || echo "")
+          echo "Current WEBSITE_RUN_FROM_PACKAGE: $CURRENT_VAL"
+          
+          # If the setting is a URL (starts with http) or is missing/empty/null, set it to "1"
+          # so Kudu zipdeploy works correctly on the Linux Consumption plan.
+          if [[ "$CURRENT_VAL" =~ ^\"http || -z "$CURRENT_VAL" || "$CURRENT_VAL" = "null" ]]; then
+            echo "Setting WEBSITE_RUN_FROM_PACKAGE to 1..."
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+              -u "$SCM_USER:$SCM_PASS" \
+              -X POST \
+              -H "Content-Type: application/json" \
+              -d '{"WEBSITE_RUN_FROM_PACKAGE": "1"}' \
+              "https://${{ env.AZURE_FUNCTIONAPP_NAME }}.scm.azurewebsites.net/api/settings" \
+              --max-time 15 || echo "000")
+            echo "Set status: $HTTP_STATUS"
+            if [ "$HTTP_STATUS" = "204" ] || [ "$HTTP_STATUS" = "200" ]; then
+              echo "✅ WEBSITE_RUN_FROM_PACKAGE successfully set to 1"
+            else
+              echo "⚠️  Could not update setting via Kudu API (status $HTTP_STATUS) — proceeding anyway"
+            fi
           else
-            echo "⚠️  Could not clear via Kudu API (status $HTTP_STATUS) — proceeding anyway"
+            echo "✅ WEBSITE_RUN_FROM_PACKAGE is already configured correctly ($CURRENT_VAL)"
           fi
 
       - name: Deploy to Azure Functions
