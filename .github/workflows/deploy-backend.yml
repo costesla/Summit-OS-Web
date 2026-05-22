@@ -105,48 +105,10 @@ jobs:
           fi
           echo "✅ No local.settings.json in deployment package."
 
-      - name: Clear WEBSITE_RUN_FROM_PACKAGE (pre-deploy guardrail)
-        # The Azure/functions-action zipdeploy fails if this is set to a blob URL.
-        # Uses the Kudu REST API with publish profile SCM credentials — no az login needed.
-        env:
-          PUBLISH_PROFILE: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE_SUMMITOS_API }}
-        run: |
-          SCM_USER=$(echo "$PUBLISH_PROFILE" | grep -oP '(?<=userName=")[^"]+' | head -1)
-          SCM_PASS=$(echo "$PUBLISH_PROFILE" | grep -oP '(?<=userPWD=")[^"]+' | head -1)
-          
-          # Check current value
-          CURRENT_VAL=$(curl -s -u "$SCM_USER:$SCM_PASS" \
-            "https://${{ env.AZURE_FUNCTIONAPP_NAME }}.scm.azurewebsites.net/api/settings/WEBSITE_RUN_FROM_PACKAGE" \
-            --max-time 10 || echo "")
-          echo "Current WEBSITE_RUN_FROM_PACKAGE: $CURRENT_VAL"
-          
-          # If the setting is a URL (starts with http) or is missing/empty/null, set it to "1"
-          # so Kudu zipdeploy works correctly on the Linux Consumption plan.
-          if [[ "$CURRENT_VAL" =~ ^\"http || -z "$CURRENT_VAL" || "$CURRENT_VAL" = "null" ]]; then
-            echo "Setting WEBSITE_RUN_FROM_PACKAGE to 1..."
-            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-              -u "$SCM_USER:$SCM_PASS" \
-              -X POST \
-              -H "Content-Type: application/json" \
-              -d '{"WEBSITE_RUN_FROM_PACKAGE": "1"}' \
-              "https://${{ env.AZURE_FUNCTIONAPP_NAME }}.scm.azurewebsites.net/api/settings" \
-              --max-time 15 || echo "000")
-            echo "Set status: $HTTP_STATUS"
-            if [ "$HTTP_STATUS" = "204" ] || [ "$HTTP_STATUS" = "200" ]; then
-              echo "✅ WEBSITE_RUN_FROM_PACKAGE successfully set to 1"
-            else
-              echo "🚨 CRITICAL ERROR: WEBSITE_RUN_FROM_PACKAGE is set to a Blob SAS URL or is missing ($CURRENT_VAL),"
-              echo "   and Kudu REST API cannot modify App Service settings on Linux Consumption (HTTP status $HTTP_STATUS)."
-              echo "   This will cause the subsequent zipdeploy to fail with a Kudu 404 error."
-              echo ""
-              echo "👉 FIX: Run the following command in your local terminal or Cloud Shell to reset it:"
-              echo "   az functionapp config appsettings set --name ${{ env.AZURE_FUNCTIONAPP_NAME }} --resource-group rg-summitos-prod --settings WEBSITE_RUN_FROM_PACKAGE=1"
-              echo ""
-              exit 1
-            fi
-          else
-            echo "✅ WEBSITE_RUN_FROM_PACKAGE is already configured correctly ($CURRENT_VAL)"
-          fi
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Deploy to Azure Functions
         uses: Azure/functions-action@v1
@@ -154,7 +116,6 @@ jobs:
         with:
           app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
           package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE_SUMMITOS_API }}
           scm-do-build-during-deployment: false
           enable-oryx-build: false
 
