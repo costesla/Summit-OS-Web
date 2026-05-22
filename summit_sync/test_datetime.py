@@ -73,9 +73,57 @@ def test_normalize():
     else:
         print("[FAIL] Normalization mismatch.")
 
+def test_dst_transitions():
+    print("\n--- Testing DST Transitions & State Conformance ---")
+    # 1. Summer Case (July 2, 2026 15:30 UTC)
+    # CO (Denver) should be in MDT (UTC-6) -> 09:30 AM MDT
+    # AZ (Phoenix) should be in MST (UTC-7) -> 08:30 AM MST (No DST!)
+    # NV (Los Angeles) should be in PDT (UTC-7) -> 08:30 AM PDT
+    utc_summer = datetime.datetime(2026, 7, 2, 15, 30, tzinfo=pytz.utc)
+    
+    summer_cases = [
+        ("CO", "America/Denver", "09:30 AM MDT"),
+        ("AZ", "America/Phoenix", "08:30 AM MST"),
+        ("NV", "America/Los_Angeles", "08:30 AM PDT"),
+        ("TX", "America/Chicago", "10:30 AM CDT"),
+        ("NY", "America/New_York", "11:30 AM EDT"),
+    ]
+    
+    print("Testing Summer (Daylight Saving Time in most states):")
+    for state, expected_tz, expected_time_part in summer_cases:
+        formatted = datetime_utils.format_local_time(utc_summer, state)
+        print(f"  State: {state} | Local: {formatted}")
+        if expected_time_part in formatted:
+            print(f"  [OK] Correct summer conversion for {state}")
+        else:
+            print(f"  [FAIL] Summer transformation mismatch for {state}")
+            
+    # 2. Winter Case (January 2, 2026 15:30 UTC)
+    # CO (Denver) should be in MST (UTC-7) -> 08:30 AM MST
+    # AZ (Phoenix) should be in MST (UTC-7) -> 08:30 AM MST
+    utc_winter = datetime.datetime(2026, 1, 2, 15, 30, tzinfo=pytz.utc)
+    
+    winter_cases = [
+        ("CO", "America/Denver", "08:30 AM MST"),
+        ("AZ", "America/Phoenix", "08:30 AM MST"),
+        ("NV", "America/Los_Angeles", "07:30 AM PST"),
+        ("TX", "America/Chicago", "09:30 AM CST"),
+        ("NY", "America/New_York", "10:30 AM EST"),
+    ]
+    
+    print("Testing Winter (Standard Time):")
+    for state, expected_tz, expected_time_part in winter_cases:
+        formatted = datetime_utils.format_local_time(utc_winter, state)
+        print(f"  State: {state} | Local: {formatted}")
+        if expected_time_part in formatted:
+            print(f"  [OK] Correct winter conversion for {state}")
+        else:
+            print(f"  [FAIL] Winter transformation mismatch for {state}")
+
 if __name__ == "__main__":
     test_32bit_enforcement()
     test_timezone_conversions()
+    test_dst_transitions()
     test_formatting()
     test_normalize()
     test_azure_cli()

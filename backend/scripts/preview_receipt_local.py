@@ -111,8 +111,13 @@ html_content = f"""<!DOCTYPE html>
                                         </p>
                                         
                                         <p style="margin: 0 0 10px; font-weight: 600; color: #333333;">💵 Cash</p>
-                                        <p style="margin: 0; padding-left: 20px;">
+                                        <p style="margin: 0 0 15px; padding-left: 20px;">
                                             Pay your driver directly at pickup or dropoff
+                                        </p>
+
+                                        <p style="margin: 0 0 10px; font-weight: 600; color: #333333;">✉️ Pay Later (Post-Trip Invoice)</p>
+                                        <p style="margin: 0; padding-left: 20px;">
+                                            A professional invoice will be emailed to you after the trip is completed. Suitable for corporate reimbursements.
                                         </p>
                                     </td>
                                 </tr>

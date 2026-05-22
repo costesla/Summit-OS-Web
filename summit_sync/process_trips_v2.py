@@ -140,6 +140,27 @@ def process_trips(target_date=None):
         
         logging.info(f"\n[Drive #{i+1}] ID: {drive_id} | {drive_tag} | {drive_start.strftime('%H:%M')} - {drive_end.strftime('%H:%M')}")
 
+        # Telematics distance & SOC validations/warnings
+        d_dist = drive.get('distance', drive.get('odometer_distance', 0))
+        d_start_soc = drive.get('starting_battery')
+        d_end_soc = drive.get('ending_battery')
+        
+        if d_dist is not None:
+            if d_dist < 0:
+                logging.error(f"   🚨 ALERT: Drive {drive_id} telemetry shows negative distance: {d_dist} mi")
+            elif d_dist == 0:
+                logging.warning(f"   ⚠️  Drive {drive_id} telemetry shows zero distance.")
+                
+        if d_start_soc is not None and (d_start_soc < 0 or d_start_soc > 100):
+            logging.error(f"   🚨 ALERT: Drive {drive_id} starting battery percentage invalid: {d_start_soc}%")
+        if d_end_soc is not None and (d_end_soc < 0 or d_end_soc > 100):
+            logging.error(f"   🚨 ALERT: Drive {drive_id} ending battery percentage invalid: {d_end_soc}%")
+            
+        if d_start_soc is not None and d_end_soc is not None:
+            if d_end_soc > d_start_soc:
+                if d_dist >= 0.2:
+                    logging.warning(f"   ⚠️  AUDIT WARNING: Drive {drive_id} telematics shows SOC increase: {d_start_soc}% -> {d_end_soc}% over {d_dist:.2f} mi (possible regen or telemetry anomaly).")
+
         # Determine Client Context
         client_config = None
         if drive_tag:

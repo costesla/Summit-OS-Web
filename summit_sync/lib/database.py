@@ -102,6 +102,27 @@ class DatabaseClient:
         url_hash = hashlib.md5(source_url.encode()).hexdigest()[:8]
         trip_id = trip_data.get('trip_id') if trip_data.get('trip_id') and 'Unknown' not in trip_data.get('trip_id') else f"T{url_hash}"
 
+        # SOC & Distance assertions/validations
+        t_dist = trip_data.get('tessie_distance_mi') or trip_data.get('tessie_distance') or trip_data.get('distance_miles', 0)
+        s_soc = trip_data.get('start_soc')
+        e_soc = trip_data.get('end_soc')
+        
+        if t_dist is not None:
+            assert t_dist >= 0, f"Trip {trip_id} has invalid negative distance: {t_dist} mi"
+            if t_dist == 0:
+                logging.warning(f"Trip {trip_id} has zero distance (tessie_distance_mi: {t_dist})")
+        
+        if s_soc is not None:
+            assert 0 <= s_soc <= 100, f"Trip {trip_id} has invalid start_soc: {s_soc}%"
+        if e_soc is not None:
+            assert 0 <= e_soc <= 100, f"Trip {trip_id} has invalid end_soc: {e_soc}%"
+            
+        if s_soc is not None and e_soc is not None:
+            if e_soc > s_soc:
+                # Log audit warning if SOC increases, unless negligible distance
+                if t_dist >= 0.2:
+                    logging.warning(f"AUDIT WARNING: Trip {trip_id} shows SOC increase from {s_soc}% to {e_soc}% over {t_dist:.2f} mi (possible regenerative braking or telemetry anomaly).")
+
         logging.info(f"Saving {trip_type} Trip: {trip_id}")
         
         conn = self.get_connection()
@@ -205,6 +226,18 @@ class DatabaseClient:
         if not session_id:
             logging.error("Missing session_id in charge_data")
             return
+
+        # SOC & Energy Added assertions/validations
+        s_soc = charge_data.get('start_soc')
+        e_soc = charge_data.get('end_soc')
+        energy_added = charge_data.get('energy_added', 0)
+        
+        if s_soc is not None and e_soc is not None:
+            assert e_soc >= s_soc, f"Charging session {session_id} has invalid negative SOC delta: {s_soc}% -> {e_soc}%"
+            
+        if energy_added is not None and energy_added < 0:
+            logging.error(f"ALERT: Charging session {session_id} shows negative energy added: {energy_added} kWh")
+            raise AssertionError(f"Charging session {session_id} has negative energy delta: {energy_added} kWh")
 
         logging.info(f"Saving Charging Session: {session_id}")
         conn = self.get_connection()
