@@ -178,15 +178,15 @@ const ExpenseList = ({
                     <input
                         type="number" step="0.01" placeholder="$0.00" value={amount}
                         onChange={e => setAmount(e.target.value)}
-                        className={`${inputBase} w-20 p-2 text-center`}
+                        className={`${inputBase} w-20 p-2 text-center shrink-0`}
                     />
                     <input
                         type="text" placeholder="Note (store, receipt...)" value={note}
                         onChange={e => setNote(e.target.value)}
-                        className={`${inputBase} flex-1 p-2`}
+                        className={`${inputBase} flex-1 min-w-0 p-2`}
                     />
                     <button type="submit"
-                        className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${
+                        className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all shrink-0 ${
                             accentColor.includes('amber') 
                                 ? 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100' 
                                 : accentColor.includes('blue')
@@ -2547,7 +2547,7 @@ const DriverDashboard = () => {
                         {/* Right Columns */}
                         <div className="lg:col-span-2 space-y-6" ref={expenseFormRef}>
                             <TessieChargesPanel onImport={handleImportCharge} selectedDate={selectedDate} />
-                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <ExpenseList
                                     title="Charging Sessions"
                                     data={expenses.charging.filter(e => e.timestamp.startsWith(selectedDate))}
@@ -2570,18 +2570,20 @@ const DriverDashboard = () => {
                                     }))}
                                     accentColor="text-rose-600"
                                 />
-                                <ExpenseList
-                                    title="Capital & Maintenance"
-                                    subtitle="Excluded from Daily Shift Stats"
-                                    data={(expenses.capital_maintenance || []).filter(e => e.timestamp.startsWith(selectedDate))}
-                                    icon={<Cpu className="w-4 h-4 text-blue-600" />}
-                                    onDelete={(id) => deleteExpense('capital_maintenance', id)}
-                                    onAdd={(amount, note) => setExpenses(prev => ({
-                                        ...prev,
-                                        capital_maintenance: [{ id: Date.now(), amount, note, category: 'Maintenance', timestamp: `${selectedDate}T${new Date().toTimeString().split(' ')[0]}` }, ...(prev.capital_maintenance || [])]
-                                    }))}
-                                    accentColor="text-blue-600"
-                                />
+                                <div className="md:col-span-2">
+                                    <ExpenseList
+                                        title="Capital & Maintenance"
+                                        subtitle="Excluded from Daily Shift Stats"
+                                        data={(expenses.capital_maintenance || []).filter(e => e.timestamp.startsWith(selectedDate))}
+                                        icon={<Cpu className="w-4 h-4 text-blue-600" />}
+                                        onDelete={(id) => deleteExpense('capital_maintenance', id)}
+                                        onAdd={(amount, note) => setExpenses(prev => ({
+                                            ...prev,
+                                            capital_maintenance: [{ id: Date.now(), amount, note, category: 'Maintenance', timestamp: `${selectedDate}T${new Date().toTimeString().split(' ')[0]}` }, ...(prev.capital_maintenance || [])]
+                                        }))}
+                                        accentColor="text-blue-600"
+                                    />
+                                </div>
                             </div>
                             {/* Sync expenses to cloud */}
                             <div className="flex items-center gap-3 pt-1">
