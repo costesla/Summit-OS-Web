@@ -20,7 +20,7 @@ jobs:
   # ─────────────────────────────────────────────────────────────
   secret_scan:
     name: Secret Scan
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -63,7 +63,7 @@ jobs:
   build_and_deploy:
     name: Build and Deploy
     needs: secret_scan
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
