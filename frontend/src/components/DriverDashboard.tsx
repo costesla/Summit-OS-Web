@@ -382,11 +382,13 @@ const tagStyle = (tag: string | null) => {
 const TessieDrivesPanel = ({
     onImport,
     selectedDate,
-    refreshKey
+    refreshKey,
+    privatePayments = []
 }: {
     onImport: (drive: TessieDrive) => void;
     selectedDate: string;
     refreshKey?: number;
+    privatePayments?: PrivatePayment[];
 }) => {
     const [drives, setDrives] = useState<TessieDrive[]>([]);
     const [loading, setLoading] = useState(true);
@@ -523,6 +525,27 @@ const TessieDrivesPanel = ({
                                                 </span>
                                             )
                                     )}
+                                    {drive.tag &&
+                                     !drive.tag.toLowerCase().includes('uber') &&
+                                     !drive.tag.toLowerCase().includes('uncategorized') &&
+                                     !drive.tag.toLowerCase().includes('untagged') && (() => {
+                                        const tagLower = drive.tag.toLowerCase();
+                                        const matchedPayment = (privatePayments || []).find((p) => {
+                                            if (p.date !== drive.date || !p.client) return false;
+                                            const clientLower = p.client.toLowerCase();
+                                            return tagLower.includes(clientLower);
+                                        });
+                                        return matchedPayment && matchedPayment.amount > 0 ? (
+                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 border-emerald-200 text-emerald-700">
+                                                <span>✓ Paid</span>
+                                                <span>(${matchedPayment.amount.toFixed(2)})</span>
+                                            </span>
+                                        ) : (
+                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-rose-50 border-rose-200 text-rose-700">
+                                                <span>✗ Unpaid</span>
+                                            </span>
+                                        );
+                                    })()}
                                 </div>
                                 {(drive.start || drive.end) && (
                                     <div className="flex items-start gap-1.5 text-[11px] text-slate-600">
@@ -2536,7 +2559,7 @@ const DriverDashboard = () => {
                         onTripsLoaded={(count, earnings) => setUberStats({ count, earnings })}
                     />
 
-                    <TessieDrivesPanel onImport={() => {}} selectedDate={selectedDate} refreshKey={drivesRefreshKey} />
+                    <TessieDrivesPanel onImport={() => {}} selectedDate={selectedDate} refreshKey={drivesRefreshKey} privatePayments={privatePayments} />
 
                     <AuditLedgerModal 
                         isOpen={isAuditOpen} 

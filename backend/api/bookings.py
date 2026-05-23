@@ -157,11 +157,30 @@ def log_private_trip(req: func.HttpRequest) -> func.HttpResponse:
         name = req_body.get('name') or req_body.get('customerName') or "Unknown"
         price = req_body.get('fare') or req_body.get('price', 0)
         
+        # Parse scheduled pickup time (pickupTime / appointmentStart)
+        raw_time = req_body.get('pickupTime') or req_body.get('appointmentStart')
+        timestamp_epoch = time.time()
+        dt_utc = None
+        if raw_time:
+            try:
+                from services.datetime_utils import normalize_to_utc
+                dt_utc = normalize_to_utc(raw_time)
+                if dt_utc:
+                    timestamp_epoch = dt_utc.timestamp()
+                    # Timezone Drift Validation
+                    from dateutil.parser import parse
+                    parsed_dt = parse(raw_time)
+                    if parsed_dt.tzinfo is None:
+                        logging.warning(f"TIMEZONE_DRIFT_DETECTED: Inbound naive sync timestamp '{raw_time}' coerced to UTC.")
+            except Exception as pe:
+                logging.error(f"Failed to parse raw_time for epoch in log_private_trip: {pe}")
+
         trip_data = {
-            "trip_id": req_body.get('bookingId') or f"P-{int(time.time())}",
+            "trip_id": req_body.get('bookingId') or f"P-{int(timestamp_epoch)}",
             "classification": "Private_Booking",
             "fare": price,
-            "timestamp_epoch": time.time(),
+            "timestamp_epoch": timestamp_epoch,
+            "Timestamp_Offer": dt_utc.strftime("%Y-%m-%d %H:%M:%S") if dt_utc else None,
             "raw_text": f"Booking for {name}"
         }
         db.save_trip(trip_data)
@@ -464,13 +483,30 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
         # Log to Database
         db = DatabaseClient()
         try:
+            # Determine the epoch timestamp of the scheduled pickup time, fallback to time.time()
+            timestamp_epoch = time.time()
+            dt_utc = None
+            if raw_time:
+                try:
+                    dt_utc = normalize_to_utc(raw_time)
+                    if dt_utc:
+                        timestamp_epoch = dt_utc.timestamp()
+                        # Timezone Drift Validation
+                        from dateutil.parser import parse
+                        parsed_dt = parse(raw_time)
+                        if parsed_dt.tzinfo is None:
+                            logging.warning(f"TIMEZONE_DRIFT_DETECTED: Inbound timestamp '{raw_time}' is naive. Coerced to UTC. Verifying offset consistency...")
+                except Exception as pe:
+                    logging.error(f"Failed to parse raw_time for epoch: {pe}")
+
             # Create a rich metadata object for the DB
             db_data = data.copy()
             db_data.update({
                 "trip_id": booking_id,
                 "classification": "Private_Booking",
                 "fare": float(price.replace('$', '').replace(',', '')) if '$' in price else 0,
-                "timestamp_epoch": time.time()
+                "timestamp_epoch": timestamp_epoch,
+                "Timestamp_Offer": dt_utc.strftime("%Y-%m-%d %H:%M:%S") if dt_utc else None
             })
             db.save_trip(db_data)
         except Exception as db_err:

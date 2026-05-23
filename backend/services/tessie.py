@@ -566,3 +566,29 @@ class TessieClient:
         except Exception as e:
             logging.error(f"Error opening frunk: {e}")
             return None
+
+    def set_drive_tag(self, vin, drive_id, tag):
+        """
+        Sets a tag on a specific drive in Tessie.
+        GET https://api.tessie.com/{vin}/set_drive_tag?drive_id={drive_id}&tag={tag}
+        """
+        if not self.api_key:
+            return None
+            
+        logging.info(f"Setting tag '{tag}' for drive {drive_id} on {vin}")
+        try:
+            url = f"{self.base_url}/{vin}/set_drive_tag"
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Accept": "application/json"
+            }
+            params = {
+                "drive_id": drive_id,
+                "tag": tag
+            }
+            response = requests.get(url, headers=headers, params=params, timeout=self.timeout)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            logging.error(f"Error setting drive tag in Tessie: {str(e)}")
+            return None

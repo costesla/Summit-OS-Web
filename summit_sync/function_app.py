@@ -385,6 +385,24 @@ def log_private_trip(req: func.HttpRequest) -> func.HttpResponse:
         dist = float(details.get('dist', 0))
         dur = float(details.get('time', 0))
 
+        # Determine the epoch timestamp of the scheduled pickup time, fallback to time.time()
+        raw_time = req_body.get('pickupTime') or req_body.get('appointmentStart')
+        timestamp_epoch = time.time()
+        dt_utc = None
+        if raw_time:
+            try:
+                from lib.datetime_utils import normalize_to_utc
+                dt_utc = normalize_to_utc(raw_time)
+                if dt_utc:
+                    timestamp_epoch = dt_utc.timestamp()
+                    # Timezone Drift Validation
+                    from dateutil.parser import parse
+                    parsed_dt = parse(raw_time)
+                    if parsed_dt.tzinfo is None:
+                        logging.warning(f"TIMEZONE_DRIFT_DETECTED: Inbound naive sync timestamp '{raw_time}' coerced to UTC.")
+            except Exception as pe:
+                logging.error(f"Failed to parse raw_time for epoch in sync log_private_trip: {pe}")
+
         trip_data = {
             "trip_id": booking_id,
             "classification": "Private_Booking",
@@ -396,7 +414,8 @@ def log_private_trip(req: func.HttpRequest) -> func.HttpResponse:
             "duration_minutes": dur,
             "payment_method": req_body.get('paymentMethod', "Website Booking"),
             "raw_text": f"Private Booking: {name} ({email})",
-            "timestamp_epoch": time.time(),
+            "timestamp_epoch": timestamp_epoch,
+            "Timestamp_Offer": dt_utc.strftime("%Y-%m-%d %H:%M:%S") if dt_utc else None,
             
             # Compliance Fields
             "is_cdot_reportable": True, # Private trips are ALWAYS reportable
@@ -472,6 +491,24 @@ def calendar_book(req: func.HttpRequest) -> func.HttpResponse:
             start_time_iso=req_body.get('appointmentStart')
         )
 
+        # Determine the epoch timestamp of the scheduled pickup time, fallback to time.time()
+        raw_time = req_body.get('appointmentStart')
+        timestamp_epoch = time.time()
+        dt_utc = None
+        if raw_time:
+            try:
+                from lib.datetime_utils import normalize_to_utc
+                dt_utc = normalize_to_utc(raw_time)
+                if dt_utc:
+                    timestamp_epoch = dt_utc.timestamp()
+                    # Timezone Drift Validation
+                    from dateutil.parser import parse
+                    parsed_dt = parse(raw_time)
+                    if parsed_dt.tzinfo is None:
+                        logging.warning(f"TIMEZONE_DRIFT_DETECTED: Inbound naive sync timestamp '{raw_time}' coerced to UTC.")
+            except Exception as pe:
+                logging.error(f"Failed to parse raw_time for epoch in sync calendar_book: {pe}")
+
         # Log to SQL (optional but good for history)
         from lib.database import DatabaseClient
         db = DatabaseClient()
@@ -481,7 +518,8 @@ def calendar_book(req: func.HttpRequest) -> func.HttpResponse:
             "start_location": req_body.get('pickup'),
             "end_location": req_body.get('dropoff'),
             "fare": req_body.get('price', 0),
-            "timestamp_epoch": time.time()
+            "timestamp_epoch": timestamp_epoch,
+            "Timestamp_Offer": dt_utc.strftime("%Y-%m-%d %H:%M:%S") if dt_utc else None
         })
 
         return func.HttpResponse(
