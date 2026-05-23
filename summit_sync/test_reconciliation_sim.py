@@ -50,7 +50,7 @@ class TestReconciliationSim(unittest.TestCase):
         
         # Tessie returns no drives in ±4h and ±6h
         mock_tessie = MockTessieClient.return_value
-        mock_tessie.get_tagged_drives.return_value = []
+        mock_tessie.get_drives.return_value = []
         self.engine.tessie = mock_tessie
         
         mock_cursor = MagicMock()
@@ -75,7 +75,7 @@ class TestReconciliationSim(unittest.TestCase):
         
         # Tessie returns drive but ending time and distance are way off (leading to low confidence < 60)
         mock_tessie = MockTessieClient.return_value
-        mock_tessie.get_tagged_drives.return_value = [{
+        mock_tessie.get_drives.return_value = [{
             'id': 'DRIVE-LOW-CONF',
             'started_at': past_time.timestamp() - 3600 * 5,
             'ending_time': past_time.timestamp() + 3600 * 5,
@@ -105,7 +105,7 @@ class TestReconciliationSim(unittest.TestCase):
         
         # Perfect matching drive
         mock_tessie = MockTessieClient.return_value
-        mock_tessie.get_tagged_drives.return_value = [{
+        mock_tessie.get_drives.return_value = [{
             'id': 'DRIVE-MATCH',
             'started_at': past_time.timestamp(),
             'ending_time': past_time.timestamp() + 1800, # 30 min duration

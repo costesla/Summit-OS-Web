@@ -145,21 +145,21 @@ class ReconciliationEngine:
             logging.error("No TESSIE_VIN env var.")
             return
 
-        duration_min = trip.get('Duration_min') or 30
+        duration_min = float(trip.get('Duration_min') or 30)
         estimated_end_ts = target_ts + (duration_min * 60)
 
         # 2. Candidate Matching Logic with Fallback and expanded search window
         # Primary window: ±4 hours
         ts_start_4h = int(estimated_end_ts - (3600 * 4))
         ts_end_4h = int(estimated_end_ts + (3600 * 4))
-        drives = self.tessie.get_tagged_drives(vin, ts_start_4h, ts_end_4h)
+        drives = self.tessie.get_drives(vin, ts_start_4h, ts_end_4h)
 
         if not drives:
             # Fallback expanded window: ±6 hours
             logging.info(f"No match in primary ±4h window. Retrying with expanded ±6h window for Trip {trip_id}.")
             ts_start_6h = int(estimated_end_ts - (3600 * 6))
             ts_end_6h = int(estimated_end_ts + (3600 * 6))
-            drives = self.tessie.get_tagged_drives(vin, ts_start_6h, ts_end_6h)
+            drives = self.tessie.get_drives(vin, ts_start_6h, ts_end_6h)
 
         if not drives:
             logging.info(f"NO_MATCH: No candidate Tessie drives found within ±6h for Trip {trip_id}.")
