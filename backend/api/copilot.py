@@ -573,6 +573,7 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
         # We handle both space-separated and camelCase variants common in the user's manual tagging
         suffixes_to_strip = [
             " en route", " enroute", " - en route",
+            " in route", " inroute", " - in route", " in-route",
             " pickup", " pick up", " pickup", " - pickup", "pickup", "pick up",
             " dropoff", " drop off", " drop-off", " - dropoff", "dropoff", "drop off",
             " arrival", " - arrival", " arrival",
@@ -664,7 +665,8 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
                 "starting_battery": first.get("starting_battery"),
                 "ending_battery": last.get("ending_battery"),
                 "duration_minutes": round((last.get("ended_at", 0) - first.get("started_at", 0)) / 60, 1) if first.get("started_at") and last.get("ended_at") else 0,
-                "tessie_drive_id": first.get("id")
+                "tessie_drive_id": first.get("id"),
+                "leg_ids": [d.get("id") for d in drives]
             })
 
         # Sort by most recent first
@@ -711,10 +713,11 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
             matched_ride = None
             
             # 1. Exact ID Match (highly accurate)
+            leg_ids = drive.get("leg_ids", [drive_id])
             for ride in earned_rides:
                 r_id = str(ride["RideID"] or "")
                 t_id = str(ride["Tessie_DriveID"] or "")
-                if drive_id_str in r_id or drive_id_str in t_id:
+                if any(str(lid) in r_id or str(lid) in t_id for lid in leg_ids if lid):
                     matched_ride = ride
                     break
             
