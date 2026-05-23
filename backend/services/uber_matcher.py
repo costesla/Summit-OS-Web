@@ -158,9 +158,9 @@ class UberMatcherService:
 
     def _parse_timestamp_from_text(self, text: str) -> Optional[datetime.datetime]:
         """Extracts trip timestamp from OCR text — handles multiple Uber app formats."""
-        # Format 1 (with year): "May 5, 2026 . 5:16 AM"  or  "May 5, 2026 · 5:16 AM"
+        # Format 1 (with year): "May 5, 2026 . 5:16 AM", "May 5, 2026 · 5:16 AM", or "May 5, 2026 at 5:16 AM"
         m = re.search(
-            r"([A-Z][a-z]+ \d{1,2},?\s*\d{4})\s*[.\xb7\u00b7\u2022\-–]\s*(\d{1,2}:\d{2}\s*[APM]{2})",
+            r"([A-Z][a-z]+ \d{1,2},?\s*\d{4})\s*(?:[.\xb7\u00b7\u2022\-–]|at)?\s*(\d{1,2}:\d{2}\s*[APM]{2})",
             text
         )
         if m:
@@ -173,9 +173,9 @@ class UberMatcherService:
                 except:
                     continue
 
-        # Format 2 (no year): "May 8 · 5:41 AM"  — assume current year
+        # Format 2 (no year): "May 8 · 5:41 AM" or "May 8 at 5:41 AM" — assume current year
         m2 = re.search(
-            r"([A-Z][a-z]+ \d{1,2})\s*[.\xb7\u00b7\u2022\-–]\s*(\d{1,2}:\d{2}\s*[APM]{2})",
+            r"([A-Z][a-z]+ \d{1,2})\s*(?:[.\xb7\u00b7\u2022\-–]|at)?\s*(\d{1,2}:\d{2}\s*[APM]{2})",
             text
         )
         if m2:

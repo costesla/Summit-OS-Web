@@ -20,8 +20,7 @@ Write-Host "Deploying to Azure with remote build..."
 az functionapp deployment source config-zip --resource-group $resourceGroup --name $appName --src $zipName --build-remote true --timeout 600
 
 if ($LASTEXITCODE -eq 0) {
-    Write-Host "Deployment successful! Syncing function triggers..." -ForegroundColor Green
-    az functionapp function sync --name $appName --resource-group $resourceGroup
+    Write-Host "Deployment successful!" -ForegroundColor Green
 } else {
     Write-Host "Deployment failed with exit code $LASTEXITCODE" -ForegroundColor Red
 }

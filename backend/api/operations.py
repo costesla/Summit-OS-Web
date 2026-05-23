@@ -297,32 +297,12 @@ def get_day_trips(req: func.HttpRequest) -> func.HttpResponse:
         date_str = req.params.get("date")
         if not date_str:
             return func.HttpResponse(json.dumps({"success": False, "error": "date is required"}), status_code=400, headers=_cors(req), mimetype="application/json")
-        from services.database import DatabaseClient
-        db = DatabaseClient()
-        trips = db.get_trips_by_date(date_str)
         
-        # Map raw database row dictionaries to frontend schema
-        formatted_trips = []
-        for t in trips:
-            formatted_trips.append({
-                "trip_id": t.get("RideID"),
-                "trip_number": t.get("Trip_Number", 1),
-                "timestamp": t.get("Timestamp_Start").isoformat() if t.get("Timestamp_Start") else None,
-                "time_display": t.get("Timestamp_Start").strftime("%I:%M %p") if t.get("Timestamp_Start") else "—",
-                "service_type": t.get("TripType", "UberX"),
-                "driver_earnings": float(t.get("Driver_Earnings") or 0.0),
-                "rider_payment": float(t.get("Fare") or 0.0),
-                "tip": float(t.get("Tip") or 0.0),
-                "uber_cut": float((t.get("Fare") or 0.0) + (t.get("Tip") or 0.0) - (t.get("Driver_Earnings") or 0.0)),
-                "pickup": t.get("Pickup_Location"),
-                "dropoff": t.get("Dropoff_Location"),
-                "duration_min": float(t.get("Duration_min") or 0.0),
-                "distance_mi": float(t.get("Distance_mi") or 0.0),
-                "filename": t.get("Sidecar_Artifact_JSON")
-            })
-            
+        service = CloudWatcherService()
+        trips = service.get_trips_for_date(date_str)
+        
         return func.HttpResponse(
-            json.dumps({"success": True, "trips": formatted_trips}),
+            json.dumps({"success": True, "trips": trips}),
             status_code=200, headers=_cors(req), mimetype="application/json"
         )
     except Exception as e:

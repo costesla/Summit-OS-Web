@@ -13,3 +13,4 @@ pytz
 openai
 pydantic
 stripe>=8.6.0
+cryptography==40.0.2

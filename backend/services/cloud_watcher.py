@@ -306,6 +306,7 @@ class CloudWatcherService:
                 pickup = ""
                 dropoff = ""
                 trip_dt = None
+                vdata = {}
 
                 try:
                     _oai = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
@@ -328,6 +329,11 @@ class CloudWatcherService:
                                         "  rider_payment: (for receipt) the amount next to 'Rider payment'\n"
                                         "  trip_time: (for receipt) the date and time (e.g. 'May 8, 2026 · 5:40 AM')\n"
                                         "  online_time: (for summary) the total 'Online' time exactly as shown (e.g. '6h 15m')\n"
+                                        "  duration_min: (for receipt) trip duration in minutes as a number (e.g. 24 or 24.5)\n"
+                                        "  distance_mi: (for receipt) trip distance in miles as a number (e.g. 12.5)\n"
+                                        "  pickup: (for receipt) pickup address or location if visible\n"
+                                        "  dropoff: (for receipt) dropoff address or location if visible\n"
+                                        "  service_type: (for receipt) service type like 'UberX', 'Comfort', 'UberXL', 'Black' if visible\n"
                                         "Return ONLY valid JSON, no markdown."
                                     )
                                 },
@@ -390,6 +396,10 @@ class CloudWatcherService:
 
                     pickup  = vdata.get("pickup", "") or ""
                     dropoff = vdata.get("dropoff", "") or ""
+                    if not pickup or not dropoff:
+                        p_route, d_route = self._extract_route(text_for_stats)
+                        pickup = pickup or p_route or ""
+                        dropoff = dropoff or d_route or ""
 
                     log.info(f"PROCESSED: {name} → earned=${card['driver_earnings']}, time={trip_dt}")
 
@@ -414,8 +424,26 @@ class CloudWatcherService:
                     return None, f"SKIP: '{name}' — no earnings found"
 
                 duration_min = self._extract_duration(text_for_stats)
+                if duration_min is None or duration_min == 0.0:
+                    try:
+                        duration_min = float(vdata.get("duration_min") or 0.0)
+                    except:
+                        duration_min = 0.0
+
                 distance_mi  = self._extract_distance(text_for_stats)
-                service_type = self._extract_service_type(text_for_stats) or "UberX"
+                if distance_mi is None or distance_mi == 0.0:
+                    try:
+                        distance_mi = float(vdata.get("distance_mi") or 0.0)
+                    except:
+                        distance_mi = 0.0
+
+                service_type = self._extract_service_type(text_for_stats)
+                if not service_type or service_type == "UberX":
+                    gpt_service = vdata.get("service_type")
+                    if gpt_service:
+                        service_type = gpt_service
+                if not service_type:
+                    service_type = "UberX"
 
                 entry = {
                     "filename": name,
@@ -495,72 +523,73 @@ class CloudWatcherService:
         date_compact = date_str.replace("-", "")
         conn = self.db.get_connection()
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM Rides.Rides WHERE RideID LIKE ?", (f"TRIP-{date_compact}-%",))
-        deleted = cursor.rowcount
-        if deleted:
-            logs.append(f"INFO: Cleared {deleted} existing TRIP records for {date_str}.")
+        
+        try:
+            cursor.execute("DELETE FROM Rides.Rides WHERE RideID LIKE ?", (f"TRIP-{date_compact}-%",))
+            deleted = cursor.rowcount
+            if deleted:
+                logs.append(f"INFO: Cleared {deleted} existing TRIP records for {date_str}.")
 
-        # 6. Write numbered TRIP records & try to link to Tessie
-        trips_out = []
-        for i, c in enumerate(dated_cards, start=1):
-            trip_id = f"TRIP-{date_compact}-{i:02d}"
-            card = c["card"]
-            trip_dt = c["trip_dt"]
-            uber_cut = round((card.get("rider_payment") or 0) - (card.get("driver_earnings") or 0), 2)
+            # 6. Write numbered TRIP records & try to link to Tessie
+            trips_out = []
+            for i, c in enumerate(dated_cards, start=1):
+                trip_id = f"TRIP-{date_compact}-{i:02d}"
+                card = c["card"]
+                trip_dt = c["trip_dt"]
+                uber_cut = round((card.get("rider_payment") or 0) - (card.get("driver_earnings") or 0), 2)
 
-            # --- Proximity Matching to Tessie ---
-            tessie_drive_id = None
-            if trip_dt:
-                match = self.uber._find_match(trip_dt, tolerance_hours=4)
-                if match:
-                    tessie_drive_id = match["RideID"]
-                    trip_dt_naive = trip_dt.replace(tzinfo=None) if trip_dt.tzinfo else trip_dt
-                    logs.append(f"LINK: {trip_id} matched to {tessie_drive_id} (diff: {abs((match['Timestamp_Start'] - trip_dt_naive).total_seconds())/60:.1f}m)")
-                    
-                    # --- NEW: Auto-tag the preceding 'Pickup' drive ---
-                    # Look for a drive that ended within 60 mins before this one started
-                    try:
-                        cursor.execute("""
-                            SELECT TOP 1 RideID 
-                            FROM Rides.Rides 
-                            WHERE Timestamp_Start < ? 
-                              AND Timestamp_Start > DATEADD(minute, -60, ?)
-                              AND (Classification IS NULL OR Classification = 'Untagged')
-                            ORDER BY Timestamp_Start DESC
-                        """, (match['Timestamp_Start'], match['Timestamp_Start']))
-                        pickup_row = cursor.fetchone()
-                        if pickup_row:
-                            pickup_id = pickup_row[0]
+                # --- Proximity Matching to Tessie ---
+                tessie_drive_id = None
+                if trip_dt:
+                    match = self.uber._find_match(trip_dt, tolerance_hours=4)
+                    if match:
+                        tessie_drive_id = match["RideID"]
+                        trip_dt_naive = trip_dt.replace(tzinfo=None) if trip_dt.tzinfo else trip_dt
+                        logs.append(f"LINK: {trip_id} matched to {tessie_drive_id} (diff: {abs((match['Timestamp_Start'] - trip_dt_naive).total_seconds())/60:.1f}m)")
+                        
+                        # --- NEW: Auto-tag the preceding 'Pickup' drive ---
+                        # Look for a drive that ended within 60 mins before this one started
+                        try:
                             cursor.execute("""
-                                UPDATE Rides.Rides 
-                                SET Classification = 'Uber_Pickup', LastUpdated = GETUTCDATE() 
-                                WHERE RideID = ?
-                            """, (pickup_id,))
-                            logs.append(f"AUTO-TAG: {pickup_id} labeled as Uber_Pickup")
-                    except Exception as pickup_err:
-                        logs.append(f"WARN: Failed to auto-tag pickup: {pickup_err}")
+                                SELECT TOP 1 RideID 
+                                FROM Rides.Rides 
+                                WHERE Timestamp_Start < ? 
+                                  AND Timestamp_Start > DATEADD(minute, -60, ?)
+                                  AND (Classification IS NULL OR Classification = 'Untagged')
+                                ORDER BY Timestamp_Start DESC
+                            """, (match['Timestamp_Start'], match['Timestamp_Start']))
+                            pickup_row = cursor.fetchone()
+                            if pickup_row:
+                                pickup_id = pickup_row[0]
+                                cursor.execute("""
+                                    UPDATE Rides.Rides 
+                                    SET Classification = 'Uber_Pickup', LastUpdated = GETUTCDATE() 
+                                    WHERE RideID = ?
+                                """, (pickup_id,))
+                                logs.append(f"AUTO-TAG: {pickup_id} labeled as Uber_Pickup")
+                        except Exception as pickup_err:
+                            logs.append(f"WARN: Failed to auto-tag pickup: {pickup_err}")
 
-            sidecar = {
-                "source": "scan_and_number",
-                "filename": c["filename"],
-                "trip_number": i,
-                "raw_text": c["text"][:500],
-                "card_data": card,
-                "pickup": c["pickup"],
-                "dropoff": c["dropoff"],
-                "duration_min": c["duration_min"],
-                "distance_mi": c["distance_mi"],
-                "service_type": c["service_type"],
-                "tessie_link": tessie_drive_id,
-                "scanned_at": datetime.datetime.now(MDT).isoformat(),
-            }
+                sidecar = {
+                    "source": "scan_and_number",
+                    "filename": c["filename"],
+                    "trip_number": i,
+                    "raw_text": c["text"][:500],
+                    "card_data": card,
+                    "pickup": c["pickup"],
+                    "dropoff": c["dropoff"],
+                    "duration_min": c["duration_min"],
+                    "distance_mi": c["distance_mi"],
+                    "service_type": c["service_type"],
+                    "tessie_link": tessie_drive_id,
+                    "scanned_at": datetime.datetime.now(MDT).isoformat(),
+                }
 
-            # If it is a private trip, we should use 'Private' and the specific classification
-            is_private = c.get("is_private", False)
-            trip_type = "Private" if is_private else "Uber"
-            classification = card.get("classification", "Uber_Matched") if is_private else "Uber_Matched"
+                # If it is a private trip, we should use 'Private' and the specific classification
+                is_private = c.get("is_private", False)
+                trip_type = "Private" if is_private else "Uber"
+                classification = card.get("classification", "Uber_Matched") if is_private else "Uber_Matched"
 
-            try:
                 cursor.execute("""
                     INSERT INTO Rides.Rides
                     (RideID, TripType, Timestamp_Start, Fare, Driver_Earnings, Tip, Platform_Cut,
@@ -579,30 +608,32 @@ class CloudWatcherService:
                     tessie_drive_id
                 ))
                 logs.append(f"SAVED: {trip_id} — Trip #{i} — ${card.get('driver_earnings', 0):.2f}")
-            except Exception as e:
-                logs.append(f"ERROR saving {trip_id}: {e}")
-                log.error(f"Error inserting {trip_id}: {e}")
-                continue
 
-            trips_out.append({
-                "trip_id": trip_id,
-                "trip_number": i,
-                "timestamp": trip_dt.isoformat() if trip_dt else None,
-                "time_display": trip_dt.strftime("%#I:%M %p" if os.name == "nt" else "%-I:%M %p") if trip_dt else "Unknown",
-                "service_type": c["service_type"] or "UberX",
-                "driver_earnings": card.get("driver_earnings") or 0,
-                "rider_payment": card.get("rider_payment") or 0,
-                "tip": card.get("tip") or 0,
-                "uber_cut": uber_cut,
-                "pickup": c["pickup"],
-                "dropoff": c["dropoff"],
-                "duration_min": c["duration_min"],
-                "distance_mi": c["distance_mi"],
-                "filename": c["filename"],
-            })
+                trips_out.append({
+                    "trip_id": trip_id,
+                    "trip_number": i,
+                    "timestamp": trip_dt.isoformat() if trip_dt else None,
+                    "time_display": trip_dt.strftime("%#I:%M %p" if os.name == "nt" else "%-I:%M %p") if trip_dt else "Unknown",
+                    "service_type": c["service_type"] or "UberX",
+                    "driver_earnings": card.get("driver_earnings") or 0,
+                    "rider_payment": card.get("rider_payment") or 0,
+                    "tip": card.get("tip") or 0,
+                    "uber_cut": uber_cut,
+                    "pickup": c["pickup"],
+                    "dropoff": c["dropoff"],
+                    "duration_min": c["duration_min"],
+                    "distance_mi": c["distance_mi"],
+                    "filename": c["filename"],
+                })
 
-        conn.commit()
-        cursor.close()
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+            logs.append(f"CRITICAL DATABASE ERROR: {e}. Transaction rolled back.")
+            log.error(f"Database transaction rolled back for {date_str}: {e}")
+            raise e
+        finally:
+            cursor.close()
 
         total_earnings = round(sum(t["driver_earnings"] for t in trips_out), 2)
         logs.append(f"DONE: {len(trips_out)} trips saved. Total earnings: ${total_earnings}")

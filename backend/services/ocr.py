@@ -55,7 +55,9 @@ class OCRClient:
         try:
             result = self.client.analyze(
                 image_data=image_bytes,
-                visual_features=[VisualFeatures.READ]
+                visual_features=[VisualFeatures.READ],
+                timeout=5,
+                retry_total=0
             )
             return self._parse_analysis_result(result)
         except Exception as e:
