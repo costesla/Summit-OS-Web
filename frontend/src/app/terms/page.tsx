@@ -34,10 +34,13 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">2. Service Description</h2>
-            <p>
+            <p className="mb-4">
               COS Tesla LLC provides private passenger transportation services in El Paso
               County, Colorado and surrounding areas. Service is subject to driver
               availability and geographic coverage.
+            </p>
+            <p className="text-sm text-gray-400">
+              COS Tesla LLC operates as a prearranged luxury transportation service under Colorado Department of Regulatory Agencies (DORA) Public Utilities Commission Permit No. <span className="text-cyan-400 font-mono">0250</span> (issued in 2026).
             </p>
           </section>
 
@@ -83,10 +86,13 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">7. Governing Law</h2>
-            <p>
+            <h2 className="text-xl font-semibold text-white mb-3">7. Governing Law & Regulatory Oversight</h2>
+            <p className="mb-4">
               These terms are governed by the laws of the State of Colorado. Any disputes
               will be resolved in El Paso County, Colorado courts.
+            </p>
+            <p className="text-sm text-gray-400">
+              As a Limited Regulation Carrier, our operations are subject to safety and insurance oversight by the Colorado Public Utilities Commission (PUC). For inquiries or to file a passenger complaint, you may contact the PUC Consumer Affairs Unit directly at 303-894-2000 or visit their official website.
             </p>
           </section>
 

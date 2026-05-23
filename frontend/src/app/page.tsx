@@ -289,7 +289,9 @@ export default function Home() {
             <p className="text-xs text-slate-500">
               &copy; {new Date().getFullYear()} COS Tesla LLC.
             </p>
-
+            <p className="text-xs text-slate-500 font-mono">
+              CO PUC 0250
+            </p>
           </div>
         </div>
       </footer>

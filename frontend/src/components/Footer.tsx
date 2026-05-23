@@ -16,8 +16,9 @@ export default function Footer() {
                     <span className="hover:text-white cursor-pointer transition-colors">Terms of Service</span>
                 </div>
 
-                <div className="pt-8 border-t border-white/5 text-gray-600 text-xs">
-                    © {new Date().getFullYear()} COS Tesla LLC. All rights reserved.
+                <div className="pt-8 border-t border-white/5 text-gray-600 text-xs flex flex-col items-center gap-1">
+                    <span>© {new Date().getFullYear()} COS Tesla LLC. All rights reserved.</span>
+                    <span className="font-mono opacity-80">CO PUC 0250</span>
                 </div>
             </div>
         </footer>
