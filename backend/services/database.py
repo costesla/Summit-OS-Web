@@ -355,6 +355,8 @@ class DatabaseClient:
             cat = exp.get("category")
             if cat in ["Maintenance", "General_Expense"]:
                 capital_maintenance.append(exp)
+            elif cat == "Charging_Session":
+                charging.append(exp)
             else:
                 fastfood.append(exp)
         

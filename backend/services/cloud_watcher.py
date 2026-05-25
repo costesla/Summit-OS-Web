@@ -341,7 +341,7 @@ class CloudWatcherService:
                                     "type": "image_url",
                                     "image_url": {
                                         "url": f"data:image/jpeg;base64,{b64}",
-                                        "detail": "auto"
+                                        "detail": "high"
                                     }
                                 }
                             ]
@@ -756,6 +756,14 @@ class CloudWatcherService:
             name = file.get("name", "")
             item_id = file.get("id")
             try:
+                # Extract capture date from filename (e.g. Screenshot_20260524_...)
+                import re
+                capture_date = date_str
+                date_match = re.search(r'(20\d{6})', name)
+                if date_match:
+                    raw_date = date_match.group(1)
+                    capture_date = f"{raw_date[:4]}-{raw_date[4:6]}-{raw_date[6:]}"
+
                 content = self.graph.get_file_content(item_id)
                 import base64
                 from openai import OpenAI
@@ -767,13 +775,15 @@ class CloudWatcherService:
                 prompt = (
                     "This is an image of a business expense receipt or proof of payment. This includes paper/digital receipts (e.g. coffee, food, gas, parts, maintenance), AND mobile banking/credit card transaction screenshots (e.g. Chase, Amex, Apple Pay) that clearly document a business-related charge (such as 'TESLA SUPERCHARGER', fuel, tolls, or supplies).\n"
                     "Analyze the image and extract the transaction details.\n"
+                    f"Note: This screenshot/image was captured on {capture_date}. If the screenshot mentions 'Today', 'Yesterday', or relative days, resolve them relative to the capture date {capture_date}.\n"
+                    "Note on Charging/Tessie screenshots: If the screenshot displays both 'Electric Cost' and 'Fuel Cost' (gasoline equivalent comparison), the actual business expense amount paid is the 'Electric Cost' (e.g. $13.67), NOT the 'Fuel Cost' comparison (e.g. $25.22). Set the 'amount' to the 'Electric Cost' value, and the 'category' to 'Charging_Session'.\n"
                     "Return ONLY a JSON object with these keys:\n"
                     "  is_expense_receipt: true if this is a business expense receipt or a mobile banking transaction screenshot of a business-related charge (e.g. Tesla Supercharger, Starbucks, gas, shop maintenance). Return false if it is a completed Uber/ride-hailing trip receipt (where you earned money), a generic personal screen, or unrelated.\n"
                     "  merchant: Name of the business (e.g. 'Starbucks', 'McDonald\'s', 'Circle K', 'Shell', 'Tesla Supercharger')\n"
                     "  amount: Total transaction amount as a number (e.g. 15.45)\n"
                     "  tax: Tax amount as a number, if visible (otherwise 0.0)\n"
                     "  category: Select one from: 'Meal_Receipt', 'Fuel_Receipt', 'Maintenance', 'Charging_Session', 'ATM_Receipt', 'General_Expense'\n"
-                    "  date_time: The date and time of the transaction in YYYY-MM-DD HH:MM:SS format (e.g. '2026-05-19 08:32:00'). If time is not visible, use '12:00:00'. If date is not visible, estimate from context or use the current year/month/day.\n"
+                    f"  date_time: The date and time of the transaction in YYYY-MM-DD HH:MM:SS format (e.g. '{capture_date} 08:32:00'). If time is not visible, use '12:00:00'. If date is not visible, resolve relative terms like 'Today' to {capture_date}, or estimate from context.\n"
                     "  items: List of items purchased, if readable (e.g. ['Grande Latte', 'Croissant']). For banking transactions with no items, return an empty list.\n"
                     "  currency: 'USD'\n"
                     "Return ONLY valid JSON, no markdown."
@@ -789,7 +799,7 @@ class CloudWatcherService:
                                 "type": "image_url",
                                 "image_url": {
                                     "url": f"data:image/jpeg;base64,{b64}",
-                                    "detail": "auto"
+                                    "detail": "high"
                                 }
                             }
                         ]
