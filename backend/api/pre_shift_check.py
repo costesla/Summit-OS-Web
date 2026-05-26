@@ -442,7 +442,7 @@ async def _get_graph_token() -> str | None:
     if cached and cached["expires_at"] > now + 60:
         return cached["value"]
 
-    import aiohttp
+    import requests as _req
     url  = f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
     data = {
         "grant_type": "client_credentials",
@@ -450,16 +450,19 @@ async def _get_graph_token() -> str | None:
         "client_secret": client_secret,
         "scope": "https://graph.microsoft.com/.default",
     }
-    async with aiohttp.ClientSession() as session:
-        async with session.post(url, data=data, timeout=aiohttp.ClientTimeout(total=5)) as r:
-            if r.status != 200:
-                return None
-            resp_data = await r.json()
-            token_val = resp_data.get("access_token")
-            expires_in = int(resp_data.get("expires_in", 3600))
-            _graph_token_cache["token"] = {"value": token_val,
-                                           "expires_at": now + expires_in}
-            return token_val
+    try:
+        resp = _req.post(url, data=data, timeout=5)
+        if resp.status_code != 200:
+            return None
+        resp_data = resp.json()
+        token_val = resp_data.get("access_token")
+        expires_in = int(resp_data.get("expires_in", 3600))
+        _graph_token_cache["token"] = {"value": token_val,
+                                       "expires_at": now + expires_in}
+        return token_val
+    except Exception as e:
+        log.warning(f"Failed to fetch MS Graph token: {e}")
+        return None
 
 
 def _build_onedrive_path(date_str: str, subfolder_hint: str = "Uber Driver") -> str:
@@ -493,27 +496,28 @@ async def _graph_count_files(token: str, folder_path: str,
     if not drive_id:
         raise ValueError("ONEDRIVE_DRIVE_ID not configured")
 
-    import aiohttp
+    import requests as _req
     encoded = folder_path.replace(" ", "%20")
     url = (f"https://graph.microsoft.com/v1.0/drives/{drive_id}"
            f"/root:/{encoded}:/children?$select=name,size&$top=999")
     headers = {"Authorization": f"Bearer {token}"}
 
-    async def _fetch(session):
-        async with session.get(url, headers=headers,
-                               timeout=aiohttp.ClientTimeout(total=_ONEDRIVE_TIMEOUT_S)) as r:
-            if r.status == 429:
-                retry_after = int(r.headers.get("Retry-After", "2"))
-                await asyncio.sleep(min(retry_after, 3))
-                async with session.get(url, headers=headers,
-                                       timeout=aiohttp.ClientTimeout(total=_ONEDRIVE_TIMEOUT_S)) as r2:
-                    r2.raise_for_status()
-                    return await r2.json()
-            r.raise_for_status()
-            return await r.json()
+    def _fetch():
+        resp = _req.get(url, headers=headers, timeout=_ONEDRIVE_TIMEOUT_S)
+        if resp.status_code == 429:
+            retry_after = int(resp.headers.get("Retry-After", "2"))
+            time.sleep(min(retry_after, 3))
+            resp = _req.get(url, headers=headers, timeout=_ONEDRIVE_TIMEOUT_S)
+        resp.raise_for_status()
+        return resp.json()
 
-    async with aiohttp.ClientSession() as session:
-        data = await _fetch(session)
+    try:
+        loop = asyncio.get_running_loop()
+        data = await loop.run_in_executor(None, _fetch)
+    except Exception as e:
+        if "404" in str(e):
+            return 0  # folder not found is 0 files
+        raise
 
     files = data.get("value", [])
     count = 0
