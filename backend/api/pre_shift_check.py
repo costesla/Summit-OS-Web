@@ -751,13 +751,16 @@ def _score_tier3(db_r: dict, onedrive_r: dict, bank_r: dict, date_str: str = "")
     # Same-day grace: expense screenshots may not yet be uploaded to OneDrive
     today_mt = datetime.datetime.now(_MT).strftime("%Y-%m-%d")
     is_today = (date_str == today_mt)
-    if is_today and od_v == 0:
-        od_v = None
-        onedrive_r = dict(onedrive_r)
-        onedrive_r["value"] = None
-        onedrive_r["status"] = "UNAVAILABLE"
-        onedrive_r["error"] = "Same-day sync lag — expense screenshots not yet uploaded to OneDrive"
-        notes.append("OneDrive: same-day sync lag — expense screenshots not yet uploaded (treated as unavailable)")
+    if is_today:
+        best_count = db_v if (db_v is not None and db_v > 0) else None
+        if best_count and best_count > 0:
+            if od_v == 0:
+                od_v = None
+                onedrive_r = dict(onedrive_r)
+                onedrive_r["value"] = None
+                onedrive_r["status"] = "UNAVAILABLE"
+                onedrive_r["error"] = "Same-day sync lag — expense screenshots not yet uploaded to OneDrive"
+                notes.append("OneDrive: same-day sync lag — expense screenshots not yet uploaded (treated as unavailable)")
 
     available = [(s, v) for s, v in [("db", db_v), ("onedrive", od_v), ("bank", bnk_v)]
                  if v is not None]
