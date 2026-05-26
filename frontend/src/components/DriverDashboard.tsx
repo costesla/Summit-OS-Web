@@ -390,7 +390,7 @@ const TessieDrivesPanel = ({
     selectedDate: string;
     refreshKey?: number;
     privatePayments?: PrivatePayment[];
-    chargingExpenses?: any[];
+    chargingExpenses?: Expense[];
 }) => {
     const [drives, setDrives] = useState<TessieDrive[]>([]);
     const [loading, setLoading] = useState(true);
