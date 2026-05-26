@@ -383,12 +383,14 @@ const TessieDrivesPanel = ({
     onImport,
     selectedDate,
     refreshKey,
-    privatePayments = []
+    privatePayments = [],
+    chargingExpenses = []
 }: {
     onImport: (drive: TessieDrive) => void;
     selectedDate: string;
     refreshKey?: number;
     privatePayments?: PrivatePayment[];
+    chargingExpenses?: any[];
 }) => {
     const [drives, setDrives] = useState<TessieDrive[]>([]);
     const [loading, setLoading] = useState(true);
@@ -525,27 +527,121 @@ const TessieDrivesPanel = ({
                                                 </span>
                                             )
                                     )}
-                                    {drive.tag &&
-                                     !drive.tag.toLowerCase().includes('uber') &&
-                                     !drive.tag.toLowerCase().includes('uncategorized') &&
-                                     !drive.tag.toLowerCase().includes('untagged') && (() => {
-                                        const tagLower = drive.tag.toLowerCase();
-                                        const matchedPayment = (privatePayments || []).find((p) => {
-                                            if (p.date !== drive.date || !p.client) return false;
-                                            const clientLower = p.client.toLowerCase();
-                                            return tagLower.includes(clientLower);
-                                        });
-                                        return matchedPayment && matchedPayment.amount > 0 ? (
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 border-emerald-200 text-emerald-700">
-                                                <span>✓ Paid</span>
-                                                <span>(${matchedPayment.amount.toFixed(2)})</span>
-                                            </span>
-                                        ) : (
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-rose-50 border-rose-200 text-rose-700">
-                                                <span>✗ Unpaid</span>
-                                            </span>
-                                        );
-                                    })()}
+                                     {drive.tag &&
+                                      !drive.tag.toLowerCase().includes('uber') &&
+                                      !drive.tag.toLowerCase().includes('uncategorized') &&
+                                      !drive.tag.toLowerCase().includes('untagged') && (() => {
+                                         const tagLower = drive.tag.toLowerCase();
+
+                                         // 1. Check if it's an operational charging session
+                                         if (tagLower.includes('charging') || tagLower.includes('supercharger')) {
+                                             const numMatch = tagLower.match(/(?:session|charging)\s*(\d+)/) || tagLower.match(/(\d+)/);
+                                             const sessionNum = numMatch ? numMatch[1] : null;
+                                             let matchedExpense = null;
+                                             
+                                             if (sessionNum && chargingExpenses && chargingExpenses.length > 0) {
+                                                 matchedExpense = chargingExpenses.find(e => {
+                                                     const noteLower = (e.note ?? '').toLowerCase();
+                                                     return noteLower.includes(`session ${sessionNum}`) || 
+                                                            noteLower.includes(`charging ${sessionNum}`) || 
+                                                            noteLower.includes(`charge ${sessionNum}`) ||
+                                                            (sessionNum === '1' && !noteLower.includes('session 2') && !noteLower.includes('session 3'));
+                                                 });
+                                             }
+                                             if (!matchedExpense && drive.time_mst && chargingExpenses && chargingExpenses.length > 0) {
+                                                 const [dH, dM] = drive.time_mst.split(':').map(Number);
+                                                 const driveMins = dH * 60 + dM;
+                                                 let minDiff = 120;
+                                                 for (const exp of chargingExpenses) {
+                                                     const noteLower = (exp.note ?? '').toLowerCase();
+                                                     const timeMatch = noteLower.match(/(\d{1,2}):(\d{2})/);
+                                                     if (timeMatch) {
+                                                         const [eH, eM] = timeMatch.map(Number);
+                                                         const expMins = eH * 60 + eM;
+                                                         const diff = Math.abs(driveMins - expMins);
+                                                         if (diff < minDiff) {
+                                                             minDiff = diff;
+                                                             matchedExpense = exp;
+                                                         }
+                                                     }
+                                                 }
+                                             }
+                                             if (!matchedExpense && chargingExpenses && chargingExpenses.length === 1) {
+                                                 matchedExpense = chargingExpenses[0];
+                                             }
+                                             if (matchedExpense && matchedExpense.amount > 0) {
+                                                 return (
+                                                     <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-50 border-amber-200 text-amber-700">
+                                                         <span>⚡ Charged</span>
+                                                         <span>(${matchedExpense.amount.toFixed(2)})</span>
+                                                     </span>
+                                                 );
+                                             }
+                                             return (
+                                                 <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-50 border-slate-200 text-slate-500">
+                                                     <span>⚡ Charging Session</span>
+                                                 </span>
+                                             );
+                                         }
+
+                                         // 2. Check other common operational/non-passenger tags
+                                         if (tagLower.includes('reposition')) {
+                                             return (
+                                                 <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-50 border-slate-200 text-slate-600">
+                                                     <span>📍 Repositioning</span>
+                                                 </span>
+                                             );
+                                         }
+                                         if (tagLower.includes('staging')) {
+                                             return (
+                                                 <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-50 border-slate-200 text-slate-600">
+                                                     <span>📍 Staging</span>
+                                                 </span>
+                                             );
+                                         }
+                                         if (tagLower.includes('home')) {
+                                             return (
+                                                 <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-50 border-slate-200 text-slate-600">
+                                                     <span>🏠 Home</span>
+                                                 </span>
+                                             );
+                                         }
+                                         if (tagLower.includes('quickquack') || tagLower.includes('wash') || tagLower.includes('clean')) {
+                                             return (
+                                                 <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-50 border-slate-200 text-slate-600">
+                                                     <span>🧼 Car Wash</span>
+                                                 </span>
+                                             );
+                                         }
+                                         if (tagLower.includes('starbucks') || tagLower.includes('whataburger') || tagLower.includes('maverik') || tagLower.includes('mcdonald') || tagLower.includes('burger') || tagLower.includes('wingstop') || tagLower.includes('food') || tagLower.includes('drink') || tagLower.includes('meal')) {
+                                             let displayTag = '🍴 Break';
+                                             if (tagLower.includes('starbucks')) displayTag = '☕ Starbucks';
+                                             else if (tagLower.includes('whataburger')) displayTag = '🍔 Whataburger';
+                                             else if (tagLower.includes('maverik')) displayTag = '🍴 Maverik';
+                                             return (
+                                                 <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-50 border-slate-200 text-slate-600">
+                                                     <span>{displayTag}</span>
+                                                 </span>
+                                             );
+                                         }
+
+                                         // 3. Fallback to private passenger payment client matching
+                                         const matchedPayment = (privatePayments || []).find((p) => {
+                                             if (p.date !== drive.date || !p.client) return false;
+                                             const clientLower = p.client.toLowerCase();
+                                             return tagLower.includes(clientLower);
+                                         });
+                                         return matchedPayment && matchedPayment.amount > 0 ? (
+                                             <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 border-emerald-200 text-emerald-700">
+                                                 <span>✓ Paid</span>
+                                                 <span>(${matchedPayment.amount.toFixed(2)})</span>
+                                             </span>
+                                         ) : (
+                                             <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-rose-50 border-rose-200 text-rose-700">
+                                                 <span>✗ Unpaid</span>
+                                             </span>
+                                         );
+                                     })()}
                                 </div>
                                 {(drive.start || drive.end) && (
                                     <div className="flex items-start gap-1.5 text-[11px] text-slate-600">
@@ -2559,7 +2655,13 @@ const DriverDashboard = () => {
                         onTripsLoaded={(count, earnings) => setUberStats({ count, earnings })}
                     />
 
-                    <TessieDrivesPanel onImport={() => {}} selectedDate={selectedDate} refreshKey={drivesRefreshKey} privatePayments={privatePayments} />
+                    <TessieDrivesPanel 
+                        onImport={() => {}} 
+                        selectedDate={selectedDate} 
+                        refreshKey={drivesRefreshKey} 
+                        privatePayments={privatePayments} 
+                        chargingExpenses={expenses.charging} 
+                    />
 
                     <AuditLedgerModal 
                         isOpen={isAuditOpen} 
