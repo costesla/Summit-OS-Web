@@ -1829,9 +1829,9 @@ const IntelligenceSyncPanel: React.FC<{
         <div id="intelligence-sync-panel" className="p-6 md:p-8 rounded-2xl border border-slate-200/80 bg-white/80 shadow-md backdrop-blur-md relative overflow-hidden group shadow-slate-100/50">
             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-3xl rounded-full pointer-events-none group-hover:bg-blue-500/10 transition-all duration-1000" />
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 xl:gap-14">
+            <div className="space-y-6 divide-y divide-slate-100">
                 
-                {/* Left Column: Intelligence Sync & Controls */}
+                {/* Block 1: Intelligence Sync & Controls */}
                 <div className="space-y-5">
                     <div className="flex justify-between items-start">
                         <div>
@@ -1877,34 +1877,24 @@ const IntelligenceSyncPanel: React.FC<{
                         </div>
                     </div>
 
-                    {/* Spaced Buttons Grid with Color & Priority Discipline */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        {/* Tertiary Action: Create Folders (Subtle Slate Outline) */}
-                        <button
-                            disabled={status === 'running'}
-                            onClick={() => runSync(false)}
-                            className="flex flex-col items-center justify-center gap-1 py-3 px-2 rounded-xl text-[10px] font-bold bg-slate-50 border border-slate-200/80 text-slate-600 hover:bg-slate-100 hover:text-slate-800 transition-all duration-300 disabled:opacity-50 shadow-sm"
-                        >
-                            <span>Create Folders</span>
-                            <span className="text-[8px] font-normal text-slate-400/90 normal-case">OneDrive structure</span>
-                        </button>
-
-                        {/* Primary Action: Rebuild Day (Solid Gold Badge Accent) */}
+                    {/* Optimized Button Hierarchy for Narrow Sidebar Column */}
+                    <div className="space-y-3">
+                        {/* Primary Action: Rebuild Day (Full Width) */}
                         <button
                             disabled={status === 'running'}
                             onClick={runDailySync}
-                            className="flex flex-col items-center justify-center gap-1 py-3 px-2 rounded-xl text-[10px] font-black bg-amber-500 hover:bg-amber-600 border border-amber-600/35 text-white transition-all duration-300 disabled:opacity-50 shadow shadow-amber-500/10"
+                            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-black bg-amber-500 hover:bg-amber-600 border border-amber-600/35 text-white transition-all duration-300 disabled:opacity-50 shadow shadow-amber-500/10"
                         >
                             <span>Rebuild Day</span>
-                            <span className="text-[8px] font-medium text-amber-50/90 normal-case">Tessie + Bank + Scan</span>
+                            <span className="text-[9px] font-normal text-amber-50/80 normal-case">(Tessie + Bank + Scan)</span>
                         </button>
 
-                        {/* Secondary Actions: Scan Day / Custom Folder (Emerald Outline Theme) */}
-                        <div className="flex flex-col gap-1.5">
+                        {/* Secondary Actions: Scan Day / Custom Folder (Side-by-Side 2 Column Row) */}
+                        <div className="grid grid-cols-2 gap-3">
                             <button
                                 disabled={status === 'running'}
                                 onClick={runScanDay}
-                                className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2 px-2 rounded-t-xl text-[10px] font-black bg-emerald-50 border-2 border-emerald-500 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 transition-all duration-300 disabled:opacity-50 shadow-sm"
+                                className="flex flex-col items-center justify-center gap-0.5 py-2.5 px-2 rounded-xl text-[10px] font-black bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 transition-all duration-300 disabled:opacity-50 shadow-sm"
                             >
                                 <span>Scan Day</span>
                                 <span className="text-[8px] font-medium text-emerald-600/90 normal-case">OneDrive Auto-scan</span>
@@ -1912,11 +1902,21 @@ const IntelligenceSyncPanel: React.FC<{
                             <button
                                 disabled={status === 'running'}
                                 onClick={runOneDriveSyncCustom}
-                                className="flex items-center justify-center gap-1 py-1.5 px-2 rounded-b-xl text-[9px] font-bold bg-white border border-emerald-200/80 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 transition-all duration-300 disabled:opacity-50 shadow-sm"
+                                className="flex items-center justify-center gap-1 py-2 px-2 rounded-xl text-[10px] font-bold bg-white border border-emerald-200/80 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 transition-all duration-300 disabled:opacity-50 shadow-sm"
                             >
                                 <span>Custom Folder ↗</span>
                             </button>
                         </div>
+
+                        {/* Tertiary Action: Create Folders (Full Width) */}
+                        <button
+                            disabled={status === 'running'}
+                            onClick={() => runSync(false)}
+                            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-[10px] font-bold bg-slate-50 border border-slate-200/80 text-slate-600 hover:bg-slate-100 hover:text-slate-800 transition-all duration-300 disabled:opacity-50 shadow-sm"
+                        >
+                            <span>Create Folders</span>
+                            <span className="text-[8px] font-normal text-slate-400/90 normal-case">(OneDrive structure)</span>
+                        </button>
                     </div>
 
                     {/* Console Log Window */}
@@ -1948,15 +1948,15 @@ const IntelligenceSyncPanel: React.FC<{
                     </div>
                 </div>
 
-                {/* Right Column: Pre-Shift Health Check & Verification */}
-                <div className="lg:border-l lg:border-slate-200/80 lg:pl-8 xl:pl-12 pt-6 lg:pt-0 space-y-5 flex flex-col justify-between">
+                {/* Block 2: Pre-Shift Health Check & Verification */}
+                <div className="pt-6 space-y-5">
                     <div>
                         <h2 className="text-base font-bold flex items-center gap-2 text-slate-800">
                             <HeartPulse className="w-4 h-4 text-emerald-600" /> System Health Check
                         </h2>
                         <p className="text-xs font-semibold text-slate-500 tracking-wide">Multi-Source Telemetry Consensus</p>
                     </div>
-                    <div className="flex-1 py-1">
+                    <div className="py-1">
                         <PreShiftCard selectedDate={selectedDate} isEmbedded={true} />
                     </div>
                 </div>
