@@ -6,7 +6,7 @@ import {
     Navigation, Receipt, RotateCcw, Clock,
     Battery, BatteryCharging, WifiOff, Download,
     MapPin, Gauge, LogOut, Cpu, RefreshCw, Loader2,
-    DollarSign, Cloud, Moon
+    DollarSign, Cloud, Moon, HeartPulse
 } from 'lucide-react';
 import { isBackgroundableError, devDebugError, getAsyncExecutionLogs, pollJobStatus } from '../../../../src/lib/intelligenceUtils';
 
@@ -500,7 +500,7 @@ const TierRow = ({ label, tier }: { label: string; tier?: TierResult }) => {
     );
 };
 
-const PreShiftCard = ({ selectedDate }: { selectedDate: string }) => {
+const PreShiftCard = ({ selectedDate, isEmbedded = false }: { selectedDate: string, isEmbedded?: boolean }) => {
     const STORAGE_KEY = `summitos-preshift-collapsed-${selectedDate}`;
 
     const [data, setData] = useState<PreShiftPayload | null>(null);
@@ -508,6 +508,16 @@ const PreShiftCard = ({ selectedDate }: { selectedDate: string }) => {
     const [collapsed, setCollapsed] = useState<boolean>(() => {
         try { return localStorage.getItem(STORAGE_KEY) === '1'; } catch { return false; }
     });
+
+    const wrapperClass = (cls: string) => {
+        if (isEmbedded) {
+            return cls
+                .replace(/rounded-2xl|border-slate-200\/80|border-slate-200|border-emerald-200|border-amber-200|border-orange-200|border|bg-white\/80|bg-white\/70|shadow-sm|backdrop-blur-md|backdrop-blur-lg|backdrop-blur/g, '')
+                .replace(/\bp-4\b/g, 'p-0')
+                .trim();
+        }
+        return cls;
+    };
     const [lastRun, setLastRun] = useState<string | null>(null);
     const [fixStatus, setFixStatus] = useState<AutoFixStatus>('idle');
     const [fixResult, setFixResult] = useState<AutoFixResult | null>(null);
@@ -623,8 +633,8 @@ const PreShiftCard = ({ selectedDate }: { selectedDate: string }) => {
     // Skeleton
     if (loading) {
         return (
-            <div className="rounded-2xl border border-slate-200/80 bg-white/80 p-4 space-y-3 animate-pulse"
-                style={{ backdropFilter: 'blur(16px)' }}>
+            <div className={wrapperClass("rounded-2xl border border-slate-200/80 bg-white/80 p-4 space-y-3 animate-pulse")}
+                style={isEmbedded ? {} : { backdropFilter: 'blur(16px)' }}>
                 <div className="flex items-center gap-3">
                     <div className="w-4 h-4 rounded-full bg-slate-200" />
                     <div className="h-3 w-40 bg-slate-200 rounded-full" />
@@ -646,8 +656,8 @@ const PreShiftCard = ({ selectedDate }: { selectedDate: string }) => {
     // Fixing in progress
     if (fixStatus === 'fixing') {
         return (
-            <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4"
-                style={{ backdropFilter: 'blur(16px)' }}>
+            <div className={wrapperClass("rounded-2xl border border-amber-200 bg-amber-50/80 p-4")}
+                style={isEmbedded ? {} : { backdropFilter: 'blur(16px)' }}>
                 <div className="flex items-center gap-3">
                     <Loader2 className="w-4 h-4 text-amber-500 animate-spin shrink-0" />
                     <div>
@@ -662,8 +672,8 @@ const PreShiftCard = ({ selectedDate }: { selectedDate: string }) => {
     // Fixed & verified
     if (fixStatus === 'fixed' && fixVerified && overall === 'PASS') {
         return (
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 space-y-2"
-                style={{ backdropFilter: 'blur(16px)' }}>
+            <div className={wrapperClass("rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 space-y-2")}
+                style={isEmbedded ? {} : { backdropFilter: 'blur(16px)' }}>
                 <div className="flex items-center gap-3">
                     <div className="w-4 h-4 rounded-full bg-emerald-500 shrink-0" />
                     <div>
@@ -691,8 +701,8 @@ const PreShiftCard = ({ selectedDate }: { selectedDate: string }) => {
         const manualActions = fixResult?.actions.filter(a => a.action === 'MANUAL_REQUIRED') ?? [];
         const flagged       = fixResult?.actions.filter(a => a.action === 'FLAGGED') ?? [];
         return (
-            <div className="rounded-2xl border border-orange-200 bg-orange-50/80 p-4 space-y-3"
-                style={{ backdropFilter: 'blur(16px)' }}>
+            <div className={wrapperClass("rounded-2xl border border-orange-200 bg-orange-50/80 p-4 space-y-3")}
+                style={isEmbedded ? {} : { backdropFilter: 'blur(16px)' }}>
                 <div className="flex items-center gap-3">
                     <div className="w-4 h-4 rounded-full bg-orange-400 animate-pulse shrink-0" />
                     <div>
@@ -718,8 +728,8 @@ const PreShiftCard = ({ selectedDate }: { selectedDate: string }) => {
     // N_A / unavailable
     if (!data || data.overall_status === 'N_A') {
         return (
-            <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-4"
-                style={{ backdropFilter: 'blur(16px)' }}>
+            <div className={wrapperClass("rounded-2xl border border-slate-200/80 bg-white/70 p-4")}
+                style={isEmbedded ? {} : { backdropFilter: 'blur(16px)' }}>
                 <div className="flex items-center gap-3">
                     <div className="w-4 h-4 rounded-full bg-slate-300 shrink-0" />
                     <span className="text-xs font-semibold text-slate-500">Pre-Shift Check — systems unavailable</span>
@@ -736,8 +746,8 @@ const PreShiftCard = ({ selectedDate }: { selectedDate: string }) => {
     // Full card
     const canAutoFix = (overall === 'FAIL' || overall === 'WARN') && fixStatus === 'idle';
     return (
-        <div className={`rounded-2xl border p-4 transition-all duration-300 ${statusBg(overall)}`}
-            style={{ backdropFilter: 'blur(16px)', background: 'rgba(255,255,255,0.88)' }}>
+        <div className={wrapperClass(`rounded-2xl border p-4 transition-all duration-300 ${statusBg(overall)}`)}
+            style={isEmbedded ? {} : { backdropFilter: 'blur(16px)', background: 'rgba(255,255,255,0.88)' }}>
 
             <div className="flex items-center gap-3 mb-3">
                 <div className={`w-4 h-4 rounded-full shrink-0 ${statusDot(overall)} ${overall !== 'PASS' ? 'animate-pulse' : ''}`} />
@@ -1774,109 +1784,128 @@ const IntelligenceSyncPanel: React.FC<{
     };
 
     return (
-        <div className="p-6 rounded-2xl border border-slate-200/80 bg-white/80 shadow-sm backdrop-blur-md relative overflow-hidden group">
+        <div id="intelligence-sync-panel" className="p-6 rounded-2xl border border-slate-200/80 bg-white/80 shadow-sm backdrop-blur-md relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-3xl rounded-full pointer-events-none group-hover:bg-blue-500/10 transition-all duration-1000" />
             
-            <div className="flex justify-between items-start mb-1">
-                <div>
-                    <h2 className="text-base font-bold flex items-center gap-2 text-slate-800">
-                        <Cpu className="w-4 h-4 text-blue-600" /> Intelligence Sync
-                    </h2>
-                    <p className="text-xs font-semibold text-slate-500 tracking-wide">Autonomous Pipeline Operating</p>
-                </div>
-                {status === 'running' && (
-                    <div className="flex items-center gap-1.5 px-3 py-1 bg-blue-50 border border-blue-200/80 rounded-full">
-                        <Loader2 className="w-3 h-3 text-blue-600 animate-spin" />
-                        <span className="text-[9px] font-bold text-blue-600 uppercase font-mono tracking-tighter">Running</span>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                {/* Left Column: Intelligence Sync & Controls */}
+                <div className="space-y-4">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <h2 className="text-base font-bold flex items-center gap-2 text-slate-800">
+                                <Cpu className="w-4 h-4 text-blue-600" /> Intelligence Sync
+                            </h2>
+                            <p className="text-xs font-semibold text-slate-500 tracking-wide">Autonomous Pipeline Operating</p>
+                        </div>
+                        {status === 'running' && (
+                            <div className="flex items-center gap-1.5 px-3 py-1 bg-blue-50 border border-blue-200/80 rounded-full shrink-0">
+                                <Loader2 className="w-3 h-3 text-blue-600 animate-spin" />
+                                <span className="text-[9px] font-bold text-blue-600 uppercase font-mono tracking-tighter">Running</span>
+                            </div>
+                        )}
                     </div>
-                )}
-            </div>
 
-            {/* Manual Hours Input */}
-            <div className="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-blue-50 border border-blue-100">
-                    <Clock className="w-4 h-4 text-blue-600" />
-                </div>
-                <div className="flex-1">
-                    <p className="text-xs font-semibold text-slate-500 mb-1">Shift Duration</p>
-                    <div className="flex items-center gap-2">
-                        <input
-                            type="number"
-                            step="0.25"
-                            placeholder="e.g. 6.25"
-                            value={hours || ''}
-                            onChange={(e) => onHoursChange(parseFloat(e.target.value) || 0)}
-                            className="w-20 bg-transparent border-none text-slate-800 font-black text-lg focus:outline-none placeholder-slate-300"
-                        />
-                        <span className="text-xs font-mono text-slate-400 font-bold uppercase">h</span>
-                        {hours > 0 && <span className="text-xs text-emerald-600 font-medium ml-auto">// override active</span>}
+                    {/* Manual Hours Input */}
+                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-blue-50 border border-blue-100 shrink-0">
+                            <Clock className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div className="flex-1">
+                            <p className="text-xs font-semibold text-slate-500 mb-1">Shift Duration</p>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="number"
+                                    step="0.25"
+                                    placeholder="e.g. 6.25"
+                                    value={hours || ''}
+                                    onChange={(e) => onHoursChange(parseFloat(e.target.value) || 0)}
+                                    className="w-20 bg-transparent border-none text-slate-800 font-black text-lg focus:outline-none placeholder-slate-300"
+                                />
+                                <span className="text-xs font-mono text-slate-400 font-bold uppercase">h</span>
+                                {hours > 0 && <span className="text-xs text-emerald-600 font-medium ml-auto">// override active</span>}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+                        <button
+                            disabled={status === 'running'}
+                            onClick={() => runSync(false)}
+                            className="flex flex-col items-center justify-center gap-0.5 py-3 rounded-xl text-[10px] font-bold bg-slate-100 border border-slate-200 text-slate-700 hover:bg-slate-200/80 transition-all disabled:opacity-50"
+                        >
+                            <span>Create Folders</span>
+                            <span className="text-[8px] font-normal text-slate-500 normal-case">OneDrive structure</span>
+                        </button>
+                        <button
+                            disabled={status === 'running'}
+                            onClick={runDailySync}
+                            className="flex flex-col items-center justify-center gap-0.5 py-3 rounded-xl text-[10px] font-bold bg-amber-50 border border-amber-200 text-amber-700 hover:bg-amber-100 transition-all disabled:opacity-50"
+                        >
+                            <span>Rebuild Day</span>
+                            <span className="text-[8px] font-normal text-amber-600/80 normal-case">Tessie + Bank + Scan</span>
+                        </button>
+                        <div className="flex flex-col gap-1">
+                            <button
+                                disabled={status === 'running'}
+                                onClick={runScanDay}
+                                className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 rounded-t-xl text-[10px] font-bold bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 transition-all disabled:opacity-50"
+                            >
+                                <span>Scan Day</span>
+                                <span className="text-[8px] font-normal text-emerald-600/80 normal-case">Auto-scan OneDrive folder</span>
+                            </button>
+                            <button
+                                disabled={status === 'running'}
+                                onClick={runOneDriveSyncCustom}
+                                className="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-b-xl text-[9px] font-bold bg-emerald-50/50 border border-t-0 border-emerald-200 text-emerald-700 hover:bg-emerald-100 transition-all disabled:opacity-50"
+                            >
+                                <span>Custom Folder ↗</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Console Log Window */}
+                    <div className="bg-slate-50 rounded-xl border border-slate-200/80 overflow-hidden shadow-sm">
+                        <div className="px-3 py-1.5 border-b border-slate-200/80 bg-slate-100/50 flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                            <div className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                            <span className="text-[9px] font-mono text-slate-500 font-bold uppercase ml-auto">Intelligence Console</span>
+                        </div>
+                        <div className="p-3 h-32 overflow-y-auto font-mono text-[10px] space-y-1 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+                            {logs.length === 0 ? (
+                                <p className="text-slate-400 italic">// System Ready. Select operation for {selectedDate}.</p>
+                            ) : (
+                                logs.map((log, i) => (
+                                    <p key={i} className={
+                                        log.includes('[ERROR]') || log.includes('[CRITICAL]') || log.includes('ERROR:') ? 'text-rose-600 font-medium' :
+                                        log.includes('[SUCCESS]') || log.includes('MATCH:') || log.includes('ROUTED:') ? 'text-emerald-700 font-semibold' :
+                                        log.includes('SKIP:') ? 'text-slate-400' :
+                                        log.startsWith('>') ? 'text-blue-600 font-bold border-t border-slate-200 pt-1 mt-1' :
+                                        'text-slate-600'
+                                    }>
+                                        {log}
+                                    </p>
+                                ))
+                            )}
+                            {status === 'running' && <p className="text-blue-500 animate-pulse">_</p>}
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 mb-4 mt-4">
-                <button
-                    disabled={status === 'running'}
-                    onClick={() => runSync(false)}
-                    className="flex flex-col items-center justify-center gap-0.5 py-3 rounded-xl text-[10px] font-bold bg-slate-100 border border-slate-200 text-slate-700 hover:bg-slate-200/80 transition-all disabled:opacity-50"
-                >
-                    <span>Create Folders</span>
-                    <span className="text-[8px] font-normal text-slate-500 normal-case">OneDrive structure</span>
-                </button>
-                <button
-                    disabled={status === 'running'}
-                    onClick={runDailySync}
-                    className="flex flex-col items-center justify-center gap-0.5 py-3 rounded-xl text-[10px] font-bold bg-amber-50 border border-amber-200 text-amber-700 hover:bg-amber-100 transition-all disabled:opacity-50"
-                >
-                    <span>Rebuild Day</span>
-                    <span className="text-[8px] font-normal text-amber-600/80 normal-case">Tessie + Bank + Scan</span>
-                </button>
-                {/* Scan Day: auto-path from selected date, no prompt, no file picker */}
-                <div className="flex flex-col gap-1">
-                    <button
-                        disabled={status === 'running'}
-                        onClick={runScanDay}
-                        className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 rounded-t-xl text-[10px] font-bold bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 transition-all disabled:opacity-50"
-                    >
-                        <span>Scan Day</span>
-                        <span className="text-[8px] font-normal text-emerald-600/80 normal-case">Auto-scan OneDrive folder</span>
-                    </button>
-                    <button
-                        disabled={status === 'running'}
-                        onClick={runOneDriveSyncCustom}
-                        className="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-b-xl text-[9px] font-bold bg-emerald-50/50 border border-t-0 border-emerald-200 text-emerald-700 hover:bg-emerald-100 transition-all disabled:opacity-50"
-                    >
-                        <span>Custom Folder ↗</span>
-                    </button>
+                {/* Right Column: Pre-Shift Health Check & Verification */}
+                <div className="lg:border-l lg:border-slate-200/80 lg:pl-6 pt-6 lg:pt-0 space-y-4 flex flex-col justify-between">
+                    <div>
+                        <h2 className="text-base font-bold flex items-center gap-2 text-slate-800">
+                            <HeartPulse className="w-4 h-4 text-emerald-600" /> System Health Check
+                        </h2>
+                        <p className="text-xs font-semibold text-slate-500 tracking-wide">Multi-Source Telemetry Consensus</p>
+                    </div>
+                    <div className="flex-1 py-1">
+                        <PreShiftCard selectedDate={selectedDate} isEmbedded={true} />
+                    </div>
                 </div>
-            </div>
 
-            {/* Console Log Window */}
-            <div className="bg-slate-50 rounded-xl border border-slate-200/80 overflow-hidden shadow-sm">
-                <div className="px-3 py-1.5 border-b border-slate-200/80 bg-slate-100/50 flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-rose-400" />
-                    <div className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                    <span className="text-[9px] font-mono text-slate-500 font-bold uppercase ml-auto">Intelligence Console</span>
-                </div>
-                <div className="p-3 h-32 overflow-y-auto font-mono text-[10px] space-y-1 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
-                    {logs.length === 0 ? (
-                        <p className="text-slate-400 italic">// System Ready. Select operation for {selectedDate}.</p>
-                    ) : (
-                        logs.map((log, i) => (
-                            <p key={i} className={
-                                log.includes('[ERROR]') || log.includes('[CRITICAL]') || log.includes('ERROR:') ? 'text-rose-600 font-medium' :
-                                log.includes('[SUCCESS]') || log.includes('MATCH:') || log.includes('ROUTED:') ? 'text-emerald-700 font-semibold' :
-                                log.includes('SKIP:') ? 'text-slate-400' :
-                                log.startsWith('>') ? 'text-blue-600 font-bold border-t border-slate-200 pt-1 mt-1' :
-                                'text-slate-600'
-                            }>
-                                {log}
-                            </p>
-                        ))
-                    )}
-                    {status === 'running' && <p className="text-blue-500 animate-pulse">_</p>}
-                </div>
             </div>
         </div>
     );
@@ -2947,8 +2976,6 @@ const DriverDashboard = () => {
                     {/* ── Tesla Status Bar (TOP) ── */}
                     <TeslaStatusBar />
 
-                    {/* ── Pre-Shift System Check ── */}
-                    <PreShiftCard selectedDate={selectedDate} />
 
 
                     {/* ── Telemetry Curves ── */}
