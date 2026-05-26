@@ -441,8 +441,8 @@ const TierRow = ({ label, tier }: { label: string; tier?: TierResult }) => {
     const conf = tier.confidence;
     const sourceEntries = Object.entries(tier.values);
     return (
-        <div className="flex items-start gap-3 py-2.5 border-b border-slate-100 last:border-0">
-            <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black
+        <div className="flex items-start gap-4 py-3 border-b border-slate-100 last:border-0">
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-xs font-black
                 ${tier.status === 'PASS' ? 'bg-emerald-100 text-emerald-700' :
                   tier.status === 'WARN' ? 'bg-amber-100 text-amber-700' :
                   tier.status === 'FAIL' ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-400'}`}>
@@ -450,14 +450,11 @@ const TierRow = ({ label, tier }: { label: string; tier?: TierResult }) => {
             </div>
             <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-bold text-slate-700">{label}</span>
+                    <span className="text-xs font-bold text-slate-800 tracking-tight">{label}</span>
                     {conf !== null && (
-                        <div className="flex items-center gap-1.5 shrink-0">
-                            <div className="w-16 h-1 bg-slate-100 rounded-full overflow-hidden">
-                                <div className={`h-full ${confBar(conf)} transition-all duration-500`} style={{ width: `${conf}%` }} />
-                            </div>
-                            <span className={`text-[10px] font-mono font-bold tabular-nums ${statusColor(tier.status)}`}>{conf}/100</span>
-                        </div>
+                        <span className={`text-[10px] font-mono font-black tabular-nums ${statusColor(tier.status)}`}>
+                            {conf}<span className="text-slate-400 font-normal text-[9px]">/100</span>
+                        </span>
                     )}
                 </div>
                 {tier.notes.map((n, i) => (
@@ -475,24 +472,33 @@ const TierRow = ({ label, tier }: { label: string; tier?: TierResult }) => {
                     </div>
                 )}
                 {sourceEntries.length > 0 && (
-                    <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                    <div className="flex items-center gap-2 mt-1.5 flex-wrap text-[10px] font-mono text-slate-500 font-medium">
                         {sourceEntries.map(([src, r], i) => (
                             <React.Fragment key={src}>
-                                {i > 0 && <span className="text-slate-300 text-[9px]">·</span>}
+                                {i > 0 && <span className="text-slate-300 font-normal">·</span>}
                                 <span title={`${src}: ${r?.status ?? 'N/A'}`}
-                                    className={`text-[9px] font-bold font-mono flex items-center gap-1
-                                        ${r?.status === 'OK' ? 'text-emerald-600' :
-                                          r?.status === 'UNAVAILABLE' ? 'text-slate-400' : 'text-amber-600'}`}>
-                                    <span className={`w-1.5 h-1.5 rounded-full inline-block ${statusDot(r?.status)}`} />
+                                    className={`flex items-center gap-1
+                                        ${r?.status === 'OK' ? 'text-slate-700' :
+                                          r?.status === 'UNAVAILABLE' ? 'text-slate-400' : 'text-amber-600 font-semibold'}`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full inline-block shrink-0 ${statusDot(r?.status)}`} />
                                     {SOURCE_LABELS[src] ?? src}
                                     {r?.value !== null && r?.value !== undefined && typeof r.value === 'number' && (
-                                        <span className="text-slate-400 font-normal">
+                                        <span className="text-slate-500 font-bold ml-0.5">
                                             {Number.isInteger(r.value) ? r.value : `$${r.value.toFixed(2)}`}
                                         </span>
                                     )}
                                 </span>
                             </React.Fragment>
                         ))}
+                    </div>
+                )}
+                {conf !== null && (
+                    <div className="mt-2 w-full bg-slate-100 rounded-full overflow-hidden" style={{ height: '5px' }}>
+                        <div className={`h-full ${confBar(conf)} transition-all duration-700 ease-out rounded-full`}
+                            style={{
+                                width: `${Math.max(6, Math.min(100, conf))}%`,
+                                minWidth: '6px'
+                            }} />
                     </div>
                 )}
             </div>
@@ -745,47 +751,83 @@ const PreShiftCard = ({ selectedDate, isEmbedded = false }: { selectedDate: stri
 
     // Full card
     const canAutoFix = (overall === 'FAIL' || overall === 'WARN') && fixStatus === 'idle';
+    const weakestTier = (() => {
+        if (!data || !data.tiers) return null;
+        const list = [
+            { name: 'Tier 1 · Trip Count', tier: data.tiers.tier1_trips },
+            { name: 'Tier 2 · Earnings', tier: data.tiers.tier2_earnings },
+            { name: 'Tier 3 · Expenses', tier: data.tiers.tier3_expenses },
+            { name: 'Tier 4 · Timeline Integrity', tier: data.tiers.tier4_timeline }
+        ];
+        const failed = list.find(t => t.tier?.status === 'FAIL');
+        if (failed) return failed.name;
+        const warned = list.find(t => t.tier?.status === 'WARN');
+        if (warned) return warned.name;
+        return null;
+    })();
+
     return (
-        <div className={wrapperClass(`rounded-2xl border p-4 transition-all duration-300 ${statusBg(overall)}`)}
+        <div className={wrapperClass(`rounded-2xl border p-5 md:p-6 transition-all duration-300 shadow-md shadow-slate-100/50 ${statusBg(overall)}`)}
             style={isEmbedded ? {} : { backdropFilter: 'blur(16px)', background: 'rgba(255,255,255,0.88)' }}>
 
-            <div className="flex items-center gap-3 mb-3">
-                <div className={`w-4 h-4 rounded-full shrink-0 ${statusDot(overall)} ${overall !== 'PASS' ? 'animate-pulse' : ''}`} />
-                <div>
-                    <p className="text-[10px] font-semibold tracking-wider text-slate-500 uppercase">
-                        Pre-Shift · Strict Consensus · {selectedDate}
-                    </p>
-                    <p className={`text-sm font-black tracking-tight ${statusColor(overall)}`}>
-                        {overall === 'PASS' ? 'All Systems Go'
-                            : overall === 'WARN' ? 'Action Required'
-                            : overall === 'FAIL' ? 'Issues Detected' : 'Status Unknown'}
-                    </p>
-                </div>
-                {conf !== null && (
-                    <div className="flex items-center gap-2 mx-4 flex-1">
-                        <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                            <div className={`h-full ${confBar(conf)} transition-all duration-700`} style={{ width: `${conf}%` }} />
-                        </div>
-                        <span className={`text-xs font-mono font-black tabular-nums ${statusColor(overall)}`}>
-                            {conf}<span className="text-slate-400 font-normal text-[10px]">/100</span>
-                        </span>
+            {/* ROW 1: Metadata / Status Title & Actions */}
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div className="flex items-center gap-3">
+                    <div className={`w-4 h-4 rounded-full shrink-0 ${statusDot(overall)} ${overall !== 'PASS' ? 'animate-pulse' : ''}`} />
+                    <div>
+                        <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                            Pre-Shift · Strict Consensus · {selectedDate}
+                        </p>
+                        <p className={`text-sm font-black tracking-tight ${statusColor(overall)}`}>
+                            {overall === 'PASS' ? 'All Systems Go'
+                                : overall === 'WARN' ? 'Action Required'
+                                : overall === 'FAIL' ? 'Issues Detected' : 'Status Unknown'}
+                        </p>
                     </div>
-                )}
+                </div>
                 <div className="flex items-center gap-2 ml-auto shrink-0">
                     {data.cache?.hit && (
-                        <span className="text-[9px] font-mono text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                        <span className="text-[9px] font-mono font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200/50">
                             cached {Math.round(data.cache.age_seconds / 60)}m ago
                         </span>
                     )}
                     {lastRun && !data.cache?.hit && <span className="text-[9px] font-mono text-slate-400">{lastRun}</span>}
                     <button onClick={() => fetchCheck(true)}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-slate-200 hover:bg-slate-50 text-slate-600 transition-all">
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-all shadow-sm">
                         <RefreshCw className="w-3 h-3" /> Re-run
                     </button>
                 </div>
             </div>
 
-            <div className="rounded-xl bg-white/60 border border-slate-200/60 px-3 divide-y divide-slate-100 mb-3">
+            {/* ROW 2: Premium Full-Width Consensus Confidence Progress Bar Box */}
+            {conf !== null && (
+                <div className="mb-4 flex items-center justify-between gap-4 p-3 bg-slate-50/80 border border-slate-200/50 rounded-xl shadow-inner">
+                    <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-center mb-1.5">
+                            <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Consensus Confidence</span>
+                            <span className={`text-xs font-mono font-black tabular-nums ${statusColor(overall)}`}>
+                                {conf}<span className="text-slate-400 font-normal text-[10px]">/100</span>
+                            </span>
+                        </div>
+                        <div className="w-full h-2 bg-slate-200/60 rounded-full overflow-hidden">
+                            <div className={`h-full ${confBar(conf)} transition-all duration-700 ease-out rounded-full`}
+                                style={{
+                                    width: `${Math.max(6, Math.min(100, conf))}%`
+                                }} />
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ROW 3: Weakest Link Alert Banner */}
+            {overall !== 'PASS' && weakestTier && (
+                <div className="mb-4 px-3 py-2 rounded-lg bg-slate-100/50 border border-slate-200/40 text-[10px] font-medium text-slate-600 flex items-center gap-2">
+                    <span className="font-bold text-[8px] uppercase tracking-wider text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/40 shrink-0">Weakest Link</span>
+                    <span className="truncate">Primary issue detected in <strong className="text-slate-700 font-black">{weakestTier}</strong>. Review anomalies below.</span>
+                </div>
+            )}
+
+            <div className="rounded-xl bg-white/60 border border-slate-200/60 px-4 divide-y divide-slate-100 mb-4 shadow-sm">
                 <TierRow label="Tier 1 · Trip Count"        tier={data.tiers.tier1_trips} />
                 <TierRow label="Tier 2 · Earnings"           tier={data.tiers.tier2_earnings} />
                 <TierRow label="Tier 3 · Expenses"           tier={data.tiers.tier3_expenses} />
@@ -793,7 +835,7 @@ const PreShiftCard = ({ selectedDate, isEmbedded = false }: { selectedDate: stri
             </div>
 
             {fixStatus === 'fixed' && fixResult && (
-                <div className="mb-3 px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-[10px] font-mono text-emerald-700">
+                <div className="mb-4 px-3 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-[10px] font-mono text-emerald-700">
                     ✓ Fix applied: {fixResult.rows_affected} row(s) removed
                     {fixResult.repair_ids.length > 0 && ` · Audit: ${fixResult.repair_ids.join(', ')}`}
                     {!fixVerified && <span className="text-amber-600 ml-2">· Warnings remain — review below</span>}
@@ -1784,13 +1826,13 @@ const IntelligenceSyncPanel: React.FC<{
     };
 
     return (
-        <div id="intelligence-sync-panel" className="p-6 rounded-2xl border border-slate-200/80 bg-white/80 shadow-sm backdrop-blur-md relative overflow-hidden group">
+        <div id="intelligence-sync-panel" className="p-6 md:p-8 rounded-2xl border border-slate-200/80 bg-white/80 shadow-md backdrop-blur-md relative overflow-hidden group shadow-slate-100/50">
             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-3xl rounded-full pointer-events-none group-hover:bg-blue-500/10 transition-all duration-1000" />
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 xl:gap-14">
                 
                 {/* Left Column: Intelligence Sync & Controls */}
-                <div className="space-y-4">
+                <div className="space-y-5">
                     <div className="flex justify-between items-start">
                         <div>
                             <h2 className="text-base font-bold flex items-center gap-2 text-slate-800">
@@ -1807,57 +1849,70 @@ const IntelligenceSyncPanel: React.FC<{
                     </div>
 
                     {/* Manual Hours Input */}
-                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center gap-3">
+                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center gap-3">
                         <div className="p-2 rounded-lg bg-blue-50 border border-blue-100 shrink-0">
                             <Clock className="w-4 h-4 text-blue-600" />
                         </div>
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                             <p className="text-xs font-semibold text-slate-500 mb-1">Shift Duration</p>
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="number"
-                                    step="0.25"
-                                    placeholder="e.g. 6.25"
-                                    value={hours || ''}
-                                    onChange={(e) => onHoursChange(parseFloat(e.target.value) || 0)}
-                                    className="w-20 bg-transparent border-none text-slate-800 font-black text-lg focus:outline-none placeholder-slate-300"
-                                />
-                                <span className="text-xs font-mono text-slate-400 font-bold uppercase">h</span>
-                                {hours > 0 && <span className="text-xs text-emerald-600 font-medium ml-auto">// override active</span>}
+                            <div className="flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-1">
+                                    <input
+                                        type="number"
+                                        step="0.25"
+                                        placeholder="e.g. 6.25"
+                                        value={hours || ''}
+                                        onChange={(e) => onHoursChange(parseFloat(e.target.value) || 0)}
+                                        className="w-20 bg-transparent border-none text-slate-800 font-black text-lg focus:outline-none placeholder-slate-300"
+                                    />
+                                    <span className="text-xs font-mono text-slate-400 font-bold uppercase">h</span>
+                                </div>
+                                {hours > 0 && (
+                                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/50 px-2.5 py-0.5 rounded-full shadow-sm tracking-tight shrink-0 flex items-center gap-1.5">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse" />
+                                        Override Active
+                                    </span>
+                                )}
                             </div>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+                    {/* Spaced Buttons Grid with Color & Priority Discipline */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {/* Tertiary Action: Create Folders (Subtle Slate Outline) */}
                         <button
                             disabled={status === 'running'}
                             onClick={() => runSync(false)}
-                            className="flex flex-col items-center justify-center gap-0.5 py-3 rounded-xl text-[10px] font-bold bg-slate-100 border border-slate-200 text-slate-700 hover:bg-slate-200/80 transition-all disabled:opacity-50"
+                            className="flex flex-col items-center justify-center gap-1 py-3 px-2 rounded-xl text-[10px] font-bold bg-slate-50 border border-slate-200/80 text-slate-600 hover:bg-slate-100 hover:text-slate-800 transition-all duration-300 disabled:opacity-50 shadow-sm"
                         >
                             <span>Create Folders</span>
-                            <span className="text-[8px] font-normal text-slate-500 normal-case">OneDrive structure</span>
+                            <span className="text-[8px] font-normal text-slate-400/90 normal-case">OneDrive structure</span>
                         </button>
+
+                        {/* Primary Action: Rebuild Day (Solid Gold Badge Accent) */}
                         <button
                             disabled={status === 'running'}
                             onClick={runDailySync}
-                            className="flex flex-col items-center justify-center gap-0.5 py-3 rounded-xl text-[10px] font-bold bg-amber-50 border border-amber-200 text-amber-700 hover:bg-amber-100 transition-all disabled:opacity-50"
+                            className="flex flex-col items-center justify-center gap-1 py-3 px-2 rounded-xl text-[10px] font-black bg-amber-500 hover:bg-amber-600 border border-amber-600/35 text-white transition-all duration-300 disabled:opacity-50 shadow shadow-amber-500/10"
                         >
                             <span>Rebuild Day</span>
-                            <span className="text-[8px] font-normal text-amber-600/80 normal-case">Tessie + Bank + Scan</span>
+                            <span className="text-[8px] font-medium text-amber-50/90 normal-case">Tessie + Bank + Scan</span>
                         </button>
-                        <div className="flex flex-col gap-1">
+
+                        {/* Secondary Actions: Scan Day / Custom Folder (Emerald Outline Theme) */}
+                        <div className="flex flex-col gap-1.5">
                             <button
                                 disabled={status === 'running'}
                                 onClick={runScanDay}
-                                className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 rounded-t-xl text-[10px] font-bold bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 transition-all disabled:opacity-50"
+                                className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2 px-2 rounded-t-xl text-[10px] font-black bg-emerald-50 border-2 border-emerald-500 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 transition-all duration-300 disabled:opacity-50 shadow-sm"
                             >
                                 <span>Scan Day</span>
-                                <span className="text-[8px] font-normal text-emerald-600/80 normal-case">Auto-scan OneDrive folder</span>
+                                <span className="text-[8px] font-medium text-emerald-600/90 normal-case">OneDrive Auto-scan</span>
                             </button>
                             <button
                                 disabled={status === 'running'}
                                 onClick={runOneDriveSyncCustom}
-                                className="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-b-xl text-[9px] font-bold bg-emerald-50/50 border border-t-0 border-emerald-200 text-emerald-700 hover:bg-emerald-100 transition-all disabled:opacity-50"
+                                className="flex items-center justify-center gap-1 py-1.5 px-2 rounded-b-xl text-[9px] font-bold bg-white border border-emerald-200/80 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 transition-all duration-300 disabled:opacity-50 shadow-sm"
                             >
                                 <span>Custom Folder ↗</span>
                             </button>
@@ -1894,7 +1949,7 @@ const IntelligenceSyncPanel: React.FC<{
                 </div>
 
                 {/* Right Column: Pre-Shift Health Check & Verification */}
-                <div className="lg:border-l lg:border-slate-200/80 lg:pl-6 pt-6 lg:pt-0 space-y-4 flex flex-col justify-between">
+                <div className="lg:border-l lg:border-slate-200/80 lg:pl-8 xl:pl-12 pt-6 lg:pt-0 space-y-5 flex flex-col justify-between">
                     <div>
                         <h2 className="text-base font-bold flex items-center gap-2 text-slate-800">
                             <HeartPulse className="w-4 h-4 text-emerald-600" /> System Health Check

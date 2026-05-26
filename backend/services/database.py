@@ -105,9 +105,46 @@ class DatabaseClient:
         earnings = float(trip_data.get('driver_total') or 0)
         cut = float(trip_data.get('uber_cut') or 0)
 
+        # Resolve initial classification & trip type
+        incoming_classification = trip_data.get('classification') or trip_data.get('Classification')
+        incoming_triptype = trip_data.get('trip_type') or trip_data.get('TripType') or ('Uber' if incoming_classification == 'Uber_Core' else 'Private')
+
+        # Check existing row in DB for Ingestion Guardrails
+        existing_classification = None
+        existing_triptype = None
+        try:
+            cursor.execute("SELECT Classification, TripType FROM Rides.Rides WHERE RideID = ?", (ride_id,))
+            row = cursor.fetchone()
+            if row:
+                existing_classification = row[0]
+                existing_triptype = row[1]
+        except Exception as query_err:
+            logging.warning(f"Failed to query existing ride {ride_id} classification: {query_err}")
+
+        # Ingestion Guardrails: Database classification takes precedence over incoming updates for non-Uber/Private drives
+        is_existing_private = (
+            existing_triptype == 'Private' or 
+            (existing_classification and (
+                existing_classification.startswith('Private:') or 
+                existing_classification in ('Jackie', 'Esmeralda')
+            ))
+        )
+        is_incoming_private = (
+            incoming_triptype == 'Private' or 
+            (incoming_classification and (
+                incoming_classification.startswith('Private:') or 
+                incoming_classification in ('Jackie', 'Esmeralda')
+            ))
+        )
+
+        if is_existing_private and not is_incoming_private:
+            logging.info(f"Ingestion Guardrail: Preserving database classification '{existing_classification}' for {ride_id} (Blocked incoming update '{incoming_classification}')")
+            incoming_classification = existing_classification
+            incoming_triptype = 'Private'
+
         params = (
             ride_id,
-            trip_data.get('trip_type') or trip_data.get('TripType') or ('Uber' if trip_data.get('classification') == 'Uber_Core' else 'Private'),
+            incoming_triptype,
             t_start,
             trip_data.get('start_location') or trip_data.get('pickup_place') or trip_data.get('Pickup_Location'),
             trip_data.get('end_location') or trip_data.get('dropoff_place') or trip_data.get('Dropoff_Location'),
@@ -124,11 +161,11 @@ class DatabaseClient:
             trip_data.get('energy_used') or trip_data.get('Energy_Used_kWh'),
             trip_data.get('efficiency_wh_mi') or trip_data.get('Efficiency_Wh_mi'),
             source_url,
-            trip_data.get('classification') or trip_data.get('Classification'),
+            incoming_classification,
             json.dumps(trip_data) if trip_data else None,
             # For INSERT:
             ride_id,
-            trip_data.get('trip_type') or trip_data.get('TripType') or ('Uber' if trip_data.get('classification') == 'Uber_Core' else 'Private'),
+            incoming_triptype,
             t_start,
             trip_data.get('start_location') or trip_data.get('pickup_place') or trip_data.get('Pickup_Location'),
             trip_data.get('end_location') or trip_data.get('dropoff_place') or trip_data.get('Dropoff_Location'),
@@ -145,7 +182,7 @@ class DatabaseClient:
             trip_data.get('energy_used') or trip_data.get('Energy_Used_kWh'),
             trip_data.get('efficiency_wh_mi') or trip_data.get('Efficiency_Wh_mi'),
             source_url,
-            trip_data.get('classification') or trip_data.get('Classification'),
+            incoming_classification,
             json.dumps(trip_data) if trip_data else None
         )
 

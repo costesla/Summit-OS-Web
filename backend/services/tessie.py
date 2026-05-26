@@ -576,6 +576,13 @@ class TessieClient:
             return None
             
         logging.info(f"Setting tag '{tag}' for drive {drive_id} on {vin}")
+
+        # Enforce tag length limit strictly before API submission
+        if tag and len(tag) > 20:
+            err_msg = f"Tessie API tag validation failed: Tag '{tag}' exceeds the 20-character limit (length: {len(tag)})."
+            logging.error(err_msg)
+            raise ValueError(err_msg)
+
         try:
             url = f"{self.base_url}/{vin}/drives/set_tag"
             headers = {
@@ -592,4 +599,4 @@ class TessieClient:
             return response.json()
         except Exception as e:
             logging.error(f"Error setting drive tag in Tessie: {str(e)}")
-            return None
+            raise
