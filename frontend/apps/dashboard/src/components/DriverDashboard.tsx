@@ -519,7 +519,10 @@ const PreShiftCard = ({ selectedDate }: { selectedDate: string }) => {
 
     const setCollapsedPersist = (val: boolean) => {
         setCollapsed(val);
-        try { val ? localStorage.setItem(STORAGE_KEY, '1') : localStorage.removeItem(STORAGE_KEY); } catch {}
+        try {
+            if (val) { localStorage.setItem(STORAGE_KEY, '1'); }
+            else { localStorage.removeItem(STORAGE_KEY); }
+        } catch { /* localStorage unavailable — non-fatal */ }
     };
 
     const fetchCheck = useCallback(async (bust = false) => {
