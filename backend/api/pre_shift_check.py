@@ -108,14 +108,22 @@ async def safe_call(coro, timeout_s: float, name: str) -> dict:
 
 async def _src_db_trip_count(start_utc: datetime.datetime,
                              end_utc: datetime.datetime) -> int:
-    """Count Uber trips in DB for the UTC window."""
+    """Count Tessie-sourced Uber drives in DB for the UTC window.
+
+    Only counts RideIDs prefixed 'TESSIE-' with Classification='Uber_Dropoff',
+    which directly corresponds to what Tessie's /drives API returns. OCR-matched
+    trips (TRIP-YYYYMMDD-XX, Uber_Matched) are screenshot-derived and are NOT
+    visible in Tessie's API, so they must be excluded to keep sources comparable.
+    """
     def _query():
         db = DatabaseClient()
         conn = db.get_connection()
         cur = conn.cursor()
         cur.execute(
             """SELECT COUNT(*) FROM Rides.Rides
-               WHERE (TripType = 'Uber' OR TripType IS NULL)
+               WHERE TripType = 'Uber'
+               AND Classification = 'Uber_Dropoff'
+               AND RideID LIKE 'TESSIE-%'
                AND Timestamp_Start >= ? AND Timestamp_Start < ?""",
             (start_utc.replace(tzinfo=None), end_utc.replace(tzinfo=None))
         )
@@ -124,6 +132,7 @@ async def _src_db_trip_count(start_utc: datetime.datetime,
         conn.close()
         return int(row[0]) if row else 0
     return await asyncio.get_event_loop().run_in_executor(None, _query)
+
 
 
 async def _src_db_earnings_sum(start_utc: datetime.datetime,
@@ -202,7 +211,14 @@ async def _src_db_ocr_earnings(start_utc: datetime.datetime,
 async def _src_tessie_trip_count(date_str: str,
                                  start_utc: datetime.datetime,
                                  end_utc: datetime.datetime) -> int:
-    """Count Tessie drives tagged Uber* for the target date."""
+    """Count Tessie drives tagged Uber* for the target date.
+
+    Notes:
+    - Tessie's /drives API requires 'from' and 'to' as Unix timestamps.
+    - A 404 from Tessie means no drives exist for the range (treated as UNAVAILABLE by safe_call).
+    - We count ALL drives with 'uber' anywhere in the tag — no distance filter, since
+      Tessie labels are set by the operator and are authoritative (e.g. 'Uber Trip 1').
+    """
     import requests as _req
     vin   = os.environ.get("TESSIE_VIN", "")
     token = os.environ.get("TESSIE_TOKEN", "") or os.environ.get("TESSIE_API_KEY", "")
@@ -213,18 +229,19 @@ async def _src_tessie_trip_count(date_str: str,
     to_ts   = int(end_utc.timestamp())
     url     = f"https://api.tessie.com/{vin}/drives"
     resp    = _req.get(url, headers={"Authorization": f"Bearer {token}"},
-                       params={"from": from_ts, "to": to_ts},
+                       params={"from": from_ts, "to": to_ts, "limit": 250},
                        timeout=_DEFAULT_TIMEOUT_S)
+    if resp.status_code == 404:
+        raise ValueError(f"Tessie /drives returned 404 for date {date_str} — no drives in range")
     resp.raise_for_status()
-    drives = resp.json().get("results") or resp.json().get("drives") or []
-    # Filter: must have an Uber-style tag AND distance >= 0.25 mi
-    count = 0
-    for d in drives:
-        tag = (d.get("tag") or "").lower()
-        dist = float(d.get("distance") or d.get("distance_miles") or 0)
-        if "uber" in tag and dist >= 0.25:
-            count += 1
+    data   = resp.json()
+    drives = data.get("results") or data.get("drives") or []
+    # Count any drive where the operator label contains 'uber' (case-insensitive)
+    # No distance threshold — the label is the authoritative source of trip type.
+    count = sum(1 for d in drives if "uber" in (d.get("tag") or "").lower())
+    log.info(f"[PreShift] Tessie /drives for {date_str}: {len(drives)} total, {count} uber-tagged")
     return count
+
 
 
 async def _src_onedrive_trip_count(date_str: str) -> int:
@@ -534,18 +551,41 @@ async def _graph_count_files(token: str, folder_path: str,
 
 # ── Tier scorers ───────────────────────────────────────────────────────────────
 
-def _score_tier1(db_r: dict, tessie_r: dict, onedrive_r: dict) -> dict:
+def _score_tier1(db_r: dict, tessie_r: dict, onedrive_r: dict, date_str: str = "") -> dict:
     """
     Trip Count Consensus.
-    3/3 agree → confidence 95-100 (PASS)
-    2/3 agree (within ±1 tolerance) → confidence 65-80 (WARN)
-    0-1 agree → confidence 0-40 (FAIL)
-    Any source UNAVAILABLE → cap at 80
+    3/3 agree -> confidence 95-100 (PASS)
+    2/3 agree (within +/-1 tolerance) -> confidence 65-80 (WARN)
+    0-1 agree -> confidence 0-40 (FAIL)
+    Any source UNAVAILABLE -> cap at 80
+
+    Same-day grace: if the date is today (MDT) and Tessie/OneDrive return 0
+    while DB has >0 trips, treat them as UNAVAILABLE (sync lag, not a real mismatch).
     """
     notes, outliers, delta = [], [], {}
     db_v        = db_r["value"]
     tessie_v    = tessie_r["value"]
     od_v        = onedrive_r["value"]
+
+    # Same-day grace: Tessie tags drives asynchronously; on today's date a count
+    # of 0 from Tessie or OneDrive is almost certainly a sync lag, not real disagreement.
+    today_mt = datetime.datetime.now(_MT).strftime("%Y-%m-%d")
+    is_today = (date_str == today_mt)
+    if is_today and db_v and db_v > 0:
+        if tessie_v == 0:
+            tessie_v = None
+            tessie_r = dict(tessie_r)
+            tessie_r["value"] = None
+            tessie_r["status"] = "UNAVAILABLE"
+            tessie_r["error"] = "Same-day sync lag — Tessie drive tagging not yet complete"
+            notes.append("Tessie: same-day sync lag — drive tags not yet populated (treated as unavailable)")
+        if od_v == 0:
+            od_v = None
+            onedrive_r = dict(onedrive_r)
+            onedrive_r["value"] = None
+            onedrive_r["status"] = "UNAVAILABLE"
+            onedrive_r["error"] = "Same-day sync lag — screenshots not yet uploaded to OneDrive"
+            notes.append("OneDrive: same-day sync lag — Uber screenshots not yet uploaded (treated as unavailable)")
 
     available = [(s, v) for s, v in [("db", db_v), ("tessie", tessie_v), ("onedrive", od_v)]
                  if v is not None]
@@ -572,16 +612,16 @@ def _score_tier1(db_r: dict, tessie_r: dict, onedrive_r: dict) -> dict:
     if tessie_v is not None and od_v is not None:
         delta["tessie_vs_onedrive"] = tessie_v - od_v
 
-    # OneDrive tolerance ±1 (upload lag)
+    # OneDrive tolerance +/-1 (upload lag)
     od_adjusted = od_v
     if od_v is not None:
-        # Check if onedrive is within ±1 of the median of other sources
+        # Check if onedrive is within +/-1 of the median of other sources
         others = [v for s, v in available if s != "onedrive"]
         if others:
             med = sum(others) / len(others)
             if abs(od_v - med) == 1:
                 od_adjusted = round(med)
-                notes.append("OneDrive count within ±1 upload-lag tolerance — adjusted for consensus")
+                notes.append("OneDrive count within +/-1 upload-lag tolerance -- adjusted for consensus")
 
     # Recompute agreement with adjustment
     adj_values = []
@@ -601,7 +641,12 @@ def _score_tier1(db_r: dict, tessie_r: dict, onedrive_r: dict) -> dict:
         conf = min(cap, 72)
         status = "WARN"
         outlier_vals = [(s, v) for s, v in available if v != min_v and v != max_v]
-        notes.append(f"Sources within ±1 tolerance (spread={spread})")
+        notes.append(f"Sources within +/-1 tolerance (spread={spread})")
+    elif len(available) == 1:
+        # Only DB available — WARN with single-source note
+        conf = min(cap, 65)
+        status = "WARN"
+        notes.append(f"Only DB available: {available[0][1]} trips (secondary sources unavailable)")
     else:
         conf = min(cap, 35)
         status = "FAIL"
@@ -682,12 +727,31 @@ def _score_tier2(db_sum_r: dict, ocr_sum_r: dict, bank_r: dict) -> dict:
                         delta, notes, outliers, meta=meta)
 
 
-def _score_tier3(db_r: dict, onedrive_r: dict, bank_r: dict) -> dict:
-    """Expense Consensus (Meal_Receipt count)."""
+def _score_tier3(db_r: dict, onedrive_r: dict, bank_r: dict, date_str: str = "") -> dict:
+    """
+    Expense Consensus.
+    DB == OneDrive -> PASS
+    DB != OneDrive -> FAIL with delta.
+    Bank is supporting only.
+
+    Same-day grace: if the date is today (MDT) and OneDrive returns 0
+    while DB has >0 expenses, treat OneDrive as UNAVAILABLE (upload lag).
+    """
     notes, outliers, delta = [], [], {}
     db_v  = db_r["value"]
     od_v  = onedrive_r["value"]
     bnk_v = bank_r["value"]
+
+    # Same-day grace: expense screenshots may not yet be uploaded to OneDrive
+    today_mt = datetime.datetime.now(_MT).strftime("%Y-%m-%d")
+    is_today = (date_str == today_mt)
+    if is_today and db_v and db_v > 0 and od_v == 0:
+        od_v = None
+        onedrive_r = dict(onedrive_r)
+        onedrive_r["value"] = None
+        onedrive_r["status"] = "UNAVAILABLE"
+        onedrive_r["error"] = "Same-day sync lag — expense screenshots not yet uploaded to OneDrive"
+        notes.append("OneDrive: same-day sync lag — expense screenshots not yet uploaded (treated as unavailable)")
 
     available = [(s, v) for s, v in [("db", db_v), ("onedrive", od_v), ("bank", bnk_v)]
                  if v is not None]
@@ -923,9 +987,9 @@ def pre_shift_check(req: func.HttpRequest) -> func.HttpResponse:
             loop.close()
 
         # ── Score tiers ──
-        tier1 = _score_tier1(db_trips,    tessie_trips, od_trips)
+        tier1 = _score_tier1(db_trips,    tessie_trips, od_trips,    date_str)
         tier2 = _score_tier2(db_earnings, ocr_earnings, bank_earnings)
-        tier3 = _score_tier3(db_expenses, od_expenses,  bank_expenses)
+        tier3 = _score_tier3(db_expenses, od_expenses,  bank_expenses, date_str)
         tier4 = _score_tier4(timeline_r)
 
         overall_status, overall_conf = _compute_overall(tier1, tier2, tier3, tier4)
