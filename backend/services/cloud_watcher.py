@@ -799,7 +799,7 @@ class CloudWatcherService:
                     "  merchant: Name of the business (e.g. 'Starbucks', 'McDonald\'s', 'Circle K', 'Shell', 'Tesla Supercharger')\n"
                     "  amount: Total transaction amount as a number (e.g. 15.45)\n"
                     "  tax: Tax amount as a number, if visible (otherwise 0.0)\n"
-                    "  category: Select one from: 'Meal_Receipt', 'Fuel_Receipt', 'Maintenance', 'Charging_Session', 'ATM_Receipt', 'General_Expense'\n"
+                    "  category: Select one from: 'Meal_Receipt', 'Fuel_Receipt', 'Maintenance', 'Charging_Session', 'ATM_Receipt', 'General_Expense'. IMPORTANT: Use 'Meal_Receipt' for any food or drink purchase — including convenience stores like Maverik, Circle K, 7-Eleven, Wawa, Love's, or Pilot when items are drinks/snacks/food. Use 'General_Expense' ONLY for non-food business supplies or misc charges that are not food, fuel, maintenance, charging, or ATM-related.\n"
                     f"  date_time: The date and time of the transaction in YYYY-MM-DD HH:MM:SS format (e.g. '{capture_date} 08:32:00'). If time is not visible, use '12:00:00'. If date is not visible, resolve relative terms like 'Today' to {capture_date}, or estimate from context.\n"
                     "  items: List of items purchased, if readable (e.g. ['Grande Latte', 'Croissant']). For banking transactions with no items, return an empty list.\n"
                     "  currency: 'USD'\n"

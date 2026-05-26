@@ -271,7 +271,8 @@ class OCRClient:
         # 3. Expense (Business Context)
         expense_keywords = [
             "starbucks", "mcdonald", "tacobell", "shell", "chevron", 
-            "circle k", "7-eleven", "costco gas", "fuel", "gasoline"
+            "circle k", "7-eleven", "costco gas", "fuel", "gasoline",
+            "maverik", "wawa", "loves", "pilot", "whataburger", "burger", "wendys"
         ]
         if any(keyword in text_lower for keyword in expense_keywords):
             return "Expense"
@@ -322,7 +323,7 @@ class OCRClient:
         Classify the following OCR text from an image into one of these categories:
         - Uber_Core (Uber trip details, earnings, or offers)
         - Private_Trip (Venmo or private ride notifications)
-        - Meal_Receipt (Lunch, Starbucks, restaurants)
+        - Meal_Receipt (Lunch, Starbucks, restaurants, convenience store food/drinks like Maverik, Circle K, 7-Eleven)
         - ATM_Receipt (Cash deposits or withdrawals)
         - Fuel_Receipt (Gas stations like Shell, Chevron)
         - Aviation_Context (FlightRadar24, flight paths)
