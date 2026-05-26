@@ -507,13 +507,14 @@ def auto_fix(req: func.HttpRequest) -> func.HttpResponse:
 
         # Bust pre-shift check cache (only on real fix, not dry_run)
         if not dry_run:
-            from api.pre_shift_check import _mem_cache
-            stale_keys = [k for k in _mem_cache if k.startswith(date_str)]
-            for k in stale_keys:
-                _mem_cache.pop(k, None)
-            log.info(f"[AutoFix] Busted {len(stale_keys)} pre-shift cache entries")
-        except Exception as cache_err:
-            log.warning(f"[AutoFix] Cache bust failed (non-fatal): {cache_err}")
+            try:
+                from api.pre_shift_check import _mem_cache
+                stale_keys = [k for k in _mem_cache if k.startswith(date_str)]
+                for k in stale_keys:
+                    _mem_cache.pop(k, None)
+                log.info(f"[AutoFix] Busted {len(stale_keys)} pre-shift cache entries")
+            except Exception as cache_err:
+                log.warning(f"[AutoFix] Cache bust failed (non-fatal): {cache_err}")
 
         return func.HttpResponse(
             json.dumps(result, default=str),
