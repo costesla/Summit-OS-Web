@@ -366,6 +366,8 @@ const TeslaStatusBar = () => {
 type CheckStatus = 'PASS' | 'WARN' | 'FAIL' | 'N_A';
 type SourceStatus = 'OK' | 'DEGRADED' | 'UNAVAILABLE';
 
+type AutoFixStatus = 'idle' | 'fixing' | 'fixed' | 'manual_required' | 'error';
+
 interface SourceResult { status: SourceStatus; value: number | null; latency_ms: number | null; error: string | null; }
 interface TierResult {
     status: CheckStatus; confidence: number | null;
@@ -377,8 +379,24 @@ interface PreShiftPayload {
     date: string; generated_at: string; pipeline_version: string;
     overall_status: CheckStatus; overall_confidence: number | null;
     cache: { hit: boolean; age_seconds: number };
-    tiers: { tier1_trips?: TierResult; tier2_earnings?: TierResult; tier3_expenses?: TierResult };
+    tiers: {
+        tier1_trips?: TierResult;
+        tier2_earnings?: TierResult;
+        tier3_expenses?: TierResult;
+        tier4_timeline?: TierResult;
+    };
     systems: Record<string, SourceStatus>;
+    error?: string;
+}
+interface AutoFixResult {
+    status: 'FIX_APPLIED' | 'MANUAL_REQUIRED' | 'NO_ACTION' | 'ERROR';
+    actions: Array<{
+        type: string; action: string; found?: number; rows_affected?: number;
+        reason?: string; next_step?: string; repair_id?: string;
+        before?: Record<string, number>; after?: Record<string, number>;
+    }>;
+    rows_affected: number; confidence: number;
+    manual_required: boolean; flags: string[]; repair_ids: string[];
     error?: string;
 }
 
@@ -413,9 +431,15 @@ const confBar = (conf: number | null) => {
     return 'bg-rose-500';
 };
 
+const SOURCE_LABELS: Record<string, string> = {
+    db: 'DB', tessie: 'Tessie', onedrive: 'OneDrive', ocr: 'OCR',
+    bank: 'Bank', timeline: 'Timeline',
+};
+
 const TierRow = ({ label, tier }: { label: string; tier?: TierResult }) => {
     if (!tier) return null;
     const conf = tier.confidence;
+    const sourceEntries = Object.entries(tier.values);
     return (
         <div className="flex items-start gap-3 py-2.5 border-b border-slate-100 last:border-0">
             <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black
@@ -450,13 +474,27 @@ const TierRow = ({ label, tier }: { label: string; tier?: TierResult }) => {
                         ))}
                     </div>
                 )}
-            </div>
-            {/* Source dots */}
-            <div className="flex gap-1 shrink-0 mt-1">
-                {Object.entries(tier.values).map(([src, r]) => (
-                    <div key={src} title={`${src}: ${r?.status ?? 'N/A'} ${r?.value ?? ''}`}
-                        className={`w-2 h-2 rounded-full ${statusDot(r?.status)} transition-all`} />
-                ))}
+                {sourceEntries.length > 0 && (
+                    <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                        {sourceEntries.map(([src, r], i) => (
+                            <React.Fragment key={src}>
+                                {i > 0 && <span className="text-slate-300 text-[9px]">·</span>}
+                                <span title={`${src}: ${r?.status ?? 'N/A'}`}
+                                    className={`text-[9px] font-bold font-mono flex items-center gap-1
+                                        ${r?.status === 'OK' ? 'text-emerald-600' :
+                                          r?.status === 'UNAVAILABLE' ? 'text-slate-400' : 'text-amber-600'}`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full inline-block ${statusDot(r?.status)}`} />
+                                    {SOURCE_LABELS[src] ?? src}
+                                    {r?.value !== null && r?.value !== undefined && typeof r.value === 'number' && (
+                                        <span className="text-slate-400 font-normal">
+                                            {Number.isInteger(r.value) ? r.value : `$${r.value.toFixed(2)}`}
+                                        </span>
+                                    )}
+                                </span>
+                            </React.Fragment>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -467,48 +505,84 @@ const PreShiftCard = ({ selectedDate }: { selectedDate: string }) => {
     const [loading, setLoading] = useState(true);
     const [collapsed, setCollapsed] = useState(false);
     const [lastRun, setLastRun] = useState<string | null>(null);
+    const [fixStatus, setFixStatus] = useState<AutoFixStatus>('idle');
+    const [fixResult, setFixResult] = useState<AutoFixResult | null>(null);
+    const [fixVerified, setFixVerified] = useState(false);
 
     const fetchCheck = useCallback(async (bust = false) => {
         setLoading(true);
         try {
             const url = `${AZURE_BASE}/pre-shift-check?date=${selectedDate}${bust ? '&refresh=1' : ''}`;
-            const res = await fetch(url, {
-                signal: AbortSignal.timeout(30_000),
-                cache: 'no-store',
-            });
+            const res = await fetch(url, { signal: AbortSignal.timeout(30_000), cache: 'no-store' });
             if (!res.ok) throw new Error('non-ok');
             const payload: PreShiftPayload = await res.json();
             setData(payload);
             setLastRun(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-            // Auto-collapse only on full green pass
             setCollapsed(payload.overall_status === 'PASS' && (payload.overall_confidence ?? 0) >= 90);
+            return payload;
         } catch {
             setData(null);
+            return null;
         } finally {
             setLoading(false);
         }
     }, [selectedDate]);
 
-    useEffect(() => { fetchCheck(false); }, [fetchCheck]);
+    useEffect(() => {
+        setFixStatus('idle');
+        setFixResult(null);
+        setFixVerified(false);
+        fetchCheck(false);
+    }, [fetchCheck]);
+
+    const runAutoFix = useCallback(async () => {
+        setFixStatus('fixing');
+        setFixResult(null);
+        try {
+            const res = await fetch(`${AZURE_BASE}/auto-fix?date=${selectedDate}`, {
+                method: 'POST',
+                signal: AbortSignal.timeout(30_000),
+                cache: 'no-store',
+            });
+            const result: AutoFixResult = await res.json();
+            setFixResult(result);
+            if (result.status === 'MANUAL_REQUIRED' || result.status === 'ERROR') {
+                setFixStatus('manual_required');
+                return;
+            }
+            // Re-run health check after fix
+            const recheck = await fetchCheck(true);
+            if (recheck && recheck.overall_status === 'PASS' && (recheck.overall_confidence ?? 0) >= 90) {
+                setFixVerified(true);
+            }
+            setFixStatus(result.status === 'FIX_APPLIED' ? 'fixed' : 'idle');
+        } catch (err) {
+            setFixResult({ status: 'ERROR', actions: [], rows_affected: 0, confidence: 0,
+                           manual_required: false, flags: [], repair_ids: [], error: String(err) });
+            setFixStatus('error');
+        }
+    }, [selectedDate, fetchCheck]);
 
     const overall = data?.overall_status ?? null;
     const conf    = data?.overall_confidence ?? null;
 
-    // ── Collapsed banner (green pass only) ──────────────────────────
-    if (!loading && collapsed && overall === 'PASS') {
+    // Collapsed green banner
+    if (!loading && collapsed && overall === 'PASS' && fixStatus !== 'fixing') {
         return (
             <div onClick={() => setCollapsed(false)}
                 className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-emerald-200 bg-emerald-50/80 cursor-pointer hover:bg-emerald-50 transition-all"
                 style={{ backdropFilter: 'blur(8px)' }}>
-                <div className="w-4 h-4 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                <span className="text-xs font-bold text-emerald-700">All Systems Go · Pre-Shift Check PASS</span>
-                {conf !== null && <span className="text-[10px] font-mono text-emerald-600 ml-auto">{conf}/100 confidence</span>}
+                <div className="w-4 h-4 rounded-full bg-emerald-500 shrink-0" />
+                <span className="text-xs font-bold text-emerald-700">
+                    {fixVerified ? '✓ Fixed & Verified · All Systems Go' : 'All Systems Go · Pre-Shift Check PASS'}
+                </span>
+                {conf !== null && <span className="text-[10px] font-mono text-emerald-600 ml-auto">{conf}/100</span>}
                 {lastRun && <span className="text-[10px] text-emerald-500 font-mono">as of {lastRun}</span>}
             </div>
         );
     }
 
-    // ── Skeleton ────────────────────────────────────────────────────
+    // Skeleton
     if (loading) {
         return (
             <div className="rounded-2xl border border-slate-200/80 bg-white/80 p-4 space-y-3 animate-pulse"
@@ -518,7 +592,7 @@ const PreShiftCard = ({ selectedDate }: { selectedDate: string }) => {
                     <div className="h-3 w-40 bg-slate-200 rounded-full" />
                     <div className="ml-auto h-3 w-24 bg-slate-200 rounded-full" />
                 </div>
-                {[1, 2, 3].map(i => (
+                {[1, 2, 3, 4].map(i => (
                     <div key={i} className="flex items-center gap-3">
                         <div className="w-5 h-5 rounded-full bg-slate-100" />
                         <div className="flex-1 space-y-1.5">
@@ -531,7 +605,79 @@ const PreShiftCard = ({ selectedDate }: { selectedDate: string }) => {
         );
     }
 
-    // ── Error / N_A ─────────────────────────────────────────────────
+    // Fixing in progress
+    if (fixStatus === 'fixing') {
+        return (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4"
+                style={{ backdropFilter: 'blur(16px)' }}>
+                <div className="flex items-center gap-3">
+                    <Loader2 className="w-4 h-4 text-amber-500 animate-spin shrink-0" />
+                    <div>
+                        <p className="text-xs font-bold text-amber-700">Repairing…</p>
+                        <p className="text-[10px] text-amber-600 font-mono">Running deterministic fixes · Do not refresh</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Fixed & verified
+    if (fixStatus === 'fixed' && fixVerified && overall === 'PASS') {
+        return (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 space-y-2"
+                style={{ backdropFilter: 'blur(16px)' }}>
+                <div className="flex items-center gap-3">
+                    <div className="w-4 h-4 rounded-full bg-emerald-500 shrink-0" />
+                    <div>
+                        <p className="text-xs font-bold text-emerald-700">✓ Fixed & Verified — All Systems Go</p>
+                        <p className="text-[10px] text-emerald-600 font-mono">
+                            {fixResult?.rows_affected ?? 0} row(s) repaired · Confidence {fixResult?.confidence}/100
+                        </p>
+                    </div>
+                    <button onClick={() => { setFixStatus('idle'); setFixVerified(false); setCollapsed(false); }}
+                        className="ml-auto text-[10px] font-bold text-emerald-700 hover:text-emerald-900 underline">
+                        View detail
+                    </button>
+                </div>
+                {fixResult && fixResult.repair_ids.length > 0 && (
+                    <p className="text-[9px] font-mono text-emerald-600">
+                        Audit IDs: {fixResult.repair_ids.join(' · ')}
+                    </p>
+                )}
+            </div>
+        );
+    }
+
+    // Manual required
+    if (fixStatus === 'manual_required') {
+        const manualActions = fixResult?.actions.filter(a => a.action === 'MANUAL_REQUIRED') ?? [];
+        const flagged       = fixResult?.actions.filter(a => a.action === 'FLAGGED') ?? [];
+        return (
+            <div className="rounded-2xl border border-orange-200 bg-orange-50/80 p-4 space-y-3"
+                style={{ backdropFilter: 'blur(16px)' }}>
+                <div className="flex items-center gap-3">
+                    <div className="w-4 h-4 rounded-full bg-orange-400 animate-pulse shrink-0" />
+                    <div>
+                        <p className="text-xs font-bold text-orange-700">Manual Review Required</p>
+                        <p className="text-[10px] text-orange-600 font-mono">Auto-fix safety limit exceeded — confirm before proceeding</p>
+                    </div>
+                    <button onClick={() => { setFixStatus('idle'); fetchCheck(true); }}
+                        className="ml-auto flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-orange-200 hover:bg-orange-100 text-orange-700 transition-all">
+                        <RefreshCw className="w-3 h-3" /> Re-check
+                    </button>
+                </div>
+                {[...manualActions, ...flagged].map((a, i) => (
+                    <div key={i} className="bg-white/70 rounded-xl border border-orange-200/60 px-3 py-2 space-y-0.5">
+                        <p className="text-[10px] font-bold text-orange-700 font-mono">{a.type}</p>
+                        <p className="text-[10px] text-slate-600">{a.reason}</p>
+                        {a.next_step && <p className="text-[10px] text-blue-600 font-semibold">→ {a.next_step}</p>}
+                    </div>
+                ))}
+            </div>
+        );
+    }
+
+    // N_A / unavailable
     if (!data || data.overall_status === 'N_A') {
         return (
             <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-4"
@@ -549,49 +695,41 @@ const PreShiftCard = ({ selectedDate }: { selectedDate: string }) => {
         );
     }
 
-    // ── Full card ───────────────────────────────────────────────────
+    // Full card
+    const canAutoFix = (overall === 'FAIL' || overall === 'WARN') && fixStatus === 'idle';
     return (
         <div className={`rounded-2xl border p-4 transition-all duration-300 ${statusBg(overall)}`}
             style={{ backdropFilter: 'blur(16px)', background: 'rgba(255,255,255,0.88)' }}>
 
-            {/* Header */}
             <div className="flex items-center gap-3 mb-3">
-                <div className={`w-4 h-4 rounded-full shrink-0 ${statusDot(overall)}
-                    ${overall !== 'PASS' ? 'animate-pulse' : ''}`} />
+                <div className={`w-4 h-4 rounded-full shrink-0 ${statusDot(overall)} ${overall !== 'PASS' ? 'animate-pulse' : ''}`} />
                 <div>
                     <p className="text-[10px] font-semibold tracking-wider text-slate-500 uppercase">
-                        Pre-Shift System Check · {selectedDate}
+                        Pre-Shift · Strict Consensus · {selectedDate}
                     </p>
                     <p className={`text-sm font-black tracking-tight ${statusColor(overall)}`}>
                         {overall === 'PASS' ? 'All Systems Go'
                             : overall === 'WARN' ? 'Action Required'
-                            : overall === 'FAIL' ? 'Issues Detected'
-                            : 'Status Unknown'}
+                            : overall === 'FAIL' ? 'Issues Detected' : 'Status Unknown'}
                     </p>
                 </div>
-
-                {/* Confidence bar */}
                 {conf !== null && (
                     <div className="flex items-center gap-2 mx-4 flex-1">
                         <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                            <div className={`h-full ${confBar(conf)} transition-all duration-700`}
-                                style={{ width: `${conf}%` }} />
+                            <div className={`h-full ${confBar(conf)} transition-all duration-700`} style={{ width: `${conf}%` }} />
                         </div>
                         <span className={`text-xs font-mono font-black tabular-nums ${statusColor(overall)}`}>
                             {conf}<span className="text-slate-400 font-normal text-[10px]">/100</span>
                         </span>
                     </div>
                 )}
-
                 <div className="flex items-center gap-2 ml-auto shrink-0">
                     {data.cache?.hit && (
                         <span className="text-[9px] font-mono text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
                             cached {Math.round(data.cache.age_seconds / 60)}m ago
                         </span>
                     )}
-                    {lastRun && !data.cache?.hit && (
-                        <span className="text-[9px] font-mono text-slate-400">{lastRun}</span>
-                    )}
+                    {lastRun && !data.cache?.hit && <span className="text-[9px] font-mono text-slate-400">{lastRun}</span>}
                     <button onClick={() => fetchCheck(true)}
                         className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-slate-200 hover:bg-slate-50 text-slate-600 transition-all">
                         <RefreshCw className="w-3 h-3" /> Re-run
@@ -599,34 +737,43 @@ const PreShiftCard = ({ selectedDate }: { selectedDate: string }) => {
                 </div>
             </div>
 
-            {/* Tier rows */}
             <div className="rounded-xl bg-white/60 border border-slate-200/60 px-3 divide-y divide-slate-100 mb-3">
-                <TierRow label="Trip Count Consensus" tier={data.tiers.tier1_trips} />
-                <TierRow label="Earnings Consensus"   tier={data.tiers.tier2_earnings} />
-                <TierRow label="Expense Consensus"    tier={data.tiers.tier3_expenses} />
+                <TierRow label="Tier 1 · Trip Count"        tier={data.tiers.tier1_trips} />
+                <TierRow label="Tier 2 · Earnings"           tier={data.tiers.tier2_earnings} />
+                <TierRow label="Tier 3 · Expenses"           tier={data.tiers.tier3_expenses} />
+                <TierRow label="Tier 4 · Timeline Integrity" tier={data.tiers.tier4_timeline} />
             </div>
 
-            {/* Systems row */}
-            <div className="flex flex-wrap gap-2">
+            {fixStatus === 'fixed' && fixResult && (
+                <div className="mb-3 px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-[10px] font-mono text-emerald-700">
+                    ✓ Fix applied: {fixResult.rows_affected} row(s) removed
+                    {fixResult.repair_ids.length > 0 && ` · Audit: ${fixResult.repair_ids.join(', ')}`}
+                    {!fixVerified && <span className="text-amber-600 ml-2">· Warnings remain — review below</span>}
+                </div>
+            )}
+
+            <div className="flex flex-wrap gap-2 items-center">
                 {Object.entries(data.systems).map(([sys, st]) => (
                     <div key={sys} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/70 border border-slate-200/80">
                         <div className={`w-1.5 h-1.5 rounded-full ${statusDot(st)}`} />
                         <span className="text-[10px] font-mono text-slate-600 capitalize">{sys}</span>
-                        {st === 'UNAVAILABLE' && (
-                            <span className="text-[9px] text-slate-400">offline</span>
-                        )}
+                        {st === 'UNAVAILABLE' && <span className="text-[9px] text-slate-400">offline</span>}
                     </div>
                 ))}
-
-                {/* Action button for FAIL */}
-                {(overall === 'FAIL' || overall === 'WARN') && (
-                    <button
-                        onClick={() => {
-                            // Scroll to IntelligenceSyncPanel (Scan Day)
-                            document.getElementById('intelligence-sync-panel')?.scrollIntoView({ behavior: 'smooth' });
-                        }}
-                        className="ml-auto px-3 py-1 rounded-full text-[10px] font-bold bg-amber-500 text-white hover:bg-amber-600 transition-all flex items-center gap-1">
-                        <RefreshCw className="w-3 h-3" /> Fix Issues →
+                {canAutoFix && (
+                    <button onClick={runAutoFix}
+                        className={`ml-auto px-3 py-1.5 rounded-full text-[10px] font-bold flex items-center gap-1.5 transition-all
+                            ${overall === 'FAIL'
+                                ? 'bg-rose-500 text-white hover:bg-rose-600 animate-pulse'
+                                : 'bg-amber-500 text-white hover:bg-amber-600'}`}>
+                        <Cpu className="w-3 h-3" />
+                        Auto-Fix → Re-verify
+                    </button>
+                )}
+                {!canAutoFix && (overall === 'FAIL' || overall === 'WARN') && fixStatus === 'idle' && (
+                    <button onClick={() => document.getElementById('intelligence-sync-panel')?.scrollIntoView({ behavior: 'smooth' })}
+                        className="ml-auto px-3 py-1 rounded-full text-[10px] font-bold border border-slate-200 hover:bg-slate-50 text-slate-600 transition-all flex items-center gap-1">
+                        <RefreshCw className="w-3 h-3" /> Scan Day →
                     </button>
                 )}
             </div>

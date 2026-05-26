@@ -41,6 +41,7 @@ blueprints = [
     "api.reconcile",
     "api.send_invoice",
     "api.pre_shift_check",
+    "api.auto_fix",
 ]
 
 registration_logs = []

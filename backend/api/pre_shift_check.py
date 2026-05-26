@@ -32,7 +32,7 @@ bp = func.Blueprint()
 # ── Constants ──────────────────────────────────────────────────────────────────
 _MT = pytz.timezone("America/Denver")
 _UTC = pytz.utc
-_PIPELINE_VERSION = "1.0.0"
+_PIPELINE_VERSION = "2.0.0"
 _CACHE_TTL_S = 1800          # 30 minutes
 _DEFAULT_TIMEOUT_S = 5.0
 _ONEDRIVE_TIMEOUT_S = 8.0
@@ -272,6 +272,153 @@ async def _src_bank_earnings(date_str: str) -> float:
     if not teller_token:
         raise ValueError("TELLER_ACCESS_TOKEN not configured")
     raise NotImplementedError("Teller not configured")
+
+
+# ── Tier 4: Timeline Integrity ────────────────────────────────────────────────
+
+_GAP_WARN_SECONDS = 2700   # 45 minutes
+_MICRO_DRIVE_MI   = 0.25   # ignore repositioning noise
+
+async def _src_tier4_timeline(start_utc: datetime.datetime,
+                              end_utc: datetime.datetime) -> dict:
+    """
+    Query trip timestamps and Tessie drives for the day.
+    Returns a structured issues dict:
+      overlaps      : list of (tripA_id, tripB_id, overlap_seconds)
+      large_gaps    : list of (tripA_id, tripB_id, gap_seconds)
+      orphan_drives : list of tessie_drive_ids (distance >= 0.25 mi, no matched trip)
+      trip_count    : int
+    """
+    def _query():
+        db   = DatabaseClient()
+        conn = db.get_connection()
+        cur  = conn.cursor()
+
+        # ── 1. Fetch ordered trips ──
+        cur.execute(
+            """SELECT RideID, Timestamp_Start, Tessie_DriveID
+               FROM Rides.Rides
+               WHERE (TripType = 'Uber' OR TripType IS NULL)
+               AND Timestamp_Start >= ? AND Timestamp_Start < ?
+               AND Timestamp_Start IS NOT NULL
+               ORDER BY Timestamp_Start ASC""",
+            (start_utc.replace(tzinfo=None), end_utc.replace(tzinfo=None))
+        )
+        trips = cur.fetchall()   # (RideID, Timestamp_Start, Tessie_DriveID)
+
+        # ── 2. Overlap + gap analysis ──
+        overlaps, large_gaps = [], []
+        for i in range(len(trips) - 1):
+            a_id, a_start, _ = trips[i]
+            b_id, b_start, _ = trips[i + 1]
+            if b_start < a_start:
+                overlaps.append({"trip_a": a_id, "trip_b": b_id,
+                                  "overlap_s": int((a_start - b_start).total_seconds())})
+            else:
+                gap_s = int((b_start - a_start).total_seconds())
+                if gap_s > _GAP_WARN_SECONDS:
+                    large_gaps.append({"trip_a": a_id, "trip_b": b_id, "gap_s": gap_s})
+
+        # ── 3. Orphan Tessie drives ──
+        matched_tessie_ids = set(
+            str(row[2]).replace("TESSIE-", "")
+            for row in trips if row[2]
+        )
+        try:
+            cur.execute(
+                """SELECT DriveID, Distance_mi
+                   FROM dbo.Drive_Telemetry
+                   WHERE StartTime >= ? AND StartTime < ?
+                   AND ISNULL(Distance_mi, 0) >= ?""",
+                (start_utc.replace(tzinfo=None), end_utc.replace(tzinfo=None),
+                 _MICRO_DRIVE_MI)
+            )
+            all_drives = cur.fetchall()
+            orphans = [
+                str(row[0]) for row in all_drives
+                if str(row[0]) not in matched_tessie_ids
+            ]
+        except Exception:
+            orphans = []   # Drive_Telemetry may not exist — non-fatal
+
+        cur.close()
+        conn.close()
+        return {
+            "overlaps":      overlaps,
+            "large_gaps":    large_gaps,
+            "orphan_drives": orphans,
+            "trip_count":    len(trips),
+        }
+
+    return await asyncio.get_event_loop().run_in_executor(None, _query)
+
+
+def _score_tier4(timeline_r: dict) -> dict:
+    """
+    Timeline Integrity scorer.
+
+    Mode: Strict Consensus · Deterministic Evaluation
+    Source: DB only (always available, no external dependency)
+
+    Scoring:
+      No issues            → 100  PASS
+      Only large gaps      →  75  WARN
+      Any overlap/orphan   →  40  FAIL
+    """
+    notes, outliers, delta = [], [], {}
+
+    if timeline_r["status"] != "OK" or timeline_r["value"] is None:
+        return _tier_result("N_A", None,
+                            {"timeline": timeline_r}, {},
+                            ["Timeline source unavailable"], [])
+
+    data          = timeline_r["value"]
+    overlaps      = data.get("overlaps", [])
+    large_gaps    = data.get("large_gaps", [])
+    orphan_drives = data.get("orphan_drives", [])
+    trip_count    = data.get("trip_count", 0)
+
+    delta["overlaps"]      = len(overlaps)
+    delta["large_gaps"]    = len(large_gaps)
+    delta["orphan_drives"] = len(orphan_drives)
+
+    if overlaps:
+        for ov in overlaps[:3]:   # cap detail at 3
+            notes.append(
+                f"OVERLAP: {ov['trip_a']} ↔ {ov['trip_b']} "
+                f"({ov['overlap_s']//60}m {ov['overlap_s']%60}s)"
+            )
+            outliers.append(ov['trip_b'])
+        status = "FAIL"
+        conf   = 40
+        likely = "Duplicate trip import or incorrect timestamp on scanner"
+        notes.append(f"Likely cause: {likely}")
+
+    elif orphan_drives:
+        for od in orphan_drives[:3]:
+            notes.append(f"ORPHAN DRIVE: Tessie {od} (≥{_MICRO_DRIVE_MI}mi, no matched trip)")
+            outliers.append(f"tessie_{od}")
+        status = "FAIL"
+        conf   = 40
+        notes.append("Likely cause: Uber trip not scanned / missing from DB for this drive")
+
+    elif large_gaps:
+        for gap in large_gaps[:3]:
+            gap_min = gap['gap_s'] // 60
+            notes.append(
+                f"LARGE GAP: {gap['trip_a']} → {gap['trip_b']}: "
+                f"{gap_min}min idle (>{_GAP_WARN_SECONDS//60}min threshold)"
+            )
+        status = "WARN"
+        conf   = 75
+        notes.append("Likely cause: Meal break / charging stop / end of surge — review if unexpected")
+
+    else:
+        status = "PASS"
+        conf   = 100
+        notes.append(f"Sequence integrity confirmed across {trip_count} trips — no overlaps, gaps, or orphans")
+
+    return _tier_result(status, conf, {"timeline": timeline_r}, delta, notes, outliers)
 
 
 # ── MS Graph helpers ───────────────────────────────────────────────────────────
@@ -567,9 +714,11 @@ def _score_tier3(db_r: dict, onedrive_r: dict, bank_r: dict) -> dict:
 
 # ── Overall scorer ─────────────────────────────────────────────────────────────
 
-def _compute_overall(t1: dict, t2: dict, t3: dict) -> tuple[str, int | None]:
-    statuses    = [t["status"] for t in [t1, t2, t3] if t["status"] != "N_A"]
-    confidences = [t["confidence"] for t in [t1, t2, t3]
+def _compute_overall(t1: dict, t2: dict, t3: dict,
+                     t4: dict | None = None) -> tuple[str, int | None]:
+    tiers = [t for t in [t1, t2, t3, t4] if t is not None]
+    statuses    = [t["status"] for t in tiers if t["status"] != "N_A"]
+    confidences = [t["confidence"] for t in tiers
                    if t["confidence"] is not None]
 
     if not statuses:
@@ -735,6 +884,9 @@ def pre_shift_check(req: func.HttpRequest) -> func.HttpResponse:
                           _ONEDRIVE_TIMEOUT_S, "onedrive_expense_count"),
                 safe_call(_src_bank_trip_count(date_str),
                           _DEFAULT_TIMEOUT_S, "bank_expense_count"),
+                # Tier 4 source (DB-only — always fast)
+                safe_call(_src_tier4_timeline(start_utc, end_utc),
+                          _DEFAULT_TIMEOUT_S, "tier4_timeline"),
                 return_exceptions=False
             )
             return results
@@ -743,7 +895,8 @@ def pre_shift_check(req: func.HttpRequest) -> func.HttpResponse:
         try:
             (db_trips, tessie_trips, od_trips,
              db_earnings, ocr_earnings, bank_earnings,
-             db_expenses, od_expenses, bank_expenses) = loop.run_until_complete(_run_all())
+             db_expenses, od_expenses, bank_expenses,
+             timeline_r) = loop.run_until_complete(_run_all())
         finally:
             loop.close()
 
@@ -751,8 +904,9 @@ def pre_shift_check(req: func.HttpRequest) -> func.HttpResponse:
         tier1 = _score_tier1(db_trips,    tessie_trips, od_trips)
         tier2 = _score_tier2(db_earnings, ocr_earnings, bank_earnings)
         tier3 = _score_tier3(db_expenses, od_expenses,  bank_expenses)
+        tier4 = _score_tier4(timeline_r)
 
-        overall_status, overall_conf = _compute_overall(tier1, tier2, tier3)
+        overall_status, overall_conf = _compute_overall(tier1, tier2, tier3, tier4)
 
         # ── Build payload ──
         generated_at = datetime.datetime.utcnow().isoformat() + "Z"
@@ -768,6 +922,7 @@ def pre_shift_check(req: func.HttpRequest) -> func.HttpResponse:
                 "tier1_trips":    tier1,
                 "tier2_earnings": tier2,
                 "tier3_expenses": tier3,
+                "tier4_timeline": tier4,
             },
             "systems": {
                 "db":       db_trips["status"],
