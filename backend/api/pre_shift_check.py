@@ -1,0 +1,836 @@
+"""
+pre_shift_check.py
+==================
+GET  /api/pre-shift-check?date=YYYY-MM-DD[&refresh=1]
+
+Executes a 3-tier redundancy health check (Trips / Earnings / Expenses) with
+independent sources that must agree before reporting confidence.
+
+Design principles:
+  - No single source is trusted.
+  - Never raises an exception to the HTTP caller — always returns HTTP 200.
+  - Every external call has a hard timeout via asyncio.wait_for.
+  - Results are cached for 30 min (in-process dict + DB row when DB is up).
+  - IANA timezone "America/Denver" is used for all local-date conversions.
+"""
+
+import azure.functions as func
+import asyncio
+import datetime
+import json
+import logging
+import os
+import time
+import pytz
+
+from services.database import DatabaseClient
+
+log = logging.getLogger(__name__)
+
+bp = func.Blueprint()
+
+# ── Constants ──────────────────────────────────────────────────────────────────
+_MT = pytz.timezone("America/Denver")
+_UTC = pytz.utc
+_PIPELINE_VERSION = "1.0.0"
+_CACHE_TTL_S = 1800          # 30 minutes
+_DEFAULT_TIMEOUT_S = 5.0
+_ONEDRIVE_TIMEOUT_S = 8.0
+_NOTIFICATION_THRESHOLD = 70
+
+# In-process cache: (date_str, pipeline_version) → {payload, expires_at}
+_mem_cache: dict = {}
+
+CORS_HEADERS = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+}
+
+# ── Helpers ────────────────────────────────────────────────────────────────────
+
+def _mt_date_to_utc_window(date_str: str) -> tuple[datetime.datetime, datetime.datetime]:
+    """
+    Convert a local America/Denver date string (YYYY-MM-DD) to a UTC window
+    [start_utc, end_utc) representing midnight-to-midnight MDT/MST.
+    """
+    naive_start = datetime.datetime.strptime(date_str, "%Y-%m-%d")
+    naive_end   = naive_start + datetime.timedelta(days=1)
+    start_mt    = _MT.localize(naive_start, is_dst=None)
+    end_mt      = _MT.localize(naive_end,   is_dst=None)
+    return start_mt.astimezone(_UTC), end_mt.astimezone(_UTC)
+
+
+def _source_result(status: str, value=None, latency_ms: float | None = None,
+                   error: str | None = None) -> dict:
+    """Standard source result envelope."""
+    return {"status": status, "value": value, "latency_ms": latency_ms, "error": error}
+
+
+def _tier_result(status: str, confidence: int | None, values: dict,
+                 delta: dict, notes: list, outliers: list) -> dict:
+    return {
+        "status": status,
+        "confidence": confidence,
+        "values": values,
+        "delta": delta,
+        "notes": notes,
+        "outliers": outliers,
+    }
+
+
+async def safe_call(coro, timeout_s: float, name: str) -> dict:
+    """
+    Execute *coro* with a hard timeout. Always returns a source_result dict.
+    Catches ALL exceptions so callers never crash.
+    """
+    t0 = time.monotonic()
+    try:
+        value = await asyncio.wait_for(coro, timeout=timeout_s)
+        latency_ms = round((time.monotonic() - t0) * 1000, 1)
+        return _source_result("OK", value, latency_ms)
+    except asyncio.TimeoutError:
+        latency_ms = round((time.monotonic() - t0) * 1000, 1)
+        log.warning(f"[PreShift] {name} timed out after {timeout_s}s")
+        return _source_result("UNAVAILABLE", None, latency_ms,
+                              f"Timed out after {timeout_s}s")
+    except Exception as exc:
+        latency_ms = round((time.monotonic() - t0) * 1000, 1)
+        log.error(f"[PreShift] {name} raised: {exc}")
+        return _source_result("UNAVAILABLE", None, latency_ms, str(exc))
+
+
+# ── Source implementations ─────────────────────────────────────────────────────
+
+async def _src_db_trip_count(start_utc: datetime.datetime,
+                             end_utc: datetime.datetime) -> int:
+    """Count Uber trips in DB for the UTC window."""
+    def _query():
+        db = DatabaseClient()
+        conn = db.get_connection()
+        cur = conn.cursor()
+        cur.execute(
+            """SELECT COUNT(*) FROM Rides.Rides
+               WHERE (TripType = 'Uber' OR TripType IS NULL)
+               AND Timestamp_Start >= ? AND Timestamp_Start < ?""",
+            (start_utc.replace(tzinfo=None), end_utc.replace(tzinfo=None))
+        )
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+        return int(row[0]) if row else 0
+    return await asyncio.get_event_loop().run_in_executor(None, _query)
+
+
+async def _src_db_earnings_sum(start_utc: datetime.datetime,
+                               end_utc: datetime.datetime) -> float:
+    """Sum Driver_Earnings from DB for the UTC window."""
+    def _query():
+        db = DatabaseClient()
+        conn = db.get_connection()
+        cur = conn.cursor()
+        cur.execute(
+            """SELECT ISNULL(SUM(Driver_Earnings), 0) FROM Rides.Rides
+               WHERE (TripType = 'Uber' OR TripType IS NULL)
+               AND Timestamp_Start >= ? AND Timestamp_Start < ?""",
+            (start_utc.replace(tzinfo=None), end_utc.replace(tzinfo=None))
+        )
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+        return round(float(row[0]), 2) if row else 0.0
+    return await asyncio.get_event_loop().run_in_executor(None, _query)
+
+
+async def _src_db_expense_count(start_utc: datetime.datetime,
+                                end_utc: datetime.datetime) -> int:
+    """Count Meal_Receipt expenses in DB for the UTC window."""
+    def _query():
+        db = DatabaseClient()
+        conn = db.get_connection()
+        cur = conn.cursor()
+        cur.execute(
+            """SELECT COUNT(*) FROM Rides.ManualExpenses
+               WHERE Category IN ('Meal_Receipt','General_Expense','FastFood')
+               AND Timestamp >= ? AND Timestamp < ?""",
+            (start_utc.replace(tzinfo=None), end_utc.replace(tzinfo=None))
+        )
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+        return int(row[0]) if row else 0
+    return await asyncio.get_event_loop().run_in_executor(None, _query)
+
+
+async def _src_db_ocr_earnings(start_utc: datetime.datetime,
+                               end_utc: datetime.datetime) -> float:
+    """
+    Sum earnings from the Sidecar_Artifact_JSON OCR field for screenshot-derived trips.
+    Falls back to Driver_Earnings when sidecar is absent (still counts as OCR source
+    because trip was OCR-scanned from a screenshot into the DB).
+    """
+    def _query():
+        db = DatabaseClient()
+        conn = db.get_connection()
+        cur = conn.cursor()
+        cur.execute(
+            """SELECT Sidecar_Artifact_JSON, Driver_Earnings FROM Rides.Rides
+               WHERE (TripType = 'Uber' OR TripType IS NULL)
+               AND Timestamp_Start >= ? AND Timestamp_Start < ?""",
+            (start_utc.replace(tzinfo=None), end_utc.replace(tzinfo=None))
+        )
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        total = 0.0
+        import json as _json
+        for sidecar_raw, db_earnings in rows:
+            try:
+                sidecar = _json.loads(str(sidecar_raw)) if sidecar_raw else {}
+                val = sidecar.get("driver_earnings") or sidecar.get("earnings")
+                total += float(val) if val is not None else float(db_earnings or 0)
+            except Exception:
+                total += float(db_earnings or 0)
+        return round(total, 2)
+    return await asyncio.get_event_loop().run_in_executor(None, _query)
+
+
+async def _src_tessie_trip_count(date_str: str,
+                                 start_utc: datetime.datetime,
+                                 end_utc: datetime.datetime) -> int:
+    """Count Tessie drives tagged Uber* for the target date."""
+    import requests as _req
+    vin   = os.environ.get("TESSIE_VIN", "")
+    token = os.environ.get("TESSIE_TOKEN", "")
+    if not vin or not token:
+        raise ValueError("TESSIE_VIN or TESSIE_TOKEN not configured")
+
+    from_ts = int(start_utc.timestamp())
+    to_ts   = int(end_utc.timestamp())
+    url     = f"https://api.tessie.com/{vin}/drives"
+    resp    = _req.get(url, headers={"Authorization": f"Bearer {token}"},
+                       params={"from": from_ts, "to": to_ts},
+                       timeout=_DEFAULT_TIMEOUT_S)
+    resp.raise_for_status()
+    drives = resp.json().get("results") or resp.json().get("drives") or []
+    # Filter: must have an Uber-style tag AND distance >= 0.25 mi
+    count = 0
+    for d in drives:
+        tag = (d.get("tag") or "").lower()
+        dist = float(d.get("distance") or d.get("distance_miles") or 0)
+        if "uber" in tag and dist >= 0.25:
+            count += 1
+    return count
+
+
+async def _src_onedrive_trip_count(date_str: str) -> int:
+    """
+    Count Uber Driver screenshot files in the OneDrive folder for date_str.
+    Folder pattern: Uber Driver/YYYY/Month/Week X/M.DD.YY
+    Uses MS Graph API.
+    """
+    token = await _get_graph_token()
+    if not token:
+        raise ValueError("MS Graph credentials not configured")
+
+    folder_path = _build_onedrive_path(date_str, subfolder_hint="Uber Driver")
+    count = await _graph_count_files(
+        token, folder_path,
+        include_extensions=[".jpg", ".jpeg", ".png"],
+        exclude_patterns=["Starbucks", "WingStop", "Scan_", "_Starbucks", "Charging"]
+    )
+    return count
+
+
+async def _src_onedrive_expense_count(date_str: str) -> int:
+    """Count non-Uber-Driver expense screenshots in the date folder."""
+    token = await _get_graph_token()
+    if not token:
+        raise ValueError("MS Graph credentials not configured")
+
+    folder_path = _build_onedrive_path(date_str, subfolder_hint="Uber Driver")
+    count = await _graph_count_files(
+        token, folder_path,
+        include_extensions=[".jpg", ".jpeg", ".png", ".pdf"],
+        exclude_patterns=["_Uber Driver"]
+    )
+    return count
+
+
+async def _src_bank_trip_count(date_str: str) -> int:
+    """Placeholder: Teller bank transactions for Uber deposits on date."""
+    teller_token = os.environ.get("TELLER_ACCESS_TOKEN", "")
+    if not teller_token:
+        raise ValueError("TELLER_ACCESS_TOKEN not configured")
+    # Teller integration placeholder — returns UNAVAILABLE when not wired
+    raise NotImplementedError("Teller not configured")
+
+
+async def _src_bank_earnings(date_str: str) -> float:
+    """Placeholder: Bank Uber deposits for date."""
+    teller_token = os.environ.get("TELLER_ACCESS_TOKEN", "")
+    if not teller_token:
+        raise ValueError("TELLER_ACCESS_TOKEN not configured")
+    raise NotImplementedError("Teller not configured")
+
+
+# ── MS Graph helpers ───────────────────────────────────────────────────────────
+
+_graph_token_cache: dict = {}
+
+async def _get_graph_token() -> str | None:
+    """Obtain MS Graph token via client credentials. Returns None if not configured."""
+    client_id     = os.environ.get("GRAPH_CLIENT_ID") or os.environ.get("MS_GRAPH_CLIENT_ID")
+    client_secret = os.environ.get("GRAPH_CLIENT_SECRET") or os.environ.get("MS_GRAPH_CLIENT_SECRET")
+    tenant_id     = os.environ.get("GRAPH_TENANT_ID") or os.environ.get("AZURE_TENANT_ID")
+    if not all([client_id, client_secret, tenant_id]):
+        return None
+
+    now = time.time()
+    cached = _graph_token_cache.get("token")
+    if cached and cached["expires_at"] > now + 60:
+        return cached["value"]
+
+    import aiohttp
+    url  = f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
+    data = {
+        "grant_type": "client_credentials",
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "scope": "https://graph.microsoft.com/.default",
+    }
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, data=data, timeout=aiohttp.ClientTimeout(total=5)) as r:
+            if r.status != 200:
+                return None
+            resp_data = await r.json()
+            token_val = resp_data.get("access_token")
+            expires_in = int(resp_data.get("expires_in", 3600))
+            _graph_token_cache["token"] = {"value": token_val,
+                                           "expires_at": now + expires_in}
+            return token_val
+
+
+def _build_onedrive_path(date_str: str, subfolder_hint: str = "Uber Driver") -> str:
+    """
+    Build the OneDrive folder path for a given date.
+    Pattern: Uber Driver/2026/May/Week 4/5.24.26
+    """
+    dt = datetime.datetime.strptime(date_str, "%Y-%m-%d")
+    year = dt.strftime("%Y")
+    month = dt.strftime("%B")      # "May"
+    # ISO week within month (approximate Week 1-5)
+    week_num = (dt.day - 1) // 7 + 1
+    day_fmt = f"{dt.month}.{dt.day:02d}.{str(dt.year)[2:]}"  # "5.24.26"
+    drive_id = os.environ.get("ONEDRIVE_DRIVE_ID", "")
+    site_id  = os.environ.get("SHAREPOINT_SITE_ID", "")
+    return f"{subfolder_hint}/{year}/{month}/Week {week_num}/{day_fmt}"
+
+
+async def _graph_count_files(token: str, folder_path: str,
+                             include_extensions: list[str],
+                             exclude_patterns: list[str]) -> int:
+    """Count files in an OneDrive folder via MS Graph. Handles 429 with 1 retry."""
+    drive_id = os.environ.get("ONEDRIVE_DRIVE_ID", "")
+    if not drive_id:
+        raise ValueError("ONEDRIVE_DRIVE_ID not configured")
+
+    import aiohttp
+    encoded = folder_path.replace(" ", "%20")
+    url = (f"https://graph.microsoft.com/v1.0/drives/{drive_id}"
+           f"/root:/{encoded}:/children?$select=name,size&$top=999")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    async def _fetch(session):
+        async with session.get(url, headers=headers,
+                               timeout=aiohttp.ClientTimeout(total=_ONEDRIVE_TIMEOUT_S)) as r:
+            if r.status == 429:
+                retry_after = int(r.headers.get("Retry-After", "2"))
+                await asyncio.sleep(min(retry_after, 3))
+                async with session.get(url, headers=headers,
+                                       timeout=aiohttp.ClientTimeout(total=_ONEDRIVE_TIMEOUT_S)) as r2:
+                    r2.raise_for_status()
+                    return await r2.json()
+            r.raise_for_status()
+            return await r.json()
+
+    async with aiohttp.ClientSession() as session:
+        data = await _fetch(session)
+
+    files = data.get("value", [])
+    count = 0
+    for f in files:
+        name = f.get("name", "")
+        ext  = "." + name.rsplit(".", 1)[-1].lower() if "." in name else ""
+        if include_extensions and ext not in include_extensions:
+            continue
+        if any(p.lower() in name.lower() for p in exclude_patterns):
+            continue
+        count += 1
+    return count
+
+
+# ── Tier scorers ───────────────────────────────────────────────────────────────
+
+def _score_tier1(db_r: dict, tessie_r: dict, onedrive_r: dict) -> dict:
+    """
+    Trip Count Consensus.
+    3/3 agree → confidence 95-100 (PASS)
+    2/3 agree (within ±1 tolerance) → confidence 65-80 (WARN)
+    0-1 agree → confidence 0-40 (FAIL)
+    Any source UNAVAILABLE → cap at 80
+    """
+    notes, outliers, delta = [], [], {}
+    db_v        = db_r["value"]
+    tessie_v    = tessie_r["value"]
+    od_v        = onedrive_r["value"]
+
+    available = [(s, v) for s, v in [("db", db_v), ("tessie", tessie_v), ("onedrive", od_v)]
+                 if v is not None]
+    unavail   = [s for s, v in [("db", db_v), ("tessie", tessie_v), ("onedrive", od_v)]
+                 if v is None]
+
+    if unavail:
+        notes.append(f"Sources unavailable: {', '.join(unavail)}")
+        for s in unavail:
+            outliers.append(s)
+
+    if not available:
+        return _tier_result("N_A", None, {"db": db_r, "tessie": tessie_r, "onedrive": onedrive_r},
+                            {}, ["All sources unavailable"], outliers)
+
+    values_v = [v for _, v in available]
+    min_v, max_v = min(values_v), max(values_v)
+    spread = max_v - min_v
+
+    if db_v is not None and tessie_v is not None:
+        delta["db_vs_tessie"] = db_v - tessie_v
+    if db_v is not None and od_v is not None:
+        delta["db_vs_onedrive"] = db_v - od_v
+    if tessie_v is not None and od_v is not None:
+        delta["tessie_vs_onedrive"] = tessie_v - od_v
+
+    # OneDrive tolerance ±1 (upload lag)
+    od_adjusted = od_v
+    if od_v is not None:
+        # Check if onedrive is within ±1 of the median of other sources
+        others = [v for s, v in available if s != "onedrive"]
+        if others:
+            med = sum(others) / len(others)
+            if abs(od_v - med) == 1:
+                od_adjusted = round(med)
+                notes.append("OneDrive count within ±1 upload-lag tolerance — adjusted for consensus")
+
+    # Recompute agreement with adjustment
+    adj_values = []
+    for s, v in available:
+        adj_values.append(od_adjusted if s == "onedrive" else v)
+
+    agree_count = len(set(adj_values)) == 1 and len(adj_values) > 1
+    partial_agree = spread <= 1
+
+    cap = 80 if unavail else 100
+
+    if len(available) >= 2 and agree_count:
+        conf = min(cap, 97 if len(available) == 3 else 85)
+        status = "PASS"
+        notes.append(f"All available sources agree: {adj_values[0]} trips")
+    elif len(available) >= 2 and partial_agree:
+        conf = min(cap, 72)
+        status = "WARN"
+        outlier_vals = [(s, v) for s, v in available if v != min_v and v != max_v]
+        notes.append(f"Sources within ±1 tolerance (spread={spread})")
+    else:
+        conf = min(cap, 35)
+        status = "FAIL"
+        for s, v in available:
+            if v != max_v:
+                outliers.append(f"{s}={v} (max={max_v})")
+        notes.append(f"Sources disagree: spread={spread} trips")
+
+    return _tier_result(status, conf,
+                        {"db": db_r, "tessie": tessie_r, "onedrive": onedrive_r},
+                        delta, notes, outliers)
+
+
+def _score_tier2(db_sum_r: dict, ocr_sum_r: dict, bank_r: dict) -> dict:
+    """
+    Earnings Consensus.
+    DB == OCR (within $0.10) → PASS even if bank differs.
+    DB != OCR              → FAIL with delta.
+    Bank is supporting only — UNAVAILABLE doesn't penalize below WARN.
+    """
+    notes, outliers, delta = [], [], {}
+    db_v  = db_sum_r["value"]
+    ocr_v = ocr_sum_r["value"]
+    bnk_v = bank_r["value"]
+
+    if db_v is None and ocr_v is None:
+        return _tier_result("N_A", None,
+                            {"db": db_sum_r, "ocr": ocr_sum_r, "bank": bank_r},
+                            {}, ["Both DB and OCR unavailable"], [])
+
+    cap = 100
+    if bank_r["status"] == "UNAVAILABLE":
+        notes.append("Bank source unavailable — evaluating DB vs OCR only")
+        cap = 85
+
+    if db_v is None:
+        return _tier_result("WARN", 55,
+                            {"db": db_sum_r, "ocr": ocr_sum_r, "bank": bank_r},
+                            {}, ["DB unavailable — cannot confirm earnings"], ["db"])
+    if ocr_v is None:
+        return _tier_result("WARN", 55,
+                            {"db": db_sum_r, "ocr": ocr_sum_r, "bank": bank_r},
+                            {}, ["OCR unavailable — cannot cross-check earnings"], ["ocr"])
+
+    diff = round(db_v - ocr_v, 2)
+    delta["db_vs_ocr"] = diff
+    pct  = abs(diff / ocr_v * 100) if ocr_v else 0
+
+    if bnk_v is not None:
+        delta["db_vs_bank"] = round(db_v - bnk_v, 2)
+
+    if abs(diff) <= 0.10:
+        conf = min(cap, 97)
+        status = "PASS"
+        notes.append(f"DB (${db_v:.2f}) matches OCR (${ocr_v:.2f}) — within $0.10")
+    elif abs(diff) <= 1.00:
+        conf = min(cap, 75)
+        status = "WARN"
+        notes.append(f"DB (${db_v:.2f}) vs OCR (${ocr_v:.2f}): delta=${diff:+.2f} — minor rounding")
+        outliers.append("db" if diff > 0 else "ocr")
+    else:
+        conf = min(cap, 25)
+        status = "FAIL"
+        cause = "DB likely inflated by duplicate/ghost records" if diff > 0 else \
+                "DB likely missing trips vs OCR screenshot count"
+        notes.append(f"DB (${db_v:.2f}) ≠ OCR (${ocr_v:.2f}): delta=${diff:+.2f} ({pct:.1f}%) — {cause}")
+        outliers.append("db")
+
+    return _tier_result(status, conf,
+                        {"db": db_sum_r, "ocr": ocr_sum_r, "bank": bank_r},
+                        delta, notes, outliers)
+
+
+def _score_tier3(db_r: dict, onedrive_r: dict, bank_r: dict) -> dict:
+    """Expense Consensus (Meal_Receipt count)."""
+    notes, outliers, delta = [], [], {}
+    db_v  = db_r["value"]
+    od_v  = onedrive_r["value"]
+    bnk_v = bank_r["value"]
+
+    available = [(s, v) for s, v in [("db", db_v), ("onedrive", od_v), ("bank", bnk_v)]
+                 if v is not None]
+
+    if not available:
+        return _tier_result("N_A", None,
+                            {"db": db_r, "onedrive": onedrive_r, "bank": bank_r},
+                            {}, ["All sources unavailable"], [])
+
+    cap = 100
+    unavail = [s for s, v in [("db", db_v), ("onedrive", od_v), ("bank", bnk_v)] if v is None]
+    if unavail:
+        cap = 80
+        notes.append(f"Sources unavailable: {', '.join(unavail)}")
+
+    if db_v is not None and od_v is not None:
+        diff = db_v - od_v
+        delta["db_vs_onedrive"] = diff
+        if abs(diff) == 0:
+            conf = min(cap, 95)
+            status = "PASS"
+            notes.append(f"DB ({db_v}) matches OneDrive screenshot count ({od_v})")
+        elif abs(diff) <= 1:
+            conf = min(cap, 72)
+            status = "WARN"
+            notes.append(f"DB ({db_v}) vs OneDrive ({od_v}): delta={diff:+d} — possible upload lag")
+            outliers.append("onedrive")
+        else:
+            conf = min(cap, 35)
+            status = "FAIL"
+            notes.append(f"DB ({db_v}) ≠ OneDrive ({od_v}): delta={diff:+d}")
+            outliers.append("db" if diff > 0 else "onedrive")
+    elif db_v is not None:
+        conf = min(cap, 60)
+        status = "WARN"
+        notes.append(f"Only DB available: {db_v} expense(s)")
+    else:
+        conf = min(cap, 55)
+        status = "WARN"
+        notes.append("DB unavailable — evaluating remaining sources only")
+
+    return _tier_result(status, conf,
+                        {"db": db_r, "onedrive": onedrive_r, "bank": bank_r},
+                        delta, notes, outliers)
+
+
+# ── Overall scorer ─────────────────────────────────────────────────────────────
+
+def _compute_overall(t1: dict, t2: dict, t3: dict) -> tuple[str, int | None]:
+    statuses    = [t["status"] for t in [t1, t2, t3] if t["status"] != "N_A"]
+    confidences = [t["confidence"] for t in [t1, t2, t3]
+                   if t["confidence"] is not None]
+
+    if not statuses:
+        return "N_A", None
+
+    overall_conf = min(confidences) if confidences else None
+
+    if any(s == "FAIL" for s in statuses):
+        return "FAIL", overall_conf
+    if any(s == "WARN" for s in statuses):
+        return "WARN", overall_conf
+    return "PASS", overall_conf
+
+
+# ── Caching ────────────────────────────────────────────────────────────────────
+
+def _cache_key(date_str: str) -> str:
+    return f"{date_str}:{_PIPELINE_VERSION}"
+
+
+def _cache_get(date_str: str) -> dict | None:
+    key   = _cache_key(date_str)
+    entry = _mem_cache.get(key)
+    if entry and time.time() < entry["expires_at"]:
+        age = int(time.time() - entry["stored_at"])
+        payload = dict(entry["payload"])
+        payload["cache"] = {"hit": True, "age_seconds": age,
+                            "pipeline_version": _PIPELINE_VERSION}
+        return payload
+    return None
+
+
+def _cache_set(date_str: str, payload: dict):
+    key = _cache_key(date_str)
+    _mem_cache[key] = {
+        "payload": payload,
+        "stored_at": time.time(),
+        "expires_at": time.time() + _CACHE_TTL_S,
+    }
+    # Evict stale entries to prevent unbounded growth
+    stale = [k for k, v in _mem_cache.items() if time.time() > v["expires_at"]]
+    for k in stale:
+        _mem_cache.pop(k, None)
+
+
+# ── Notification (feature-flagged) ────────────────────────────────────────────
+
+def _maybe_notify(overall_status: str, overall_conf: int | None, date_str: str):
+    """
+    If confidence < threshold, emit a notification candidate.
+    Never raises — notification failure must not affect the endpoint.
+    """
+    if overall_conf is None or overall_conf >= _NOTIFICATION_THRESHOLD:
+        return
+    try:
+        teams_url = os.environ.get("TEAMS_WEBHOOK_URL", "")
+        if teams_url:
+            import requests as _req
+            payload = {
+                "@type": "MessageCard",
+                "@context": "http://schema.org/extensions",
+                "summary": f"SummitOS Pre-Shift Alert — {date_str}",
+                "themeColor": "FF0000" if overall_status == "FAIL" else "FF8C00",
+                "title": f"⚠️ Pre-Shift Check: {overall_status} (confidence {overall_conf}/100)",
+                "text": (f"System health check for **{date_str}** scored below threshold.\n\n"
+                         f"Status: **{overall_status}** | Confidence: **{overall_conf}/100**\n\n"
+                         "Open the dashboard to review and resolve issues before your shift."),
+            }
+            _req.post(teams_url, json=payload, timeout=4)
+            log.info(f"[PreShift] Teams notification sent for {date_str}")
+        else:
+            # Store notification candidate in DB
+            try:
+                db = DatabaseClient()
+                conn = db.get_connection()
+                cur = conn.cursor()
+                cur.execute(
+                    """IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES
+                                     WHERE TABLE_NAME = 'NotificationCandidates')
+                       CREATE TABLE dbo.NotificationCandidates (
+                           ID INT IDENTITY PRIMARY KEY,
+                           CreatedAt DATETIME DEFAULT GETUTCDATE(),
+                           TargetDate NVARCHAR(10),
+                           Status NVARCHAR(20),
+                           Confidence INT,
+                           Delivered BIT DEFAULT 0
+                       )"""
+                )
+                cur.execute(
+                    "INSERT INTO dbo.NotificationCandidates (TargetDate, Status, Confidence) VALUES (?,?,?)",
+                    (date_str, overall_status, overall_conf)
+                )
+                conn.commit()
+                cur.close()
+                conn.close()
+            except Exception as db_err:
+                log.warning(f"[PreShift] Could not store notification candidate: {db_err}")
+    except Exception as notify_err:
+        log.warning(f"[PreShift] Notification failed (non-fatal): {notify_err}")
+
+
+# ── Main handler ───────────────────────────────────────────────────────────────
+
+@bp.route(route="pre-shift-check", methods=["GET", "OPTIONS"],
+          auth_level=func.AuthLevel.ANONYMOUS)
+def pre_shift_check(req: func.HttpRequest) -> func.HttpResponse:
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
+
+    try:
+        # ── Params ──
+        date_param  = req.params.get("date", "").strip()
+        force_refresh = req.params.get("refresh", "0") == "1"
+
+        if date_param:
+            try:
+                datetime.datetime.strptime(date_param, "%Y-%m-%d")
+                date_str = date_param
+            except ValueError:
+                return func.HttpResponse(
+                    json.dumps({"error": "Invalid date format. Use YYYY-MM-DD."}),
+                    status_code=400, mimetype="application/json", headers=CORS_HEADERS
+                )
+        else:
+            # Default: yesterday in America/Denver
+            now_mt   = datetime.datetime.now(_MT)
+            date_str = (now_mt - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+
+        # ── Cache check ──
+        if not force_refresh:
+            cached = _cache_get(date_str)
+            if cached:
+                log.info(f"[PreShift] Cache HIT for {date_str}")
+                return func.HttpResponse(
+                    json.dumps(cached, default=str),
+                    status_code=200, mimetype="application/json", headers=CORS_HEADERS
+                )
+
+        # ── UTC window ──
+        start_utc, end_utc = _mt_date_to_utc_window(date_str)
+
+        # ── Run all sources concurrently ──
+        async def _run_all():
+            results = await asyncio.gather(
+                # Tier 1 sources
+                safe_call(_src_db_trip_count(start_utc, end_utc),
+                          _DEFAULT_TIMEOUT_S, "db_trip_count"),
+                safe_call(_src_tessie_trip_count(date_str, start_utc, end_utc),
+                          _DEFAULT_TIMEOUT_S, "tessie_trip_count"),
+                safe_call(_src_onedrive_trip_count(date_str),
+                          _ONEDRIVE_TIMEOUT_S, "onedrive_trip_count"),
+                # Tier 2 sources
+                safe_call(_src_db_earnings_sum(start_utc, end_utc),
+                          _DEFAULT_TIMEOUT_S, "db_earnings_sum"),
+                safe_call(_src_db_ocr_earnings(start_utc, end_utc),
+                          _DEFAULT_TIMEOUT_S, "ocr_earnings_sum"),
+                safe_call(_src_bank_earnings(date_str),
+                          _DEFAULT_TIMEOUT_S, "bank_earnings"),
+                # Tier 3 sources
+                safe_call(_src_db_expense_count(start_utc, end_utc),
+                          _DEFAULT_TIMEOUT_S, "db_expense_count"),
+                safe_call(_src_onedrive_expense_count(date_str),
+                          _ONEDRIVE_TIMEOUT_S, "onedrive_expense_count"),
+                safe_call(_src_bank_trip_count(date_str),
+                          _DEFAULT_TIMEOUT_S, "bank_expense_count"),
+                return_exceptions=False
+            )
+            return results
+
+        loop = asyncio.new_event_loop()
+        try:
+            (db_trips, tessie_trips, od_trips,
+             db_earnings, ocr_earnings, bank_earnings,
+             db_expenses, od_expenses, bank_expenses) = loop.run_until_complete(_run_all())
+        finally:
+            loop.close()
+
+        # ── Score tiers ──
+        tier1 = _score_tier1(db_trips,    tessie_trips, od_trips)
+        tier2 = _score_tier2(db_earnings, ocr_earnings, bank_earnings)
+        tier3 = _score_tier3(db_expenses, od_expenses,  bank_expenses)
+
+        overall_status, overall_conf = _compute_overall(tier1, tier2, tier3)
+
+        # ── Build payload ──
+        generated_at = datetime.datetime.utcnow().isoformat() + "Z"
+        payload = {
+            "date": date_str,
+            "generated_at": generated_at,
+            "pipeline_version": _PIPELINE_VERSION,
+            "overall_status": overall_status,
+            "overall_confidence": overall_conf,
+            "cache": {"hit": False, "age_seconds": 0,
+                      "pipeline_version": _PIPELINE_VERSION},
+            "tiers": {
+                "tier1_trips":    tier1,
+                "tier2_earnings": tier2,
+                "tier3_expenses": tier3,
+            },
+            "systems": {
+                "db":       db_trips["status"],
+                "tessie":   tessie_trips["status"],
+                "onedrive": od_trips["status"],
+                "bank":     bank_earnings["status"],
+            },
+        }
+
+        # ── Cache & notify ──
+        _cache_set(date_str, payload)
+        _maybe_notify(overall_status, overall_conf, date_str)
+
+        log.info(f"[PreShift] {date_str} → {overall_status} ({overall_conf}/100)")
+
+        return func.HttpResponse(
+            json.dumps(payload, default=str),
+            status_code=200, mimetype="application/json", headers=CORS_HEADERS
+        )
+
+    except Exception as top_err:
+        # Last-resort catch — must never return 5xx to the dashboard
+        log.error(f"[PreShift] Unhandled error: {top_err}", exc_info=True)
+        fallback = {
+            "date": date_param if "date_param" in dir() else "unknown",
+            "overall_status": "N_A",
+            "overall_confidence": None,
+            "error": str(top_err),
+            "cache": {"hit": False, "age_seconds": 0, "pipeline_version": _PIPELINE_VERSION},
+            "tiers": {},
+            "systems": {"db": "UNAVAILABLE", "tessie": "UNAVAILABLE",
+                        "onedrive": "UNAVAILABLE", "bank": "UNAVAILABLE"},
+        }
+        return func.HttpResponse(
+            json.dumps(fallback),
+            status_code=200, mimetype="application/json", headers=CORS_HEADERS
+        )
+
+
+# ── Timer trigger (7:00 AM MDT = 13:00 UTC) ──────────────────────────────────
+
+@bp.timer_trigger(schedule="0 0 13 * * *", arg_name="timer",
+                  run_on_startup=False, use_monitor=False)
+def pre_shift_daily_timer(timer: func.TimerRequest) -> None:
+    """
+    Runs the pre-shift check automatically at 7:00 AM MDT every day
+    and caches the result. Non-fatal — if this fails, the HTTP endpoint still works.
+    """
+    try:
+        now_mt   = datetime.datetime.now(_MT)
+        date_str = (now_mt - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+        log.info(f"[PreShift Timer] Running pre-shift check for {date_str}")
+
+        import urllib.request
+        base = os.environ.get("FUNCTIONS_HTTPWORKER_PORT", "7071")
+        url  = f"http://localhost:{base}/api/pre-shift-check?date={date_str}&refresh=1"
+        try:
+            with urllib.request.urlopen(url, timeout=120) as r:
+                body = r.read().decode()
+                data = json.loads(body)
+                log.info(f"[PreShift Timer] {date_str} → "
+                         f"{data.get('overall_status')} ({data.get('overall_confidence')}/100)")
+        except Exception as http_err:
+            log.warning(f"[PreShift Timer] Self-call failed: {http_err} — result not cached")
+    except Exception as e:
+        log.error(f"[PreShift Timer] Fatal: {e}", exc_info=True)

@@ -451,6 +451,64 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
         tessie = TessieClient()
         raw_drives = tessie.get_tagged_drives(vin, from_ts, to_ts)
 
+        # ── DB Classification Override ──────────────────────────────────────────
+        # After getting live Tessie drives, apply any manual classification overrides
+        # stored in the database. This allows reclassifying drives (e.g. an "Uber Trip N"
+        # that is actually a charging session) without needing to edit the Tessie tag.
+        if raw_drives:
+            try:
+                db_override = DatabaseClient()
+                conn_ov = db_override.get_connection()
+                if conn_ov:
+                    cur_ov = conn_ov.cursor()
+                    # Fetch all manually reclassified drives (i.e., where our DB
+                    # classification conflicts with what the tag would normally produce)
+                    cur_ov.execute("""
+                        SELECT RideID, Classification, TripType
+                        FROM Rides.Rides
+                        WHERE RideID LIKE 'TESSIE-%'
+                          AND Classification IS NOT NULL
+                          AND Classification != 'Untagged'
+                    """)
+                    db_classifications = {}
+                    for ov_row in cur_ov.fetchall():
+                        rid = str(ov_row[0])
+                        if rid.startswith('TESSIE-'):
+                            drive_num = rid[len('TESSIE-'):]
+                            db_classifications[drive_num] = {'classification': ov_row[1], 'trip_type': ov_row[2]}
+                    cur_ov.close()
+                    conn_ov.close()
+
+                    # Apply overrides to raw Tessie drives
+                    for rd in raw_drives:
+                        drive_id_str = str(rd.get('id') or '')
+                        if drive_id_str in db_classifications:
+                            db_cls = db_classifications[drive_id_str]
+                            cls = db_cls['classification']
+                            # Determine the correct tag from DB classification
+                            if cls.startswith('Private:'):
+                                override_tag = cls[len('Private:'):]
+                            elif cls in ('Uber_Dropoff', 'Uber_Matched'):
+                                override_tag = None  # keep Tessie tag for genuine Uber drives
+                            elif cls == 'Jackie':
+                                override_tag = 'Jackie'
+                            elif cls == 'Esmeralda':
+                                override_tag = 'Esmeralda'
+                            else:
+                                override_tag = cls
+
+                            # Only override if tag would change classification (prevent overriding
+                            # legitimate Uber drives that are correctly tagged in both places)
+                            if override_tag is not None:
+                                original_tag = str(rd.get('tag') or '')
+                                original_lower = original_tag.lower()
+                                # Override if: original tag says "uber" but DB says it's Private/Charging
+                                if 'uber' in original_lower and not cls.startswith('Uber_'):
+                                    logging.info(f"DB Override: drive {drive_id_str} tag '{original_tag}' -> '{override_tag}' (DB cls: {cls})")
+                                    rd['tag'] = override_tag
+            except Exception as ov_err:
+                logging.warning(f"DB classification override lookup failed: {ov_err}")
+
         # Database query fallback when raw_drives is empty
         if not raw_drives:
             logging.info(f"Tessie API returned 0 drives for range {from_ts} to {to_ts}. Initiating database fallback.")
@@ -676,7 +734,6 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
         # Match each drive to a ride with earnings using exact ID matching,
         # with a tight 30-minute time-based fallback.
         try:
-            from services.database import DatabaseClient
             db = DatabaseClient()
             conn = db.get_connection()
             cur = conn.cursor()

@@ -1,0 +1,1223 @@
+﻿{
+  "Trips": [
+    {
+      "trip_id": "TESSIE-395362288",
+      "date": "2026-05-19",
+      "type": "private",
+      "distance_mi": 8.62,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.88,
+      "profit": -0.88
+    },
+    {
+      "trip_id": "TESSIE-395359565",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 5.5,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.39,
+      "profit": -0.39
+    },
+    {
+      "trip_id": "TESSIE-395358191",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 2.58,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.27,
+      "profit": -0.27
+    },
+    {
+      "trip_id": "TRIP-20260519-12",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 0.0,
+      "duration_min": 0.0,
+      "earnings": 6.87,
+      "energy_cost": 0.0,
+      "profit": 6.87
+    },
+    {
+      "trip_id": "TESSIE-395357064",
+      "date": "2026-05-19",
+      "type": "private",
+      "distance_mi": 8.6,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.48,
+      "profit": -0.48
+    },
+    {
+      "trip_id": "TESSIE-395355138",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 0.33,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.03,
+      "profit": -0.03
+    },
+    {
+      "trip_id": "TRIP-20260519-11",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 0.0,
+      "duration_min": 0.0,
+      "earnings": 12.03,
+      "energy_cost": 0.0,
+      "profit": 12.03
+    },
+    {
+      "trip_id": "TESSIE-395349550",
+      "date": "2026-05-19",
+      "type": "private",
+      "distance_mi": 8.73,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.9,
+      "profit": -0.9
+    },
+    {
+      "trip_id": "TESSIE-395346628",
+      "date": "2026-05-19",
+      "type": "private",
+      "distance_mi": 32.56,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 1.86,
+      "profit": -1.86
+    },
+    {
+      "trip_id": "TESSIE-395338237",
+      "date": "2026-05-19",
+      "type": "private",
+      "distance_mi": 2.34,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.01,
+      "profit": -0.01
+    },
+    {
+      "trip_id": "TESSIE-395336780",
+      "date": "2026-05-19",
+      "type": "private",
+      "distance_mi": 22.47,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 2.23,
+      "profit": -2.23
+    },
+    {
+      "trip_id": "TESSIE-395330129",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 10.94,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.64,
+      "profit": -0.64
+    },
+    {
+      "trip_id": "TESSIE-395325588",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 2.38,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.13,
+      "profit": -0.13
+    },
+    {
+      "trip_id": "TRIP-20260519-10",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 0.0,
+      "duration_min": 0.0,
+      "earnings": 14.8,
+      "energy_cost": 0.0,
+      "profit": 14.8
+    },
+    {
+      "trip_id": "TESSIE-395323636",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 2.51,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.27,
+      "profit": -0.27
+    },
+    {
+      "trip_id": "TESSIE-395321458",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 11.27,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.57,
+      "profit": -0.57
+    },
+    {
+      "trip_id": "TRIP-20260519-09",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 0.0,
+      "duration_min": 0.0,
+      "earnings": 11.76,
+      "energy_cost": 0.0,
+      "profit": 11.76
+    },
+    {
+      "trip_id": "TESSIE-395317431",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 6.09,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.13,
+      "profit": -0.13
+    },
+    {
+      "trip_id": "TESSIE-395313602",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 4.09,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.65,
+      "profit": -0.65
+    },
+    {
+      "trip_id": "TESSIE-395306430",
+      "date": "2026-05-19",
+      "type": "private",
+      "distance_mi": 1.32,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.06,
+      "profit": -0.06
+    },
+    {
+      "trip_id": "TRIP-20260519-08",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 0.0,
+      "duration_min": 0.0,
+      "earnings": 7.9,
+      "energy_cost": 0.0,
+      "profit": 7.9
+    },
+    {
+      "trip_id": "TESSIE-395299764",
+      "date": "2026-05-19",
+      "type": "private",
+      "distance_mi": 2.26,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.2,
+      "profit": -0.2
+    },
+    {
+      "trip_id": "TESSIE-395298026",
+      "date": "2026-05-19",
+      "type": "private",
+      "distance_mi": 9.22,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 1.02,
+      "profit": -1.02
+    },
+    {
+      "trip_id": "TESSIE-395292185",
+      "date": "2026-05-19",
+      "type": "private",
+      "distance_mi": 0.04,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.02,
+      "profit": -0.02
+    },
+    {
+      "trip_id": "TESSIE-395289917",
+      "date": "2026-05-19",
+      "type": "private",
+      "distance_mi": 2.31,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.04,
+      "profit": -0.04
+    },
+    {
+      "trip_id": "TESSIE-395280267",
+      "date": "2026-05-19",
+      "type": "private",
+      "distance_mi": 0.81,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.26,
+      "profit": -0.26
+    },
+    {
+      "trip_id": "TESSIE-395277035",
+      "date": "2026-05-19",
+      "type": "private",
+      "distance_mi": 1.27,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.02,
+      "profit": -0.02
+    },
+    {
+      "trip_id": "TESSIE-395275599",
+      "date": "2026-05-19",
+      "type": "private",
+      "distance_mi": 1.9,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.34,
+      "profit": -0.34
+    },
+    {
+      "trip_id": "TESSIE-395273851",
+      "date": "2026-05-19",
+      "type": "private",
+      "distance_mi": 26.51,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 2.39,
+      "profit": -2.39
+    },
+    {
+      "trip_id": "TESSIE-395263277",
+      "date": "2026-05-19",
+      "type": "private",
+      "distance_mi": 16.27,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 1.05,
+      "profit": -1.05
+    },
+    {
+      "trip_id": "TESSIE-395255898",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 9.24,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.62,
+      "profit": -0.62
+    },
+    {
+      "trip_id": "TRIP-20260519-07",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 0.0,
+      "duration_min": 0.0,
+      "earnings": 10.7,
+      "energy_cost": 0.0,
+      "profit": 10.7
+    },
+    {
+      "trip_id": "TESSIE-395250919",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 1.76,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.1,
+      "profit": -0.1
+    },
+    {
+      "trip_id": "TESSIE-395249846",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 12.56,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.88,
+      "profit": -0.88
+    },
+    {
+      "trip_id": "TESSIE-395244321",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 2.72,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.41,
+      "profit": -0.41
+    },
+    {
+      "trip_id": "TRIP-20260519-06",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 0.0,
+      "duration_min": 0.0,
+      "earnings": 21.57,
+      "energy_cost": 0.0,
+      "profit": 21.57
+    },
+    {
+      "trip_id": "TESSIE-395219298",
+      "date": "2026-05-19",
+      "type": "private",
+      "distance_mi": 3.31,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.01,
+      "profit": -0.01
+    },
+    {
+      "trip_id": "TESSIE-395216329",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 7.44,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.71,
+      "profit": -0.71
+    },
+    {
+      "trip_id": "TESSIE-395210801",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 4.14,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.27,
+      "profit": -0.27
+    },
+    {
+      "trip_id": "TRIP-20260519-05",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 0.0,
+      "duration_min": 0.0,
+      "earnings": 13.42,
+      "energy_cost": 0.0,
+      "profit": 13.42
+    },
+    {
+      "trip_id": "TESSIE-395206981",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 16.17,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 1.37,
+      "profit": -1.37
+    },
+    {
+      "trip_id": "TESSIE-395199238",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 0.39,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.04,
+      "profit": -0.04
+    },
+    {
+      "trip_id": "TRIP-20260519-04",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 0.0,
+      "duration_min": 0.0,
+      "earnings": 15.08,
+      "energy_cost": 0.0,
+      "profit": 15.08
+    },
+    {
+      "trip_id": "TESSIE-395196007",
+      "date": "2026-05-19",
+      "type": "private",
+      "distance_mi": 4.39,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.47,
+      "profit": -0.47
+    },
+    {
+      "trip_id": "TESSIE-395192806",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 4.47,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.35,
+      "profit": -0.35
+    },
+    {
+      "trip_id": "TRIP-20260519-03",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 0.0,
+      "duration_min": 0.0,
+      "earnings": 15.91,
+      "energy_cost": 0.0,
+      "profit": 15.91
+    },
+    {
+      "trip_id": "TESSIE-395190021",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 4.95,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.55,
+      "profit": -0.55
+    },
+    {
+      "trip_id": "TESSIE-395186177",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 4.08,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.36,
+      "profit": -0.36
+    },
+    {
+      "trip_id": "TESSIE-395181429",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 0.42,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.01,
+      "profit": -0.01
+    },
+    {
+      "trip_id": "TRIP-20260519-02",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 0.0,
+      "duration_min": 0.0,
+      "earnings": 6.9,
+      "energy_cost": 0.0,
+      "profit": 6.9
+    },
+    {
+      "trip_id": "TESSIE-395177268",
+      "date": "2026-05-19",
+      "type": "private",
+      "distance_mi": 0.39,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.04,
+      "profit": -0.04
+    },
+    {
+      "trip_id": "TESSIE-395176303",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 6.21,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.45,
+      "profit": -0.45
+    },
+    {
+      "trip_id": "TESSIE-395171562",
+      "date": "2026-05-19",
+      "type": "private",
+      "distance_mi": 0.0,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.0,
+      "profit": 0.0
+    },
+    {
+      "trip_id": "TESSIE-395169920",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 0.81,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.14,
+      "profit": -0.14
+    },
+    {
+      "trip_id": "TRIP-20260519-01",
+      "date": "2026-05-19",
+      "type": "uber",
+      "distance_mi": 0.0,
+      "duration_min": 0.0,
+      "earnings": 10.68,
+      "energy_cost": 0.0,
+      "profit": 10.68
+    },
+    {
+      "trip_id": "TESSIE-395132405",
+      "date": "2026-05-19",
+      "type": "private",
+      "distance_mi": 0.02,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.0,
+      "profit": 0.0
+    },
+    {
+      "trip_id": "TESSIE-395132403",
+      "date": "2026-05-19",
+      "type": "private",
+      "distance_mi": 2.54,
+      "duration_min": 0.0,
+      "earnings": 0.0,
+      "energy_cost": 0.13,
+      "profit": -0.13
+    }
+  ],
+  "ChargingSessions": [
+    {
+      "session_id": "97961769",
+      "date": "2026-05-19",
+      "kwh_added": 33.69,
+      "cost": 13.79,
+      "duration_min": 31.1,
+      "rate_per_kwh": 0.4093
+    }
+  ],
+  "Expenses": {
+    "fastfood": [
+      {
+        "id": "1779276559226",
+        "category": "FastFood",
+        "amount": 47.41,
+        "timestamp": "2026-05-19T12:00:00-06:00"
+      },
+      {
+        "id": "1779276511787",
+        "category": "FastFood",
+        "amount": 7.79,
+        "timestamp": "2026-05-19T12:00:00-06:00"
+      },
+      {
+        "id": "1779276459787",
+        "category": "FastFood",
+        "amount": 7.79,
+        "timestamp": "2026-05-19T12:00:00-06:00"
+      }
+    ],
+    "charging": [
+      {
+        "id": "97961769",
+        "category": "charging",
+        "amount": 13.79,
+        "timestamp": "2026-05-19T12:00:00-06:00"
+      }
+    ],
+    "capital_maintenance": []
+  },
+  "TessieMetrics": [
+    {
+      "timestamp": "2026-05-19T06:20:00-06:00",
+      "soc_pct": 87.0,
+      "efficiency_wh_per_mi": 250.0,
+      "odometer_mi": 141219.58
+    },
+    {
+      "timestamp": "2026-05-19T06:21:00-06:00",
+      "soc_pct": 87.0,
+      "efficiency_wh_per_mi": 100.0,
+      "odometer_mi": 141219.61
+    },
+    {
+      "timestamp": "2026-05-19T06:22:00-06:00",
+      "soc_pct": 87.0,
+      "efficiency_wh_per_mi": 102.4,
+      "odometer_mi": 141219.92
+    },
+    {
+      "timestamp": "2026-05-19T06:23:00-06:00",
+      "soc_pct": 87.0,
+      "efficiency_wh_per_mi": 132.0,
+      "odometer_mi": 141220.33
+    },
+    {
+      "timestamp": "2026-05-19T06:24:00-06:00",
+      "soc_pct": 86.0,
+      "efficiency_wh_per_mi": 509.7,
+      "odometer_mi": 141220.74
+    },
+    {
+      "timestamp": "2026-05-19T06:25:00-06:00",
+      "soc_pct": 86.0,
+      "efficiency_wh_per_mi": 543.9,
+      "odometer_mi": 141221.3
+    },
+    {
+      "timestamp": "2026-05-19T06:26:00-06:00",
+      "soc_pct": 86.0,
+      "efficiency_wh_per_mi": 800.0,
+      "odometer_mi": 141221.79
+    },
+    {
+      "timestamp": "2026-05-19T06:27:00-06:00",
+      "soc_pct": 86.0,
+      "efficiency_wh_per_mi": 518.1,
+      "odometer_mi": 141221.98
+    },
+    {
+      "timestamp": "2026-05-19T06:28:00-06:00",
+      "soc_pct": 86.0,
+      "efficiency_wh_per_mi": 250.0,
+      "odometer_mi": 141222.13
+    },
+    {
+      "timestamp": "2026-05-19T06:28:00-06:00",
+      "soc_pct": 86.0,
+      "efficiency_wh_per_mi": 250.0,
+      "odometer_mi": 141222.08
+    },
+    {
+      "timestamp": "2026-05-19T08:22:00-06:00",
+      "soc_pct": 82.0,
+      "efficiency_wh_per_mi": 250.0,
+      "odometer_mi": 141222.14
+    },
+    {
+      "timestamp": "2026-05-19T08:23:00-06:00",
+      "soc_pct": 82.0,
+      "efficiency_wh_per_mi": 250.0,
+      "odometer_mi": 141222.17
+    },
+    {
+      "timestamp": "2026-05-19T08:24:00-06:00",
+      "soc_pct": 82.0,
+      "efficiency_wh_per_mi": 270.8,
+      "odometer_mi": 141222.28
+    },
+    {
+      "timestamp": "2026-05-19T08:25:00-06:00",
+      "soc_pct": 82.0,
+      "efficiency_wh_per_mi": 800.0,
+      "odometer_mi": 141222.58
+    },
+    {
+      "timestamp": "2026-05-19T08:26:00-06:00",
+      "soc_pct": 82.0,
+      "efficiency_wh_per_mi": 800.0,
+      "odometer_mi": 141222.78
+    },
+    {
+      "timestamp": "2026-05-19T08:27:00-06:00",
+      "soc_pct": 82.0,
+      "efficiency_wh_per_mi": 800.0,
+      "odometer_mi": 141222.97
+    },
+    {
+      "timestamp": "2026-05-19T08:31:00-06:00",
+      "soc_pct": 81.0,
+      "efficiency_wh_per_mi": 250.0,
+      "odometer_mi": 141222.97
+    },
+    {
+      "timestamp": "2026-05-19T08:34:00-06:00",
+      "soc_pct": 81.0,
+      "efficiency_wh_per_mi": 170.2,
+      "odometer_mi": 141222.98
+    },
+    {
+      "timestamp": "2026-05-19T08:35:00-06:00",
+      "soc_pct": 81.0,
+      "efficiency_wh_per_mi": 250.0,
+      "odometer_mi": 141223.09
+    },
+    {
+      "timestamp": "2026-05-19T08:36:00-06:00",
+      "soc_pct": 81.0,
+      "efficiency_wh_per_mi": 250.0,
+      "odometer_mi": 141223.11
+    },
+    {
+      "timestamp": "2026-05-19T08:37:00-06:00",
+      "soc_pct": 81.0,
+      "efficiency_wh_per_mi": 100.0,
+      "odometer_mi": 141223.25
+    },
+    {
+      "timestamp": "2026-05-19T08:38:00-06:00",
+      "soc_pct": 81.0,
+      "efficiency_wh_per_mi": 100.0,
+      "odometer_mi": 141223.95
+    },
+    {
+      "timestamp": "2026-05-19T08:39:00-06:00",
+      "soc_pct": 81.0,
+      "efficiency_wh_per_mi": 155.1,
+      "odometer_mi": 141225.0
+    },
+    {
+      "timestamp": "2026-05-19T08:40:00-06:00",
+      "soc_pct": 80.0,
+      "efficiency_wh_per_mi": 137.7,
+      "odometer_mi": 141226.04
+    },
+    {
+      "timestamp": "2026-05-19T08:41:00-06:00",
+      "soc_pct": 80.0,
+      "efficiency_wh_per_mi": 118.5,
+      "odometer_mi": 141227.05
+    },
+    {
+      "timestamp": "2026-05-19T08:42:00-06:00",
+      "soc_pct": 80.0,
+      "efficiency_wh_per_mi": 250.0,
+      "odometer_mi": 141227.88
+    },
+    {
+      "timestamp": "2026-05-19T08:43:00-06:00",
+      "soc_pct": 80.0,
+      "efficiency_wh_per_mi": 100.0,
+      "odometer_mi": 141227.98
+    },
+    {
+      "timestamp": "2026-05-19T08:44:00-06:00",
+      "soc_pct": 80.0,
+      "efficiency_wh_per_mi": 225.8,
+      "odometer_mi": 141228.18
+    },
+    {
+      "timestamp": "2026-05-19T08:45:00-06:00",
+      "soc_pct": 79.0,
+      "efficiency_wh_per_mi": 709.3,
+      "odometer_mi": 141228.57
+    },
+    {
+      "timestamp": "2026-05-19T08:46:00-06:00",
+      "soc_pct": 79.0,
+      "efficiency_wh_per_mi": 711.0,
+      "odometer_mi": 141229.03
+    },
+    {
+      "timestamp": "2026-05-19T08:46:00-06:00",
+      "soc_pct": 79.0,
+      "efficiency_wh_per_mi": 800.0,
+      "odometer_mi": 141229.08
+    },
+    {
+      "timestamp": "2026-05-19T08:47:00-06:00",
+      "soc_pct": 79.0,
+      "efficiency_wh_per_mi": 800.0,
+      "odometer_mi": 141229.2
+    },
+    {
+      "timestamp": "2026-05-19T08:48:00-06:00",
+      "soc_pct": 79.0,
+      "efficiency_wh_per_mi": 350.9,
+      "odometer_mi": 141229.31
+    },
+    {
+      "timestamp": "2026-05-19T08:49:00-06:00",
+      "soc_pct": 79.0,
+      "efficiency_wh_per_mi": 800.0,
+      "odometer_mi": 141229.55
+    },
+    {
+      "timestamp": "2026-05-19T08:58:00-06:00",
+      "soc_pct": 78.0,
+      "efficiency_wh_per_mi": 250.0,
+      "odometer_mi": 141229.58
+    },
+    {
+      "timestamp": "2026-05-19T08:59:00-06:00",
+      "soc_pct": 78.0,
+      "efficiency_wh_per_mi": 100.0,
+      "odometer_mi": 141229.71
+    },
+    {
+      "timestamp": "2026-05-19T09:00:00-06:00",
+      "soc_pct": 78.0,
+      "efficiency_wh_per_mi": 100.0,
+      "odometer_mi": 141229.98
+    },
+    {
+      "timestamp": "2026-05-19T09:00:00-06:00",
+      "soc_pct": 78.0,
+      "efficiency_wh_per_mi": 118.2,
+      "odometer_mi": 141230.03
+    },
+    {
+      "timestamp": "2026-05-19T09:01:00-06:00",
+      "soc_pct": 78.0,
+      "efficiency_wh_per_mi": 303.9,
+      "odometer_mi": 141230.11
+    },
+    {
+      "timestamp": "2026-05-19T09:02:00-06:00",
+      "soc_pct": 78.0,
+      "efficiency_wh_per_mi": 123.8,
+      "odometer_mi": 141230.4
+    },
+    {
+      "timestamp": "2026-05-19T09:03:00-06:00",
+      "soc_pct": 78.0,
+      "efficiency_wh_per_mi": 330.3,
+      "odometer_mi": 141230.78
+    },
+    {
+      "timestamp": "2026-05-19T09:04:00-06:00",
+      "soc_pct": 78.0,
+      "efficiency_wh_per_mi": 250.0,
+      "odometer_mi": 141231.05
+    },
+    {
+      "timestamp": "2026-05-19T09:05:00-06:00",
+      "soc_pct": 78.0,
+      "efficiency_wh_per_mi": 250.0,
+      "odometer_mi": 141231.06
+    },
+    {
+      "timestamp": "2026-05-19T09:06:00-06:00",
+      "soc_pct": 78.0,
+      "efficiency_wh_per_mi": 182.3,
+      "odometer_mi": 141231.12
+    },
+    {
+      "timestamp": "2026-05-19T09:07:00-06:00",
+      "soc_pct": 78.0,
+      "efficiency_wh_per_mi": 100.0,
+      "odometer_mi": 141231.36
+    },
+    {
+      "timestamp": "2026-05-19T09:08:00-06:00",
+      "soc_pct": 77.0,
+      "efficiency_wh_per_mi": 288.9,
+      "odometer_mi": 141231.96
+    },
+    {
+      "timestamp": "2026-05-19T09:09:00-06:00",
+      "soc_pct": 77.0,
+      "efficiency_wh_per_mi": 800.0,
+      "odometer_mi": 141232.52
+    },
+    {
+      "timestamp": "2026-05-19T09:10:00-06:00",
+      "soc_pct": 77.0,
+      "efficiency_wh_per_mi": 328.4,
+      "odometer_mi": 141232.69
+    },
+    {
+      "timestamp": "2026-05-19T09:11:00-06:00",
+      "soc_pct": 77.0,
+      "efficiency_wh_per_mi": 114.9,
+      "odometer_mi": 141233.09
+    },
+    {
+      "timestamp": "2026-05-19T09:12:00-06:00",
+      "soc_pct": 76.0,
+      "efficiency_wh_per_mi": 100.0,
+      "odometer_mi": 141233.62
+    },
+    {
+      "timestamp": "2026-05-19T09:13:00-06:00",
+      "soc_pct": 76.0,
+      "efficiency_wh_per_mi": 100.0,
+      "odometer_mi": 141233.94
+    },
+    {
+      "timestamp": "2026-05-19T09:14:00-06:00",
+      "soc_pct": 76.0,
+      "efficiency_wh_per_mi": 100.0,
+      "odometer_mi": 141234.11
+    },
+    {
+      "timestamp": "2026-05-19T09:14:00-06:00",
+      "soc_pct": 76.0,
+      "efficiency_wh_per_mi": 250.0,
+      "odometer_mi": 141234.11
+    },
+    {
+      "timestamp": "2026-05-19T09:15:00-06:00",
+      "soc_pct": 76.0,
+      "efficiency_wh_per_mi": 308.4,
+      "odometer_mi": 141234.2
+    },
+    {
+      "timestamp": "2026-05-19T09:16:00-06:00",
+      "soc_pct": 76.0,
+      "efficiency_wh_per_mi": 237.9,
+      "odometer_mi": 141234.38
+    },
+    {
+      "timestamp": "2026-05-19T09:17:00-06:00",
+      "soc_pct": 76.0,
+      "efficiency_wh_per_mi": 375.2,
+      "odometer_mi": 141235.01
+    },
+    {
+      "timestamp": "2026-05-19T09:18:00-06:00",
+      "soc_pct": 76.0,
+      "efficiency_wh_per_mi": 468.7,
+      "odometer_mi": 141235.39
+    },
+    {
+      "timestamp": "2026-05-19T09:19:00-06:00",
+      "soc_pct": 75.0,
+      "efficiency_wh_per_mi": 285.8,
+      "odometer_mi": 141235.96
+    },
+    {
+      "timestamp": "2026-05-19T09:20:00-06:00",
+      "soc_pct": 75.0,
+      "efficiency_wh_per_mi": 250.0,
+      "odometer_mi": 141236.55
+    },
+    {
+      "timestamp": "2026-05-19T09:21:00-06:00",
+      "soc_pct": 75.0,
+      "efficiency_wh_per_mi": 100.0,
+      "odometer_mi": 141236.6
+    },
+    {
+      "timestamp": "2026-05-19T09:22:00-06:00",
+      "soc_pct": 74.0,
+      "efficiency_wh_per_mi": 382.6,
+      "odometer_mi": 141237.11
+    },
+    {
+      "timestamp": "2026-05-19T09:23:00-06:00",
+      "soc_pct": 74.0,
+      "efficiency_wh_per_mi": 368.8,
+      "odometer_mi": 141237.91
+    },
+    {
+      "timestamp": "2026-05-19T09:24:00-06:00",
+      "soc_pct": 74.0,
+      "efficiency_wh_per_mi": 100.0,
+      "odometer_mi": 141238.59
+    },
+    {
+      "timestamp": "2026-05-19T09:25:00-06:00",
+      "soc_pct": 73.0,
+      "efficiency_wh_per_mi": 100.0,
+      "odometer_mi": 141238.98
+    },
+    {
+      "timestamp": "2026-05-19T09:25:00-06:00",
+      "soc_pct": 73.0,
+      "efficiency_wh_per_mi": 126.4,
+      "odometer_mi": 141238.9
+    },
+    {
+      "timestamp": "2026-05-19T09:26:00-06:00",
+      "soc_pct": 73.0,
+      "efficiency_wh_per_mi": 574.5,
+      "odometer_mi": 141239.1
+    },
+    {
+      "timestamp": "2026-05-19T09:27:00-06:00",
+      "soc_pct": 73.0,
+      "efficiency_wh_per_mi": 175.6,
+      "odometer_mi": 141239.45
+    },
+    {
+      "timestamp": "2026-05-19T09:28:00-06:00",
+      "soc_pct": 73.0,
+      "efficiency_wh_per_mi": 100.0,
+      "odometer_mi": 141240.2
+    },
+    {
+      "timestamp": "2026-05-19T09:29:00-06:00",
+      "soc_pct": 73.0,
+      "efficiency_wh_per_mi": 100.0,
+      "odometer_mi": 141241.04
+    },
+    {
+      "timestamp": "2026-05-19T09:30:00-06:00",
+      "soc_pct": 72.0,
+      "efficiency_wh_per_mi": 601.5,
+      "odometer_mi": 141241.78
+    },
+    {
+      "timestamp": "2026-05-19T09:31:00-06:00",
+      "soc_pct": 72.0,
+      "efficiency_wh_per_mi": 589.2,
+      "odometer_mi": 141242.53
+    },
+    {
+      "timestamp": "2026-05-19T09:32:00-06:00",
+      "soc_pct": 72.0,
+      "efficiency_wh_per_mi": 508.1,
+      "odometer_mi": 141243.16
+    },
+    {
+      "timestamp": "2026-05-19T09:33:00-06:00",
+      "soc_pct": 72.0,
+      "efficiency_wh_per_mi": 800.0,
+      "odometer_mi": 141243.48
+    },
+    {
+      "timestamp": "2026-05-19T09:34:00-06:00",
+      "soc_pct": 72.0,
+      "efficiency_wh_per_mi": 800.0,
+      "odometer_mi": 141243.53
+    },
+    {
+      "timestamp": "2026-05-19T09:35:00-06:00",
+      "soc_pct": 71.0,
+      "efficiency_wh_per_mi": 483.8,
+      "odometer_mi": 141243.89
+    },
+    {
+      "timestamp": "2026-05-19T09:36:00-06:00",
+      "soc_pct": 71.0,
+      "efficiency_wh_per_mi": 279.8,
+      "odometer_mi": 141244.38
+    },
+    {
+      "timestamp": "2026-05-19T09:37:00-06:00",
+      "soc_pct": 71.0,
+      "efficiency_wh_per_mi": 746.0,
+      "odometer_mi": 141244.47
+    },
+    {
+      "timestamp": "2026-05-19T09:38:00-06:00",
+      "soc_pct": 71.0,
+      "efficiency_wh_per_mi": 100.0,
+      "odometer_mi": 141245.23
+    },
+    {
+      "timestamp": "2026-05-19T09:39:00-06:00",
+      "soc_pct": 70.0,
+      "efficiency_wh_per_mi": 250.0,
+      "odometer_mi": 141245.91
+    },
+    {
+      "timestamp": "2026-05-19T09:40:00-06:00",
+      "soc_pct": 70.0,
+      "efficiency_wh_per_mi": 480.4,
+      "odometer_mi": 141246.1
+    },
+    {
+      "timestamp": "2026-05-19T09:41:00-06:00",
+      "soc_pct": 69.0,
+      "efficiency_wh_per_mi": 489.5,
+      "odometer_mi": 141246.95
+    },
+    {
+      "timestamp": "2026-05-19T09:42:00-06:00",
+      "soc_pct": 69.0,
+      "efficiency_wh_per_mi": 187.7,
+      "odometer_mi": 141247.77
+    },
+    {
+      "timestamp": "2026-05-19T09:50:00-06:00",
+      "soc_pct": 69.0,
+      "efficiency_wh_per_mi": 250.0,
+      "odometer_mi": 141247.92
+    },
+    {
+      "timestamp": "2026-05-19T09:51:00-06:00",
+      "soc_pct": 69.0,
+      "efficiency_wh_per_mi": 100.0,
+      "odometer_mi": 141248.3
+    },
+    {
+      "timestamp": "2026-05-19T09:51:00-06:00",
+      "soc_pct": 69.0,
+      "efficiency_wh_per_mi": 100.0,
+      "odometer_mi": 141248.36
+    },
+    {
+      "timestamp": "2026-05-19T09:52:00-06:00",
+      "soc_pct": 69.0,
+      "efficiency_wh_per_mi": 135.0,
+      "odometer_mi": 141248.42
+    },
+    {
+      "timestamp": "2026-05-19T09:53:00-06:00",
+      "soc_pct": 69.0,
+      "efficiency_wh_per_mi": 100.0,
+      "odometer_mi": 141248.96
+    },
+    {
+      "timestamp": "2026-05-19T09:54:00-06:00",
+      "soc_pct": 69.0,
+      "efficiency_wh_per_mi": 100.0,
+      "odometer_mi": 141249.66
+    },
+    {
+      "timestamp": "2026-05-19T09:55:00-06:00",
+      "soc_pct": 68.0,
+      "efficiency_wh_per_mi": 100.0,
+      "odometer_mi": 141250.34
+    },
+    {
+      "timestamp": "2026-05-19T09:56:00-06:00",
+      "soc_pct": 68.0,
+      "efficiency_wh_per_mi": 250.0,
+      "odometer_mi": 141250.44
+    },
+    {
+      "timestamp": "2026-05-19T09:57:00-06:00",
+      "soc_pct": 68.0,
+      "efficiency_wh_per_mi": 100.0,
+      "odometer_mi": 141250.44
+    },
+    {
+      "timestamp": "2026-05-19T09:58:00-06:00",
+      "soc_pct": 68.0,
+      "efficiency_wh_per_mi": 114.3,
+      "odometer_mi": 141251.09
+    },
+    {
+      "timestamp": "2026-05-19T09:59:00-06:00",
+      "soc_pct": 68.0,
+      "efficiency_wh_per_mi": 121.3,
+      "odometer_mi": 141251.65
+    },
+    {
+      "timestamp": "2026-05-19T10:00:00-06:00",
+      "soc_pct": 67.0,
+      "efficiency_wh_per_mi": 100.0,
+      "odometer_mi": 141252.62
+    },
+    {
+      "timestamp": "2026-05-19T10:01:00-06:00",
+      "soc_pct": 67.0,
+      "efficiency_wh_per_mi": 196.7,
+      "odometer_mi": 141253.53
+    },
+    {
+      "timestamp": "2026-05-19T10:02:00-06:00",
+      "soc_pct": 67.0,
+      "efficiency_wh_per_mi": 344.7,
+      "odometer_mi": 141254.3
+    },
+    {
+      "timestamp": "2026-05-19T10:03:00-06:00",
+      "soc_pct": 66.0,
+      "efficiency_wh_per_mi": 276.7,
+      "odometer_mi": 141255.25
+    },
+    {
+      "timestamp": "2026-05-19T10:04:00-06:00",
+      "soc_pct": 66.0,
+      "efficiency_wh_per_mi": 194.8,
+      "odometer_mi": 141256.47
+    },
+    {
+      "timestamp": "2026-05-19T10:05:00-06:00",
+      "soc_pct": 65.0,
+      "efficiency_wh_per_mi": 134.7,
+      "odometer_mi": 141257.73
+    },
+    {
+      "timestamp": "2026-05-19T10:06:00-06:00",
+      "soc_pct": 64.0,
+      "efficiency_wh_per_mi": 232.5,
+      "odometer_mi": 141258.95
+    }
+  ],
+  "KPIs": {
+    "totalRevenue": 147.62,
+    "totalExpenses": 76.78,
+    "capitalMaintenanceTotal": 0,
+    "netProfit": 70.84
+  }
+}

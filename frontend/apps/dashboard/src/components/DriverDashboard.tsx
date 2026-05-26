@@ -15,7 +15,7 @@ import { isBackgroundableError, devDebugError, getAsyncExecutionLogs, pollJobSta
 const AZURE_BASE = import.meta.env.VITE_PUBLIC_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://summitos-api.azurewebsites.net/api';
 const VERSION = "1.4.5";
 
-const TAG_FILTERS = ['Uber', 'Uber_Matched', 'Uber_Pickup', 'Jackie', 'Esmeralda', 'Uncategorized'] as const;
+const TAG_FILTERS = ['Uber', 'Uber_Matched', 'Uber_Pickup', 'Jackie', 'Esmeralda', 'Uncategorized', 'Charging Session'] as const;
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface PrivatePayment {
@@ -362,8 +362,280 @@ const TeslaStatusBar = () => {
         </div>
     );
 };
+// ─── Pre-Shift Health Check Card ─────────────────────────────────────────────
+type CheckStatus = 'PASS' | 'WARN' | 'FAIL' | 'N_A';
+type SourceStatus = 'OK' | 'DEGRADED' | 'UNAVAILABLE';
+
+interface SourceResult { status: SourceStatus; value: number | null; latency_ms: number | null; error: string | null; }
+interface TierResult {
+    status: CheckStatus; confidence: number | null;
+    values: Record<string, SourceResult>;
+    delta: Record<string, number>;
+    notes: string[]; outliers: string[];
+}
+interface PreShiftPayload {
+    date: string; generated_at: string; pipeline_version: string;
+    overall_status: CheckStatus; overall_confidence: number | null;
+    cache: { hit: boolean; age_seconds: number };
+    tiers: { tier1_trips?: TierResult; tier2_earnings?: TierResult; tier3_expenses?: TierResult };
+    systems: Record<string, SourceStatus>;
+    error?: string;
+}
+
+const statusColor = (s: CheckStatus | null | undefined) => {
+    if (s === 'PASS') return 'text-emerald-600';
+    if (s === 'WARN') return 'text-amber-600';
+    if (s === 'FAIL') return 'text-rose-600';
+    return 'text-slate-400';
+};
+const statusBg = (s: CheckStatus | null | undefined) => {
+    if (s === 'PASS') return 'bg-emerald-50 border-emerald-200';
+    if (s === 'WARN') return 'bg-amber-50 border-amber-200';
+    if (s === 'FAIL') return 'bg-rose-50 border-rose-200';
+    return 'bg-slate-50 border-slate-200';
+};
+const statusDot = (s: CheckStatus | SourceStatus | null | undefined) => {
+    if (s === 'PASS' || s === 'OK') return 'bg-emerald-500';
+    if (s === 'WARN' || s === 'DEGRADED') return 'bg-amber-400';
+    if (s === 'FAIL') return 'bg-rose-500';
+    return 'bg-slate-300';
+};
+const statusEmoji = (s: CheckStatus | null) => {
+    if (s === 'PASS') return '✓';
+    if (s === 'WARN') return '⚠';
+    if (s === 'FAIL') return '✕';
+    return '–';
+};
+const confBar = (conf: number | null) => {
+    if (conf === null) return 'bg-slate-200';
+    if (conf >= 90) return 'bg-emerald-500';
+    if (conf >= 65) return 'bg-amber-400';
+    return 'bg-rose-500';
+};
+
+const TierRow = ({ label, tier }: { label: string; tier?: TierResult }) => {
+    if (!tier) return null;
+    const conf = tier.confidence;
+    return (
+        <div className="flex items-start gap-3 py-2.5 border-b border-slate-100 last:border-0">
+            <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black
+                ${tier.status === 'PASS' ? 'bg-emerald-100 text-emerald-700' :
+                  tier.status === 'WARN' ? 'bg-amber-100 text-amber-700' :
+                  tier.status === 'FAIL' ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-400'}`}>
+                {statusEmoji(tier.status)}
+            </div>
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-bold text-slate-700">{label}</span>
+                    {conf !== null && (
+                        <div className="flex items-center gap-1.5 shrink-0">
+                            <div className="w-16 h-1 bg-slate-100 rounded-full overflow-hidden">
+                                <div className={`h-full ${confBar(conf)} transition-all duration-500`} style={{ width: `${conf}%` }} />
+                            </div>
+                            <span className={`text-[10px] font-mono font-bold tabular-nums ${statusColor(tier.status)}`}>{conf}/100</span>
+                        </div>
+                    )}
+                </div>
+                {tier.notes.map((n, i) => (
+                    <p key={i} className={`text-[10px] font-mono mt-0.5 leading-tight
+                        ${tier.status === 'FAIL' ? 'text-rose-600' :
+                          tier.status === 'WARN' ? 'text-amber-600' : 'text-slate-500'}`}>{n}</p>
+                ))}
+                {Object.keys(tier.delta).length > 0 && (
+                    <div className="flex flex-wrap gap-x-3 mt-1">
+                        {Object.entries(tier.delta).map(([k, v]) => (
+                            <span key={k} className="text-[9px] font-mono text-slate-400">
+                                {k}: <span className={Math.abs(v) > 0 ? 'text-amber-600 font-bold' : 'text-emerald-600'}>{v > 0 ? `+${v}` : v}</span>
+                            </span>
+                        ))}
+                    </div>
+                )}
+            </div>
+            {/* Source dots */}
+            <div className="flex gap-1 shrink-0 mt-1">
+                {Object.entries(tier.values).map(([src, r]) => (
+                    <div key={src} title={`${src}: ${r?.status ?? 'N/A'} ${r?.value ?? ''}`}
+                        className={`w-2 h-2 rounded-full ${statusDot(r?.status)} transition-all`} />
+                ))}
+            </div>
+        </div>
+    );
+};
+
+const PreShiftCard = ({ selectedDate }: { selectedDate: string }) => {
+    const [data, setData] = useState<PreShiftPayload | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [collapsed, setCollapsed] = useState(false);
+    const [lastRun, setLastRun] = useState<string | null>(null);
+
+    const fetchCheck = useCallback(async (bust = false) => {
+        setLoading(true);
+        try {
+            const url = `${AZURE_BASE}/pre-shift-check?date=${selectedDate}${bust ? '&refresh=1' : ''}`;
+            const res = await fetch(url, {
+                signal: AbortSignal.timeout(30_000),
+                cache: 'no-store',
+            });
+            if (!res.ok) throw new Error('non-ok');
+            const payload: PreShiftPayload = await res.json();
+            setData(payload);
+            setLastRun(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+            // Auto-collapse only on full green pass
+            setCollapsed(payload.overall_status === 'PASS' && (payload.overall_confidence ?? 0) >= 90);
+        } catch {
+            setData(null);
+        } finally {
+            setLoading(false);
+        }
+    }, [selectedDate]);
+
+    useEffect(() => { fetchCheck(false); }, [fetchCheck]);
+
+    const overall = data?.overall_status ?? null;
+    const conf    = data?.overall_confidence ?? null;
+
+    // ── Collapsed banner (green pass only) ──────────────────────────
+    if (!loading && collapsed && overall === 'PASS') {
+        return (
+            <div onClick={() => setCollapsed(false)}
+                className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-emerald-200 bg-emerald-50/80 cursor-pointer hover:bg-emerald-50 transition-all"
+                style={{ backdropFilter: 'blur(8px)' }}>
+                <div className="w-4 h-4 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                <span className="text-xs font-bold text-emerald-700">All Systems Go · Pre-Shift Check PASS</span>
+                {conf !== null && <span className="text-[10px] font-mono text-emerald-600 ml-auto">{conf}/100 confidence</span>}
+                {lastRun && <span className="text-[10px] text-emerald-500 font-mono">as of {lastRun}</span>}
+            </div>
+        );
+    }
+
+    // ── Skeleton ────────────────────────────────────────────────────
+    if (loading) {
+        return (
+            <div className="rounded-2xl border border-slate-200/80 bg-white/80 p-4 space-y-3 animate-pulse"
+                style={{ backdropFilter: 'blur(16px)' }}>
+                <div className="flex items-center gap-3">
+                    <div className="w-4 h-4 rounded-full bg-slate-200" />
+                    <div className="h-3 w-40 bg-slate-200 rounded-full" />
+                    <div className="ml-auto h-3 w-24 bg-slate-200 rounded-full" />
+                </div>
+                {[1, 2, 3].map(i => (
+                    <div key={i} className="flex items-center gap-3">
+                        <div className="w-5 h-5 rounded-full bg-slate-100" />
+                        <div className="flex-1 space-y-1.5">
+                            <div className="h-2.5 w-32 bg-slate-100 rounded-full" />
+                            <div className="h-2 w-48 bg-slate-100 rounded-full" />
+                        </div>
+                    </div>
+                ))}
+            </div>
+        );
+    }
+
+    // ── Error / N_A ─────────────────────────────────────────────────
+    if (!data || data.overall_status === 'N_A') {
+        return (
+            <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-4"
+                style={{ backdropFilter: 'blur(16px)' }}>
+                <div className="flex items-center gap-3">
+                    <div className="w-4 h-4 rounded-full bg-slate-300 shrink-0" />
+                    <span className="text-xs font-semibold text-slate-500">Pre-Shift Check — systems unavailable</span>
+                    <button onClick={() => fetchCheck(true)}
+                        className="ml-auto flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-bold border border-slate-200 hover:bg-slate-50 text-slate-600 transition-all">
+                        <RefreshCw className="w-3 h-3" /> Re-run
+                    </button>
+                </div>
+                {data?.error && <p className="mt-2 text-[10px] font-mono text-slate-400">{data.error}</p>}
+            </div>
+        );
+    }
+
+    // ── Full card ───────────────────────────────────────────────────
+    return (
+        <div className={`rounded-2xl border p-4 transition-all duration-300 ${statusBg(overall)}`}
+            style={{ backdropFilter: 'blur(16px)', background: 'rgba(255,255,255,0.88)' }}>
+
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-3">
+                <div className={`w-4 h-4 rounded-full shrink-0 ${statusDot(overall)}
+                    ${overall !== 'PASS' ? 'animate-pulse' : ''}`} />
+                <div>
+                    <p className="text-[10px] font-semibold tracking-wider text-slate-500 uppercase">
+                        Pre-Shift System Check · {selectedDate}
+                    </p>
+                    <p className={`text-sm font-black tracking-tight ${statusColor(overall)}`}>
+                        {overall === 'PASS' ? 'All Systems Go'
+                            : overall === 'WARN' ? 'Action Required'
+                            : overall === 'FAIL' ? 'Issues Detected'
+                            : 'Status Unknown'}
+                    </p>
+                </div>
+
+                {/* Confidence bar */}
+                {conf !== null && (
+                    <div className="flex items-center gap-2 mx-4 flex-1">
+                        <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div className={`h-full ${confBar(conf)} transition-all duration-700`}
+                                style={{ width: `${conf}%` }} />
+                        </div>
+                        <span className={`text-xs font-mono font-black tabular-nums ${statusColor(overall)}`}>
+                            {conf}<span className="text-slate-400 font-normal text-[10px]">/100</span>
+                        </span>
+                    </div>
+                )}
+
+                <div className="flex items-center gap-2 ml-auto shrink-0">
+                    {data.cache?.hit && (
+                        <span className="text-[9px] font-mono text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                            cached {Math.round(data.cache.age_seconds / 60)}m ago
+                        </span>
+                    )}
+                    {lastRun && !data.cache?.hit && (
+                        <span className="text-[9px] font-mono text-slate-400">{lastRun}</span>
+                    )}
+                    <button onClick={() => fetchCheck(true)}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-slate-200 hover:bg-slate-50 text-slate-600 transition-all">
+                        <RefreshCw className="w-3 h-3" /> Re-run
+                    </button>
+                </div>
+            </div>
+
+            {/* Tier rows */}
+            <div className="rounded-xl bg-white/60 border border-slate-200/60 px-3 divide-y divide-slate-100 mb-3">
+                <TierRow label="Trip Count Consensus" tier={data.tiers.tier1_trips} />
+                <TierRow label="Earnings Consensus"   tier={data.tiers.tier2_earnings} />
+                <TierRow label="Expense Consensus"    tier={data.tiers.tier3_expenses} />
+            </div>
+
+            {/* Systems row */}
+            <div className="flex flex-wrap gap-2">
+                {Object.entries(data.systems).map(([sys, st]) => (
+                    <div key={sys} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/70 border border-slate-200/80">
+                        <div className={`w-1.5 h-1.5 rounded-full ${statusDot(st)}`} />
+                        <span className="text-[10px] font-mono text-slate-600 capitalize">{sys}</span>
+                        {st === 'UNAVAILABLE' && (
+                            <span className="text-[9px] text-slate-400">offline</span>
+                        )}
+                    </div>
+                ))}
+
+                {/* Action button for FAIL */}
+                {(overall === 'FAIL' || overall === 'WARN') && (
+                    <button
+                        onClick={() => {
+                            // Scroll to IntelligenceSyncPanel (Scan Day)
+                            document.getElementById('intelligence-sync-panel')?.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                        className="ml-auto px-3 py-1 rounded-full text-[10px] font-bold bg-amber-500 text-white hover:bg-amber-600 transition-all flex items-center gap-1">
+                        <RefreshCw className="w-3 h-3" /> Fix Issues →
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+};
 
 // ─── Tag badge ───────────────────────────────────────────────────────────────
+
 const TAG_STYLE: Record<string, string> = {
     uber_matched: 'bg-emerald-50 text-emerald-700 border-emerald-200/80',
     uber_pickup: 'bg-sky-50 text-sky-700 border-sky-200/80',
@@ -2421,6 +2693,10 @@ const DriverDashboard = () => {
                     
                     {/* ── Tesla Status Bar (TOP) ── */}
                     <TeslaStatusBar />
+
+                    {/* ── Pre-Shift System Check ── */}
+                    <PreShiftCard selectedDate={selectedDate} />
+
 
                     {/* ── Telemetry Curves ── */}
                     <TelemetrySparklines selectedDate={selectedDate} />

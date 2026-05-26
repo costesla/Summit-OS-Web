@@ -141,6 +141,12 @@ class TessieSyncService:
         if not tag:
             return 'Untagged'
         t = tag.lower()
+        # Charging Session tags always take priority — never treat as Uber_Dropoff
+        if 'charging session' in t or 'charge session' in t:
+            return f'Private:{tag}'
+        # "Uber Picture" is a staging/documentation drive, not a revenue trip
+        if t == 'uber picture' or t == 'uber photo':
+            return f'Private:{tag}'
         if 'uber' in t:
             return 'Uber_Dropoff'   # Required by UberMatcherService._find_match()
         if 'jackie' in t:

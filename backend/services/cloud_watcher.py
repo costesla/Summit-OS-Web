@@ -382,6 +382,14 @@ class CloudWatcherService:
                     # Final driver payout
                     final_earnings = max(you_earned, round(your_earnings + tip_val, 2))
 
+                    # If GPT returned 0 for all earnings fields, try rider_payment as emergency
+                    # fallback (some Uber receipt screenshots show "Rider payment" prominently)
+                    if final_earnings == 0 and rider_pay > 0:
+                        # Estimate driver earnings as ~80% of rider payment (Uber's typical split)
+                        # This is only used when nothing else was extracted
+                        final_earnings = round(rider_pay * 0.80, 2)
+                        log.warning(f"GPT earnings=0 for {name}; using rider_pay×0.80 = ${final_earnings:.2f} as emergency fallback")
+
                     card = {
                         "driver_earnings": final_earnings,
                         "fare": rider_pay,
@@ -420,8 +428,19 @@ class CloudWatcherService:
                     pickup, dropoff = self._extract_route(text_for_stats)
 
 
+                # If earnings still 0 after all extraction attempts, try Azure OCR as last resort
+                if card.get("driver_earnings", 0) == 0 and text_for_stats:
+                    card_raw = self.uber._parse_uber_card(text_for_stats)
+                    azure_earnings = round((card_raw.get("driver_earnings") or 0) + (card_raw.get("tip") or 0), 2)
+                    if azure_earnings > 0:
+                        log.info(f"RECOVERY: '{name}' — Azure OCR recovered earnings=${azure_earnings:.2f} (GPT missed it)")
+                        card["driver_earnings"] = azure_earnings
+                        card["fare"] = card.get("fare") or card_raw.get("fare", 0)
+                        card["tip"] = card.get("tip") or card_raw.get("tip", 0)
+                        card["rider_payment"] = card.get("rider_payment") or card_raw.get("rider_payment", 0)
+
                 if card.get("driver_earnings", 0) == 0:
-                    return None, f"SKIP: '{name}' — no earnings found"
+                    return None, f"SKIP: '{name}' — no earnings found (GPT + Azure both returned $0)"
 
                 duration_min = self._extract_duration(text_for_stats)
                 if duration_min is None or duration_min == 0.0:
@@ -659,7 +678,7 @@ class CloudWatcherService:
             SELECT RideID, Timestamp_Start, Fare, Driver_Earnings, Tip, Platform_Cut, Sidecar_Artifact_JSON
             FROM Rides.Rides
             WHERE RideID LIKE ? AND (TripType = 'Uber' OR TripType IS NULL)
-            ORDER BY RideID ASC
+            ORDER BY Timestamp_Start ASC, RideID ASC
         """, (f"TRIP-{date_compact}-%",))
         rows = cursor.fetchall()
         trips = []
@@ -756,13 +775,11 @@ class CloudWatcherService:
             name = file.get("name", "")
             item_id = file.get("id")
             try:
-                # Extract capture date from filename (e.g. Screenshot_20260524_...)
-                import re
+                # Always use date_str as the work day — the OneDrive folder is the
+                # authoritative source for which day this receipt belongs to.
+                # Do NOT override from the filename: screenshots are often taken
+                # the morning after (e.g. Screenshot_20260525_... for May 24th receipts).
                 capture_date = date_str
-                date_match = re.search(r'(20\d{6})', name)
-                if date_match:
-                    raw_date = date_match.group(1)
-                    capture_date = f"{raw_date[:4]}-{raw_date[4:6]}-{raw_date[6:]}"
 
                 content = self.graph.get_file_content(item_id)
                 import base64
@@ -823,6 +840,11 @@ class CloudWatcherService:
                 category = vdata.get("category", "General_Expense")
                 dt_str = vdata.get("date_time", "")
                 items = vdata.get("items", [])
+
+                # Skip charging sessions — Tessie already tracks these in the
+                # Charging Sessions panel. Importing them here creates duplicates.
+                if category == "Charging_Session":
+                    return None, f"SKIP: '{name}' — Charging_Session is tracked by Tessie, not expenses"
                 
                 if amount <= 0.0:
                     return None, f"SKIP: '{name}' — extracted amount is $0.00 or negative"
@@ -839,7 +861,24 @@ class CloudWatcherService:
                             parsed_dt = _dt.datetime.strptime(date_str, "%Y-%m-%d")
                         except:
                             parsed_dt = _dt.datetime.now()
-                            
+
+                # ── Date clamping: screenshots in this folder belong to this workday ──
+                # If GPT extracted a date more than 1 day before the folder date, clamp
+                # the DATE portion to date_str (preserve the extracted time).
+                # Receipts often show a prior day's date when screenshotted the next morning.
+                try:
+                    folder_dt = _dt.datetime.strptime(date_str, "%Y-%m-%d")
+                    day_diff = (folder_dt.date() - parsed_dt.date()).days
+                    if day_diff >= 1:
+                        log.info(f"DATE CLAMP: '{name}' GPT date {parsed_dt.date()} → {folder_dt.date()} (folder date, {day_diff}d gap)")
+                        parsed_dt = parsed_dt.replace(
+                            year=folder_dt.year,
+                            month=folder_dt.month,
+                            day=folder_dt.day
+                        )
+                except Exception as clamp_err:
+                    log.warning(f"Date clamp failed for {name}: {clamp_err}")
+
                 parsed_dt = parsed_dt.replace(tzinfo=MDT)
                 
                 entry = {
@@ -854,7 +893,9 @@ class CloudWatcherService:
                     "items": items
                 }
                 
-                return entry, f"PARSED: '{name}' — {merchant} ${amount:.2f} ({category}) @ {dt_str}"
+                stored_dt_str = parsed_dt.strftime("%Y-%m-%d %H:%M:%S")
+                clamp_note = f" [clamped from {dt_str}]" if stored_dt_str[:10] != dt_str[:10] else ""
+                return entry, f"PARSED: '{name}' — {merchant} ${amount:.2f} ({category}) @ {stored_dt_str}{clamp_note}"
             except Exception as e:
                 log.error(f"Error processing expense {name}: {e}")
                 return None, f"ERROR: '{name}' — {e}"
