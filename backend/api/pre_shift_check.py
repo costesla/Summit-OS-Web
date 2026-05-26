@@ -964,11 +964,11 @@ def pre_shift_check(req: func.HttpRequest) -> func.HttpResponse:
 
 # ── Timer trigger (7:00 AM MDT = 13:00 UTC) ──────────────────────────────────
 
-@bp.timer_trigger(schedule="0 0 13 * * *", arg_name="timer",
+@bp.timer_trigger(schedule="0 30 10 * * *", arg_name="timer",
                   run_on_startup=False, use_monitor=False)
 def pre_shift_daily_timer(timer: func.TimerRequest) -> None:
     """
-    Runs the pre-shift check automatically at 7:00 AM MDT every day
+    Runs the pre-shift check automatically at 4:30 AM MDT (10:30 UTC) every day
     and caches the result. Non-fatal — if this fails, the HTTP endpoint still works.
     """
     try:
