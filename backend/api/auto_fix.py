@@ -51,9 +51,10 @@ _TIMESTAMP_TOL_S = 60       # seconds — trip timestamps within this = potentia
 
 CORS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
 }
+
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -320,10 +321,11 @@ def _flag_orphan_drives(conn, start_utc: datetime.datetime,
 
 # ── Main runner ────────────────────────────────────────────────────────────────
 
-def _run_auto_fix(date_str: str) -> dict:
+def _run_auto_fix(date_str: str, dry_run: bool = False) -> dict:
     """
     Orchestrates all fixes inside a single TRANSACTION.
     On any failure → ROLLBACK and return error payload.
+    dry_run=True → preview only, no writes, no audit log.
     """
     start_utc, end_utc = _mt_date_to_utc_window(date_str)
 
@@ -365,17 +367,19 @@ def _run_auto_fix(date_str: str) -> dict:
         actions.append(act3)
         actions.append(act4)
 
-        # ─ Commit if we actually fixed something ─
+        # ─ Commit or rollback (dry_run always rolls back) ─
         fixed_actions = [a for a in actions if a.get("action") == "FIX_APPLIED"]
-        if fixed_actions:
+        if fixed_actions and not dry_run:
             conn.commit()
             log.info(f"[AutoFix] COMMIT: {len(fixed_actions)} fix(es), {total_rows} rows for {date_str}")
         else:
-            conn.rollback()   # nothing to commit — clean rollback
+            conn.rollback()   # dry_run or nothing to commit — clean rollback
+            if dry_run and fixed_actions:
+                log.info(f"[AutoFix] DRY RUN: would have fixed {len(fixed_actions)} action(s) — rolled back")
 
-        # ─ Write audit log for each applied fix ─
+        # ─ Write audit log (skip on dry_run) ─
         conn.autocommit = True
-        for act in fixed_actions:
+        if not dry_run:
             rid = _repair_id()
             try:
                 _write_repair_log(
@@ -451,18 +455,19 @@ def _run_auto_fix(date_str: str) -> dict:
         "status":          overall_status,
         "date":            date_str,
         "generated_at":    datetime.datetime.utcnow().isoformat() + "Z",
+        "dry_run":         dry_run,
         "actions":         actions,
-        "rows_affected":   total_rows,
+        "rows_affected":   0 if dry_run else total_rows,
         "confidence":      confidence,
         "manual_required": manual_required,
         "flags":           [a["type"] for a in flags],
-        "repair_ids":      [a["repair_id"] for a in actions if "repair_id" in a],
+        "repair_ids":      [] if dry_run else [a["repair_id"] for a in actions if "repair_id" in a],
     }
 
 
 # ── HTTP handler ───────────────────────────────────────────────────────────────
 
-@bp.route(route="auto-fix", methods=["POST", "OPTIONS"],
+@bp.route(route="auto-fix", methods=["GET", "POST", "OPTIONS"],
           auth_level=func.AuthLevel.ANONYMOUS)
 def auto_fix(req: func.HttpRequest) -> func.HttpResponse:
     if req.method == "OPTIONS":
@@ -486,21 +491,22 @@ def auto_fix(req: func.HttpRequest) -> func.HttpResponse:
             now_mt   = datetime.datetime.now(_MT)
             date_str = (now_mt - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
 
-        log.info(f"[AutoFix] Requested for {date_str}")
+        dry_run  = req.params.get("dry_run", "0") == "1"
+        log.info(f"[AutoFix] {'DRY RUN preview' if dry_run else 'Requested'} for {date_str}")
 
         # Run in thread — DB calls are blocking
         loop = asyncio.new_event_loop()
         try:
             result = loop.run_until_complete(
                 asyncio.get_event_loop().run_in_executor(
-                    None, lambda: _run_auto_fix(date_str)
+                    None, lambda: _run_auto_fix(date_str, dry_run=dry_run)
                 )
             )
         finally:
             loop.close()
 
-        # Bust pre-shift check cache so next GET gets fresh data
-        try:
+        # Bust pre-shift check cache (only on real fix, not dry_run)
+        if not dry_run:
             from api.pre_shift_check import _mem_cache
             stale_keys = [k for k in _mem_cache if k.startswith(date_str)]
             for k in stale_keys:

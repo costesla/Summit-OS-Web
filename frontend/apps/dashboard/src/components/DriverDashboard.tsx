@@ -501,13 +501,26 @@ const TierRow = ({ label, tier }: { label: string; tier?: TierResult }) => {
 };
 
 const PreShiftCard = ({ selectedDate }: { selectedDate: string }) => {
+    const STORAGE_KEY = `summitos-preshift-collapsed-${selectedDate}`;
+
     const [data, setData] = useState<PreShiftPayload | null>(null);
     const [loading, setLoading] = useState(true);
-    const [collapsed, setCollapsed] = useState(false);
+    const [collapsed, setCollapsed] = useState<boolean>(() => {
+        try { return localStorage.getItem(STORAGE_KEY) === '1'; } catch { return false; }
+    });
     const [lastRun, setLastRun] = useState<string | null>(null);
     const [fixStatus, setFixStatus] = useState<AutoFixStatus>('idle');
     const [fixResult, setFixResult] = useState<AutoFixResult | null>(null);
     const [fixVerified, setFixVerified] = useState(false);
+
+    // Confirmation modal state — populated by dry_run preview
+    const [showConfirm, setShowConfirm] = useState(false);
+    const [previewResult, setPreviewResult] = useState<AutoFixResult | null>(null);
+
+    const setCollapsedPersist = (val: boolean) => {
+        setCollapsed(val);
+        try { val ? localStorage.setItem(STORAGE_KEY, '1') : localStorage.removeItem(STORAGE_KEY); } catch {}
+    };
 
     const fetchCheck = useCallback(async (bust = false) => {
         setLoading(true);
@@ -518,7 +531,8 @@ const PreShiftCard = ({ selectedDate }: { selectedDate: string }) => {
             const payload: PreShiftPayload = await res.json();
             setData(payload);
             setLastRun(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-            setCollapsed(payload.overall_status === 'PASS' && (payload.overall_confidence ?? 0) >= 90);
+            const isClean = payload.overall_status === 'PASS' && (payload.overall_confidence ?? 0) >= 90;
+            if (isClean) setCollapsedPersist(true);
             return payload;
         } catch {
             setData(null);
@@ -526,16 +540,38 @@ const PreShiftCard = ({ selectedDate }: { selectedDate: string }) => {
         } finally {
             setLoading(false);
         }
-    }, [selectedDate]);
+    }, [selectedDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         setFixStatus('idle');
         setFixResult(null);
         setFixVerified(false);
+        setShowConfirm(false);
+        setPreviewResult(null);
         fetchCheck(false);
     }, [fetchCheck]);
 
+    // Step 1: Preview (dry_run=1) — shows confirmation modal
+    const requestAutoFix = useCallback(async () => {
+        setFixStatus('fixing');
+        try {
+            const res = await fetch(`${AZURE_BASE}/auto-fix?date=${selectedDate}&dry_run=1`, {
+                signal: AbortSignal.timeout(20_000), cache: 'no-store',
+            });
+            const preview: AutoFixResult = await res.json();
+            setPreviewResult(preview);
+            setFixStatus('idle');   // back to idle — user must confirm
+            setShowConfirm(true);
+        } catch (err) {
+            setFixResult({ status: 'ERROR', actions: [], rows_affected: 0, confidence: 0,
+                           manual_required: false, flags: [], repair_ids: [], error: String(err) });
+            setFixStatus('error');
+        }
+    }, [selectedDate]);
+
+    // Step 2: Confirmed — run the real fix
     const runAutoFix = useCallback(async () => {
+        setShowConfirm(false);
         setFixStatus('fixing');
         setFixResult(null);
         try {
@@ -550,7 +586,6 @@ const PreShiftCard = ({ selectedDate }: { selectedDate: string }) => {
                 setFixStatus('manual_required');
                 return;
             }
-            // Re-run health check after fix
             const recheck = await fetchCheck(true);
             if (recheck && recheck.overall_status === 'PASS' && (recheck.overall_confidence ?? 0) >= 90) {
                 setFixVerified(true);
@@ -753,21 +788,28 @@ const PreShiftCard = ({ selectedDate }: { selectedDate: string }) => {
             )}
 
             <div className="flex flex-wrap gap-2 items-center">
-                {Object.entries(data.systems).map(([sys, st]) => (
-                    <div key={sys} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/70 border border-slate-200/80">
-                        <div className={`w-1.5 h-1.5 rounded-full ${statusDot(st)}`} />
-                        <span className="text-[10px] font-mono text-slate-600 capitalize">{sys}</span>
-                        {st === 'UNAVAILABLE' && <span className="text-[9px] text-slate-400">offline</span>}
-                    </div>
-                ))}
+                {Object.entries(data.systems).map(([sys, info]) => {
+                    const sysObj = typeof info === 'object' && info !== null ? info as {status?: string; online?: boolean; latency_ms?: number | null} : {status: String(info)};
+                    const st = (sysObj.status ?? String(info)) as CheckStatus;
+                    const ms = sysObj.latency_ms;
+                    return (
+                        <div key={sys} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/70 border border-slate-200/80"
+                            title={ms != null ? `${sys}: ${ms}ms` : sys}>
+                            <div className={`w-1.5 h-1.5 rounded-full ${statusDot(st)}`} />
+                            <span className="text-[10px] font-mono text-slate-600 capitalize">{sys}</span>
+                            {ms != null && <span className="text-[9px] text-slate-400">{ms}ms</span>}
+                            {String(st) === 'UNAVAILABLE' && <span className="text-[9px] text-rose-400">offline</span>}
+                        </div>
+                    );
+                })}
                 {canAutoFix && (
-                    <button onClick={runAutoFix}
+                    <button onClick={requestAutoFix}
                         className={`ml-auto px-3 py-1.5 rounded-full text-[10px] font-bold flex items-center gap-1.5 transition-all
                             ${overall === 'FAIL'
                                 ? 'bg-rose-500 text-white hover:bg-rose-600 animate-pulse'
                                 : 'bg-amber-500 text-white hover:bg-amber-600'}`}>
                         <Cpu className="w-3 h-3" />
-                        Auto-Fix → Re-verify
+                        Auto-Fix → Preview
                     </button>
                 )}
                 {!canAutoFix && (overall === 'FAIL' || overall === 'WARN') && fixStatus === 'idle' && (
@@ -777,9 +819,70 @@ const PreShiftCard = ({ selectedDate }: { selectedDate: string }) => {
                     </button>
                 )}
             </div>
+
+            {/* Confirmation Modal */}
+            {showConfirm && previewResult && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}>
+                    <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white shadow-2xl p-5 space-y-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                                <Cpu className="w-4 h-4 text-amber-600" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-black text-slate-800">Confirm Auto-Fix</p>
+                                <p className="text-[10px] text-slate-500">Review what will change before committing</p>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            {previewResult.actions
+                                .filter(a => a.action === 'FIX_APPLIED' || a.action === 'MANUAL_REQUIRED')
+                                .map((a, i) => (
+                                <div key={i} className={`rounded-xl border px-3 py-2 space-y-1
+                                    ${a.action === 'FIX_APPLIED' ? 'bg-amber-50 border-amber-200' : 'bg-orange-50 border-orange-200'}`}>
+                                    <p className="text-[10px] font-bold font-mono text-slate-700">{a.type}</p>
+                                    {a.before && a.after && (
+                                        <div className="flex items-center gap-2 text-[10px] font-mono">
+                                            <span className="text-slate-500">
+                                                {(a.before as Record<string,number>).count != null && `${(a.before as Record<string,number>).count} rows`}
+                                                {(a.before as Record<string,number>).earnings != null && ` · $${(a.before as Record<string,number>).earnings.toFixed(2)}`}
+                                            </span>
+                                            <span className="text-slate-300">→</span>
+                                            <span className="text-emerald-600 font-bold">
+                                                {(a.after as Record<string,number>).count != null && `${(a.after as Record<string,number>).count} rows`}
+                                                {(a.after as Record<string,number>).earnings != null && ` · $${(a.after as Record<string,number>).earnings.toFixed(2)}`}
+                                            </span>
+                                        </div>
+                                    )}
+                                    {a.rows_affected != null && a.action === 'FIX_APPLIED' && (
+                                        <p className="text-[10px] text-amber-700">{a.rows_affected} duplicate record(s) queued for removal</p>
+                                    )}
+                                    {a.action === 'MANUAL_REQUIRED' && (
+                                        <p className="text-[10px] text-orange-600">{a.reason}</p>
+                                    )}
+                                </div>
+                            ))}
+                            {previewResult.actions.every(a => a.action === 'NO_ACTION' || a.action === 'FLAGGED') && (
+                                <p className="text-xs text-slate-500 text-center py-2">No fixable issues — nothing will be changed.</p>
+                            )}
+                        </div>
+                        <div className="flex gap-2 pt-1">
+                            <button onClick={() => { setShowConfirm(false); setPreviewResult(null); }}
+                                className="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all">
+                                Cancel
+                            </button>
+                            <button onClick={runAutoFix}
+                                className="flex-1 px-3 py-2 rounded-xl bg-amber-500 text-white text-xs font-bold hover:bg-amber-600 transition-all flex items-center justify-center gap-1.5">
+                                <Cpu className="w-3.5 h-3.5" /> Confirm &amp; Fix
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
+
 
 // ─── Tag badge ───────────────────────────────────────────────────────────────
 

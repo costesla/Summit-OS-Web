@@ -36,7 +36,7 @@ _PIPELINE_VERSION = "2.0.0"
 _CACHE_TTL_S = 1800          # 30 minutes
 _DEFAULT_TIMEOUT_S = 5.0
 _ONEDRIVE_TIMEOUT_S = 8.0
-_NOTIFICATION_THRESHOLD = 70
+_NOTIFICATION_THRESHOLD = 75
 
 # In-process cache: (date_str, pipeline_version) → {payload, expires_at}
 _mem_cache: dict = {}
@@ -68,8 +68,9 @@ def _source_result(status: str, value=None, latency_ms: float | None = None,
 
 
 def _tier_result(status: str, confidence: int | None, values: dict,
-                 delta: dict, notes: list, outliers: list) -> dict:
-    return {
+                 delta: dict, notes: list, outliers: list,
+                 meta: dict | None = None) -> dict:
+    result = {
         "status": status,
         "confidence": confidence,
         "values": values,
@@ -77,6 +78,9 @@ def _tier_result(status: str, confidence: int | None, values: dict,
         "notes": notes,
         "outliers": outliers,
     }
+    if meta:
+        result["meta"] = meta
+    return result
 
 
 async def safe_call(coro, timeout_s: float, name: str) -> dict:
@@ -642,22 +646,29 @@ def _score_tier2(db_sum_r: dict, ocr_sum_r: dict, bank_r: dict) -> dict:
         conf = min(cap, 97)
         status = "PASS"
         notes.append(f"DB (${db_v:.2f}) matches OCR (${ocr_v:.2f}) — within $0.10")
+        meta = {"gap": 0.0, "suspected_issue": None}
     elif abs(diff) <= 1.00:
         conf = min(cap, 75)
         status = "WARN"
         notes.append(f"DB (${db_v:.2f}) vs OCR (${ocr_v:.2f}): delta=${diff:+.2f} — minor rounding")
         outliers.append("db" if diff > 0 else "ocr")
+        meta = {"gap": round(abs(diff), 2), "suspected_issue": "rounding_drift"}
     else:
         conf = min(cap, 25)
         status = "FAIL"
-        cause = "DB likely inflated by duplicate/ghost records" if diff > 0 else \
-                "DB likely missing trips vs OCR screenshot count"
+        if diff > 0:
+            cause      = "DB likely inflated by duplicate/ghost records"
+            issue_code = "duplicate_import_id"
+        else:
+            cause      = "DB likely missing trips vs OCR screenshot count"
+            issue_code = "missing_ocr_ingestion"
         notes.append(f"DB (${db_v:.2f}) ≠ OCR (${ocr_v:.2f}): delta=${diff:+.2f} ({pct:.1f}%) — {cause}")
         outliers.append("db")
+        meta = {"gap": round(abs(diff), 2), "suspected_issue": issue_code}
 
     return _tier_result(status, conf,
                         {"db": db_sum_r, "ocr": ocr_sum_r, "bank": bank_r},
-                        delta, notes, outliers)
+                        delta, notes, outliers, meta=meta)
 
 
 def _score_tier3(db_r: dict, onedrive_r: dict, bank_r: dict) -> dict:
@@ -925,10 +936,18 @@ def pre_shift_check(req: func.HttpRequest) -> func.HttpResponse:
                 "tier4_timeline": tier4,
             },
             "systems": {
-                "db":       db_trips["status"],
-                "tessie":   tessie_trips["status"],
-                "onedrive": od_trips["status"],
-                "bank":     bank_earnings["status"],
+                "db":       {"status": db_trips["status"],
+                             "online": db_trips["status"] == "OK",
+                             "latency_ms": db_trips["latency_ms"]},
+                "tessie":   {"status": tessie_trips["status"],
+                             "online": tessie_trips["status"] == "OK",
+                             "latency_ms": tessie_trips["latency_ms"]},
+                "onedrive": {"status": od_trips["status"],
+                             "online": od_trips["status"] == "OK",
+                             "latency_ms": od_trips["latency_ms"]},
+                "bank":     {"status": bank_earnings["status"],
+                             "online": bank_earnings["status"] == "OK",
+                             "latency_ms": bank_earnings["latency_ms"]},
             },
         }
 
