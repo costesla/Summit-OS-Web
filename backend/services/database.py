@@ -35,7 +35,11 @@ class DatabaseClient:
             self.connection_string = self.connection_string.replace('ODBC Driver 17', 'ODBC Driver 18')
 
         try:
-            return pyodbc.connect(self.connection_string)
+            conn_str = self.connection_string
+            # Ensure a generous connection timeout for Azure SQL cold-start
+            if "Connection Timeout" not in conn_str:
+                conn_str = conn_str.rstrip(";") + ";Connection Timeout=25;"
+            return pyodbc.connect(conn_str)
         except Exception as e:
             logging.error(f"SQL Connection Error: {e}")
             return None

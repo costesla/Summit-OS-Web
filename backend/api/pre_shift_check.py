@@ -35,7 +35,8 @@ _UTC = pytz.utc
 _PIPELINE_VERSION = "2.0.0"
 _CACHE_TTL_S = 1800          # 30 minutes
 _DEFAULT_TIMEOUT_S = 5.0
-_ONEDRIVE_TIMEOUT_S = 8.0
+_DB_TIMEOUT_S = 20.0         # Azure SQL can take 15-30s on cold start
+_ONEDRIVE_TIMEOUT_S = 10.0
 _NOTIFICATION_THRESHOLD = 75
 
 # In-process cache: (date_str, pipeline_version) → {payload, expires_at}
@@ -567,25 +568,30 @@ def _score_tier1(db_r: dict, tessie_r: dict, onedrive_r: dict, date_str: str = "
     tessie_v    = tessie_r["value"]
     od_v        = onedrive_r["value"]
 
-    # Same-day grace: Tessie tags drives asynchronously; on today's date a count
-    # of 0 from Tessie or OneDrive is almost certainly a sync lag, not real disagreement.
+    # Same-day grace: OneDrive/Tessie are sync-lagged on today's date.
+    # Use the best available trip count (from any live source) to confirm
+    # there IS real activity. If ANY source shows >0 trips, a 0 from another
+    # source on today's date is sync lag, not a real mismatch.
     today_mt = datetime.datetime.now(_MT).strftime("%Y-%m-%d")
     is_today = (date_str == today_mt)
-    if is_today and db_v and db_v > 0:
-        if tessie_v == 0:
-            tessie_v = None
-            tessie_r = dict(tessie_r)
-            tessie_r["value"] = None
-            tessie_r["status"] = "UNAVAILABLE"
-            tessie_r["error"] = "Same-day sync lag — Tessie drive tagging not yet complete"
-            notes.append("Tessie: same-day sync lag — drive tags not yet populated (treated as unavailable)")
-        if od_v == 0:
-            od_v = None
-            onedrive_r = dict(onedrive_r)
-            onedrive_r["value"] = None
-            onedrive_r["status"] = "UNAVAILABLE"
-            onedrive_r["error"] = "Same-day sync lag — screenshots not yet uploaded to OneDrive"
-            notes.append("OneDrive: same-day sync lag — Uber screenshots not yet uploaded (treated as unavailable)")
+    if is_today:
+        best_count = db_v if (db_v is not None and db_v > 0) else (
+                     tessie_v if (tessie_v is not None and tessie_v > 0) else None)
+        if best_count and best_count > 0:
+            if tessie_v == 0:
+                tessie_v = None
+                tessie_r = dict(tessie_r)
+                tessie_r["value"] = None
+                tessie_r["status"] = "UNAVAILABLE"
+                tessie_r["error"] = "Same-day sync lag — Tessie drive tagging not yet complete"
+                notes.append("Tessie: same-day sync lag (treated as unavailable)")
+            if od_v == 0:
+                od_v = None
+                onedrive_r = dict(onedrive_r)
+                onedrive_r["value"] = None
+                onedrive_r["status"] = "UNAVAILABLE"
+                onedrive_r["error"] = "Same-day sync lag — Uber screenshots not yet uploaded to OneDrive"
+                notes.append("OneDrive: same-day sync lag — screenshots not yet uploaded (treated as unavailable)")
 
     available = [(s, v) for s, v in [("db", db_v), ("tessie", tessie_v), ("onedrive", od_v)]
                  if v is not None]
@@ -734,8 +740,8 @@ def _score_tier3(db_r: dict, onedrive_r: dict, bank_r: dict, date_str: str = "")
     DB != OneDrive -> FAIL with delta.
     Bank is supporting only.
 
-    Same-day grace: if the date is today (MDT) and OneDrive returns 0
-    while DB has >0 expenses, treat OneDrive as UNAVAILABLE (upload lag).
+    Same-day grace: if the date is today (MDT) and OneDrive returns 0,
+    treat OneDrive as UNAVAILABLE (upload lag).
     """
     notes, outliers, delta = [], [], {}
     db_v  = db_r["value"]
@@ -745,7 +751,7 @@ def _score_tier3(db_r: dict, onedrive_r: dict, bank_r: dict, date_str: str = "")
     # Same-day grace: expense screenshots may not yet be uploaded to OneDrive
     today_mt = datetime.datetime.now(_MT).strftime("%Y-%m-%d")
     is_today = (date_str == today_mt)
-    if is_today and db_v and db_v > 0 and od_v == 0:
+    if is_today and od_v == 0:
         od_v = None
         onedrive_r = dict(onedrive_r)
         onedrive_r["value"] = None
@@ -951,28 +957,28 @@ def pre_shift_check(req: func.HttpRequest) -> func.HttpResponse:
             results = await asyncio.gather(
                 # Tier 1 sources
                 safe_call(_src_db_trip_count(start_utc, end_utc),
-                          _DEFAULT_TIMEOUT_S, "db_trip_count"),
+                          _DB_TIMEOUT_S, "db_trip_count"),
                 safe_call(_src_tessie_trip_count(date_str, start_utc, end_utc),
                           _DEFAULT_TIMEOUT_S, "tessie_trip_count"),
                 safe_call(_src_onedrive_trip_count(date_str),
                           _ONEDRIVE_TIMEOUT_S, "onedrive_trip_count"),
                 # Tier 2 sources
                 safe_call(_src_db_earnings_sum(start_utc, end_utc),
-                          _DEFAULT_TIMEOUT_S, "db_earnings_sum"),
+                          _DB_TIMEOUT_S, "db_earnings_sum"),
                 safe_call(_src_db_ocr_earnings(start_utc, end_utc),
-                          _DEFAULT_TIMEOUT_S, "ocr_earnings_sum"),
+                          _DB_TIMEOUT_S, "ocr_earnings_sum"),
                 safe_call(_src_bank_earnings(date_str),
                           _DEFAULT_TIMEOUT_S, "bank_earnings"),
                 # Tier 3 sources
                 safe_call(_src_db_expense_count(start_utc, end_utc),
-                          _DEFAULT_TIMEOUT_S, "db_expense_count"),
+                          _DB_TIMEOUT_S, "db_expense_count"),
                 safe_call(_src_onedrive_expense_count(date_str),
                           _ONEDRIVE_TIMEOUT_S, "onedrive_expense_count"),
                 safe_call(_src_bank_trip_count(date_str),
                           _DEFAULT_TIMEOUT_S, "bank_expense_count"),
                 # Tier 4 source (DB-only — always fast)
                 safe_call(_src_tier4_timeline(start_utc, end_utc),
-                          _DEFAULT_TIMEOUT_S, "tier4_timeline"),
+                          _DB_TIMEOUT_S, "tier4_timeline"),
                 return_exceptions=False
             )
             return results
