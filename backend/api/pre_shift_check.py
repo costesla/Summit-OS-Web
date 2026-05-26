@@ -205,7 +205,7 @@ async def _src_tessie_trip_count(date_str: str,
     """Count Tessie drives tagged Uber* for the target date."""
     import requests as _req
     vin   = os.environ.get("TESSIE_VIN", "")
-    token = os.environ.get("TESSIE_TOKEN", "")
+    token = os.environ.get("TESSIE_TOKEN", "") or os.environ.get("TESSIE_API_KEY", "")
     if not vin or not token:
         raise ValueError("TESSIE_VIN or TESSIE_TOKEN not configured")
 
@@ -431,9 +431,9 @@ _graph_token_cache: dict = {}
 
 async def _get_graph_token() -> str | None:
     """Obtain MS Graph token via client credentials. Returns None if not configured."""
-    client_id     = os.environ.get("GRAPH_CLIENT_ID") or os.environ.get("MS_GRAPH_CLIENT_ID")
-    client_secret = os.environ.get("GRAPH_CLIENT_SECRET") or os.environ.get("MS_GRAPH_CLIENT_SECRET")
-    tenant_id     = os.environ.get("GRAPH_TENANT_ID") or os.environ.get("AZURE_TENANT_ID")
+    client_id     = os.environ.get("GRAPH_CLIENT_ID") or os.environ.get("MS_GRAPH_CLIENT_ID") or os.environ.get("OAUTH_CLIENT_ID")
+    client_secret = os.environ.get("GRAPH_CLIENT_SECRET") or os.environ.get("MS_GRAPH_CLIENT_SECRET") or os.environ.get("OAUTH_CLIENT_SECRET")
+    tenant_id     = os.environ.get("GRAPH_TENANT_ID") or os.environ.get("AZURE_TENANT_ID") or os.environ.get("OAUTH_TENANT_ID")
     if not all([client_id, client_secret, tenant_id]):
         return None
 
@@ -473,7 +473,7 @@ def _build_onedrive_path(date_str: str, subfolder_hint: str = "Uber Driver") -> 
     # ISO week within month (approximate Week 1-5)
     week_num = (dt.day - 1) // 7 + 1
     day_fmt = f"{dt.month}.{dt.day:02d}.{str(dt.year)[2:]}"  # "5.24.26"
-    drive_id = os.environ.get("ONEDRIVE_DRIVE_ID", "")
+    drive_id = os.environ.get("ONEDRIVE_DRIVE_ID", "") or os.environ.get("SHAREPOINT_DRIVE_ID", "")
     site_id  = os.environ.get("SHAREPOINT_SITE_ID", "")
     return f"{subfolder_hint}/{year}/{month}/Week {week_num}/{day_fmt}"
 
@@ -482,7 +482,7 @@ async def _graph_count_files(token: str, folder_path: str,
                              include_extensions: list[str],
                              exclude_patterns: list[str]) -> int:
     """Count files in an OneDrive folder via MS Graph. Handles 429 with 1 retry."""
-    drive_id = os.environ.get("ONEDRIVE_DRIVE_ID", "")
+    drive_id = os.environ.get("ONEDRIVE_DRIVE_ID", "") or os.environ.get("SHAREPOINT_DRIVE_ID", "")
     if not drive_id:
         raise ValueError("ONEDRIVE_DRIVE_ID not configured")
 
