@@ -470,8 +470,15 @@ def _build_onedrive_path(date_str: str, subfolder_hint: str = "Uber Driver") -> 
     dt = datetime.datetime.strptime(date_str, "%Y-%m-%d")
     year = dt.strftime("%Y")
     month = dt.strftime("%B")      # "May"
-    # ISO week within month (approximate Week 1-5)
-    week_num = (dt.day - 1) // 7 + 1
+    # Unified calendar week within month, anchored on Monday (matches operations / cloud_watcher)
+    first = dt.replace(day=1)
+    days_to_monday = (7 - first.weekday()) % 7
+    first_monday = first + datetime.timedelta(days=days_to_monday)
+    if dt.date() < first_monday.date():
+        week_num = 1
+    else:
+        offset = 1 if first_monday.day == 1 else 2
+        week_num = (dt.day - first_monday.day) // 7 + offset
     day_fmt = f"{dt.month}.{dt.day:02d}.{str(dt.year)[2:]}"  # "5.24.26"
     drive_id = os.environ.get("ONEDRIVE_DRIVE_ID", "") or os.environ.get("SHAREPOINT_DRIVE_ID", "")
     site_id  = os.environ.get("SHAREPOINT_SITE_ID", "")
