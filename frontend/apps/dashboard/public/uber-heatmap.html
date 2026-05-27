@@ -473,9 +473,11 @@
     <div class="ctrl-group">
       <span class="ctrl-label">Map</span>
       <select id="tile-select">
-        <option value="dark">Dark</option>
-        <option value="satellite">Satellite</option>
-        <option value="streets">Streets</option>
+        <option value="dark">Dark Theme</option>
+        <option value="streets">Google Streets</option>
+        <option value="satellite">Google Satellite</option>
+        <option value="hybrid">Google Hybrid</option>
+        <option value="terrain">Google Terrain</option>
       </select>
     </div>
 
@@ -672,12 +674,20 @@ const TILES = {
     attr: '&copy; OpenStreetMap &copy; CARTO'
   },
   satellite: {
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    attr: 'Esri, Maxar, Earthstar Geographics'
+    url: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+    attr: '&copy; Google Maps'
+  },
+  hybrid: {
+    url: 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+    attr: '&copy; Google Maps'
   },
   streets: {
-    url: 'https://{s}.basemaps.cartocdn.com/dark_matter/{z}/{x}/{y}{r}.png',
-    attr: '&copy; OpenStreetMap &copy; CARTO'
+    url: 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+    attr: '&copy; Google Maps'
+  },
+  terrain: {
+    url: 'https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',
+    attr: '&copy; Google Maps'
   }
 };
 
