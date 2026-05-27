@@ -381,6 +381,67 @@
       0%, 100% { opacity: 1; transform: scale(1); }
       50% { opacity: 0.5; transform: scale(0.8); }
     }
+
+    /* Smart recommendations */
+    .rec-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 8px;
+      transition: all 0.2s;
+    }
+    .rec-card:hover { border-color: rgba(6,182,212,0.4); }
+    .rec-title {
+      font-size: 9px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .rec-value {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+      font-family: 'Outfit', sans-serif;
+    }
+    .rec-hotspots {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 4px;
+    }
+    .rec-hotspot-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 8px;
+      background: rgba(255,255,255,0.01);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .rec-hotspot-item:hover {
+      background: rgba(6,182,212,0.05);
+      border-color: rgba(6,182,212,0.3);
+      transform: translateX(2px);
+    }
+    .rec-tip-box {
+      border-left: 3px solid var(--accent-cyan);
+      background: rgba(6,182,212,0.03);
+      padding: 8px 10px;
+      border-radius: 0 8px 8px 0;
+      font-size: 10px;
+      line-height: 1.4;
+      color: var(--text-secondary);
+      margin-top: 8px;
+    }
   </style>
 </head>
 <body>
@@ -468,6 +529,26 @@
         </div>
       </div>
       <div class="error-box" id="error-box">Could not load trip data. Check your backend connection.</div>
+    </div>
+
+    <!-- Smart Recommendations -->
+    <div class="sidebar-section" id="recommendations-section">
+      <div class="section-title">💡 Smart Recommendations</div>
+      <div class="ctrl-group" style="margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+        <span class="ctrl-label" style="margin:0;">Day</span>
+        <select id="rec-day-select" style="font-size:12px;width:100%;background:transparent;border:none;color:var(--text-primary);outline:none;cursor:pointer;">
+          <option value="0" style="background:#1e2a3a;">Sunday</option>
+          <option value="1" style="background:#1e2a3a;">Monday</option>
+          <option value="2" style="background:#1e2a3a;">Tuesday</option>
+          <option value="3" style="background:#1e2a3a;">Wednesday</option>
+          <option value="4" style="background:#1e2a3a;">Thursday</option>
+          <option value="5" style="background:#1e2a3a;">Friday</option>
+          <option value="6" style="background:#1e2a3a;">Saturday</option>
+        </select>
+      </div>
+      <div id="rec-container">
+        <div style="color:var(--text-muted);font-size:11px;text-align:center;padding:12px 0;">Load data to see recommendations</div>
+      </div>
     </div>
 
     <!-- Legend -->
@@ -647,6 +728,7 @@ async function loadData() {
     renderTimeChart();
     renderDowChart();
     renderZones();
+    renderRecommendations();
 
   } catch (err) {
     console.error('Load error:', err);
@@ -821,6 +903,123 @@ function renderZones() {
   });
 }
 
+// ── Smart Recommendations ─────────────────────────────────────────────
+function renderRecommendations() {
+  const selectedDay = parseInt(document.getElementById('rec-day-select').value);
+  const container = document.getElementById('rec-container');
+  
+  // Filter drives by day of week (0=Sun, 1=Mon, ..., 6=Sat)
+  const dayDrives = allDrives.filter(d => {
+    if (!d.date) return false;
+    const dt = new Date(d.date + 'T12:00:00');
+    return dt.getDay() === selectedDay;
+  });
+
+  if (dayDrives.length === 0) {
+    container.innerHTML = `
+      <div style="color:var(--text-muted);font-size:11px;text-align:center;padding:12px 0;line-height:1.4;">
+        No historical data logged for this day yet. Open the range selector above to load a wider window.
+      </div>
+    `;
+    return;
+  }
+
+  // 1. Calculate Peak Shift Time
+  const hourCounts = new Array(24).fill(0);
+  dayDrives.forEach(d => {
+    if (d.time_mst) {
+      const hr = parseInt(d.time_mst.split(':')[0], 10);
+      if (!isNaN(hr)) hourCounts[hr]++;
+    }
+  });
+
+  // Define shifts
+  const shifts = [
+    { name: '🌅 Morning Rush (6a - 10a)', count: 0, hours: [6,7,8,9] },
+    { name: '☀️ Midday Lunch (11a - 2p)', count: 0, hours: [11,12,13,14] },
+    { name: '🌇 Afternoon Commute (3p - 7p)', count: 0, hours: [15,16,17,18] },
+    { name: '🌙 Late Night Bars (8p - 1a)', count: 0, hours: [20,21,22,23,0] }
+  ];
+
+  shifts.forEach(s => {
+    s.hours.forEach(h => {
+      s.count += hourCounts[h];
+    });
+  });
+
+  const bestShift = shifts.sort((a, b) => b.count - a.count)[0];
+
+  // 2. Calculate Top Hotspots for this specific day
+  const zoneCounts = {};
+  dayDrives.forEach(d => {
+    const sLat = d._start_lat || d.start_lat;
+    const sLon = d._start_lon || d.start_lon;
+    const name = (d.start || '').split(',')[0].trim();
+    if (name && sLat && sLon) {
+      if (!zoneCounts[name]) zoneCounts[name] = { count: 0, lat: sLat, lon: sLon };
+      zoneCounts[name].count++;
+    }
+  });
+
+  const topZones = Object.entries(zoneCounts)
+    .map(([name, data]) => ({ name, ...data }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 3);
+
+  // 3. Dynamic strategy pro-tip
+  let proTip = "";
+  const topZoneName = topZones[0] ? topZones[0].name : "your main routes";
+  
+  if (selectedDay === 5 || selectedDay === 6) { // Fri/Sat
+    proTip = `Friday and Saturday evenings show high density in central and entertainment spots. Positioning near ${topZoneName} during the evening transition will maximize ride matching.`;
+  } else if (selectedDay === 0) { // Sun
+    proTip = `Sundays typically cluster around early morning hotel/airport checkouts or midday returns. Target airport corridors and tourist entry points early on.`;
+  } else { // Weekdays
+    proTip = `Commute hours dictate the volume today. We recommend holding at ${topZoneName} to capture regional business travel and morning/afternoon office commuters.`;
+  }
+
+  // Render HTML
+  let hotspotsHTML = '';
+  if (topZones.length > 0) {
+    hotspotsHTML = `
+      <div class="rec-card">
+        <div class="rec-title">📍 Top Hotspots (Click to zoom)</div>
+        <div class="rec-hotspots">
+          ${topZones.map((z, idx) => `
+            <div class="rec-hotspot-item" onclick="flyToZone(${z.lat}, ${z.lon})">
+              <span>${idx + 1}. ${z.name.substring(0, 20)}</span>
+              <strong style="color:var(--accent-cyan)">${z.count}×</strong>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  container.innerHTML = `
+    <!-- Shift Card -->
+    <div class="rec-card">
+      <div class="rec-title">⏰ Best Suggested Shift</div>
+      <div class="rec-value" style="color:var(--accent-cyan)">${bestShift.count > 0 ? bestShift.name : 'Varies'}</div>
+      <div style="font-size:10px;color:var(--text-secondary);margin-top:4px;">Based on ${dayDrives.length} historical trips logged for this day.</div>
+    </div>
+
+    <!-- Hotspots -->
+    ${hotspotsHTML}
+
+    <!-- Strategy Tip -->
+    <div class="rec-tip-box">
+      <strong>💡 Strategy:</strong> ${proTip}
+    </div>
+  `;
+}
+
+function flyToZone(lat, lon) {
+  if (map) {
+    map.setView([lat, lon], 14, { animate: true, duration: 1.5 });
+  }
+}
+
 // ── UI helpers ────────────────────────────────────────────────────────
 function showLoading(show, text) {
   const overlay = document.getElementById('loading-overlay');
@@ -859,6 +1058,8 @@ document.getElementById('radius-slider').addEventListener('input', e => {
 });
 
 document.getElementById('days-select').addEventListener('change', loadData);
+document.getElementById('rec-day-select').addEventListener('change', renderRecommendations);
+document.getElementById('rec-day-select').value = new Date().getDay();
 
 // ── Boot ──────────────────────────────────────────────────────────────
 initMap();
