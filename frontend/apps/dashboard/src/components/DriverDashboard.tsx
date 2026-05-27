@@ -2822,17 +2822,17 @@ const TelemetrySparklines = ({ selectedDate }: { selectedDate: string }) => {
 const UberHeatmapPanel = () => {
     const [expanded, setExpanded] = useState(false);
     return (
-        <div className="rounded-2xl border border-slate-200/80 bg-white/80 overflow-hidden transition-all duration-300 shadow-sm backdrop-blur-md">
-            <div className="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition-all duration-200 group">
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/90 overflow-hidden transition-all duration-300 shadow-sm backdrop-blur-md">
+            <div className="w-full p-4 flex items-center justify-between hover:bg-slate-800/50 transition-all duration-200 group">
                 <button
                     onClick={() => setExpanded(!expanded)}
                     className="flex-grow flex items-center gap-2 text-left"
                     id="uber-heatmap-toggle"
                 >
-                    <MapPin className="w-4 h-4 text-blue-600" />
+                    <MapPin className="w-4 h-4 text-sky-400" />
                     <div>
-                        <h3 className="font-bold text-sm text-slate-800">Uber Activity Heatmap</h3>
-                        <p className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Pickup &amp; Dropoff Density · Colorado Springs</p>
+                        <h3 className="font-bold text-sm text-white">Uber Activity Heatmap</h3>
+                        <p className="text-[10px] text-slate-100 font-semibold font-mono uppercase tracking-wider">Pickup &amp; Dropoff Density · Colorado Springs</p>
                     </div>
                 </button>
                 <div className="flex items-center gap-4">
@@ -2841,21 +2841,21 @@ const UberHeatmapPanel = () => {
                         target="_blank"
                         rel="noopener noreferrer"
                         title="Open map in new tab"
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex items-center gap-1.5 text-xs font-semibold"
+                        className="p-1.5 rounded-lg text-slate-300 hover:text-sky-400 hover:bg-slate-800 transition-all duration-200 flex items-center gap-1.5 text-xs font-semibold"
                     >
                         <ExternalLink className="w-4 h-4" />
                         <span className="hidden sm:inline">Pop Out</span>
                     </a>
                     <button
                         onClick={() => setExpanded(!expanded)}
-                        className="text-xs font-bold text-blue-600 font-mono hover:underline"
+                        className="text-xs font-bold text-sky-400 font-mono hover:underline"
                     >
                         {expanded ? '▲ HIDE' : '▼ EXPAND'}
                     </button>
                 </div>
             </div>
             {expanded && (
-                <div className="border-t border-slate-200/80" style={{ height: '620px' }}>
+                <div className="border-t border-slate-800" style={{ height: '620px' }}>
                     <iframe
                         src="/uber-heatmap.html"
                         title="Uber Activity Heatmap"
