@@ -611,7 +611,11 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
                             "starting_location": pickup_location,
                             "ending_location": dropoff_location,
                             "starting_battery": start_soc,
-                            "ending_battery": end_soc
+                            "ending_battery": end_soc,
+                            "starting_latitude": sidecar.get("starting_latitude") or sidecar.get("start_lat"),
+                            "starting_longitude": sidecar.get("starting_longitude") or sidecar.get("start_lon"),
+                            "ending_latitude": sidecar.get("ending_latitude") or sidecar.get("end_lat"),
+                            "ending_longitude": sidecar.get("ending_longitude") or sidecar.get("end_lon")
                         }
                         raw_drives.append(d)
                     
@@ -724,7 +728,15 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
                 "ending_battery": last.get("ending_battery"),
                 "duration_minutes": round((last.get("ended_at", 0) - first.get("started_at", 0)) / 60, 1) if first.get("started_at") and last.get("ended_at") else 0,
                 "tessie_drive_id": first.get("id"),
-                "leg_ids": [d.get("id") for d in drives]
+                "leg_ids": [d.get("id") for d in drives],
+                "start_lat": first.get("starting_latitude"),
+                "start_lon": first.get("starting_longitude"),
+                "_start_lat": first.get("starting_latitude"),
+                "_start_lon": first.get("starting_longitude"),
+                "end_lat": last.get("ending_latitude"),
+                "end_lon": last.get("ending_longitude"),
+                "_end_lat": last.get("ending_latitude"),
+                "_end_lon": last.get("ending_longitude")
             })
 
         # Sort by most recent first
