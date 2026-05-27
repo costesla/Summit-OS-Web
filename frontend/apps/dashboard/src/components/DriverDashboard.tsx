@@ -2818,6 +2818,41 @@ const TelemetrySparklines = ({ selectedDate }: { selectedDate: string }) => {
     );
 };
 
+// ─── Uber Heatmap Panel ──────────────────────────────────────────────────────
+const UberHeatmapPanel = () => {
+    const [expanded, setExpanded] = useState(false);
+    return (
+        <div className="rounded-2xl border border-slate-200/80 bg-white/80 overflow-hidden transition-all duration-300 shadow-sm backdrop-blur-md">
+            <button
+                onClick={() => setExpanded(!expanded)}
+                className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50 transition-all duration-200"
+                id="uber-heatmap-toggle"
+            >
+                <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-blue-600" />
+                    <div>
+                        <h3 className="font-bold text-sm text-slate-800">Uber Activity Heatmap</h3>
+                        <p className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Pickup &amp; Dropoff Density · Colorado Springs</p>
+                    </div>
+                </div>
+                <span className="text-xs font-bold text-blue-600 font-mono">
+                    {expanded ? '▲ HIDE MAP' : '▼ EXPAND MAP'}
+                </span>
+            </button>
+            {expanded && (
+                <div className="border-t border-slate-200/80" style={{ height: '620px' }}>
+                    <iframe
+                        src="/uber-heatmap.html"
+                        title="Uber Activity Heatmap"
+                        className="w-full h-full border-none"
+                        style={{ display: 'block' }}
+                    />
+                </div>
+            )}
+        </div>
+    );
+};
+
 const DriverDashboard = () => {
 
     const [, setLastSync] = useState<string | null>(() => {
@@ -3351,6 +3386,8 @@ const DriverDashboard = () => {
                     privatePayments={privatePayments} 
                     chargingExpenses={expenses.charging} 
                 />
+
+                <UberHeatmapPanel />
 
 
                 {/* Audit Ledger Modal */}
