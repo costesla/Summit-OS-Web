@@ -612,14 +612,15 @@ function initMap() {
 
   heatLayer = L.heatLayer([], {
     radius: heatRadius,
-    blur: 20,
-    maxZoom: 17,
+    blur: 15,
+    minOpacity: 0.25,
+    maxZoom: 15,
     gradient: {
-      0.1: 'blue',
-      0.3: 'cyan',
-      0.5: 'lime',
-      0.7: 'yellow',
-      1.0: 'red'
+      0.2: '#2563eb', // Sapphire Blue (Low density)
+      0.4: '#06b6d4', // Teal/Cyan (Moderate density)
+      0.6: '#10b981', // Emerald Green (High density)
+      0.8: '#f59e0b', // Amber Gold (Very High density)
+      1.0: '#ef4444'  // Crimson Red (Hottest spot)
     }
   }).addTo(map);
 }
@@ -849,7 +850,12 @@ document.getElementById('tile-select').addEventListener('change', e => {
 
 document.getElementById('radius-slider').addEventListener('input', e => {
   heatRadius = parseInt(e.target.value);
-  if (heatLayer) heatLayer.setOptions({ radius: heatRadius });
+  if (heatLayer) {
+    heatLayer.setOptions({ 
+      radius: heatRadius,
+      blur: Math.round(heatRadius * 0.5)
+    });
+  }
 });
 
 document.getElementById('days-select').addEventListener('change', loadData);
