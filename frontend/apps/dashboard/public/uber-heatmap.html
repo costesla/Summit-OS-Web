@@ -1081,12 +1081,91 @@ document.getElementById('days-select').addEventListener('change', loadData);
 document.getElementById('rec-day-select').addEventListener('change', renderRecommendations);
 document.getElementById('rec-day-select').value = new Date().getDay();
 
+// ── Live Locator (Tessie telemetry tracker) ───────────────────────────
+let carMarker = null;
+let liveLocationActive = false;
+
+// Create custom pulsing icon style
+const pulseIconStyle = document.createElement('style');
+pulseIconStyle.textContent = `
+  .pulsing-car-marker {
+    background: #3b82f6;
+    border: 3.5px solid #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 0 0 10px rgba(59,130,246,0.35);
+    animation: car-pulse 1.8s infinite;
+  }
+  @keyframes car-pulse {
+    0% { box-shadow: 0 0 0 0px rgba(59,130,246,0.5); }
+    70% { box-shadow: 0 0 0 12px rgba(59,130,246,0); }
+    100% { box-shadow: 0 0 0 0px rgba(59,130,246,0); }
+  }
+`;
+document.head.appendChild(pulseIconStyle);
+
+async function updateLiveLocation() {
+  try {
+    const url = `${BACKEND}/api/copilot/vehicle/status`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    
+    // Check if geofence privacy is active or car is asleep
+    if (data.location && typeof data.location === 'object' && data.location.lat && data.location.long) {
+      const lat = data.location.lat;
+      const lon = data.location.long;
+      const speed = data.location.speed || 0;
+      
+      const popupText = `
+        <div style="font-family:'Inter', sans-serif; font-size:12px; color:#1e293b; padding:4px;">
+          <strong style="color:#2563eb; display:flex; align-items:center; gap:4px;">⚡ COS Tesla Active</strong>
+          <div style="margin-top:4px;">Speed: <strong>${speed.toFixed(0)} mph</strong></div>
+          <div style="font-size:10px; color:#64748b; margin-top:2px;">Live Tessie Telemetry</div>
+        </div>
+      `;
+
+      if (!carMarker) {
+        const carIcon = L.divIcon({
+          className: 'pulsing-car-marker',
+          iconSize: [16, 16],
+          iconAnchor: [8, 8]
+        });
+        carMarker = L.marker([lat, lon], { icon: carIcon }).addTo(map);
+        carMarker.bindPopup(popupText);
+      } else {
+        carMarker.setLatLng([lat, lon]);
+        carMarker.setPopupContent(popupText);
+      }
+      
+      // Auto pan to vehicle on first active acquisition
+      if (!liveLocationActive) {
+        liveLocationActive = true;
+        map.setView([lat, lon], 14, { animate: true, duration: 1.5 });
+      }
+    } else {
+      // Clear marker if location is geofenced (home/privacy zone)
+      if (carMarker) {
+        map.removeLayer(carMarker);
+        carMarker = null;
+      }
+      liveLocationActive = false;
+    }
+  } catch (err) {
+    console.warn('Live location update failed (car sleeping/unreachable)');
+  }
+}
+
 // ── Boot ──────────────────────────────────────────────────────────────
 initMap();
 showLoading(true, 'Initializing map…');
 
 // Auto-load after a brief moment so the map tiles can render
-setTimeout(loadData, 800);
+setTimeout(async () => {
+  await loadData();
+  // Start locator polling
+  updateLiveLocation();
+  setInterval(updateLiveLocation, 15000); // refresh vehicle location every 15s
+}, 800);
 </script>
 
 </body>
