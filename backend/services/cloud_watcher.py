@@ -879,6 +879,7 @@ class CloudWatcherService:
                 except Exception as clamp_err:
                     log.warning(f"Date clamp failed for {name}: {clamp_err}")
 
+                original_dt = parsed_dt
                 parsed_dt = parsed_dt.replace(tzinfo=MDT)
                 
                 entry = {
@@ -890,6 +891,7 @@ class CloudWatcherService:
                     "tax": tax,
                     "category": category,
                     "date_time": parsed_dt,
+                    "original_date_time": original_dt,
                     "items": items
                 }
                 
@@ -933,9 +935,15 @@ class CloudWatcherService:
                         t2_naive = t2.replace(tzinfo=None) if t2.tzinfo else t2
                         time_diff = abs((t1_naive - t2_naive).total_seconds())
                         if time_diff <= 600:  # 10-minute window
-                            is_dup = True
-                            logs.append(f"DEDUP: '{exp['filename']}' is a duplicate of '{existing['filename']}' (same merchant/amount, diff {time_diff/60:.1f}m <= 10m) — skipped.")
-                            break
+                            # If they originally had different extracted dates, they are genuinely different days (e.g. back-to-back shifts)
+                            orig1 = exp.get("original_date_time")
+                            orig2 = existing.get("original_date_time")
+                            if orig1 and orig2 and orig1.date() != orig2.date():
+                                is_dup = False
+                            else:
+                                is_dup = True
+                                logs.append(f"DEDUP: '{exp['filename']}' is a duplicate of '{existing['filename']}' (same merchant/amount, diff {time_diff/60:.1f}m <= 10m) — skipped.")
+                                break
                     else:
                         # Fallback if datetimes aren't both present: treat as duplicate
                         is_dup = True

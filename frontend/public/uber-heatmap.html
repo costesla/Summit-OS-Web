@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Summit OS · Uber Activity Heatmap</title>
+  <meta name="description" content="Geographic heatmap of Uber driving activity — pickup and dropoff density across Colorado Springs." />
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg-dark:     #090d14;
+      --bg-card:     #0f1623;
+      --bg-surface:  #141c2b;
+      --border:      rgba(255,255,255,0.08);
+      --accent-blue: #3b82f6;
+      --accent-cyan: #06b6d4;
+      --accent-emer: #10b981;
+      --accent-warn: #f59e0b;
+      --accent-red:  #ef4444;
+      --text-primary:   #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted:     #475569;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Top bar ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      height: 56px;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      gap: 16px;
+      z-index: 1000;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      white-space: nowrap;
+    }
+    .brand-icon {
+      width: 28px; height: 28px;
+      background: linear-gradient(135deg, #3b82f6, #06b6d4);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+    }
+    .brand span.sub { color: var(--text-secondary); font-weight: 400; font-size: 14px; }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .ctrl-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 4px 8px;
+    }
+    .ctrl-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+    select, input[type="range"] {
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+    }
+    select option { background: #1e2a3a; }
+
+    .mode-tabs {
+      display: flex;
+      gap: 2px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 3px;
+    }
+    .mode-tab {
+      padding: 4px 12px;
+      border-radius: 5px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      transition: all 0.2s;
+    }
+    .mode-tab.active {
+      background: var(--accent-blue);
+      color: #fff;
+    }
+
+    .btn-refresh {
+      display: flex; align-items: center; gap: 6px;
+      padding: 7px 14px;
+      background: linear-gradient(135deg, #3b82f6, #06b6d4);
+      border: none; border-radius: 8px;
+      color: #fff; font-size: 13px; font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      white-space: nowrap;
+    }
+    .btn-refresh:hover { opacity: 0.85; }
+    .btn-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Main layout ── */
+    .main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 280px;
+      flex-shrink: 0;
+      background: var(--bg-card);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      z-index: 500;
+    }
+
+    .sidebar-section {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-section:last-child { border-bottom: none; }
+
+    .section-title {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    /* Stat cards */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .stat-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      transition: border-color 0.2s;
+    }
+    .stat-card:hover { border-color: rgba(59,130,246,0.4); }
+    .stat-value {
+      font-size: 20px;
+      font-weight: 700;
+      font-family: 'Outfit', sans-serif;
+      line-height: 1;
+      background: linear-gradient(135deg, #f1f5f9, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .stat-value.green { background: linear-gradient(135deg, #10b981, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .stat-value.blue  { background: linear-gradient(135deg, #3b82f6, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .stat-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    /* Legend */
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    .legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* Hot zones list */
+    .zone-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 6px;
+      font-size: 12px;
+      transition: border-color 0.2s;
+      cursor: pointer;
+    }
+    .zone-item:hover { border-color: rgba(59,130,246,0.5); }
+    .zone-name { color: var(--text-primary); font-weight: 500; }
+    .zone-count {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 100px;
+      background: rgba(59,130,246,0.15);
+      color: var(--accent-blue);
+      font-weight: 600;
+    }
+
+    /* Time chart */
+    .time-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      height: 60px;
+    }
+    .time-bar-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+    .time-bar {
+      width: 100%;
+      background: linear-gradient(to top, #3b82f6, #06b6d4);
+      border-radius: 2px 2px 0 0;
+      transition: height 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+      min-height: 2px;
+    }
+    .time-label {
+      font-size: 8px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    /* Loading overlay */
+    .loading-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(9,13,20,0.85);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      z-index: 9999;
+      backdrop-filter: blur(4px);
+      transition: opacity 0.4s;
+    }
+    .loading-overlay.hidden { opacity: 0; pointer-events: none; }
+
+    .spinner {
+      width: 44px; height: 44px;
+      border: 3px solid rgba(59,130,246,0.2);
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-text {
+      font-size: 14px;
+      color: var(--text-secondary);
+      letter-spacing: 0.3px;
+    }
+
+    /* Map container */
+    .map-wrap {
+      flex: 1;
+      position: relative;
+    }
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Map info pill */
+    .map-pill {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15,22,35,0.92);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 8px 20px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      backdrop-filter: blur(8px);
+      z-index: 500;
+      white-space: nowrap;
+    }
+    .map-pill strong { color: var(--text-primary); }
+
+    /* Error box */
+    .error-box {
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: #fca5a5;
+      margin-top: 8px;
+      display: none;
+    }
+
+    /* Tooltip for zone hover */
+    .leaflet-tooltip.zone-tooltip {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      padding: 6px 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+
+    /* Scrollbar */
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-track { background: transparent; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* Pulse animation for live dot */
+    .live-dot {
+      width: 8px; height: 8px;
+      background: #10b981;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 4px;
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Top Header ── -->
+<header>
+  <div class="brand">
+    <div class="brand-icon">🗺</div>
+    Summit OS
+    <span class="sub">/ Uber Activity Heatmap</span>
+  </div>
+
+  <div class="controls">
+    <!-- Date range -->
+    <div class="ctrl-group">
+      <span class="ctrl-label">Range</span>
+      <select id="days-select">
+        <option value="7">Last 7 days</option>
+        <option value="14">Last 14 days</option>
+        <option value="30" selected>Last 30 days</option>
+        <option value="60">Last 60 days</option>
+        <option value="90">Last 90 days</option>
+        <option value="180">Last 6 months</option>
+        <option value="365">All time (1 yr)</option>
+      </select>
+    </div>
+
+    <!-- Map layer -->
+    <div class="ctrl-group">
+      <span class="ctrl-label">Map</span>
+      <select id="tile-select">
+        <option value="dark">Dark</option>
+        <option value="satellite">Satellite</option>
+        <option value="streets">Streets</option>
+      </select>
+    </div>
+
+    <!-- Heat radius -->
+    <div class="ctrl-group">
+      <span class="ctrl-label">Radius</span>
+      <input type="range" id="radius-slider" min="15" max="60" value="30" style="width:70px;" />
+    </div>
+
+    <!-- Mode tabs -->
+    <div class="mode-tabs">
+      <button class="mode-tab active" id="tab-both"  onclick="setMode('both')">Both</button>
+      <button class="mode-tab"        id="tab-pickup" onclick="setMode('pickup')">Pickups</button>
+      <button class="mode-tab"        id="tab-drop"   onclick="setMode('dropoff')">Dropoffs</button>
+    </div>
+
+    <button class="btn-refresh" id="refresh-btn" onclick="loadData()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+        <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+      </svg>
+      Load Data
+    </button>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+
+    <!-- Stats -->
+    <div class="sidebar-section">
+      <div class="section-title">📊 Summary</div>
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-value blue" id="stat-trips">—</div>
+          <div class="stat-label">Uber Trips</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-miles">—</div>
+          <div class="stat-label">Total Miles</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value green" id="stat-earn">—</div>
+          <div class="stat-label">Earnings</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-avg">—</div>
+          <div class="stat-label">Avg Miles/Trip</div>
+        </div>
+      </div>
+      <div class="error-box" id="error-box">Could not load trip data. Check your backend connection.</div>
+    </div>
+
+    <!-- Legend -->
+    <div class="sidebar-section">
+      <div class="section-title">🌡 Heat Legend</div>
+      <div class="legend-row">
+        <div class="legend-dot" style="background:rgba(0,0,255,0.7);"></div>
+        <span>Low activity</span>
+      </div>
+      <div class="legend-row">
+        <div class="legend-dot" style="background:rgba(0,255,0,0.7);"></div>
+        <span>Moderate activity</span>
+      </div>
+      <div class="legend-row">
+        <div class="legend-dot" style="background:rgba(255,255,0,0.7);"></div>
+        <span>High activity</span>
+      </div>
+      <div class="legend-row">
+        <div class="legend-dot" style="background:rgba(255,0,0,0.9);"></div>
+        <span>Very high activity</span>
+      </div>
+    </div>
+
+    <!-- Activity by hour -->
+    <div class="sidebar-section">
+      <div class="section-title">⏰ Activity by Hour</div>
+      <div class="time-bars" id="hour-bars">
+        <!-- Bars generated by JS -->
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:4px;">
+        <span style="font-size:9px;color:var(--text-muted)">12a</span>
+        <span style="font-size:9px;color:var(--text-muted)">6a</span>
+        <span style="font-size:9px;color:var(--text-muted)">12p</span>
+        <span style="font-size:9px;color:var(--text-muted)">6p</span>
+        <span style="font-size:9px;color:var(--text-muted)">11p</span>
+      </div>
+    </div>
+
+    <!-- Hot zones -->
+    <div class="sidebar-section">
+      <div class="section-title">🔥 Hottest Zones</div>
+      <div id="zone-list">
+        <div style="color:var(--text-muted);font-size:12px;text-align:center;padding:16px 0;">Load data to see zones</div>
+      </div>
+    </div>
+
+    <!-- Day of week -->
+    <div class="sidebar-section">
+      <div class="section-title">📅 Trips by Day of Week</div>
+      <div id="dow-bars" style="display:flex;align-items:flex-end;gap:3px;height:50px;">
+      </div>
+      <div style="display:flex;justify-content:space-around;margin-top:4px;">
+        <span style="font-size:9px;color:var(--text-muted)">Sun</span>
+        <span style="font-size:9px;color:var(--text-muted)">Mon</span>
+        <span style="font-size:9px;color:var(--text-muted)">Tue</span>
+        <span style="font-size:9px;color:var(--text-muted)">Wed</span>
+        <span style="font-size:9px;color:var(--text-muted)">Thu</span>
+        <span style="font-size:9px;color:var(--text-muted)">Fri</span>
+        <span style="font-size:9px;color:var(--text-muted)">Sat</span>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="sidebar-section" style="margin-top:auto;">
+      <div style="font-size:11px;color:var(--text-muted);line-height:1.5;">
+        <span class="live-dot"></span>
+        Data sourced from Tessie API via Summit OS backend.
+        Pickup &amp; dropoff coordinates from all Uber-tagged drives.
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ── Map ── -->
+  <div class="map-wrap">
+    <div id="map"></div>
+
+    <div class="loading-overlay" id="loading-overlay">
+      <div class="spinner"></div>
+      <div class="loading-text" id="loading-text">Connecting to Summit OS…</div>
+    </div>
+
+    <div class="map-pill" id="map-pill">
+      Zoom or pan to explore · <strong id="pill-count">0 points</strong> plotted
+    </div>
+  </div>
+
+</div>
+
+<!-- Scripts -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────
+// Detect environment: if running from the Next.js dev server use relative URL,
+// otherwise use the production backend.
+const BACKEND = (() => {
+  const h = window.location.hostname;
+  if (h === 'localhost' || h === '127.0.0.1') return 'http://localhost:7071';
+  return 'https://summitosapi.azurewebsites.net';
+})();
+
+const COS_CENTER = [38.8339, -104.8214]; // Colorado Springs center
+
+// ── Tile layers ────────────────────────────────────────────────────────
+const TILES = {
+  dark: {
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    attr: '&copy; OpenStreetMap &copy; CARTO'
+  },
+  satellite: {
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attr: 'Esri, Maxar, Earthstar Geographics'
+  },
+  streets: {
+    url: 'https://{s}.basemaps.cartocdn.com/dark_matter/{z}/{x}/{y}{r}.png',
+    attr: '&copy; OpenStreetMap &copy; CARTO'
+  }
+};
+
+// ── State ─────────────────────────────────────────────────────────────
+let map, heatLayer, tileLayer;
+let allDrives = [];
+let currentMode = 'both';
+let heatRadius = 30;
+
+// ── Initialize Map ────────────────────────────────────────────────────
+function initMap() {
+  map = L.map('map', {
+    center: COS_CENTER,
+    zoom: 12,
+    zoomControl: true,
+    preferCanvas: true
+  });
+
+  tileLayer = L.tileLayer(TILES.dark.url, {
+    attribution: TILES.dark.attr,
+    maxZoom: 19,
+    subdomains: 'abcd'
+  }).addTo(map);
+
+  heatLayer = L.heatLayer([], {
+    radius: heatRadius,
+    blur: 20,
+    maxZoom: 17,
+    gradient: {
+      0.1: 'blue',
+      0.3: 'cyan',
+      0.5: 'lime',
+      0.7: 'yellow',
+      1.0: 'red'
+    }
+  }).addTo(map);
+}
+
+// ── Load Data ─────────────────────────────────────────────────────────
+async function loadData() {
+  const days = document.getElementById('days-select').value;
+  showLoading(true, 'Fetching Uber drives from Tessie…');
+  document.getElementById('refresh-btn').disabled = true;
+  document.getElementById('error-box').style.display = 'none';
+
+  try {
+    const url = `${BACKEND}/api/copilot/tessie/drives?tag=uber&days=${days}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(20000) });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    allDrives = (data.drives || []);
+    
+    showLoading(true, `Processing ${allDrives.length} trips…`);
+    await new Promise(r => setTimeout(r, 50)); // let UI breathe
+
+    renderHeatmap();
+    renderStats();
+    renderTimeChart();
+    renderDowChart();
+    renderZones();
+
+  } catch (err) {
+    console.error('Load error:', err);
+    document.getElementById('error-box').style.display = 'block';
+    document.getElementById('error-box').textContent =
+      `Failed to load data: ${err.message}. Make sure the backend is running.`;
+  } finally {
+    showLoading(false);
+    document.getElementById('refresh-btn').disabled = false;
+  }
+}
+
+// ── Build heat points ─────────────────────────────────────────────────
+function getHeatPoints(drives, mode) {
+  const pts = [];
+  for (const d of drives) {
+    // Each drive from /api/copilot/tessie/drives has start/end as address strings.
+    // We use the raw lat/lon that the Tessie API embeds — these come through
+    // on the day-summary endpoint. For the drives endpoint we geocode from the
+    // start/end address saved in the DB if the live Tessie coords are missing.
+    // 
+    // The drives list includes starting_latitude etc. if available from live Tessie.
+    const sLat = d._start_lat || d.start_lat;
+    const sLon = d._start_lon || d.start_lon;
+    const eLat = d._end_lat   || d.end_lat;
+    const eLon = d._end_lon   || d.end_lon;
+
+    const intensity = Math.min(1, 0.4 + (d.distance_miles || 0) / 30);
+
+    if ((mode === 'both' || mode === 'pickup') && sLat && sLon) {
+      pts.push([sLat, sLon, intensity]);
+    }
+    if ((mode === 'both' || mode === 'dropoff') && eLat && eLon) {
+      pts.push([eLat, eLon, intensity]);
+    }
+  }
+  return pts;
+}
+
+// ── Render heatmap ────────────────────────────────────────────────────
+function renderHeatmap() {
+  const pts = getHeatPoints(allDrives, currentMode);
+  heatLayer.setLatLngs(pts);
+  heatLayer.setOptions({ radius: heatRadius });
+
+  document.getElementById('pill-count').textContent =
+    `${pts.length} points`;
+
+  if (pts.length > 0) {
+    const lats = pts.map(p => p[0]);
+    const lons = pts.map(p => p[1]);
+    const bounds = L.latLngBounds(
+      [Math.min(...lats), Math.min(...lons)],
+      [Math.max(...lats), Math.max(...lons)]
+    );
+    map.fitBounds(bounds, { padding: [40, 40] });
+  }
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────
+function renderStats() {
+  const count = allDrives.length;
+  const totalMiles = allDrives.reduce((s, d) => s + (d.distance_miles || 0), 0);
+  const totalEarn  = allDrives.reduce((s, d) => s + (d.driver_earnings || 0), 0);
+  const avgMiles   = count > 0 ? totalMiles / count : 0;
+
+  document.getElementById('stat-trips').textContent = count;
+  document.getElementById('stat-miles').textContent = totalMiles.toFixed(0);
+  document.getElementById('stat-earn').textContent  = totalEarn > 0
+    ? `$${totalEarn.toFixed(0)}`
+    : '—';
+  document.getElementById('stat-avg').textContent = avgMiles.toFixed(1);
+}
+
+// ── Hour chart ────────────────────────────────────────────────────────
+function renderTimeChart() {
+  const hourCounts = new Array(24).fill(0);
+  for (const d of allDrives) {
+    if (d.time_mst) {
+      const hr = parseInt(d.time_mst.split(':')[0], 10);
+      if (!isNaN(hr)) hourCounts[hr]++;
+    }
+  }
+  const maxH = Math.max(...hourCounts, 1);
+  const container = document.getElementById('hour-bars');
+  container.innerHTML = '';
+  hourCounts.forEach((cnt, hr) => {
+    const pct = cnt / maxH;
+    const wrap = document.createElement('div');
+    wrap.className = 'time-bar-wrap';
+    const bar = document.createElement('div');
+    bar.className = 'time-bar';
+    bar.style.height = `${Math.max(4, pct * 56)}px`;
+    bar.title = `${hr}:00 — ${cnt} trips`;
+    wrap.appendChild(bar);
+    container.appendChild(wrap);
+  });
+}
+
+// ── Day-of-week chart ─────────────────────────────────────────────────
+function renderDowChart() {
+  const dowCounts = new Array(7).fill(0); // 0=Sun..6=Sat
+  for (const d of allDrives) {
+    if (d.date) {
+      const dt = new Date(d.date + 'T12:00:00');
+      dowCounts[dt.getDay()]++;
+    }
+  }
+  const maxD = Math.max(...dowCounts, 1);
+  const container = document.getElementById('dow-bars');
+  container.innerHTML = '';
+  const dayColors = ['#f59e0b','#3b82f6','#3b82f6','#3b82f6','#3b82f6','#10b981','#10b981'];
+  dowCounts.forEach((cnt, i) => {
+    const pct = cnt / maxD;
+    const bar = document.createElement('div');
+    bar.style.cssText = `
+      flex:1; height:${Math.max(3, pct*46)}px;
+      background:${dayColors[i]}; border-radius:2px 2px 0 0;
+      transition:height 0.6s;
+    `;
+    bar.title = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][i] + `: ${cnt} trips`;
+    container.appendChild(bar);
+  });
+}
+
+// ── Hot zones ─────────────────────────────────────────────────────────
+function renderZones() {
+  // Cluster start/end locations by approximate 0.01° grid (~1km)
+  const grid = {};
+  const addPt = (lat, lon, label) => {
+    if (!lat || !lon) return;
+    const key = `${(lat * 100 | 0) / 100},${(lon * 100 | 0) / 100}`;
+    if (!grid[key]) grid[key] = { lat, lon, count: 0, labels: {} };
+    grid[key].count++;
+    if (label) grid[key].labels[label] = (grid[key].labels[label] || 0) + 1;
+  };
+
+  for (const d of allDrives) {
+    const sLat = d._start_lat || d.start_lat;
+    const sLon = d._start_lon || d.start_lon;
+    const eLat = d._end_lat || d.end_lat;
+    const eLon = d._end_lon || d.end_lon;
+    const startName = (d.start || '').split(',')[0];
+    const endName   = (d.end   || '').split(',')[0];
+    addPt(sLat, sLon, startName);
+    addPt(eLat, eLon, endName);
+  }
+
+  const sorted = Object.values(grid)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8);
+
+  const container = document.getElementById('zone-list');
+  if (sorted.length === 0) {
+    container.innerHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:8px 0;">No coordinate data available</div>';
+    return;
+  }
+
+  container.innerHTML = '';
+  sorted.forEach((zone, i) => {
+    const topLabel = Object.entries(zone.labels)
+      .sort((a, b) => b[1] - a[1])[0];
+    const label = topLabel ? topLabel[0] : `Zone ${i + 1}`;
+    const el = document.createElement('div');
+    el.className = 'zone-item';
+    el.innerHTML = `
+      <div class="zone-name">${label.substring(0, 24)}</div>
+      <div class="zone-count">${zone.count}×</div>
+    `;
+    el.onclick = () => map.setView([zone.lat, zone.lon], 15);
+    container.appendChild(el);
+  });
+}
+
+// ── UI helpers ────────────────────────────────────────────────────────
+function showLoading(show, text) {
+  const overlay = document.getElementById('loading-overlay');
+  const textEl  = document.getElementById('loading-text');
+  if (text) textEl.textContent = text;
+  overlay.classList.toggle('hidden', !show);
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  ['both','pickup','dropoff'].forEach(m => {
+    document.getElementById(`tab-${m === 'dropoff' ? 'drop' : m}`).classList.toggle('active', m === mode);
+  });
+  if (allDrives.length > 0) renderHeatmap();
+}
+
+// ── Controls ──────────────────────────────────────────────────────────
+document.getElementById('tile-select').addEventListener('change', e => {
+  const key = e.target.value;
+  if (tileLayer) map.removeLayer(tileLayer);
+  tileLayer = L.tileLayer(TILES[key].url, {
+    attribution: TILES[key].attr,
+    maxZoom: 19,
+    subdomains: 'abcd'
+  }).addTo(map);
+});
+
+document.getElementById('radius-slider').addEventListener('input', e => {
+  heatRadius = parseInt(e.target.value);
+  if (heatLayer) heatLayer.setOptions({ radius: heatRadius });
+});
+
+document.getElementById('days-select').addEventListener('change', loadData);
+
+// ── Boot ──────────────────────────────────────────────────────────────
+initMap();
+showLoading(true, 'Initializing map…');
+
+// Auto-load after a brief moment so the map tiles can render
+setTimeout(loadData, 800);
+</script>
+
+</body>
+</html>
