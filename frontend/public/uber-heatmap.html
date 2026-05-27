@@ -654,6 +654,17 @@ const BACKEND = (() => {
 
 const COS_CENTER = [38.8339, -104.8214]; // Colorado Springs center
 
+function parseLocalDate(dateStr) {
+  if (!dateStr) return null;
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return null;
+  const yr = parseInt(parts[0], 10);
+  const mo = parseInt(parts[1], 10) - 1;
+  const dy = parseInt(parts[2], 10);
+  const dt = new Date(yr, mo, dy);
+  return isNaN(dt.getTime()) ? null : dt;
+}
+
 // ── Tile layers ────────────────────────────────────────────────────────
 const TILES = {
   dark: {
@@ -832,8 +843,8 @@ function renderTimeChart() {
 function renderDowChart() {
   const dowCounts = new Array(7).fill(0); // 0=Sun..6=Sat
   for (const d of allDrives) {
-    if (d.date) {
-      const dt = new Date(d.date + 'T12:00:00');
+    const dt = parseLocalDate(d.date);
+    if (dt) {
       dowCounts[dt.getDay()]++;
     }
   }
@@ -910,9 +921,8 @@ function renderRecommendations() {
   
   // Filter drives by day of week (0=Sun, 1=Mon, ..., 6=Sat)
   const dayDrives = allDrives.filter(d => {
-    if (!d.date) return false;
-    const dt = new Date(d.date + 'T12:00:00');
-    return dt.getDay() === selectedDay;
+    const dt = parseLocalDate(d.date);
+    return dt && dt.getDay() === selectedDay;
   });
 
   if (dayDrives.length === 0) {
