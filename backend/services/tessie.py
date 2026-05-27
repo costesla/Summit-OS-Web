@@ -226,9 +226,10 @@ class TessieClient:
             logging.error(f"Error matching Tessie drive: {str(e)}")
             return None
 
-    def get_tagged_drives(self, vin, from_ts, to_ts, limit=200):
+    def get_tagged_drives(self, vin, from_ts, to_ts, limit=3000):
         """
         Fetches all drives in a time range from the Tessie API.
+        Automatically pages through results to capture all drives.
         Returns raw drive objects including the 'tag' field.
         Filtering by tag keyword is done in the caller for flexibility.
         """
@@ -236,23 +237,49 @@ class TessieClient:
             return []
 
         logging.info(f"Fetching tagged drives for VIN: {vin}, from={from_ts}, to={to_ts}")
+        all_results = []
+        page = 1
+        page_size = 250 # maximum standard page size for Tessie API
+        
         try:
-            url = f"{self.base_url}/{vin}/drives"
-            headers = {"Authorization": f"Bearer {self.api_key}"}
-            params = {
-                "from": from_ts,
-                "to": to_ts,
-                "limit": limit
-            }
+            while True:
+                url = f"{self.base_url}/{vin}/drives"
+                headers = {"Authorization": f"Bearer {self.api_key}"}
+                params = {
+                    "from": from_ts,
+                    "to": to_ts,
+                    "limit": page_size,
+                    "page": page
+                }
 
-            response = requests.get(url, headers=headers, params=params, timeout=self.timeout)
-            response.raise_for_status()
+                logging.info(f"Requesting page {page} of tagged drives (current count: {len(all_results)})...")
+                response = requests.get(url, headers=headers, params=params, timeout=self.timeout)
+                response.raise_for_status()
 
-            data = response.json()
-            return data.get("results", [])
+                data = response.json()
+                results = data.get("results", [])
+                
+                if not results:
+                    break
+                    
+                all_results.extend(results)
+                
+                # If we got fewer results than page_size, we have reached the end of results
+                if len(results) < page_size:
+                    break
+                    
+                # Guard rail to prevent infinite loops or exceeding reasonable limits
+                if len(all_results) >= limit:
+                    break
+                    
+                page += 1
+
+            logging.info(f"Successfully fetched a total of {len(all_results)} drives from Tessie API (over {page} pages).")
+            return all_results
+            
         except Exception as e:
             logging.error(f"Error fetching tagged drives: {str(e)}")
-            return []
+            return all_results
 
     def get_drive_telemetry(self, vin, from_ts, to_ts):
         """
