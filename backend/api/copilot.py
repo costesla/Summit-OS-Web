@@ -867,6 +867,8 @@ def copilot_tessie_charges(req: func.HttpRequest) -> func.HttpResponse:
                 "ending_soc": c.get("ending_battery_level") or c.get("battery_level_end"),
                 "duration_minutes": round(float(c.get("duration") or 0) / 60, 1) if c.get("duration") else None,
                 "location": _sanitize_pii_address(c.get("location") or c.get("charging_location")),
+                "lat": c.get("latitude") or c.get("lat"),
+                "lon": c.get("longitude") or c.get("lon") or c.get("lng"),
                 "charge_type": c.get("charger_type") or c.get("connector_type"),
                 "tessie_charge_id": c.get("id")
             })

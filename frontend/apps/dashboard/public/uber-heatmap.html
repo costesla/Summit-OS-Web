@@ -507,6 +507,12 @@
       <button class="mode-tab"        id="tab-drop"   onclick="setMode('dropoff')">Dropoffs</button>
     </div>
 
+    <!-- Charging Overlay Toggle -->
+    <label class="ctrl-group hover-pointer" style="display:flex; align-items:center; gap:6px; cursor:pointer; user-select:none; font-size:12px; color:var(--text-primary); font-weight:600; padding:5px 10px;">
+      <input type="checkbox" id="charging-toggle" style="cursor:pointer; width:14px; height:14px; accent-color:var(--accent-blue);" />
+      <span>⚡ Show Charges</span>
+    </label>
+
     <button class="btn-refresh" id="refresh-btn" onclick="loadData()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
@@ -707,6 +713,8 @@ const TILES = {
 // ── State ─────────────────────────────────────────────────────────────
 let map, heatLayer, tileLayer;
 let allDrives = [];
+let allCharges = [];
+let chargeMarkers = [];
 let currentMode = 'both';
 let heatRadius = 30;
 
@@ -743,18 +751,32 @@ function initMap() {
 // ── Load Data ─────────────────────────────────────────────────────────
 async function loadData() {
   const days = document.getElementById('days-select').value;
-  showLoading(true, 'Fetching Uber drives from Tessie…');
+  showLoading(true, 'Fetching Uber telemetry from Tessie…');
   document.getElementById('refresh-btn').disabled = true;
   document.getElementById('error-box').style.display = 'none';
 
   try {
-    const url = `${BACKEND}/api/copilot/tessie/drives?tag=uber&days=${days}`;
-    const res = await fetch(url, { signal: AbortSignal.timeout(20000) });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    allDrives = (data.drives || []);
+    const drivesUrl = `${BACKEND}/api/copilot/tessie/drives?tag=uber&days=${days}`;
+    const chargesUrl = `${BACKEND}/api/copilot/tessie/charges?days=${days}`;
     
-    showLoading(true, `Processing ${allDrives.length} trips…`);
+    // Fetch drives and charges in parallel
+    const [drivesRes, chargesRes] = await Promise.all([
+      fetch(drivesUrl, { signal: AbortSignal.timeout(20000) }),
+      fetch(chargesUrl, { signal: AbortSignal.timeout(20000) }).catch(() => null)
+    ]);
+    
+    if (!drivesRes.ok) throw new Error(`HTTP ${drivesRes.status}`);
+    const drivesData = await drivesRes.json();
+    allDrives = (drivesData.drives || []);
+    
+    if (chargesRes && chargesRes.ok) {
+      const chargesData = await chargesRes.json();
+      allCharges = (chargesData.sessions || []);
+    } else {
+      allCharges = [];
+    }
+    
+    showLoading(true, `Processing ${allDrives.length} trips & ${allCharges.length} charges…`);
     await new Promise(r => setTimeout(r, 50)); // let UI breathe
 
     renderHeatmap();
@@ -763,6 +785,7 @@ async function loadData() {
     renderDowChart();
     renderZones();
     renderRecommendations();
+    renderCharges();
 
   } catch (err) {
     console.error('Load error:', err);
@@ -773,6 +796,77 @@ async function loadData() {
     showLoading(false);
     document.getElementById('refresh-btn').disabled = false;
   }
+}
+
+// Create custom styling for the charging session marker overlays
+const chargingStyle = document.createElement('style');
+chargingStyle.textContent = `
+  .charging-session-marker {
+    background: #0ea5e9;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(14,165,233,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 9px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+`;
+document.head.appendChild(chargingStyle);
+
+// ── Render charges ────────────────────────────────────────────────────
+function renderCharges() {
+  // Clear any existing charge markers
+  chargeMarkers.forEach(m => map.removeLayer(m));
+  chargeMarkers = [];
+  
+  const showCharges = document.getElementById('charging-toggle').checked;
+  if (!showCharges || allCharges.length === 0) return;
+  
+  allCharges.forEach(c => {
+    if (c.lat && c.lon) {
+      const startSoc = c.starting_soc || 0;
+      const endSoc = c.ending_soc || 0;
+      const addedKwh = c.energy_added_kwh || 0;
+      const duration = c.duration_minutes || 0;
+      
+      const popupHTML = `
+        <div style="font-family:'Inter', sans-serif; font-size:12px; color:#1e293b; padding:6px; min-width:180px;">
+          <strong style="color:#0ea5e9; display:flex; align-items:center; gap:4px; font-size:13px;">⚡ Tessie Charging Corridor</strong>
+          <div style="margin-top:6px; border-bottom:1px solid #e2e8f0; padding-bottom:4px;">
+            Location: <strong>${c.location ? c.location.substring(0, 30) : 'Supercharger Corridor'}</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-top:6px;">
+            <span>SOC Boost:</span>
+            <strong>${startSoc}% ➔ ${endSoc}%</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-top:2px;">
+            <span>Energy Added:</span>
+            <strong>${addedKwh.toFixed(1)} kWh</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-top:2px;">
+            <span>Duration:</span>
+            <strong>${duration.toFixed(0)} mins</strong>
+          </div>
+          <div style="font-size:9px; color:#64748b; margin-top:4px; text-align:right;">${c.date} @ ${c.time_mst} MST</div>
+        </div>
+      `;
+      
+      const chargeIcon = L.divIcon({
+        className: 'charging-session-marker',
+        html: '⚡',
+        iconSize: [18, 18],
+        iconAnchor: [9, 9]
+      });
+      
+      const m = L.marker([c.lat, c.lon], { icon: chargeIcon }).addTo(map);
+      m.bindPopup(popupHTML);
+      chargeMarkers.push(m);
+    }
+  });
 }
 
 // ── Build heat points ─────────────────────────────────────────────────
@@ -1105,6 +1199,7 @@ document.getElementById('days-select').addEventListener('change', loadData);
 document.getElementById('hour-filter-select').addEventListener('change', () => {
   if (allDrives.length > 0) renderHeatmap();
 });
+document.getElementById('charging-toggle').addEventListener('change', renderCharges);
 document.getElementById('rec-day-select').addEventListener('change', renderRecommendations);
 document.getElementById('rec-day-select').value = new Date().getDay();
 
