@@ -1107,14 +1107,25 @@ async function updateLiveLocation() {
   try {
     const url = `${BACKEND}/api/copilot/vehicle/status`;
     const res = await fetch(url);
-    if (!res.ok) throw new Error();
-    const data = await res.json();
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const body = await res.json();
     
-    // Check if geofence privacy is active or car is asleep
-    if (data.location && typeof data.location === 'object' && data.location.lat && data.location.long) {
-      const lat = data.location.lat;
-      const lon = data.location.long;
-      const speed = data.location.speed || 0;
+    console.log('[Heatmap Live GPS] Tessie payload received:', body);
+    
+    // Correct target path: body.vehicle.location
+    const vehicle = body.vehicle;
+    if (!vehicle) {
+      console.warn('[Heatmap Live GPS] No vehicle object in payload');
+      return;
+    }
+    
+    const loc = vehicle.location;
+    if (loc && typeof loc === 'object' && loc.lat && loc.long) {
+      const lat = loc.lat;
+      const lon = loc.long;
+      const speed = loc.speed || 0;
+      
+      console.log(`[Heatmap Live GPS] Plotting active position: lat=${lat}, lon=${lon}, speed=${speed}mph`);
       
       const popupText = `
         <div style="font-family:'Inter', sans-serif; font-size:12px; color:#1e293b; padding:4px;">
@@ -1143,6 +1154,7 @@ async function updateLiveLocation() {
         map.setView([lat, lon], 14, { animate: true, duration: 1.5 });
       }
     } else {
+      console.log('[Heatmap Live GPS] Geofence active or location missing:', loc);
       // Clear marker if location is geofenced (home/privacy zone)
       if (carMarker) {
         map.removeLayer(carMarker);
@@ -1151,7 +1163,7 @@ async function updateLiveLocation() {
       liveLocationActive = false;
     }
   } catch (err) {
-    console.warn('Live location update failed (car sleeping/unreachable)');
+    console.warn('[Heatmap Live GPS] Fetch failed (car asleep or offline):', err);
   }
 }
 
