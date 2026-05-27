@@ -481,6 +481,19 @@
       </select>
     </div>
 
+    <!-- Hour Filter -->
+    <div class="ctrl-group">
+      <span class="ctrl-label">Time</span>
+      <select id="hour-filter-select">
+        <option value="all" selected>All Day (24h)</option>
+        <option value="morning">Morning Commute (5a - 10a)</option>
+        <option value="midday">Midday / Lunch (10a - 3p)</option>
+        <option value="afternoon">Afternoon Rush (3p - 7p)</option>
+        <option value="evening">Evening Transition (7p - 11p)</option>
+        <option value="night">Night Owls (11p - 5a)</option>
+      </select>
+    </div>
+
     <!-- Heat radius -->
     <div class="ctrl-group">
       <span class="ctrl-label">Radius</span>
@@ -765,13 +778,24 @@ async function loadData() {
 // ── Build heat points ─────────────────────────────────────────────────
 function getHeatPoints(drives, mode) {
   const pts = [];
+  const hourFilter = document.getElementById('hour-filter-select').value;
+  
   for (const d of drives) {
-    // Each drive from /api/copilot/tessie/drives has start/end as address strings.
-    // We use the raw lat/lon that the Tessie API embeds — these come through
-    // on the day-summary endpoint. For the drives endpoint we geocode from the
-    // start/end address saved in the DB if the live Tessie coords are missing.
-    // 
-    // The drives list includes starting_latitude etc. if available from live Tessie.
+    // Apply hourly window filter
+    if (hourFilter !== 'all' && d.time_mst) {
+      const hr = parseInt(d.time_mst.split(':')[0], 10);
+      if (!isNaN(hr)) {
+        let matchesFilter = false;
+        if (hourFilter === 'morning'   && hr >= 5 && hr < 10)  matchesFilter = true;
+        if (hourFilter === 'midday'    && hr >= 10 && hr < 15) matchesFilter = true;
+        if (hourFilter === 'afternoon' && hr >= 15 && hr < 19) matchesFilter = true;
+        if (hourFilter === 'evening'   && hr >= 19 && hr < 23) matchesFilter = true;
+        if (hourFilter === 'night'     && (hr >= 23 || hr < 5)) matchesFilter = true;
+        
+        if (!matchesFilter) continue;
+      }
+    }
+
     const sLat = d._start_lat || d.start_lat;
     const sLon = d._start_lon || d.start_lon;
     const eLat = d._end_lat   || d.end_lat;
@@ -1078,6 +1102,9 @@ document.getElementById('radius-slider').addEventListener('input', e => {
 });
 
 document.getElementById('days-select').addEventListener('change', loadData);
+document.getElementById('hour-filter-select').addEventListener('change', () => {
+  if (allDrives.length > 0) renderHeatmap();
+});
 document.getElementById('rec-day-select').addEventListener('change', renderRecommendations);
 document.getElementById('rec-day-select').value = new Date().getDay();
 
