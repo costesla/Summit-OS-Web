@@ -30,7 +30,7 @@ from typing import Optional
 # ── Allowed CORS origins ─────────────────────────────────────────────────────
 # Set ALLOWED_ORIGINS in Azure App Settings as a comma-separated list.
 # Falls back to production domain only. Wildcard (*) is NOT allowed here.
-_DEFAULT_ORIGINS = "https://www.costesla.com,https://costesla.com"
+_DEFAULT_ORIGINS = "https://www.costesla.com,https://costesla.com,https://www.dashboardcostesla.com,https://dashboardcostesla.com"
 _ALLOWED_ORIGINS = [
     o.strip()
     for o in os.environ.get("ALLOWED_ORIGINS", _DEFAULT_ORIGINS).split(",")
