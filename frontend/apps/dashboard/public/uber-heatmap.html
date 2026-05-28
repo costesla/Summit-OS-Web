@@ -719,12 +719,24 @@ let currentMode = 'both';
 let heatRadius = 30;
 
 // ── Initialize Map ────────────────────────────────────────────────────
+function disableControlsPropagation() {
+  const controls = document.querySelectorAll('select, input, button, label, .ctrl-group, .zone-item, .rec-hotspot-item');
+  controls.forEach(el => {
+    L.DomEvent.disableClickPropagation(el);
+    // Explicitly stop touch propagation to prevent Leaflet from swallowing touchstart/touchend
+    el.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
+    el.addEventListener('touchend', e => e.stopPropagation(), { passive: true });
+    el.addEventListener('click', e => e.stopPropagation());
+  });
+}
+
 function initMap() {
   map = L.map('map', {
     center: COS_CENTER,
     zoom: 12,
     zoomControl: true,
-    preferCanvas: true
+    preferCanvas: true,
+    tap: false // Disable Leaflet's custom tap handler which breaks select dropdowns on touch/Tesla screens
   });
 
   tileLayer = L.tileLayer(TILES.dark.url, {
@@ -746,6 +758,9 @@ function initMap() {
       1.0: '#ef4444'  // Crimson Red (Hottest spot)
     }
   }).addTo(map);
+
+  // Apply immediately to standard controls
+  disableControlsPropagation();
 }
 
 // ── Load Data ─────────────────────────────────────────────────────────
@@ -795,6 +810,7 @@ async function loadData() {
   } finally {
     showLoading(false);
     document.getElementById('refresh-btn').disabled = false;
+    disableControlsPropagation();
   }
 }
 
@@ -1150,6 +1166,7 @@ function renderRecommendations() {
       <strong>💡 Strategy:</strong> ${proTip}
     </div>
   `;
+  disableControlsPropagation();
 }
 
 function flyToZone(lat, lon) {

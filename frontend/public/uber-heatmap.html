@@ -25,9 +25,9 @@
       --accent-emer: #10b981;
       --accent-warn: #f59e0b;
       --accent-red:  #ef4444;
-      --text-primary:   #f1f5f9;
-      --text-secondary: #94a3b8;
-      --text-muted:     #475569;
+      --text-primary:   #ffffff;
+      --text-secondary: #f1f5f9;
+      --text-muted:     #cbd5e1;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -473,9 +473,24 @@
     <div class="ctrl-group">
       <span class="ctrl-label">Map</span>
       <select id="tile-select">
-        <option value="dark">Dark</option>
-        <option value="satellite">Satellite</option>
-        <option value="streets">Streets</option>
+        <option value="dark">Dark Theme</option>
+        <option value="streets">Google Streets</option>
+        <option value="satellite">Google Satellite</option>
+        <option value="hybrid">Google Hybrid</option>
+        <option value="terrain">Google Terrain</option>
+      </select>
+    </div>
+
+    <!-- Hour Filter -->
+    <div class="ctrl-group">
+      <span class="ctrl-label">Time</span>
+      <select id="hour-filter-select">
+        <option value="all" selected>All Day (24h)</option>
+        <option value="morning">Morning Commute (5a - 10a)</option>
+        <option value="midday">Midday / Lunch (10a - 3p)</option>
+        <option value="afternoon">Afternoon Rush (3p - 7p)</option>
+        <option value="evening">Evening Transition (7p - 11p)</option>
+        <option value="night">Night Owls (11p - 5a)</option>
       </select>
     </div>
 
@@ -491,6 +506,12 @@
       <button class="mode-tab"        id="tab-pickup" onclick="setMode('pickup')">Pickups</button>
       <button class="mode-tab"        id="tab-drop"   onclick="setMode('dropoff')">Dropoffs</button>
     </div>
+
+    <!-- Charging Overlay Toggle -->
+    <label class="ctrl-group hover-pointer" style="display:flex; align-items:center; gap:6px; cursor:pointer; user-select:none; font-size:12px; color:var(--text-primary); font-weight:600; padding:5px 10px;">
+      <input type="checkbox" id="charging-toggle" style="cursor:pointer; width:14px; height:14px; accent-color:var(--accent-blue);" />
+      <span>⚡ Show Charges</span>
+    </label>
 
     <button class="btn-refresh" id="refresh-btn" onclick="loadData()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -672,28 +693,50 @@ const TILES = {
     attr: '&copy; OpenStreetMap &copy; CARTO'
   },
   satellite: {
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    attr: 'Esri, Maxar, Earthstar Geographics'
+    url: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+    attr: '&copy; Google Maps'
+  },
+  hybrid: {
+    url: 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+    attr: '&copy; Google Maps'
   },
   streets: {
-    url: 'https://{s}.basemaps.cartocdn.com/dark_matter/{z}/{x}/{y}{r}.png',
-    attr: '&copy; OpenStreetMap &copy; CARTO'
+    url: 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+    attr: '&copy; Google Maps'
+  },
+  terrain: {
+    url: 'https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',
+    attr: '&copy; Google Maps'
   }
 };
 
 // ── State ─────────────────────────────────────────────────────────────
 let map, heatLayer, tileLayer;
 let allDrives = [];
+let allCharges = [];
+let chargeMarkers = [];
 let currentMode = 'both';
 let heatRadius = 30;
 
 // ── Initialize Map ────────────────────────────────────────────────────
+function disableControlsPropagation() {
+  const controls = document.querySelectorAll('select, input, button, label, .ctrl-group, .zone-item, .rec-hotspot-item');
+  controls.forEach(el => {
+    L.DomEvent.disableClickPropagation(el);
+    // Explicitly stop touch propagation to prevent Leaflet from swallowing touchstart/touchend
+    el.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
+    el.addEventListener('touchend', e => e.stopPropagation(), { passive: true });
+    el.addEventListener('click', e => e.stopPropagation());
+  });
+}
+
 function initMap() {
   map = L.map('map', {
     center: COS_CENTER,
     zoom: 12,
     zoomControl: true,
-    preferCanvas: true
+    preferCanvas: true,
+    tap: false // Disable Leaflet's custom tap handler which breaks select dropdowns on touch/Tesla screens
   });
 
   tileLayer = L.tileLayer(TILES.dark.url, {
@@ -715,23 +758,40 @@ function initMap() {
       1.0: '#ef4444'  // Crimson Red (Hottest spot)
     }
   }).addTo(map);
+
+  // Apply immediately to standard controls
+  disableControlsPropagation();
 }
 
 // ── Load Data ─────────────────────────────────────────────────────────
 async function loadData() {
   const days = document.getElementById('days-select').value;
-  showLoading(true, 'Fetching Uber drives from Tessie…');
+  showLoading(true, 'Fetching Uber telemetry from Tessie…');
   document.getElementById('refresh-btn').disabled = true;
   document.getElementById('error-box').style.display = 'none';
 
   try {
-    const url = `${BACKEND}/api/copilot/tessie/drives?tag=uber&days=${days}`;
-    const res = await fetch(url, { signal: AbortSignal.timeout(20000) });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    allDrives = (data.drives || []);
+    const drivesUrl = `${BACKEND}/api/copilot/tessie/drives?tag=uber&days=${days}`;
+    const chargesUrl = `${BACKEND}/api/copilot/tessie/charges?days=${days}`;
     
-    showLoading(true, `Processing ${allDrives.length} trips…`);
+    // Fetch drives and charges in parallel
+    const [drivesRes, chargesRes] = await Promise.all([
+      fetch(drivesUrl, { signal: AbortSignal.timeout(20000) }),
+      fetch(chargesUrl, { signal: AbortSignal.timeout(20000) }).catch(() => null)
+    ]);
+    
+    if (!drivesRes.ok) throw new Error(`HTTP ${drivesRes.status}`);
+    const drivesData = await drivesRes.json();
+    allDrives = (drivesData.drives || []);
+    
+    if (chargesRes && chargesRes.ok) {
+      const chargesData = await chargesRes.json();
+      allCharges = (chargesData.sessions || []);
+    } else {
+      allCharges = [];
+    }
+    
+    showLoading(true, `Processing ${allDrives.length} trips & ${allCharges.length} charges…`);
     await new Promise(r => setTimeout(r, 50)); // let UI breathe
 
     renderHeatmap();
@@ -740,6 +800,7 @@ async function loadData() {
     renderDowChart();
     renderZones();
     renderRecommendations();
+    renderCharges();
 
   } catch (err) {
     console.error('Load error:', err);
@@ -749,19 +810,102 @@ async function loadData() {
   } finally {
     showLoading(false);
     document.getElementById('refresh-btn').disabled = false;
+    disableControlsPropagation();
   }
+}
+
+// Create custom styling for the charging session marker overlays
+const chargingStyle = document.createElement('style');
+chargingStyle.textContent = `
+  .charging-session-marker {
+    background: #0ea5e9;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(14,165,233,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 9px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+`;
+document.head.appendChild(chargingStyle);
+
+// ── Render charges ────────────────────────────────────────────────────
+function renderCharges() {
+  // Clear any existing charge markers
+  chargeMarkers.forEach(m => map.removeLayer(m));
+  chargeMarkers = [];
+  
+  const showCharges = document.getElementById('charging-toggle').checked;
+  if (!showCharges || allCharges.length === 0) return;
+  
+  allCharges.forEach(c => {
+    if (c.lat && c.lon) {
+      const startSoc = c.starting_soc || 0;
+      const endSoc = c.ending_soc || 0;
+      const addedKwh = c.energy_added_kwh || 0;
+      const duration = c.duration_minutes || 0;
+      
+      const popupHTML = `
+        <div style="font-family:'Inter', sans-serif; font-size:12px; color:#1e293b; padding:6px; min-width:180px;">
+          <strong style="color:#0ea5e9; display:flex; align-items:center; gap:4px; font-size:13px;">⚡ Tessie Charging Corridor</strong>
+          <div style="margin-top:6px; border-bottom:1px solid #e2e8f0; padding-bottom:4px;">
+            Location: <strong>${c.location ? c.location.substring(0, 30) : 'Supercharger Corridor'}</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-top:6px;">
+            <span>SOC Boost:</span>
+            <strong>${startSoc}% ➔ ${endSoc}%</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-top:2px;">
+            <span>Energy Added:</span>
+            <strong>${addedKwh.toFixed(1)} kWh</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-top:2px;">
+            <span>Duration:</span>
+            <strong>${duration.toFixed(0)} mins</strong>
+          </div>
+          <div style="font-size:9px; color:#64748b; margin-top:4px; text-align:right;">${c.date} @ ${c.time_mst} MST</div>
+        </div>
+      `;
+      
+      const chargeIcon = L.divIcon({
+        className: 'charging-session-marker',
+        html: '⚡',
+        iconSize: [18, 18],
+        iconAnchor: [9, 9]
+      });
+      
+      const m = L.marker([c.lat, c.lon], { icon: chargeIcon }).addTo(map);
+      m.bindPopup(popupHTML);
+      chargeMarkers.push(m);
+    }
+  });
 }
 
 // ── Build heat points ─────────────────────────────────────────────────
 function getHeatPoints(drives, mode) {
   const pts = [];
+  const hourFilter = document.getElementById('hour-filter-select').value;
+  
   for (const d of drives) {
-    // Each drive from /api/copilot/tessie/drives has start/end as address strings.
-    // We use the raw lat/lon that the Tessie API embeds — these come through
-    // on the day-summary endpoint. For the drives endpoint we geocode from the
-    // start/end address saved in the DB if the live Tessie coords are missing.
-    // 
-    // The drives list includes starting_latitude etc. if available from live Tessie.
+    // Apply hourly window filter
+    if (hourFilter !== 'all' && d.time_mst) {
+      const hr = parseInt(d.time_mst.split(':')[0], 10);
+      if (!isNaN(hr)) {
+        let matchesFilter = false;
+        if (hourFilter === 'morning'   && hr >= 5 && hr < 10)  matchesFilter = true;
+        if (hourFilter === 'midday'    && hr >= 10 && hr < 15) matchesFilter = true;
+        if (hourFilter === 'afternoon' && hr >= 15 && hr < 19) matchesFilter = true;
+        if (hourFilter === 'evening'   && hr >= 19 && hr < 23) matchesFilter = true;
+        if (hourFilter === 'night'     && (hr >= 23 || hr < 5)) matchesFilter = true;
+        
+        if (!matchesFilter) continue;
+      }
+    }
+
     const sLat = d._start_lat || d.start_lat;
     const sLon = d._start_lon || d.start_lon;
     const eLat = d._end_lat   || d.end_lat;
@@ -1022,6 +1166,7 @@ function renderRecommendations() {
       <strong>💡 Strategy:</strong> ${proTip}
     </div>
   `;
+  disableControlsPropagation();
 }
 
 function flyToZone(lat, lon) {
@@ -1068,15 +1213,110 @@ document.getElementById('radius-slider').addEventListener('input', e => {
 });
 
 document.getElementById('days-select').addEventListener('change', loadData);
+document.getElementById('hour-filter-select').addEventListener('change', () => {
+  if (allDrives.length > 0) renderHeatmap();
+});
+document.getElementById('charging-toggle').addEventListener('change', renderCharges);
 document.getElementById('rec-day-select').addEventListener('change', renderRecommendations);
 document.getElementById('rec-day-select').value = new Date().getDay();
+
+// ── Live Locator (Tessie telemetry tracker) ───────────────────────────
+let carMarker = null;
+let liveLocationActive = false;
+
+// Create custom pulsing icon style
+const pulseIconStyle = document.createElement('style');
+pulseIconStyle.textContent = `
+  .pulsing-car-marker {
+    background: #3b82f6;
+    border: 3.5px solid #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 0 0 10px rgba(59,130,246,0.35);
+    animation: car-pulse 1.8s infinite;
+  }
+  @keyframes car-pulse {
+    0% { box-shadow: 0 0 0 0px rgba(59,130,246,0.5); }
+    70% { box-shadow: 0 0 0 12px rgba(59,130,246,0); }
+    100% { box-shadow: 0 0 0 0px rgba(59,130,246,0); }
+  }
+`;
+document.head.appendChild(pulseIconStyle);
+
+async function updateLiveLocation() {
+  try {
+    const url = `${BACKEND}/api/copilot/vehicle/status`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const body = await res.json();
+    
+    console.log('[Heatmap Live GPS] Tessie payload received:', body);
+    
+    // Correct target path: body.vehicle.location
+    const vehicle = body.vehicle;
+    if (!vehicle) {
+      console.warn('[Heatmap Live GPS] No vehicle object in payload');
+      return;
+    }
+    
+    const loc = vehicle.location;
+    if (loc && typeof loc === 'object' && loc.lat && loc.long) {
+      const lat = loc.lat;
+      const lon = loc.long;
+      const speed = loc.speed || 0;
+      
+      console.log(`[Heatmap Live GPS] Plotting active position: lat=${lat}, lon=${lon}, speed=${speed}mph`);
+      
+      const popupText = `
+        <div style="font-family:'Inter', sans-serif; font-size:12px; color:#1e293b; padding:4px;">
+          <strong style="color:#2563eb; display:flex; align-items:center; gap:4px;">⚡ COS Tesla Active</strong>
+          <div style="margin-top:4px;">Speed: <strong>${speed.toFixed(0)} mph</strong></div>
+          <div style="font-size:10px; color:#64748b; margin-top:2px;">Live Tessie Telemetry</div>
+        </div>
+      `;
+
+      if (!carMarker) {
+        const carIcon = L.divIcon({
+          className: 'pulsing-car-marker',
+          iconSize: [16, 16],
+          iconAnchor: [8, 8]
+        });
+        carMarker = L.marker([lat, lon], { icon: carIcon }).addTo(map);
+        carMarker.bindPopup(popupText);
+      } else {
+        carMarker.setLatLng([lat, lon]);
+        carMarker.setPopupContent(popupText);
+      }
+      
+      // Auto pan to vehicle on first active acquisition
+      if (!liveLocationActive) {
+        liveLocationActive = true;
+        map.setView([lat, lon], 14, { animate: true, duration: 1.5 });
+      }
+    } else {
+      console.log('[Heatmap Live GPS] Geofence active or location missing:', loc);
+      // Clear marker if location is geofenced (home/privacy zone)
+      if (carMarker) {
+        map.removeLayer(carMarker);
+        carMarker = null;
+      }
+      liveLocationActive = false;
+    }
+  } catch (err) {
+    console.warn('[Heatmap Live GPS] Fetch failed (car asleep or offline):', err);
+  }
+}
 
 // ── Boot ──────────────────────────────────────────────────────────────
 initMap();
 showLoading(true, 'Initializing map…');
 
 // Auto-load after a brief moment so the map tiles can render
-setTimeout(loadData, 800);
+setTimeout(async () => {
+  await loadData();
+  // Start locator polling
+  updateLiveLocation();
+  setInterval(updateLiveLocation, 15000); // refresh vehicle location every 15s
+}, 800);
 </script>
 
 </body>
