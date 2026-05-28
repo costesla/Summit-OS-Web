@@ -42,6 +42,10 @@ _NOTIFICATION_THRESHOLD = 75
 # In-process cache: (date_str, pipeline_version) → {payload, expires_at}
 _mem_cache: dict = {}
 
+# In-memory cache for resolved SharePoint/OneDrive Site and Drive IDs
+# Format: {"value": (site_id, drive_id), "expires": float_timestamp}
+_drive_cache: dict = {}
+
 CORS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, OPTIONS",
@@ -107,105 +111,124 @@ async def safe_call(coro, timeout_s: float, name: str) -> dict:
 
 # ── Source implementations ─────────────────────────────────────────────────────
 
-async def _src_db_trip_count(start_utc: datetime.datetime,
-                             end_utc: datetime.datetime) -> int:
-    """Count Tessie-sourced Uber drives in DB for the UTC window.
-
-    Only counts RideIDs prefixed 'TESSIE-' with Classification='Uber_Dropoff',
-    which directly corresponds to what Tessie's /drives API returns. OCR-matched
-    trips (TRIP-YYYYMMDD-XX, Uber_Matched) are screenshot-derived and are NOT
-    visible in Tessie's API, so they must be excluded to keep sources comparable.
+async def _fetch_all_db_data(start_utc: datetime.datetime, end_utc: datetime.datetime) -> dict:
+    """
+    Consolidates all database queries into a single connection and cursor context
+    to eliminate TLS/auth handshake overhead and connection thrashing.
     """
     def _query():
         db = DatabaseClient()
         conn = db.get_connection()
         cur = conn.cursor()
-        cur.execute(
-            """SELECT COUNT(*) FROM Rides.Rides
-               WHERE TripType = 'Uber'
-               AND Classification = 'Uber_Dropoff'
-               AND RideID LIKE 'TESSIE-%'
-               AND Timestamp_Start >= ? AND Timestamp_Start < ?""",
-            (start_utc.replace(tzinfo=None), end_utc.replace(tzinfo=None))
-        )
-        row = cur.fetchone()
-        cur.close()
-        conn.close()
-        return int(row[0]) if row else 0
-    return await asyncio.get_event_loop().run_in_executor(None, _query)
+        try:
+            s_utc = start_utc.replace(tzinfo=None)
+            e_utc = end_utc.replace(tzinfo=None)
 
+            # 1 & 2. Trip Count & Earnings Sum (Combined SAME-TABLE query for Rides)
+            # Uses conditional aggregation to fetch both counts and sums in a single scan
+            cur.execute(
+                """SELECT 
+                    SUM(CASE WHEN TripType = 'Uber' AND Classification = 'Uber_Dropoff' AND RideID LIKE 'TESSIE-%' THEN 1 ELSE 0 END) AS trip_count,
+                    ISNULL(SUM(CASE WHEN TripType = 'Uber' OR TripType IS NULL THEN Driver_Earnings ELSE 0 END), 0.0) AS earnings_sum
+                   FROM Rides.Rides
+                   WHERE Timestamp_Start >= ? AND Timestamp_Start < ?""",
+                (s_utc, e_utc)
+            )
+            row = cur.fetchone()
+            trip_count = int(row[0]) if (row and row[0] is not None) else 0
+            earnings_sum = round(float(row[1]), 2) if (row and row[1] is not None) else 0.0
 
+            # 3. Expense Count (ManualExpenses - Separate Table)
+            cur.execute(
+                """SELECT COUNT(*) FROM Rides.ManualExpenses
+                   WHERE Category IN ('Meal_Receipt','General_Expense','FastFood')
+                   AND Timestamp >= ? AND Timestamp < ?""",
+                (s_utc, e_utc)
+            )
+            exp_row = cur.fetchone()
+            expense_count = int(exp_row[0]) if exp_row else 0
 
-async def _src_db_earnings_sum(start_utc: datetime.datetime,
-                               end_utc: datetime.datetime) -> float:
-    """Sum Driver_Earnings from DB for the UTC window."""
-    def _query():
-        db = DatabaseClient()
-        conn = db.get_connection()
-        cur = conn.cursor()
-        cur.execute(
-            """SELECT ISNULL(SUM(Driver_Earnings), 0) FROM Rides.Rides
-               WHERE (TripType = 'Uber' OR TripType IS NULL)
-               AND Timestamp_Start >= ? AND Timestamp_Start < ?""",
-            (start_utc.replace(tzinfo=None), end_utc.replace(tzinfo=None))
-        )
-        row = cur.fetchone()
-        cur.close()
-        conn.close()
-        return round(float(row[0]), 2) if row else 0.0
-    return await asyncio.get_event_loop().run_in_executor(None, _query)
+            # 4. OCR Earnings (Requires row iteration for JSON parsing)
+            cur.execute(
+                """SELECT Sidecar_Artifact_JSON, Driver_Earnings FROM Rides.Rides
+                   WHERE (TripType = 'Uber' OR TripType IS NULL)
+                   AND Timestamp_Start >= ? AND Timestamp_Start < ?""",
+                (s_utc, e_utc)
+            )
+            ocr_rows = cur.fetchall()
+            ocr_total = 0.0
+            import json as _json
+            for sidecar_raw, db_earnings in ocr_rows:
+                try:
+                    sidecar = _json.loads(str(sidecar_raw)) if sidecar_raw else {}
+                    val = sidecar.get("driver_earnings") or sidecar.get("earnings")
+                    ocr_total += float(val) if val is not None else float(db_earnings or 0)
+                except Exception:
+                    ocr_total += float(db_earnings or 0)
+            ocr_earnings = round(ocr_total, 2)
 
+            # 5. Timeline Integrity (Ordered trips)
+            cur.execute(
+                """SELECT RideID, Timestamp_Start, Tessie_DriveID
+                   FROM Rides.Rides
+                   WHERE (TripType = 'Uber' OR TripType IS NULL)
+                   AND Timestamp_Start >= ? AND Timestamp_Start < ?
+                   AND Timestamp_Start IS NOT NULL
+                   ORDER BY Timestamp_Start ASC""",
+                (s_utc, e_utc)
+            )
+            trips = cur.fetchall()
 
-async def _src_db_expense_count(start_utc: datetime.datetime,
-                                end_utc: datetime.datetime) -> int:
-    """Count Meal_Receipt expenses in DB for the UTC window."""
-    def _query():
-        db = DatabaseClient()
-        conn = db.get_connection()
-        cur = conn.cursor()
-        cur.execute(
-            """SELECT COUNT(*) FROM Rides.ManualExpenses
-               WHERE Category IN ('Meal_Receipt','General_Expense','FastFood')
-               AND Timestamp >= ? AND Timestamp < ?""",
-            (start_utc.replace(tzinfo=None), end_utc.replace(tzinfo=None))
-        )
-        row = cur.fetchone()
-        cur.close()
-        conn.close()
-        return int(row[0]) if row else 0
-    return await asyncio.get_event_loop().run_in_executor(None, _query)
+            # Overlap + gap analysis
+            overlaps, large_gaps = [], []
+            for i in range(len(trips) - 1):
+                a_id, a_start, _ = trips[i]
+                b_id, b_start, _ = trips[i + 1]
+                if b_start < a_start:
+                    overlaps.append({"trip_a": a_id, "trip_b": b_id,
+                                      "overlap_s": int((a_start - b_start).total_seconds())})
+                else:
+                    gap_s = int((b_start - a_start).total_seconds())
+                    if gap_s > _GAP_WARN_SECONDS:
+                        large_gaps.append({"trip_a": a_id, "trip_b": b_id, "gap_s": gap_s})
 
-
-async def _src_db_ocr_earnings(start_utc: datetime.datetime,
-                               end_utc: datetime.datetime) -> float:
-    """
-    Sum earnings from the Sidecar_Artifact_JSON OCR field for screenshot-derived trips.
-    Falls back to Driver_Earnings when sidecar is absent (still counts as OCR source
-    because trip was OCR-scanned from a screenshot into the DB).
-    """
-    def _query():
-        db = DatabaseClient()
-        conn = db.get_connection()
-        cur = conn.cursor()
-        cur.execute(
-            """SELECT Sidecar_Artifact_JSON, Driver_Earnings FROM Rides.Rides
-               WHERE (TripType = 'Uber' OR TripType IS NULL)
-               AND Timestamp_Start >= ? AND Timestamp_Start < ?""",
-            (start_utc.replace(tzinfo=None), end_utc.replace(tzinfo=None))
-        )
-        rows = cur.fetchall()
-        cur.close()
-        conn.close()
-        total = 0.0
-        import json as _json
-        for sidecar_raw, db_earnings in rows:
+            # Orphan Tessie drives
+            matched_tessie_ids = set(
+                str(r[2]).replace("TESSIE-", "")
+                for r in trips if r[2]
+            )
             try:
-                sidecar = _json.loads(str(sidecar_raw)) if sidecar_raw else {}
-                val = sidecar.get("driver_earnings") or sidecar.get("earnings")
-                total += float(val) if val is not None else float(db_earnings or 0)
+                cur.execute(
+                    """SELECT DriveID, Distance_mi
+                       FROM dbo.Drive_Telemetry
+                       WHERE StartTime >= ? AND StartTime < ?
+                       AND ISNULL(Distance_mi, 0) >= ?""",
+                    (s_utc, e_utc, _MICRO_DRIVE_MI)
+                )
+                all_drives = cur.fetchall()
+                orphans = [
+                    str(r[0]) for r in all_drives
+                    if str(r[0]) not in matched_tessie_ids
+                ]
             except Exception:
-                total += float(db_earnings or 0)
-        return round(total, 2)
+                orphans = []
+
+            return {
+                "trip_count": trip_count,
+                "earnings_sum": earnings_sum,
+                "expense_count": expense_count,
+                "ocr_earnings": ocr_earnings,
+                "timeline_data": {
+                    "overlaps": overlaps,
+                    "large_gaps": large_gaps,
+                    "orphan_drives": orphans,
+                    "trip_count": len(trips)
+                }
+            }
+        finally:
+            cur.close()
+            conn.close()
+
     return await asyncio.get_event_loop().run_in_executor(None, _query)
 
 
@@ -259,7 +282,9 @@ async def _src_onedrive_trip_count(date_str: str) -> int:
     count = await _graph_count_files(
         token, folder_path,
         include_extensions=[".jpg", ".jpeg", ".png"],
-        exclude_patterns=["Starbucks", "WingStop", "Scan_", "_Starbucks", "Charging"]
+        exclude_patterns=["Starbucks", "WingStop", "Scan_", "_Starbucks", "Charging"],
+        date_str=date_str,
+        cache_type="trips"
     )
     return count
 
@@ -274,7 +299,9 @@ async def _src_onedrive_expense_count(date_str: str) -> int:
     count = await _graph_count_files(
         token, folder_path,
         include_extensions=[".jpg", ".jpeg", ".png", ".pdf"],
-        exclude_patterns=["_Uber Driver"]
+        exclude_patterns=["_Uber Driver"],
+        date_str=date_str,
+        cache_type="expenses"
     )
     return count
 
@@ -294,6 +321,139 @@ async def _src_bank_earnings(date_str: str) -> float:
     if not teller_token:
         raise ValueError("TELLER_ACCESS_TOKEN not configured")
     raise NotImplementedError("Teller not configured")
+
+
+# ── SharePoint Site & Drive Dynamic Resolution (Self-Healing / Resilient) ───────
+
+_drive_cache: dict = {}
+_onedrive_count_cache: dict = {}
+_last_resolution_meta = {"source": "env", "site_id": None, "resolution_latency_ms": 0.0}
+_warmup_started = False
+
+async def _warmup_cache():
+    """Perform a best-effort cold-start warmup of the SharePoint Site & Drive ID."""
+    try:
+        token = await _get_graph_token()
+        if token:
+            await _get_sharepoint_drive_id(token)
+            log.info("[PreShift Warmup] SharePoint/OneDrive Site and Drive ID cache warmed successfully.")
+    except Exception as e:
+        log.warning(f"[PreShift Warmup] Warmup failed (non-fatal): {e}")
+
+def _start_warmup_sync():
+    try:
+        import threading
+        def _thread_target():
+            try:
+                loop = asyncio.new_event_loop()
+                loop.run_until_complete(_warmup_cache())
+                loop.close()
+            except Exception as e:
+                log.warning(f"[PreShift Warmup Thread] Failed: {e}")
+        threading.Thread(target=_thread_target, daemon=True).start()
+    except Exception as e:
+        log.warning(f"[PreShift Warmup Thread] Could not start thread: {e}")
+
+async def _get_sharepoint_drive_id(token: str) -> tuple[str | None, str, str, float]:
+    """
+    Dynamically resolves SharePoint Site ID and Document Library (Drive) ID
+    via MS Graph API if not explicitly defined in the environment.
+    Uses in-memory caching to avoid repeated Graph round-trips.
+    
+    Returns: (site_id, drive_id, source, resolution_latency_ms)
+    """
+    # 1. Check environment variables first (highest priority)
+    drive_id = os.environ.get("ONEDRIVE_DRIVE_ID", "") or os.environ.get("SHAREPOINT_DRIVE_ID", "")
+    if drive_id:
+        return None, drive_id, "env", 0.0
+
+    # 2. Check in-memory cache
+    global _drive_cache
+    now = time.time()
+    if _drive_cache and _drive_cache.get("expires", 0) > now:
+        cached_val = _drive_cache.get("value")
+        if cached_val:
+            return cached_val[0], cached_val[1], "cache", 0.0
+
+    # 3. Dynamic Resolution (Measure resolution time defensively)
+    site_name = os.environ.get("SHAREPOINT_SITE_NAME") or "SummitOS Intelligence"
+    lib_name = os.environ.get("SHAREPOINT_LIB_NAME") or "Documents"
+    hostname = "costesla.sharepoint.com"
+
+    import requests as _req
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+
+    def _resolve() -> tuple[str, str]:
+        # Step A: Resolve SharePoint Site ID
+        direct_url = f"https://graph.microsoft.com/v1.0/sites/{hostname}:/sites/{site_name}"
+        res = _req.get(direct_url, headers=headers, timeout=5)
+        site_id = None
+        
+        if res.ok:
+            site_id = res.json().get("id")
+            log.info(f"[PreShift] SharePoint Site ID resolved directly: {site_id}")
+        else:
+            # Fallback to Search URL
+            log.warning(f"[PreShift] SharePoint direct site path resolution failed. Searching for: {site_name}")
+            search_url = f"https://graph.microsoft.com/v1.0/sites?search={site_name}"
+            res = _req.get(search_url, headers=headers, timeout=5)
+            if res.ok:
+                sites = res.json().get("value", [])
+                matched_sites = []
+                for s in sites:
+                    # Strict validation: match expected name/displayName exactly and correct hostname
+                    if s.get("name") == site_name or s.get("displayName") == site_name:
+                        web_url = s.get("webUrl", "")
+                        if hostname in web_url:
+                            matched_sites.append(s)
+                
+                if len(matched_sites) == 1:
+                    site_id = matched_sites[0].get("id")
+                    log.info(f"[PreShift] SharePoint Site ID resolved via search: {site_id}")
+                elif len(matched_sites) > 1:
+                    raise ValueError(f"Ambiguous SharePoint site search matches found for '{site_name}'. Fail-closed.")
+            
+        if not site_id:
+            raise ValueError(f"SharePoint Site '{site_name}' could not be resolved.")
+
+        # Step B: Resolve Document Library (Drive) ID
+        drives_url = f"https://graph.microsoft.com/v1.0/sites/{site_id}/drives"
+        res = _req.get(drives_url, headers=headers, timeout=5)
+        if not res.ok:
+            raise ValueError(f"Failed to fetch document libraries for SharePoint site {site_id}")
+
+        drives = res.json().get("value", [])
+        matched_drives = [d for d in drives if d.get("name") == lib_name]
+        
+        if len(matched_drives) == 1:
+            resolved_drive_id = matched_drives[0].get("id")
+            log.info(f"[PreShift] SharePoint Drive ID resolved for library '{lib_name}': {resolved_drive_id}")
+            return site_id, resolved_drive_id
+        elif len(matched_drives) > 1:
+            raise ValueError(f"Ambiguous SharePoint Drive matches found for library '{lib_name}'. Fail-closed.")
+        else:
+            available_libs = [d.get("name") for d in drives]
+            raise ValueError(f"Document library '{lib_name}' not found. Available: {available_libs}")
+
+    try:
+        t0 = time.monotonic()
+        import asyncio
+        loop = asyncio.get_running_loop()
+        site_id, resolved_drive_id = await loop.run_in_executor(None, _resolve)
+        res_ms = round((time.monotonic() - t0) * 1000, 1)
+        
+        # Cache the resolved credentials for 15 minutes (900 seconds)
+        _drive_cache = {
+            "value": (site_id, resolved_drive_id),
+            "expires": time.time() + 900
+        }
+        return site_id, resolved_drive_id, "dynamic", res_ms
+    except Exception as e:
+        log.error(f"[PreShift] Dynamic SharePoint Resolution failed: {e}")
+        raise
 
 
 # ── Tier 4: Timeline Integrity ────────────────────────────────────────────────
@@ -506,18 +666,39 @@ def _build_onedrive_path(date_str: str, subfolder_hint: str = "Uber Driver") -> 
     return f"{subfolder_hint}/{year}/{month}/Week {week_num}/{day_fmt}"
 
 
+
+
 async def _graph_count_files(token: str, folder_path: str,
                              include_extensions: list[str],
-                             exclude_patterns: list[str]) -> int:
+                             exclude_patterns: list[str],
+                             date_str: str = "",
+                             cache_type: str = "") -> int:
     """Count files in an OneDrive folder via MS Graph. Handles 429 with 1 retry."""
-    drive_id = os.environ.get("ONEDRIVE_DRIVE_ID", "") or os.environ.get("SHAREPOINT_DRIVE_ID", "")
-    if not drive_id:
-        raise ValueError("ONEDRIVE_DRIVE_ID not configured")
+    global _last_resolution_meta, _onedrive_count_cache
+    
+    # Check count cache first if caching parameters are provided
+    if date_str and cache_type:
+        cache_key = f"{date_str}:{cache_type}"
+        cached = _onedrive_count_cache.get(cache_key)
+        if cached and time.time() < cached["expires"]:
+            log.info(f"[PreShift] OneDrive {cache_type} count cache HIT for {date_str}: {cached['value']}")
+            return cached["value"]
+
+    try:
+        # Dynamically resolve Site & Drive IDs (self-healing)
+        site_id, drive_id, source, res_ms = await _get_sharepoint_drive_id(token)
+        _last_resolution_meta["source"] = source
+        _last_resolution_meta["site_id"] = site_id
+        _last_resolution_meta["resolution_latency_ms"] = res_ms
+    except Exception as e:
+        log.error(f"[PreShift] Graph count files resolution error: {e}")
+        raise ValueError(f"SharePoint/OneDrive Drive ID resolution failed: {e}")
 
     import requests as _req
     encoded = folder_path.replace(" ", "%20")
+    # Payload Optimization: Fetch only $select=name since we only count files (no size required)
     url = (f"https://graph.microsoft.com/v1.0/drives/{drive_id}"
-           f"/root:/{encoded}:/children?$select=name,size&$top=999")
+           f"/root:/{encoded}:/children?$select=name&$top=999")
     headers = {"Authorization": f"Bearer {token}"}
 
     def _fetch():
@@ -534,7 +715,7 @@ async def _graph_count_files(token: str, folder_path: str,
         data = await loop.run_in_executor(None, _fetch)
     except Exception as e:
         if "404" in str(e):
-            return 0  # folder not found is 0 files
+            return 0
         raise
 
     files = data.get("value", [])
@@ -547,6 +728,15 @@ async def _graph_count_files(token: str, folder_path: str,
         if any(p.lower() in name.lower() for p in exclude_patterns):
             continue
         count += 1
+
+    # Populate cache upon successful execution (only cache valid results)
+    if date_str and cache_type:
+        cache_key = f"{date_str}:{cache_type}"
+        _onedrive_count_cache[cache_key] = {
+            "value": count,
+            "expires": time.time() + 600  # 10 minutes TTL
+        }
+
     return count
 
 
@@ -923,6 +1113,11 @@ def pre_shift_check(req: func.HttpRequest) -> func.HttpResponse:
     if req.method == "OPTIONS":
         return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
 
+    global _warmup_started
+    if not _warmup_started:
+        _warmup_started = True
+        _start_warmup_sync()
+
     try:
         # ── Params ──
         date_param  = req.params.get("date", "").strip()
@@ -955,45 +1150,59 @@ def pre_shift_check(req: func.HttpRequest) -> func.HttpResponse:
         # ── UTC window ──
         start_utc, end_utc = _mt_date_to_utc_window(date_str)
 
-        # ── Run all sources concurrently ──
+        # ── Run all sources concurrently (IO Parallelism) ──
         async def _run_all():
+            now_t = time.time()
+            drive_cached = _drive_cache and _drive_cache.get("expires", 0) > now_t
+            od_timeout = 3.0 if drive_cached else _ONEDRIVE_TIMEOUT_S
+            
             results = await asyncio.gather(
-                # Tier 1 sources
-                safe_call(_src_db_trip_count(start_utc, end_utc),
-                          _DB_TIMEOUT_S, "db_trip_count"),
+                # Consolidate DB query: ONE connection, ONE cursor handoff
+                safe_call(_fetch_all_db_data(start_utc, end_utc),
+                          _DB_TIMEOUT_S, "db_all_data"),
+                # Tessie
                 safe_call(_src_tessie_trip_count(date_str, start_utc, end_utc),
                           _DEFAULT_TIMEOUT_S, "tessie_trip_count"),
+                # OneDrive / Graph - Trip Count
                 safe_call(_src_onedrive_trip_count(date_str),
-                          _ONEDRIVE_TIMEOUT_S, "onedrive_trip_count"),
-                # Tier 2 sources
-                safe_call(_src_db_earnings_sum(start_utc, end_utc),
-                          _DB_TIMEOUT_S, "db_earnings_sum"),
-                safe_call(_src_db_ocr_earnings(start_utc, end_utc),
-                          _DB_TIMEOUT_S, "ocr_earnings_sum"),
+                          od_timeout, "onedrive_trip_count"),
+                # OneDrive / Graph - Expenses Count
+                safe_call(_src_onedrive_expense_count(date_str),
+                          od_timeout, "onedrive_expense_count"),
+                # Bank / Teller Placeholder API
                 safe_call(_src_bank_earnings(date_str),
                           _DEFAULT_TIMEOUT_S, "bank_earnings"),
-                # Tier 3 sources
-                safe_call(_src_db_expense_count(start_utc, end_utc),
-                          _DB_TIMEOUT_S, "db_expense_count"),
-                safe_call(_src_onedrive_expense_count(date_str),
-                          _ONEDRIVE_TIMEOUT_S, "onedrive_expense_count"),
                 safe_call(_src_bank_trip_count(date_str),
                           _DEFAULT_TIMEOUT_S, "bank_expense_count"),
-                # Tier 4 source (DB-only — always fast)
-                safe_call(_src_tier4_timeline(start_utc, end_utc),
-                          _DB_TIMEOUT_S, "tier4_timeline"),
                 return_exceptions=False
             )
             return results
 
         loop = asyncio.new_event_loop()
         try:
-            (db_trips, tessie_trips, od_trips,
-             db_earnings, ocr_earnings, bank_earnings,
-             db_expenses, od_expenses, bank_expenses,
-             timeline_r) = loop.run_until_complete(_run_all())
+            (db_data_res, tessie_trips, od_trips, od_expenses,
+             bank_earnings, bank_expenses) = loop.run_until_complete(_run_all())
         finally:
             loop.close()
+
+        # ── Map Consolidated DB results to the Scoring Engine source blocks ──
+        db_latency = db_data_res["latency_ms"]
+        db_status = db_data_res["status"]
+        
+        if db_status == "OK" and db_data_res["value"] is not None:
+            db_val = db_data_res["value"]
+            db_trips = _source_result("OK", db_val["trip_count"], db_latency)
+            db_earnings = _source_result("OK", db_val["earnings_sum"], db_latency)
+            db_expenses = _source_result("OK", db_val["expense_count"], db_latency)
+            ocr_earnings = _source_result("OK", db_val["ocr_earnings"], db_latency)
+            timeline_r = _source_result("OK", db_val["timeline_data"], db_latency)
+        else:
+            err_msg = db_data_res["error"] or "Consolidated SQL query failure"
+            db_trips = _source_result("UNAVAILABLE", None, db_latency, err_msg)
+            db_earnings = _source_result("UNAVAILABLE", None, db_latency, err_msg)
+            db_expenses = _source_result("UNAVAILABLE", None, db_latency, err_msg)
+            ocr_earnings = _source_result("UNAVAILABLE", None, db_latency, err_msg)
+            timeline_r = _source_result("UNAVAILABLE", None, db_latency, err_msg)
 
         # ── Score tiers ──
         tier1 = _score_tier1(db_trips,    tessie_trips, od_trips,    date_str)
@@ -1020,9 +1229,9 @@ def pre_shift_check(req: func.HttpRequest) -> func.HttpResponse:
                 "tier4_timeline": tier4,
             },
             "systems": {
-                "db":       {"status": db_trips["status"],
-                             "online": db_trips["status"] == "OK",
-                             "latency_ms": db_trips["latency_ms"]},
+                "db":       {"status": db_status,
+                             "online": db_status == "OK",
+                             "latency_ms": db_latency},
                 "tessie":   {"status": tessie_trips["status"],
                              "online": tessie_trips["status"] == "OK",
                              "latency_ms": tessie_trips["latency_ms"]},
@@ -1038,6 +1247,20 @@ def pre_shift_check(req: func.HttpRequest) -> func.HttpResponse:
         # ── Cache & notify ──
         _cache_set(date_str, payload)
         _maybe_notify(overall_status, overall_conf, date_str)
+
+        # ── Structured Observability Logging (Production telemetry diagnostics) ──
+        diagnostics = {
+            "component": "pre_shift_check",
+            "db_latency_ms": db_latency,
+            "graph_drive_source": _last_resolution_meta["source"],
+            "graph_resolution_latency_ms": _last_resolution_meta["resolution_latency_ms"],
+            "onedrive_file_count": od_trips["value"] if od_trips["value"] is not None else None,
+            "onedrive_status": "OK" if od_trips["status"] == "OK" and od_expenses["status"] == "OK" else "UNAVAILABLE",
+            "onedrive_trips_latency_ms": od_trips["latency_ms"],
+            "onedrive_expenses_latency_ms": od_expenses["latency_ms"],
+            "tessie_latency_ms": tessie_trips["latency_ms"]
+        }
+        log.info(f"[PreShift Diagnostic] {json.dumps(diagnostics)}")
 
         log.info(f"[PreShift] {date_str} → {overall_status} ({overall_conf}/100)")
 
