@@ -6,7 +6,8 @@ import {
     Navigation, Receipt, RotateCcw, Clock,
     Battery, BatteryCharging, WifiOff, Download,
     MapPin, Gauge, LogOut, Cpu, RefreshCw, Loader2,
-    DollarSign, Cloud, Moon, HeartPulse, ExternalLink
+    DollarSign, Cloud, Moon, HeartPulse, ExternalLink,
+    ChevronDown, ChevronUp
 } from 'lucide-react';
 import { isBackgroundableError, devDebugError, getAsyncExecutionLogs, pollJobStatus } from '../../../../src/lib/intelligenceUtils';
 
@@ -620,18 +621,27 @@ const PreShiftCard = ({ selectedDate, isEmbedded = false }: { selectedDate: stri
     const overall = data?.overall_status ?? null;
     const conf    = data?.overall_confidence ?? null;
 
-    // Collapsed green banner
-    if (!loading && collapsed && overall === 'PASS' && fixStatus !== 'fixing') {
+    // Collapsed banner for any status
+    if (!loading && collapsed && fixStatus !== 'fixing') {
+        const bgCls = overall === 'PASS' ? 'border-emerald-200 bg-emerald-50/80 hover:bg-emerald-50 text-emerald-700' :
+                      overall === 'WARN' ? 'border-amber-200 bg-amber-50/80 hover:bg-amber-50 text-amber-700' :
+                      'border-rose-200 bg-rose-50/80 hover:bg-rose-50 text-rose-700';
+        const dotCls = overall === 'PASS' ? 'bg-emerald-500' :
+                       overall === 'WARN' ? 'bg-amber-500 animate-pulse' : 'bg-rose-500 animate-pulse';
+        const textLabel = overall === 'PASS' ? (fixVerified ? '✓ Fixed & Verified · All Systems Go' : 'All Systems Go · Pre-Shift Check PASS') :
+                          overall === 'WARN' ? '⚠️ Warnings Detected · Pre-Shift Check WARN' :
+                          '❌ Issues Detected · Pre-Shift Check FAIL';
         return (
-            <div onClick={() => setCollapsed(false)}
-                className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-emerald-200 bg-emerald-50/80 cursor-pointer hover:bg-emerald-50 transition-all"
+            <div onClick={() => setCollapsedPersist(false)}
+                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border cursor-pointer transition-all ${bgCls}`}
                 style={{ backdropFilter: 'blur(8px)' }}>
-                <div className="w-4 h-4 rounded-full bg-emerald-500 shrink-0" />
-                <span className="text-xs font-bold text-emerald-700">
-                    {fixVerified ? '✓ Fixed & Verified · All Systems Go' : 'All Systems Go · Pre-Shift Check PASS'}
+                <div className={`w-3.5 h-3.5 rounded-full shrink-0 ${dotCls}`} />
+                <span className="text-xs font-bold">
+                    {textLabel}
                 </span>
-                {conf !== null && <span className="text-[10px] font-mono text-emerald-600 ml-auto">{conf}/100</span>}
-                {lastRun && <span className="text-[10px] text-emerald-500 font-mono">as of {lastRun}</span>}
+                {conf !== null && <span className="text-[10px] font-mono ml-auto font-bold">{conf}/100</span>}
+                {lastRun && <span className="text-[10px] font-mono opacity-80">as of {lastRun}</span>}
+                <ChevronDown className="w-3.5 h-3.5 opacity-60 shrink-0" />
             </div>
         );
     }
@@ -795,6 +805,11 @@ const PreShiftCard = ({ selectedDate, isEmbedded = false }: { selectedDate: stri
                     <button onClick={() => fetchCheck(true)}
                         className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-all shadow-sm">
                         <RefreshCw className="w-3 h-3" /> Re-run
+                    </button>
+                    <button onClick={() => setCollapsedPersist(true)}
+                        title="Collapse panel"
+                        className="flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-400 hover:text-slate-600 transition-all shadow-sm">
+                        <ChevronUp className="w-4 h-4" />
                     </button>
                 </div>
             </div>
