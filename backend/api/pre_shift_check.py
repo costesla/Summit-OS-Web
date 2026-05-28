@@ -356,13 +356,16 @@ def _start_warmup_sync():
 
 async def _get_sharepoint_drive_id(token: str) -> tuple[str | None, str, str, float]:
     """
-    Dynamically resolves SharePoint Site ID and Document Library (Drive) ID
-    via MS Graph API if not explicitly defined in the environment.
-    Uses in-memory caching to avoid repeated Graph round-trips.
+    Resolves the OneDrive/SharePoint Drive ID to use for file counting.
+    Priority order:
+      1. ONEDRIVE_DRIVE_ID / SHAREPOINT_DRIVE_ID env var (explicit override)
+      2. In-memory cache (15 min TTL)
+      3. Personal user drive via ONEDRIVE_USER_EMAIL (e.g. peter.teehan@costesla.com)
+      4. SharePoint site + library dynamic resolution (fallback)
     
     Returns: (site_id, drive_id, source, resolution_latency_ms)
     """
-    # 1. Check environment variables first (highest priority)
+    # 1. Explicit env var override (highest priority)
     drive_id = os.environ.get("ONEDRIVE_DRIVE_ID", "") or os.environ.get("SHAREPOINT_DRIVE_ID", "")
     if drive_id:
         return None, drive_id, "env", 0.0
@@ -375,16 +378,47 @@ async def _get_sharepoint_drive_id(token: str) -> tuple[str | None, str, str, fl
         if cached_val:
             return cached_val[0], cached_val[1], "cache", 0.0
 
-    # 3. Dynamic Resolution (Measure resolution time defensively)
-    site_name = os.environ.get("SHAREPOINT_SITE_NAME") or "SummitOS Intelligence"
-    lib_name = os.environ.get("SHAREPOINT_LIB_NAME") or "Documents"
-    hostname = "costesla.sharepoint.com"
-
     import requests as _req
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json"
     }
+
+    # 3. Personal user drive (preferred — targets OneDrive - COS Tesla LLC of the user)
+    user_email = os.environ.get("ONEDRIVE_USER_EMAIL", "")
+    if user_email:
+        def _resolve_user_drive() -> str:
+            url = f"https://graph.microsoft.com/v1.0/users/{user_email}/drive"
+            res = _req.get(url, headers=headers, timeout=5)
+            if not res.ok:
+                raise ValueError(
+                    f"Failed to resolve personal OneDrive for '{user_email}': "
+                    f"HTTP {res.status_code} — check Files.Read.All or Sites.Read.All permissions."
+                )
+            resolved = res.json().get("id")
+            if not resolved:
+                raise ValueError(f"No drive ID returned for user '{user_email}'")
+            log.info(f"[PreShift] Personal OneDrive drive ID resolved for {user_email}: {resolved}")
+            return resolved
+
+        try:
+            t0 = time.monotonic()
+            loop = asyncio.get_running_loop()
+            resolved_drive_id = await loop.run_in_executor(None, _resolve_user_drive)
+            res_ms = round((time.monotonic() - t0) * 1000, 1)
+            _drive_cache = {
+                "value": (None, resolved_drive_id),
+                "expires": time.time() + 900
+            }
+            return None, resolved_drive_id, "user_drive", res_ms
+        except Exception as e:
+            log.error(f"[PreShift] Personal OneDrive resolution failed: {e}")
+            raise
+
+    # 4. SharePoint site + document library dynamic resolution (fallback)
+    site_name = os.environ.get("SHAREPOINT_SITE_NAME") or "SummitOS Intelligence"
+    lib_name = os.environ.get("SHAREPOINT_LIB_NAME") or "Documents"
+    hostname = "costesla.sharepoint.com"
 
     def _resolve() -> tuple[str, str]:
         # Step A: Resolve SharePoint Site ID
@@ -396,7 +430,6 @@ async def _get_sharepoint_drive_id(token: str) -> tuple[str | None, str, str, fl
             site_id = res.json().get("id")
             log.info(f"[PreShift] SharePoint Site ID resolved directly: {site_id}")
         else:
-            # Fallback to Search URL
             log.warning(f"[PreShift] SharePoint direct site path resolution failed. Searching for: {site_name}")
             search_url = f"https://graph.microsoft.com/v1.0/sites?search={site_name}"
             res = _req.get(search_url, headers=headers, timeout=5)
@@ -404,17 +437,15 @@ async def _get_sharepoint_drive_id(token: str) -> tuple[str | None, str, str, fl
                 sites = res.json().get("value", [])
                 matched_sites = []
                 for s in sites:
-                    # Strict validation: match expected name/displayName exactly and correct hostname
                     if s.get("name") == site_name or s.get("displayName") == site_name:
                         web_url = s.get("webUrl", "")
                         if hostname in web_url:
                             matched_sites.append(s)
-                
                 if len(matched_sites) == 1:
                     site_id = matched_sites[0].get("id")
                     log.info(f"[PreShift] SharePoint Site ID resolved via search: {site_id}")
                 elif len(matched_sites) > 1:
-                    raise ValueError(f"Ambiguous SharePoint site search matches found for '{site_name}'. Fail-closed.")
+                    raise ValueError(f"Ambiguous SharePoint site search matches for '{site_name}'. Fail-closed.")
             
         if not site_id:
             raise ValueError(f"SharePoint Site '{site_name}' could not be resolved.")
@@ -427,25 +458,21 @@ async def _get_sharepoint_drive_id(token: str) -> tuple[str | None, str, str, fl
 
         drives = res.json().get("value", [])
         matched_drives = [d for d in drives if d.get("name") == lib_name]
-        
         if len(matched_drives) == 1:
             resolved_drive_id = matched_drives[0].get("id")
             log.info(f"[PreShift] SharePoint Drive ID resolved for library '{lib_name}': {resolved_drive_id}")
             return site_id, resolved_drive_id
         elif len(matched_drives) > 1:
-            raise ValueError(f"Ambiguous SharePoint Drive matches found for library '{lib_name}'. Fail-closed.")
+            raise ValueError(f"Ambiguous SharePoint Drive matches for library '{lib_name}'. Fail-closed.")
         else:
             available_libs = [d.get("name") for d in drives]
             raise ValueError(f"Document library '{lib_name}' not found. Available: {available_libs}")
 
     try:
         t0 = time.monotonic()
-        import asyncio
         loop = asyncio.get_running_loop()
         site_id, resolved_drive_id = await loop.run_in_executor(None, _resolve)
         res_ms = round((time.monotonic() - t0) * 1000, 1)
-        
-        # Cache the resolved credentials for 15 minutes (900 seconds)
         _drive_cache = {
             "value": (site_id, resolved_drive_id),
             "expires": time.time() + 900
