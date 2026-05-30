@@ -148,11 +148,12 @@ class CloudWatcherService:
         #  - Starbucks/fast-food receipts, gas, scan files (unrelated expenses)
         #  - Samsung Print Spooler screenshots (printer confirmations parsed as Private trips)
         #  - Samsung Wallet specifically (payment app; never an Uber receipt)
+        #  - Outlook screenshots (booking confirmation emails — private trips handled by INV- sync)
         # NOTE: plain 'wallet' is intentionally NOT excluded — Uber has an in-app wallet screen
         #       that might be screenshot legitimately. Only 'samsung wallet' is excluded.
         _EXCLUDE_KEYWORDS = (
             'starbucks', 'scan_', 'receipt', 'gas', 'circle k', 'mcdonald',
-            'print spooler', 'print_spooler', 'samsung wallet',
+            'print spooler', 'print_spooler', 'samsung wallet', 'outlook',
         )
         image_files = [
             f for f in all_images
