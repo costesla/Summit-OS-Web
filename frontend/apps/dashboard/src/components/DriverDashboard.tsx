@@ -16,7 +16,7 @@ import { isBackgroundableError, devDebugError, getAsyncExecutionLogs, pollJobSta
 const AZURE_BASE = import.meta.env.VITE_PUBLIC_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://summitos-api.azurewebsites.net/api';
 const VERSION = "1.4.5";
 
-const TAG_FILTERS = ['Uber', 'Uber_Matched', 'Uber_Pickup', 'Jackie', 'Esmeralda', 'Uncategorized', 'Charging Session'] as const;
+const TAG_FILTERS = ['Uber', 'Uber_Matched', 'Uber_Pickup', 'Jackie', 'Esmeralda', 'Daniel', 'Private_Trip', 'Uncategorized', 'Charging Session'] as const;
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface PrivatePayment {
@@ -962,7 +962,10 @@ const TAG_STYLE: Record<string, string> = {
     uber: 'bg-slate-100 text-slate-700 border-slate-200/80',
     jackie: 'bg-purple-50 text-purple-700 border-purple-200/80',
     esmeralda: 'bg-teal-50 text-teal-700 border-teal-200/80',
-    uncategorized: 'bg-amber-50 text-amber-700 border-amber-200/80',
+    daniel: 'bg-indigo-50 text-indigo-700 border-indigo-200/80',
+    private_trip: 'bg-amber-50 text-amber-800 border-amber-300/80',
+    private: 'bg-amber-50 text-amber-800 border-amber-300/80',
+    uncategorized: 'bg-slate-50 text-slate-500 border-slate-200/80',
 };
 const tagStyle = (tag: string | null) => {
     const key = (tag ?? '').toLowerCase() || 'uncategorized';
@@ -1277,19 +1280,6 @@ const TessieDrivesPanel = ({
                                 </div>
                             </div>
 
-                            {/* Right: import button */}
-                            <button
-                                onClick={() => handleImport(drive)}
-                                disabled={imported}
-                                className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border transition-all shrink-0 ${imported
-                                    ? 'border-emerald-200 text-emerald-700 bg-emerald-50 cursor-default'
-                                    : 'border-blue-200 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:border-blue-300'
-                                    }`}
-                            >
-                                {imported
-                                    ? <><span className="text-emerald-700">✓</span> Imported</>
-                                    : <><Download className="w-3 h-3" /> Import</>}
-                            </button>
                         </div>
                     );
                 })}
@@ -1366,10 +1356,6 @@ const TessieChargesPanel = ({ onImport, selectedDate }: { onImport: (charge: Tes
                                     )}
                                 </div>
                             </div>
-                            <button onClick={() => handleImport(charge)} disabled={imported}
-                                className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition-all ${imported ? 'border-emerald-200 text-emerald-700 bg-emerald-50 cursor-default' : 'border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100 hover:border-amber-300'}`}>
-                                {imported ? <><span className="text-emerald-700">✓</span> Imported</> : <><Download className="w-3 h-3 inline mr-1" />Import</>}
-                            </button>
                         </div>
                     );
                 })}
@@ -1743,6 +1729,41 @@ const IntelligenceSyncPanel: React.FC<{
         }
     };
 
+    const runScrubDay = async () => {
+        const confirmed = window.confirm(
+            `⚠️ SCRUB DAY: ${selectedDate}\n\nThis will permanently delete all TRIP records for this date and reset any wrongly-classified Tessie drives back to Untagged.\n\nINV- booking records and manual Tessie tags (Jackie, Daniel, Esmeralda) will be preserved.\n\nContinue?`
+        );
+        if (!confirmed) return;
+
+        cleanupActivePoll();
+        setStatus('running');
+        setLogs([`> Scrubbing ${selectedDate} — wiping TRIP records and resetting Tessie drive classifications...`]);
+
+        try {
+            const resp = await fetch(`${AZURE_BASE}/operations/scrub-day`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ date: selectedDate })
+            });
+            const data = resp.ok ? await resp.json() : { success: false, error: `Server ${resp.status}` };
+            if (data.success) {
+                setStatus('success');
+                setLogs([
+                    ...(data.logs ?? []),
+                    `> [SUCCESS] Scrub complete — ${data.deleted_trips} TRIP record(s) deleted, ${data.reset_drives} Tessie drive(s) reset.`,
+                    `> Now upload your ${selectedDate} Uber screenshots to OneDrive, then hit Rebuild Day.`
+                ]);
+                onRefresh();
+            } else {
+                setStatus('error');
+                setLogs(prev => [...prev, `> [ERROR] ${data.error}`]);
+            }
+        } catch (err: unknown) {
+            setStatus('error');
+            setLogs(prev => [...prev, `> [CRITICAL] ${err instanceof Error ? err.message : String(err)}`]);
+        }
+    };
+
     // Scan the auto-calculated OneDrive folder for the selected date
     const runScanDay = async () => {
         cleanupActivePoll();
@@ -1997,29 +2018,10 @@ const IntelligenceSyncPanel: React.FC<{
                             className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-black bg-amber-500 hover:bg-amber-600 border border-amber-600/35 text-white transition-all duration-300 disabled:opacity-50 shadow shadow-amber-500/10"
                         >
                             <span>Rebuild Day</span>
-                            <span className="text-[9px] font-normal text-amber-50/80 normal-case">(Tessie + Bank + Scan)</span>
+                            <span className="text-[9px] font-normal text-amber-50/80 normal-case">(Tessie + OCR + Expenses)</span>
                         </button>
 
-                        {/* Secondary Actions: Scan Day / Custom Folder (Side-by-Side 2 Column Row) */}
-                        <div className="grid grid-cols-2 gap-3">
-                            <button
-                                disabled={status === 'running'}
-                                onClick={runScanDay}
-                                className="flex flex-col items-center justify-center gap-0.5 py-2.5 px-2 rounded-xl text-[10px] font-black bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 transition-all duration-300 disabled:opacity-50 shadow-sm"
-                            >
-                                <span>Scan Day</span>
-                                <span className="text-[8px] font-medium text-emerald-600/90 normal-case">OneDrive Auto-scan</span>
-                            </button>
-                            <button
-                                disabled={status === 'running'}
-                                onClick={runOneDriveSyncCustom}
-                                className="flex items-center justify-center gap-1 py-2 px-2 rounded-xl text-[10px] font-bold bg-white border border-emerald-200/80 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 transition-all duration-300 disabled:opacity-50 shadow-sm"
-                            >
-                                <span>Custom Folder ↗</span>
-                            </button>
-                        </div>
-
-                        {/* Tertiary Action: Create Folders (Full Width) */}
+                        {/* Secondary Action: Create Folders */}
                         <button
                             disabled={status === 'running'}
                             onClick={() => runSync(false)}
@@ -2027,6 +2029,16 @@ const IntelligenceSyncPanel: React.FC<{
                         >
                             <span>Create Folders</span>
                             <span className="text-[8px] font-normal text-slate-400/90 normal-case">(OneDrive structure)</span>
+                        </button>
+
+                        {/* Danger Action: Scrub Day */}
+                        <button
+                            disabled={status === 'running'}
+                            onClick={runScrubDay}
+                            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-[10px] font-bold bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 transition-all duration-300 disabled:opacity-50 shadow-sm"
+                        >
+                            <span>🗑 Scrub Day</span>
+                            <span className="text-[8px] font-normal text-rose-500/80 normal-case">(Wipe &amp; start fresh)</span>
                         </button>
                     </div>
 
