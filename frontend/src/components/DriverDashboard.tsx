@@ -788,6 +788,7 @@ const TessieChargesPanel = ({ onImport, selectedDate }: { onImport: (charge: Tes
                                         <p className="text-[10px] font-mono text-amber-700 mt-0.5">🔋 {charge.starting_soc}% → {charge.ending_soc}%</p>
                                     )}
                                 </div>
+                            </div>
                         </div>
                     );
                 })}
