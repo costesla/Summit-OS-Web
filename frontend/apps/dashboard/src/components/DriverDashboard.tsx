@@ -975,13 +975,11 @@ const tagStyle = (tag: string | null) => {
 
 // ─── Tessie Drives Panel ─────────────────────────────────────────────────────
 const TessieDrivesPanel = ({
-    onImport,
     selectedDate,
     refreshKey,
     privatePayments = [],
     chargingExpenses = []
 }: {
-    onImport: (drive: TessieDrive) => void;
     selectedDate: string;
     refreshKey?: number;
     privatePayments?: PrivatePayment[];
@@ -1283,7 +1281,7 @@ const TessieDrivesPanel = ({
 };
 
 // ─── Main Component ──────────────────────────────────────────────────────────
-const TessieChargesPanel = ({ onImport, selectedDate }: { onImport: (charge: TessieCharge) => void, selectedDate: string }) => {
+const TessieChargesPanel = ({ selectedDate }: { selectedDate: string }) => {
     const [charges, setCharges] = useState<TessieCharge[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
@@ -1522,53 +1520,6 @@ const IntelligenceSyncPanel: React.FC<{
         };
     }, []);
 
-    // Helper: build Uber Driver OneDrive path from a date string
-    const buildOneDrivePath = (dateStr: string, folderOverride?: string) => {
-        // Parse YYYY-MM-DD safely without timezone shifting
-        const [y, m, d] = dateStr.split('-').map(Number);
-        const year = y;
-        const monthName = new Date(y, m - 1, d).toLocaleString('default', { month: 'long' });
-
-        // Calendar Mon-Sun week — matches backend/reorganize_may.py logic
-        const firstOfMonth = new Date(y, m - 1, 1);
-        const daysToFirstMonday = (8 - firstOfMonth.getDay()) % 7;
-        const firstMondayDate = 1 + daysToFirstMonday;
-        // Fully unified week calculation:
-        // If month starts on Monday (firstMondayDate === 1), first week is Week 1.
-        // If month starts later, partial week is Week 1 and first full week is Week 2.
-        const weekNum = d < firstMondayDate ? 1 : Math.floor((d - firstMondayDate) / 7) + (firstMondayDate === 1 ? 1 : 2);
-        
-        const week = `Week ${weekNum}`;
-        
-        // Standardized folder name: M.DD.YY (e.g. 5.01.26)
-        const shortYear = String(y).slice(-2);
-        const dayPadded = String(d).padStart(2, '0');
-        const folderName = folderOverride ?? `${m}.${dayPadded}.${shortYear}`;
-
-        return `Uber Driver/${year}/${monthName}/${week}/${folderName}`;
-    };
-
-    const triggerCloudScan = async (path: string) => {
-        const resp = await fetch(`${AZURE_BASE}/operations/trigger-cloud-scan`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path })
-        });
-        
-        if (!resp.ok) {
-            const text = await resp.text();
-            if (text.includes('504') || text.includes('timeout') || !text.startsWith('{')) {
-                throw new Error('TIMEOUT_EXPECTED');
-            }
-            throw new Error(`Server returned ${resp.status}: ${text.substring(0, 100)}`);
-        }
-        
-        try {
-            return await resp.json();
-        } catch {
-            throw new Error('TIMEOUT_EXPECTED');
-        }
-    };
 
     const cleanupActivePoll = () => {
         if (activePollRef.current) {
