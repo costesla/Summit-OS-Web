@@ -1047,30 +1047,23 @@ const TessieDrivesPanel = ({
             style={{ backdropFilter: 'blur(16px)' }}
         >
             {/* Header */}
-            <div className="p-5 border-b border-slate-200/80 flex flex-wrap items-center gap-3 justify-between">
+            <div className="p-5 border-b border-slate-200/80 flex items-center gap-3 justify-between">
                 <div className="flex items-center gap-2">
                     <Car className="w-4 h-4 text-blue-600" />
                     <h2 className="font-bold text-slate-800">Tessie Drives</h2>
-                </div>
-                <div className="flex items-center gap-3 flex-wrap">
-                    {/* The date picker is now managed globally in the header */}
                     <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">{selectedDate}</span>
-                    {TAG_FILTERS.map((t) => (
-                        <span key={t} className={`text-[10px] font-bold px-2 py-0.5 rounded-full border font-mono uppercase tracking-wider ${tagStyle(t)}`}>
-                            {t}
-                        </span>
-                    ))}
-                    <button
-                        onClick={() => fetchAll()}
-                        disabled={loading}
-                        title="Refresh drives from Tessie"
-                        className="flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-lg border border-slate-200 text-slate-600 hover:text-blue-600 hover:border-blue-300 hover:bg-slate-50 transition-all disabled:opacity-40"
-                    >
-                        <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
-                        Refresh
-                    </button>
                 </div>
+                <button
+                    onClick={() => fetchAll()}
+                    disabled={loading}
+                    title="Refresh drives from Tessie"
+                    className="flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-lg border border-slate-200 text-slate-600 hover:text-blue-600 hover:border-blue-300 hover:bg-slate-50 transition-all disabled:opacity-40"
+                >
+                    <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+                    Refresh
+                </button>
             </div>
+
 
             {/* Body */}
             <div className="divide-y divide-slate-100">
