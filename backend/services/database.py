@@ -432,9 +432,13 @@ class DatabaseClient:
                 CAST(Timestamp_Start AS DATE) AS RideDate,
                 SUM(Distance_mi) AS TotalMiles,
                 SUM(Duration_min) / 60.0 AS DriveTime_Hours
-            FROM Rides.Rides
+            FROM Rides.Rides r
             WHERE Timestamp_Start >= CAST(? AS DATE)
               AND Timestamp_Start <= DATEADD(day, 1, CAST(? AS DATE))
+              AND NOT (r.RideID LIKE 'TESSIE-%' AND EXISTS (
+                  SELECT 1 FROM Rides.Rides match 
+                  WHERE match.Tessie_DriveID = r.RideID
+              ))
             GROUP BY CAST(Timestamp_Start AS DATE)
         ) rd ON kpi.[Date] = rd.RideDate
         WHERE kpi.[Date] >= CAST(? AS DATE) AND kpi.[Date] <= CAST(? AS DATE)
@@ -451,8 +455,12 @@ class DatabaseClient:
             Sum(Tip) as TotalTips,
             Sum(Distance_mi) as TotalDistance,
             Avg(Fare) as AvgFare
-        FROM Rides.Rides
+        FROM Rides.Rides r
         WHERE Timestamp_Start >= DATEADD(day, -?, GETDATE())
+          AND NOT (r.RideID LIKE 'TESSIE-%' AND EXISTS (
+              SELECT 1 FROM Rides.Rides match 
+              WHERE match.Tessie_DriveID = r.RideID
+          ))
         """
         results = self.execute_query_params(query, (days,))
         return results[0] if results else None

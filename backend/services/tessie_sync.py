@@ -62,12 +62,19 @@ class TessieSyncService:
             try:
                 # Map Tessie fields to our SQL schema
                 # Tessie fields: 'id', 'started_at', 'distance_miles', 'starting_location', 'tag', etc.
+                # Calculate duration in minutes from started_at and ended_at Unix timestamps
+                started_at = drive.get('started_at')
+                ended_at = drive.get('ended_at')
+                duration_min = 0
+                if started_at and ended_at:
+                    duration_min = round((ended_at - started_at) / 60, 2)
+
                 drive_data = {
                     "RideID":             f"TESSIE-{drive.get('id')}",
-                    "Timestamp_Start":    self._format_ts(drive.get('started_at')),
-                    "Timestamp_End":      self._format_ts(drive.get('ended_at')),
+                    "Timestamp_Start":    self._format_ts(started_at),
+                    "Timestamp_End":      self._format_ts(ended_at),
                     "Distance_mi":        drive.get('distance') or drive.get('distance_miles') or drive.get('odometer_distance', 0),
-                    "Duration_min":       drive.get('duration_minutes', 0),
+                    "Duration_min":       duration_min,
                     "Pickup_Location":    drive.get('starting_location', 'Unknown'),
                     "Dropoff_Location":   drive.get('ending_location', 'Unknown'),
                     "Start_SOC":          drive.get('starting_battery'),

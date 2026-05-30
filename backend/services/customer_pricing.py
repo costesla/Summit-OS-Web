@@ -13,20 +13,20 @@ class CustomerPricingProfile:
     
     # Grandfathered customers with custom pricing
     GRANDFATHERED_CUSTOMERS = {
-        # Esmeralda - Flat $20/trip until March 1, 2027
+        # Esmeralda - Flat $20/trip until March 1, 2026
         "esmii.lopez@hotmail.com": {
             "name": "Esmeralda",
             "pricing_tier": "legacy_flat_20",
-            "expires": "2027-03-01",
-            "notes": "Flat $20/trip - migrates to regular pricing March 1, 2027"
+            "expires": "2026-03-01",
+            "notes": "Flat $20/trip - migrates to regular pricing March 1, 2026"
         },
         
-        # Jacquelyn - Flat $20/trip until March 1, 2027
+        # Jacquelyn - Flat $20/trip until March 1, 2026
         "jacquelyn.heslep@playaba.net": {
             "name": "Jacquelyn",
             "pricing_tier": "legacy_flat_20",
-            "expires": "2027-03-01",
-            "notes": "Flat $20/trip - migrates to regular pricing March 1, 2027"
+            "expires": "2026-03-01",
+            "notes": "Flat $20/trip - migrates to regular pricing March 1, 2026"
         },
     }
 
