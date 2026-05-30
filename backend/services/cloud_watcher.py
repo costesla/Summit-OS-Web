@@ -595,13 +595,14 @@ class CloudWatcherService:
                             """, (tessie_drive_id,))
                             tel_row = cursor.fetchone()
                             if tel_row:
+                                def _f(v): return float(v) if v is not None else None
                                 tessie_telemetry = {
-                                    "Distance_mi": tel_row[0],
-                                    "Duration_min": tel_row[1],
-                                    "Start_SOC": tel_row[2],
-                                    "End_SOC": tel_row[3],
-                                    "Energy_Used_kWh": tel_row[4],
-                                    "Efficiency_Wh_mi": tel_row[5],
+                                    "Distance_mi": _f(tel_row[0]),
+                                    "Duration_min": _f(tel_row[1]),
+                                    "Start_SOC": _f(tel_row[2]),
+                                    "End_SOC": _f(tel_row[3]),
+                                    "Energy_Used_kWh": _f(tel_row[4]),
+                                    "Efficiency_Wh_mi": _f(tel_row[5]),
                                     "Pickup_Location": tel_row[6],
                                     "Dropoff_Location": tel_row[7]
                                 }
