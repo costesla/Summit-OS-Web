@@ -47,7 +47,7 @@
     .btn-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
 
     /* ── Layout ── */
-    .main { display: flex; flex: 1; overflow: hidden; }
+    .main { display: flex; flex: 1; overflow: hidden; min-height: 0; }
 
     /* ── Sidebar ── */
     .sidebar { width: 270px; flex-shrink: 0; background: var(--bg-card); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; z-index: 500; }
@@ -83,8 +83,8 @@
     .rec-tip-box { border-left: 3px solid var(--accent-cyan); background: rgba(6,182,212,0.03); padding: 8px 10px; border-radius: 0 8px 8px 0; font-size: 10px; line-height: 1.4; color: var(--text-secondary); margin-top: 8px; }
 
     /* ── Map area ── */
-    .map-wrap { flex: 1; position: relative; display: flex; flex-direction: column; }
-    #map { flex: 1; width: 100%; }
+    .map-wrap { flex: 1; position: relative; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+    #map { flex: 1; width: 100%; min-height: 0; }
 
     /* heatmap.js canvas overlay */
     #heatmap-canvas-container {
@@ -376,11 +376,10 @@ function createHeatOverlay(googleMap) {
     },
   });
 
-  // Size the container to match the map div
   function syncSize() {
-    const mapDiv = googleMap.getDiv();
-    container.style.width  = mapDiv.offsetWidth  + 'px';
-    container.style.height = mapDiv.offsetHeight - 58 + 'px'; // subtract timeline bar
+    const mapEl = document.getElementById('map');
+    container.style.width  = mapEl.offsetWidth  + 'px';
+    container.style.height = mapEl.offsetHeight + 'px';
   }
   syncSize();
   window.addEventListener('resize', () => { syncSize(); redrawHeat(); });
@@ -389,32 +388,41 @@ function createHeatOverlay(googleMap) {
   googleMap.addListener('bounds_changed', redrawHeat);
 }
 
-// Convert lat/lng to pixel position relative to the map's top-left corner
+// Convert lat/lng to pixel coords using Google Maps Overlay projection (Mercator-accurate)
 function latLngToPixel(latLng) {
-  const mapDiv   = map.getDiv();
-  const bounds   = map.getBounds();
-  const ne       = bounds.getNorthEast();
-  const sw       = bounds.getSouthWest();
-  const w        = mapDiv.offsetWidth;
-  const h        = mapDiv.offsetHeight - 58;
-  const x = (latLng.lng - sw.lng()) / (ne.lng() - sw.lng()) * w;
-  const y = (1 - (latLng.lat - sw.lat()) / (ne.lat() - sw.lat())) * h;
+  if (!map || !map.getProjection()) return { x: 0, y: 0 };
+  const proj    = map.getProjection();
+  const bounds  = map.getBounds();
+  const ne      = bounds.getNorthEast();
+  const sw      = bounds.getSouthWest();
+  const mapDiv  = document.getElementById('map');
+  const w       = mapDiv.offsetWidth;
+  const h       = mapDiv.offsetHeight;
+
+  // World-space points (scale 0–256 in a 256x256 tile world)
+  const scale   = Math.pow(2, map.getZoom());
+  const nePt    = proj.fromLatLngToPoint(ne);
+  const swPt    = proj.fromLatLngToPoint(sw);
+  const pt      = proj.fromLatLngToPoint(new google.maps.LatLng(latLng.lat, latLng.lng));
+
+  const x = (pt.x - swPt.x) / (nePt.x - swPt.x) * w;
+  const y = (pt.y - nePt.y) / (swPt.y - nePt.y) * h;
   return { x: Math.round(x), y: Math.round(y) };
 }
 
 function redrawHeat() {
-  if (!heatInstance || !map || !map.getBounds() || latLngPoints.length === 0) return;
+  if (!heatInstance || !map || !map.getBounds() || !map.getProjection() || latLngPoints.length === 0) return;
 
-  const mapDiv = map.getDiv();
+  const mapDiv = document.getElementById('map');
   const w = mapDiv.offsetWidth;
-  const h = mapDiv.offsetHeight - 58;
+  const h = mapDiv.offsetHeight;
 
   const pts = latLngPoints
     .map(p => {
       const px = latLngToPixel(p);
       return { x: px.x, y: px.y, value: Math.round(p.weight * 10) };
     })
-    .filter(p => p.x >= -50 && p.x <= w + 50 && p.y >= -50 && p.y <= h + 50); // clip to visible area
+    .filter(p => p.x >= -heatRadius && p.x <= w + heatRadius && p.y >= -heatRadius && p.y <= h + heatRadius);
 
   heatInstance.setData({ max: 10, data: pts });
 }
