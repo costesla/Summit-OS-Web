@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import {
     TrendingUp, Car, Zap, Utensils, Trash2,
     Navigation, Receipt, RotateCcw, Clock,
-    Battery, BatteryCharging, WifiOff, Download,
+    Battery, BatteryCharging, WifiOff,
     MapPin, Gauge, LogOut, Cpu, RefreshCw, Loader2,
     DollarSign, Cloud, Moon, HeartPulse, ExternalLink,
     ChevronDown, ChevronUp
@@ -990,7 +990,6 @@ const TessieDrivesPanel = ({
     const [drives, setDrives] = useState<TessieDrive[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
-    const [importedIds, setImportedIds] = useState<Set<string>>(new Set());
 
     const fetchAll = useCallback(async () => {
         setLoading(true);
@@ -1043,10 +1042,6 @@ const TessieDrivesPanel = ({
         fetchAll();
     }, [fetchAll, refreshKey]);
 
-    const handleImport = (drive: TessieDrive) => {
-        onImport(drive);
-        setImportedIds((prev) => new Set(prev).add(drive.tessie_drive_id));
-    };
 
     return (
         <div
@@ -1102,7 +1097,6 @@ const TessieDrivesPanel = ({
                 )}
 
                 {!loading && !error && drives.map((drive) => {
-                    const imported = importedIds.has(drive.tessie_drive_id);
                     return (
                         <div key={drive.tessie_drive_id}
                             className="p-4 flex flex-col md:flex-row md:items-center gap-3 hover:bg-slate-50/50 transition-colors group">
@@ -1293,7 +1287,6 @@ const TessieChargesPanel = ({ onImport, selectedDate }: { onImport: (charge: Tes
     const [charges, setCharges] = useState<TessieCharge[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
-    const [importedIds, setImportedIds] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         setLoading(true);
@@ -1318,11 +1311,6 @@ const TessieChargesPanel = ({ onImport, selectedDate }: { onImport: (charge: Tes
         fetchCharges();
     }, [selectedDate]);
 
-    const handleImport = (charge: TessieCharge) => {
-        onImport(charge);
-        const key = charge.tessie_charge_id ?? `${charge.date}-${charge.time_mst}`;
-        setImportedIds((prev) => new Set(prev).add(key ?? ''));
-    };
 
     return (
         <div className="rounded-2xl border border-slate-200/80 bg-white/90 shadow-sm overflow-hidden"
@@ -1338,7 +1326,6 @@ const TessieChargesPanel = ({ onImport, selectedDate }: { onImport: (charge: Tes
                 {!loading && !error && charges.length === 0 && <div className="p-8 text-center text-slate-400 font-mono text-xs italic">// no charging sessions found for {selectedDate}</div>}
                 {!loading && !error && charges.map((charge) => {
                     const key = charge.tessie_charge_id ?? `${charge.date}-${charge.time_mst}`;
-                    const imported = importedIds.has(key ?? '');
                     return (
                         <div key={key} className="flex items-center justify-between p-4 hover:bg-slate-50/50 transition-colors">
                             <div className="flex items-center gap-4">
@@ -1761,199 +1748,6 @@ const IntelligenceSyncPanel: React.FC<{
         } catch (err: unknown) {
             setStatus('error');
             setLogs(prev => [...prev, `> [CRITICAL] ${err instanceof Error ? err.message : String(err)}`]);
-        }
-    };
-
-    // Scan the auto-calculated OneDrive folder for the selected date
-    const runScanDay = async () => {
-        cleanupActivePoll();
-        const path = buildOneDrivePath(selectedDate);
-        setStatus('running');
-        const initialLog = `> Initializing Unified Day Scan: ${path}...`;
-        setLogs([initialLog]);
-        
-        try {
-            // 1. General Cloud Scan & Routing
-            const data = await triggerCloudScan(path);
-            
-            // Helper function to run Step 2 (OCR Trip extraction)
-            const proceedToOcrExtraction = async (step1Logs: string[]) => {
-                const step2Log = `> [STEP 2] Starting OCR trip extraction...`;
-                const currentLogs = [...step1Logs, step2Log];
-                setLogs(currentLogs);
-
-                try {
-                    const ocrResp = await fetch(`${AZURE_BASE}/operations/scan-day-trips`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ date: selectedDate, path })
-                    });
-                    
-                    if (!ocrResp.ok) {
-                        throw new Error(`OCR Server returned ${ocrResp.status}`);
-                    }
-
-                    const ocrData = await ocrResp.json();
-                    if (ocrData.status === 'accepted' && ocrData.jobId) {
-                        const baseLogs = [...step1Logs, step2Log];
-                        const initialJobLogs = getAsyncExecutionLogs(ocrData.jobId);
-                        setLogs([...baseLogs, ...initialJobLogs]);
-
-                        const stop = pollJobStatus(
-                            AZURE_BASE,
-                            ocrData.jobId,
-                            (jobLogs) => {
-                                setLogs([...baseLogs, ...initialJobLogs, ...jobLogs]);
-                            },
-                            (finalJobData) => {
-                                setStatus('success');
-                                const tripCount = finalJobData?.result?.trip_count ?? 0;
-                                setLogs(prev => [...prev, 
-                                    `> [SUCCESS] Full Day Scan Complete.`,
-                                    `> ${tripCount} Uber trips extracted and labeled.`
-                                ]);
-                                onRefresh();
-                            },
-                            (errorMsg) => {
-                                setStatus('error');
-                                setLogs(prev => [...prev, `> [OCR ERROR] ${errorMsg}`]);
-                            }
-                        );
-                        activePollRef.current = stop;
-                    } else if (ocrData.success) {
-                        setStatus('success');
-                        setLogs(prev => [...prev, 
-                            ...(ocrData.logs || []),
-                            `> [SUCCESS] Full Day Scan Complete.`,
-                            `> ${ocrData.trip_count} Uber trips extracted and labeled.`
-                        ]);
-                        onRefresh();
-                    } else {
-                        setStatus('error');
-                        setLogs(prev => [...prev, `> [OCR ERROR] ${ocrData.error}`]);
-                    }
-                } catch (ocrErr: unknown) {
-                    devDebugError(ocrErr);
-                    if (isBackgroundableError(ocrErr)) {
-                        setStatus('success');
-                        setLogs(prev => [...prev, 
-                            `> [NOTICE] OCR scan is continuing in background due to size.`,
-                            `> Please wait 60 seconds and refresh to see your checkmarks.`
-                        ]);
-                        setTimeout(onRefresh, 60_000);
-                    } else {
-                        setStatus('error');
-                        setLogs(prev => [...prev, `> [OCR CRITICAL ERROR] ${ocrErr instanceof Error ? ocrErr.message : String(ocrErr)}`]);
-                    }
-                }
-            };
-
-            // Now handle Step 1's response (Cloud scan)
-            if (data.status === 'accepted' && data.jobId) {
-                const baseLogs = [initialLog];
-                const initialJobLogs = getAsyncExecutionLogs(data.jobId);
-                setLogs([...baseLogs, ...initialJobLogs]);
-
-                const stop = pollJobStatus(
-                    AZURE_BASE,
-                    data.jobId,
-                    (jobLogs) => {
-                        setLogs([...baseLogs, ...initialJobLogs, ...jobLogs]);
-                    },
-                    () => {
-                        const step1DoneLogs = [...baseLogs, `> [STEP 1] Folder organization complete.`];
-                        setLogs(step1DoneLogs);
-                        // Trigger Step 2
-                        proceedToOcrExtraction(step1DoneLogs);
-                    },
-                    (errorMsg) => {
-                        setStatus('error');
-                        setLogs(prev => [...prev, `> [ERROR] ${errorMsg}`]);
-                    }
-                );
-                activePollRef.current = stop;
-            } else if (data.success) {
-                const step1DoneLogs = [initialLog, `> [STEP 1] Folder organization complete.`];
-                setLogs(step1DoneLogs);
-                // Trigger Step 2
-                await proceedToOcrExtraction(step1DoneLogs);
-            } else {
-                setStatus('error');
-                setLogs(prev => [...prev, `> [ERROR] ${data.error}`]);
-            }
-        } catch (err: unknown) {
-            devDebugError(err);
-            if (isBackgroundableError(err)) {
-                setStatus('success'); // Mark as success because background job is running
-                setLogs(prev => [...prev, 
-                    `> [NOTICE] Large scan detected (>45s).`,
-                    `> Azure proxy timed out, but the scan is still running in the background.`,
-                    `> Please wait 60 seconds and refresh the page to see your checkmarks.`
-                ]);
-                setTimeout(onRefresh, 60_000);
-            } else {
-                setStatus('error');
-                setLogs(prev => [...prev, `> [CRITICAL] ${err instanceof Error ? err.message : String(err)}`]);
-            }
-        }
-    };
-
-    // Scan a custom-named folder (for edge cases where folder name differs from day number)
-    const runOneDriveSyncCustom = async () => {
-        cleanupActivePoll();
-        const folderName = prompt('Enter folder name (e.g. 03):');
-        if (!folderName) return;
-        const path = buildOneDrivePath(selectedDate, folderName);
-        setStatus('running');
-        const initialLog = `> Scanning custom folder: ${path}...`;
-        setLogs([initialLog]);
-        
-        try {
-            const data = await triggerCloudScan(path);
-            if (data.status === 'accepted' && data.jobId) {
-                const baseLogs = [initialLog];
-                const initialJobLogs = getAsyncExecutionLogs(data.jobId);
-                setLogs([...baseLogs, ...initialJobLogs]);
-
-                const stop = pollJobStatus(
-                    AZURE_BASE,
-                    data.jobId,
-                    (jobLogs) => {
-                        setLogs([...baseLogs, ...initialJobLogs, ...jobLogs]);
-                    },
-                    () => {
-                        setStatus('success');
-                        setLogs(prev => [...prev, `> [SUCCESS] Custom scan complete.`]);
-                        onRefresh();
-                    },
-                    (errorMsg) => {
-                        setStatus('error');
-                        setLogs(prev => [...prev, `> [ERROR] ${errorMsg}`]);
-                    }
-                );
-                activePollRef.current = stop;
-            } else if (data.success) {
-                setStatus('success');
-                setLogs(prev => [...prev, ...(data.logs || []), `> [SUCCESS] Custom scan complete.`]);
-                onRefresh();
-            } else {
-                setStatus('error');
-                setLogs(prev => [...prev, `> [ERROR] ${data.error}`]);
-            }
-        } catch (err: unknown) {
-            devDebugError(err);
-            if (isBackgroundableError(err)) {
-                setStatus('success');
-                setLogs(prev => [...prev, 
-                    `> [NOTICE] Large scan detected.`,
-                    `> Proxy timed out, but background sync is likely still active.`,
-                    `> Refresh in 60 seconds.`
-                ]);
-                setTimeout(onRefresh, 60_000);
-            } else {
-                setStatus('error');
-                setLogs(prev => [...prev, `> [CRITICAL] ${err instanceof Error ? err.message : String(err)}`]);
-            }
         }
     };
 
