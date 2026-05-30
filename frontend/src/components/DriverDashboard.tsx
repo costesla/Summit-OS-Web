@@ -713,20 +713,8 @@ const TessieDrivesPanel = ({
                                     </p>
                                 </div>
                             </div>
-
-                            <button
-                                onClick={() => handleImport(drive)}
-                                disabled={imported}
-                                className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border transition-all shrink-0 ${imported
-                                    ? 'border-emerald-200 text-emerald-700 bg-emerald-50 cursor-default'
-                                    : 'border-blue-200 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:border-blue-300'
-                                    }`}
-                            >
-                                {imported
-                                    ? <><span className="text-emerald-700">✓</span> Imported</>
-                                    : <><Download className="w-3 h-3" /> Import</>}
-                            </button>
                         </div>
+
                     );
                 })}
             </div>
@@ -800,11 +788,6 @@ const TessieChargesPanel = ({ onImport, selectedDate }: { onImport: (charge: Tes
                                         <p className="text-[10px] font-mono text-amber-700 mt-0.5">🔋 {charge.starting_soc}% → {charge.ending_soc}%</p>
                                     )}
                                 </div>
-                            </div>
-                            <button onClick={() => handleImport(charge)} disabled={imported}
-                                className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition-all ${imported ? 'border-emerald-200 text-emerald-700 bg-emerald-50 cursor-default' : 'border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100 hover:border-amber-300'}`}>
-                                {imported ? <><span className="text-emerald-700">✓</span> Imported</> : <><Download className="w-3 h-3 inline mr-1" />Import</>}
-                            </button>
                         </div>
                     );
                 })}
