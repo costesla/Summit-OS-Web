@@ -1219,6 +1219,11 @@ class CloudWatcherService:
         logs.append(f"PRIVATE-SYNC: Starting Private Booking sync for {date_str}")
         
         try:
+            # Dynamically get the Mountain Time timezone offset for this target date (handles Daylight Savings)
+            dt_sample = datetime.datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=MDT)
+            offset_hours = abs(int(dt_sample.utcoffset().total_seconds() / 3600))
+            logs.append(f"PRIVATE-SYNC: Mountain Time offset for {date_str} is UTC-{offset_hours}")
+            
             # 1. Fetch all INV- bookings for this day
             cursor.execute("""
                 SELECT RideID, Timestamp_Start, Classification, Tessie_DriveID
@@ -1287,12 +1292,11 @@ class CloudWatcherService:
                 for drive in tessie_drives:
                     t_dt = drive["Timestamp_Start"]
                     
-                    # Check normal time diff, and 6-hour timezone shifted time diff (MDT vs UTC)
+                    # Check normal time diff, and exact timezone subtraction shift (UTC to Mountain Time local)
                     diff_naive = abs((b_dt - t_dt).total_seconds())
-                    diff_shifted_minus = abs((b_dt - datetime.timedelta(hours=6) - t_dt).total_seconds())
-                    diff_shifted_plus = abs((b_dt + datetime.timedelta(hours=6) - t_dt).total_seconds())
+                    diff_shifted = abs((b_dt - datetime.timedelta(hours=offset_hours) - t_dt).total_seconds())
                     
-                    min_diff = min(diff_naive, diff_shifted_minus, diff_shifted_plus)
+                    min_diff = min(diff_naive, diff_shifted)
                     
                     if min_diff < best_diff_seconds:
                         best_diff_seconds = min_diff
