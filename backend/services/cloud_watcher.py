@@ -620,29 +620,6 @@ class CloudWatcherService:
                         except Exception as update_err:
                             logs.append(f"WARN: Failed to update matched Tessie drive classification: {update_err}")
 
-                        # --- Auto-tag the preceding 'Pickup' drive ---
-                        # Look for a drive that ended within 60 mins before this one started
-                        try:
-                            cursor.execute("""
-                                SELECT TOP 1 RideID 
-                                FROM Rides.Rides 
-                                WHERE Timestamp_Start < ? 
-                                  AND Timestamp_Start > DATEADD(minute, -60, ?)
-                                  AND (Classification IS NULL OR Classification = 'Untagged')
-                                ORDER BY Timestamp_Start DESC
-                            """, (match['Timestamp_Start'], match['Timestamp_Start']))
-                            pickup_row = cursor.fetchone()
-                            if pickup_row:
-                                pickup_id = pickup_row[0]
-                                cursor.execute("""
-                                    UPDATE Rides.Rides 
-                                    SET Classification = 'Uber_Pickup', LastUpdated = GETUTCDATE() 
-                                    WHERE RideID = ?
-                                """, (pickup_id,))
-                                logs.append(f"AUTO-TAG: {pickup_id} labeled as Uber_Pickup")
-                        except Exception as pickup_err:
-                            logs.append(f"WARN: Failed to auto-tag pickup: {pickup_err}")
-
                 elif is_private:
                     logs.append(f"SKIP-TESSIE-MATCH: {trip_id} is Private — Tessie linkage handled by sync_private_bookings_for_date")
 
