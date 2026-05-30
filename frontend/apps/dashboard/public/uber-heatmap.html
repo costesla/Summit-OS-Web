@@ -359,6 +359,25 @@
       Zoom or pan to explore · <strong id="pill-count">0 points</strong> plotted
     </div>
 
+    <!-- ── Diagnostic Panel (temporary) ── -->
+    <div id="diag-panel" style="
+      position:absolute;top:10px;right:10px;z-index:9000;
+      background:rgba(0,0,0,0.88);border:1px solid rgba(255,255,255,0.15);
+      border-radius:10px;padding:12px 16px;font-family:monospace;font-size:11px;
+      color:#e2e8f0;min-width:240px;backdrop-filter:blur(8px);
+      box-shadow:0 4px 20px rgba(0,0,0,0.5);">
+      <div style="font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">🔬 Diagnostics</div>
+      <div id="diag-viz"  style="margin-bottom:4px;">Visualization lib: <span style="color:#f59e0b">checking…</span></div>
+      <div id="diag-heat" style="margin-bottom:4px;">Heat layer: <span style="color:#f59e0b">not created</span></div>
+      <div id="diag-data" style="margin-bottom:4px;">Drives loaded: <span style="color:#f59e0b">0</span></div>
+      <div id="diag-coord" style="margin-bottom:4px;">With coords: <span style="color:#f59e0b">0</span></div>
+      <div id="diag-pts"  style="margin-bottom:4px;">Heat points: <span style="color:#f59e0b">0</span></div>
+      <div id="diag-car"  style="margin-bottom:8px;">Car API: <span style="color:#f59e0b">pending</span></div>
+      <button onclick="document.getElementById('diag-panel').style.display='none'"
+        style="font-size:10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);
+        color:#94a3b8;border-radius:6px;padding:3px 10px;cursor:pointer;">Hide</button>
+    </div>
+
     <div id="timeline-bar">
       <span class="tl-label">Timeline</span>
       <button id="play-btn" onclick="togglePlayback()" title="Play / Pause">▶</button>
@@ -431,6 +450,17 @@ let timelineHour = -1;
 let playbackTimer= null;
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Diagnostic helper
+// ─────────────────────────────────────────────────────────────────────────────
+function diag(id, text, ok) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  var color = ok === true ? '#10b981' : ok === false ? '#ef4444' : '#f59e0b';
+  el.innerHTML = el.innerHTML.replace(/<span[^>]*>.*<\/span>/, '') +
+    '<span style="color:' + color + '">' + text + '</span>';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Hard timeout — never hang forever
 // ─────────────────────────────────────────────────────────────────────────────
 window._initTimeout = setTimeout(() => {
@@ -480,7 +510,9 @@ function initMap() {
 
 function tryCreateHeatLayer() {
   if (heatLayer) return;
-  if (google.maps.visualization && google.maps.visualization.HeatmapLayer) {
+  var vizOk = !!(window.google && google.maps && google.maps.visualization && google.maps.visualization.HeatmapLayer);
+  diag('diag-viz', vizOk ? 'loaded ✓' : 'NOT FOUND ✗', vizOk);
+  if (vizOk) {
     heatLayer = new google.maps.visualization.HeatmapLayer({
       data: [],
       map,
@@ -497,8 +529,9 @@ function tryCreateHeatLayer() {
       maxIntensity: 8,
       opacity: 0.9,
     });
+    diag('diag-heat', 'created ✓', true);
   } else {
-    // Retry after 2 seconds
+    diag('diag-heat', 'waiting for lib…', null);
     setTimeout(() => {
       tryCreateHeatLayer();
       if (heatLayer && allDrives.length > 0) renderHeatmap();
@@ -624,17 +657,24 @@ function flyToZone(lat, lon) {
 // Load Data
 // ─────────────────────────────────────────────────────────────────────────────
 async function loadData() {
-  const days = document.getElementById('days-select').value;
+  var days = document.getElementById('days-select').value;
   showLoading(true, 'Fetching Uber telemetry from Tessie…');
   document.getElementById('refresh-btn').disabled = true;
   document.getElementById('error-box').style.display = 'none';
   try {
-    const res = await fetch(BACKEND + '/api/copilot/tessie/drives?tag=uber&days=' + days, {
+    var res = await fetch(BACKEND + '/api/copilot/tessie/drives?tag=uber&days=' + days, {
       signal: AbortSignal.timeout(20000),
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
+    var data = await res.json();
     allDrives = data.drives || [];
+
+    // Diagnostic counts
+    var withCoords = allDrives.filter(function(d) {
+      return (d._start_lat || d.start_lat) && (d._start_lon || d.start_lon);
+    }).length;
+    diag('diag-data',  allDrives.length + ' drives', allDrives.length > 0);
+    diag('diag-coord', withCoords + ' have coords', withCoords > 0);
 
     showLoading(true, 'Rendering ' + allDrives.length + ' trips…');
     await new Promise(r => setTimeout(r, 40));
@@ -648,7 +688,8 @@ async function loadData() {
     renderRecommendations();
   } catch (err) {
     console.error('Load error:', err);
-    const box = document.getElementById('error-box');
+    diag('diag-data', 'FETCH ERROR: ' + err.message, false);
+    var box = document.getElementById('error-box');
     box.style.display = 'block';
     box.textContent = 'Failed to load: ' + err.message;
   } finally {
@@ -687,9 +728,12 @@ function getFilteredDrives() {
 // Render Heatmap
 // ─────────────────────────────────────────────────────────────────────────────
 function renderHeatmap() {
-  if (!heatLayer) return;   // visualization library not ready yet — tryCreateHeatLayer will retry
-  const drives = getFilteredDrives();
-  const pts = [];
+  if (!heatLayer) {
+    diag('diag-heat', 'null — waiting', false);
+    return;
+  }
+  var drives = getFilteredDrives();
+  var pts = [];
 
   for (var i = 0; i < drives.length; i++) {
     var d = drives[i];
@@ -709,6 +753,7 @@ function renderHeatmap() {
 
   heatLayer.setData(pts);
   heatLayer.set('radius', heatRadius);
+  diag('diag-pts', pts.length + ' points rendered', pts.length > 0);
   document.getElementById('pill-count').textContent = pts.length + ' points';
 
   if (pts.length > 0 && timelineHour < 0) {
@@ -1042,6 +1087,7 @@ async function updateLiveLocation() {
     var loc  = body && body.vehicle && body.vehicle.location;
 
     if (loc && loc.lat && loc.long) {
+      diag('diag-car', 'live @ ' + loc.lat.toFixed(4) + ',' + loc.long.toFixed(4), true);
       var pos   = { lat: loc.lat, lng: loc.long };
       var speed = loc.speed || 0;
 
@@ -1053,61 +1099,34 @@ async function updateLiveLocation() {
         '</div>';
 
       if (!carMarker) {
-        // Solid blue dot
         carMarker = new google.maps.Marker({
-          position: pos,
-          map: map,
-          title: 'COS Tesla — Live',
-          icon: {
-            path:         google.maps.SymbolPath.CIRCLE,
-            scale:        14,
-            fillColor:    '#3b82f6',
-            fillOpacity:  1,
-            strokeColor:  '#ffffff',
-            strokeWeight: 3,
-          },
+          position: pos, map: map, title: 'COS Tesla — Live',
+          icon: { path: google.maps.SymbolPath.CIRCLE, scale: 14, fillColor: '#3b82f6', fillOpacity: 1, strokeColor: '#ffffff', strokeWeight: 3 },
           zIndex: 9999,
         });
-
-        // Outer halo ring (google.maps.Circle — always works)
         carHalo = new google.maps.Circle({
-          center:        pos,
-          radius:        80,
-          map:           map,
-          strokeColor:   '#3b82f6',
-          strokeOpacity: 0.45,
-          strokeWeight:  1.5,
-          fillColor:     '#3b82f6',
-          fillOpacity:   0.1,
-          clickable:     false,
-          zIndex:        9998,
+          center: pos, radius: 80, map: map,
+          strokeColor: '#3b82f6', strokeOpacity: 0.45, strokeWeight: 1.5,
+          fillColor: '#3b82f6', fillOpacity: 0.1, clickable: false, zIndex: 9998,
         });
-
         var iw = new google.maps.InfoWindow({ content: popupContent });
-        carMarker.addListener('click', function() {
-          if (openInfoWindow) openInfoWindow.close();
-          iw.open(map, carMarker);
-          openInfoWindow = iw;
-        });
+        carMarker.addListener('click', function() { if (openInfoWindow) openInfoWindow.close(); iw.open(map, carMarker); openInfoWindow = iw; });
         carMarker._iw = iw;
       } else {
         carMarker.setPosition(pos);
         if (carHalo) carHalo.setCenter(pos);
         if (carMarker._iw) carMarker._iw.setContent(popupContent);
       }
-
-      if (!liveLocationActive) {
-        liveLocationActive = true;
-        map.panTo(pos);
-        map.setZoom(14);
-      }
+      if (!liveLocationActive) { liveLocationActive = true; map.panTo(pos); map.setZoom(14); }
     } else {
+      diag('diag-car', 'no loc — geofenced or asleep', false);
       if (carMarker) { carMarker.setMap(null); carMarker = null; }
       if (carHalo)   { carHalo.setMap(null);   carHalo   = null; }
       liveLocationActive = false;
     }
   } catch (err) {
-    console.warn('[Live GPS] Offline or asleep:', err.message);
+    diag('diag-car', 'ERROR: ' + err.message, false);
+    console.warn('[Live GPS]', err.message);
   }
 }
 </script>
