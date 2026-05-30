@@ -243,6 +243,20 @@
       transition: opacity 0.4s;
     }
     .loading-overlay.hidden { opacity: 0; pointer-events: none; }
+    .loading-dismiss {
+      margin-top: 8px;
+      padding: 6px 20px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 8px;
+      color: var(--text-muted);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: none;
+    }
+    .loading-dismiss:hover { background: rgba(255,255,255,0.15); color: #fff; }
+    .loading-error { font-size: 12px; color: #fca5a5; max-width: 280px; text-align: center; display: none; }
     .spinner {
       width: 44px; height: 44px;
       border: 3px solid rgba(59,130,246,0.2);
@@ -591,8 +605,10 @@
     <div id="map"></div>
 
     <div class="loading-overlay" id="loading-overlay">
-      <div class="spinner"></div>
+      <div class="spinner" id="loading-spinner"></div>
       <div class="loading-text" id="loading-text">Connecting to Summit OS…</div>
+      <div class="loading-error" id="loading-error"></div>
+      <button class="loading-dismiss" id="loading-dismiss" onclick="showLoading(false)">Dismiss &amp; Continue</button>
     </div>
 
     <div class="map-pill" id="map-pill">
@@ -672,45 +688,65 @@ let timelineActive  = false;
 let timelineHour    = -1; // -1 = all day
 let playbackTimer   = null;
 
+// ── Hard timeout — never hang forever ────────────────────────────────────
+window._initTimeout = setTimeout(() => {
+  if (document.getElementById('loading-overlay') &&
+      !document.getElementById('loading-overlay').classList.contains('hidden')) {
+    showLoading(true, 'Taking longer than expected…',
+      'Google Maps or the backend may be slow. Check your connection, then dismiss to use the page.');
+  }
+}, 20000);
+
 // ── Map Init ──────────────────────────────────────────────────────────────
 function initMap() {
-  map = new google.maps.Map(document.getElementById('map'), {
-    center:    COS_CENTER,
-    zoom:      12,
-    mapTypeId: 'hybrid',
-    disableDefaultUI: true,
-    zoomControl: true,
-    zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_BOTTOM },
-  });
+  clearTimeout(window._initTimeout);
+  try {
+    map = new google.maps.Map(document.getElementById('map'), {
+      center:    COS_CENTER,
+      zoom:      12,
+      mapTypeId: 'hybrid',
+      disableDefaultUI: true,
+      zoomControl: true,
+      zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_BOTTOM },
+    });
 
-  const darkMapType = new google.maps.StyledMapType(DARK_STYLES, { name: 'Dark' });
-  map.mapTypes.set('dark', darkMapType);
+    const darkMapType = new google.maps.StyledMapType(DARK_STYLES, { name: 'Dark' });
+    map.mapTypes.set('dark', darkMapType);
 
-  heatLayer = new google.maps.visualization.HeatmapLayer({
-    data: [],
-    map,
-    radius: heatRadius,
-    gradient: [
-      'rgba(0,0,0,0)',
-      'rgba(37,99,235,0.7)',
-      'rgba(59,130,246,0.85)',
-      'rgba(6,182,212,0.9)',
-      'rgba(16,185,129,1)',
-      'rgba(245,158,11,1)',
-      'rgba(239,68,68,1)',
-    ],
-    maxIntensity: 8,
-    opacity: 0.9,
-  });
+    if (google.maps.visualization) {
+      heatLayer = new google.maps.visualization.HeatmapLayer({
+        data: [],
+        map,
+        radius: heatRadius,
+        gradient: [
+          'rgba(0,0,0,0)',
+          'rgba(37,99,235,0.7)',
+          'rgba(59,130,246,0.85)',
+          'rgba(6,182,212,0.9)',
+          'rgba(16,185,129,1)',
+          'rgba(245,158,11,1)',
+          'rgba(239,68,68,1)',
+        ],
+        maxIntensity: 8,
+        opacity: 0.9,
+      });
+    } else {
+      console.warn('visualization library not loaded — heat layer disabled');
+    }
 
-  showLoading(false);
-  wireControls();
+    showLoading(false);
+    wireControls();
 
-  setTimeout(async () => {
-    await loadData();
-    updateLiveLocation();
-    setInterval(updateLiveLocation, 15000);
-  }, 600);
+    setTimeout(async () => {
+      await loadData();
+      updateLiveLocation();
+      setInterval(updateLiveLocation, 15000);
+    }, 600);
+
+  } catch (err) {
+    console.error('initMap error:', err);
+    showLoading(true, 'Map failed to initialize', err.message);
+  }
 }
 
 // ── Wire Controls ─────────────────────────────────────────────────────────
@@ -748,10 +784,33 @@ function parseLocalDate(dateStr) {
   return isNaN(dt.getTime()) ? null : dt;
 }
 
-function showLoading(show, text) {
-  const overlay = document.getElementById('loading-overlay');
+function showLoading(show, text, isError) {
+  const overlay  = document.getElementById('loading-overlay');
+  const spinner  = document.getElementById('loading-spinner');
+  const errorEl  = document.getElementById('loading-error');
+  const dismissEl= document.getElementById('loading-dismiss');
   if (text) document.getElementById('loading-text').textContent = text;
+  if (isError) {
+    spinner.style.display  = 'none';
+    errorEl.style.display  = 'block';
+    errorEl.textContent    = isError;
+    dismissEl.style.display= 'block';
+  } else {
+    spinner.style.display  = '';
+    errorEl.style.display  = 'none';
+    dismissEl.style.display= show ? 'none' : 'none';
+  }
   overlay.classList.toggle('hidden', !show);
+
+  // Show dismiss button after 8 seconds if still loading
+  if (show && !isError) {
+    clearTimeout(window._dismissTimer);
+    window._dismissTimer = setTimeout(() => {
+      if (!overlay.classList.contains('hidden')) {
+        dismissEl.style.display = 'block';
+      }
+    }, 8000);
+  }
 }
 
 function fmtHour(h) {
