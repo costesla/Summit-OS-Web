@@ -573,9 +573,13 @@ class CloudWatcherService:
                 classification = card.get("classification", "Uber_Matched") if is_private else "Uber_Matched"
 
                 # --- Proximity Matching to Tessie ---
+                # NOTE: Private trips skip _find_match here — their Tessie linkage is handled
+                # exclusively by sync_private_bookings_for_date (INV- records).
+                # Allowing private booking screenshots to call _find_match causes them to
+                # steal Tessie drives that should be matched to Uber trips (crosstalk).
                 tessie_drive_id = None
                 tessie_telemetry = {}
-                if trip_dt:
+                if trip_dt and not is_private:
                     match = self.uber._find_match(trip_dt, tolerance_hours=4)
                     if match:
                         tessie_drive_id = match["RideID"]
@@ -604,7 +608,7 @@ class CloudWatcherService:
                         except Exception as tel_err:
                             logs.append(f"WARN: Failed to fetch telemetry for matched Tessie drive {tessie_drive_id}: {tel_err}")
 
-                        # Update the original Tessie drive in SQL so it is not treated as an Uber run!
+                        # Update the original Tessie drive in SQL so it is marked as Uber
                         try:
                             cursor.execute("""
                                 UPDATE Rides.Rides
@@ -615,7 +619,7 @@ class CloudWatcherService:
                         except Exception as update_err:
                             logs.append(f"WARN: Failed to update matched Tessie drive classification: {update_err}")
 
-                        # --- NEW: Auto-tag the preceding 'Pickup' drive ---
+                        # --- Auto-tag the preceding 'Pickup' drive ---
                         # Look for a drive that ended within 60 mins before this one started
                         try:
                             cursor.execute("""
@@ -629,15 +633,18 @@ class CloudWatcherService:
                             pickup_row = cursor.fetchone()
                             if pickup_row:
                                 pickup_id = pickup_row[0]
-                                preceding_tag = 'Private_Pickup' if is_private else 'Uber_Pickup'
                                 cursor.execute("""
                                     UPDATE Rides.Rides 
-                                    SET Classification = ?, LastUpdated = GETUTCDATE() 
+                                    SET Classification = 'Uber_Pickup', LastUpdated = GETUTCDATE() 
                                     WHERE RideID = ?
-                                """, (preceding_tag, pickup_id))
-                                logs.append(f"AUTO-TAG: {pickup_id} labeled as {preceding_tag}")
+                                """, (pickup_id,))
+                                logs.append(f"AUTO-TAG: {pickup_id} labeled as Uber_Pickup")
                         except Exception as pickup_err:
                             logs.append(f"WARN: Failed to auto-tag pickup: {pickup_err}")
+
+                elif is_private:
+                    logs.append(f"SKIP-TESSIE-MATCH: {trip_id} is Private — Tessie linkage handled by sync_private_bookings_for_date")
+
 
                 sidecar = {
                     "source": "scan_and_number",
