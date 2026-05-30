@@ -14,7 +14,7 @@ import { isBackgroundableError, devDebugError, getAsyncExecutionLogs, pollJobSta
 const AZURE_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://summitos-api.azurewebsites.net/api';
 const VERSION = "1.4.5";
 
-const TAG_FILTERS = ['Uber', 'Uber_Matched', 'Uber_Pickup', 'Jackie', 'Esmeralda', 'Private_Trip', 'Uncategorized'] as const;
+const TAG_FILTERS = ['Uber', 'Uber_Matched', 'Uber_Pickup', 'Jackie', 'Esmeralda', 'Daniel', 'Private_Trip', 'Uncategorized'] as const;
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface PrivatePayment {
@@ -405,6 +405,7 @@ const TAG_STYLE: Record<string, string> = {
     uber: 'bg-slate-100 text-slate-700 border-slate-200/80',
     jackie: 'bg-purple-50 text-purple-700 border-purple-200/80',
     esmeralda: 'bg-teal-50 text-teal-700 border-teal-200/80',
+    daniel: 'bg-indigo-50 text-indigo-700 border-indigo-200/80',
     private_trip: 'bg-amber-50 text-amber-800 border-amber-300/80',
     private: 'bg-amber-50 text-amber-800 border-amber-300/80',
     uncategorized: 'bg-slate-50 text-slate-500 border-slate-200/80',
@@ -1538,14 +1539,14 @@ const IntelligenceSyncPanel: React.FC<{
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 mb-4 mt-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-4 mt-4">
                 <button
                     disabled={status === 'running'}
                     onClick={() => runSync(false)}
                     className="flex flex-col items-center justify-center gap-0.5 py-3 rounded-xl text-[10px] font-bold bg-slate-100 border border-slate-200 text-slate-700 hover:bg-slate-200/80 transition-all disabled:opacity-50"
                 >
                     <span>Create Folders</span>
-                    <span className="text-[8px] font-normal text-slate-505 normal-case">OneDrive structure</span>
+                    <span className="text-[8px] font-normal text-slate-500 normal-case">OneDrive structure</span>
                 </button>
                 <button
                     disabled={status === 'running'}
@@ -1572,6 +1573,14 @@ const IntelligenceSyncPanel: React.FC<{
                         <span>Custom Folder ↗</span>
                     </button>
                 </div>
+                <button
+                    disabled={status === 'running'}
+                    onClick={runScrubDay}
+                    className="flex flex-col items-center justify-center gap-0.5 py-3 rounded-xl text-[10px] font-bold bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 transition-all disabled:opacity-50"
+                >
+                    <span>🗑 Scrub Day</span>
+                    <span className="text-[8px] font-normal text-rose-500/80 normal-case">Wipe &amp; start fresh</span>
+                </button>
             </div>
 
             <div className="bg-slate-50 rounded-xl border border-slate-200/80 overflow-hidden shadow-sm">

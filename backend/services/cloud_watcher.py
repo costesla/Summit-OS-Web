@@ -1229,8 +1229,13 @@ class CloudWatcherService:
 
     def sync_private_bookings_for_date(self, date_str: str, cursor, logs: list):
         """
-        Pairs unmatched Private Website Bookings (INV- records) with closest Tessie drives
-        on the same day, copying telemetry, and updating Tessie drive and preceding pickup classifications.
+        Pairs Private Website Bookings (INV- records) with Tessie drives on the same day.
+
+        Bundle logic: If an INV- record is a Daily Bundle (pricing_type='bundle' or Fare >= 100),
+        ALL Tessie drives tagged with that client's name on that day are linked to the single INV-
+        record. Each drive gets the client tag (e.g. 'Jackie') and a 'bundle' flag in sidecar.
+
+        Standard logic: 1-to-1 proximity match within 3 hours.
         """
         logs.append(f"PRIVATE-SYNC: Starting Private Booking sync for {date_str}")
         
@@ -1240,47 +1245,54 @@ class CloudWatcherService:
             offset_hours = abs(int(dt_sample.utcoffset().total_seconds() / 3600))
             logs.append(f"PRIVATE-SYNC: Mountain Time offset for {date_str} is UTC-{offset_hours}")
             
-            # 1. Fetch all INV- bookings for this day
+            # 1. Fetch all INV- bookings for this day (include Fare and Sidecar for bundle detection)
             cursor.execute("""
-                SELECT RideID, Timestamp_Start, Classification, Tessie_DriveID
+                SELECT RideID, Timestamp_Start, Classification, Tessie_DriveID, Fare, Sidecar_Artifact_JSON
                 FROM Rides.Rides
                 WHERE CAST(Timestamp_Start AS DATE) = ? AND RideID LIKE 'INV-%'
             """, (date_str,))
             bookings = []
             for row in cursor.fetchall():
+                sidecar = {}
+                try:
+                    sidecar = json.loads(str(row[5])) if row[5] else {}
+                except:
+                    pass
+                is_bundle = (
+                    sidecar.get("pricing_type") == "bundle"
+                    or sidecar.get("customer_tier", "").lower() == "daily exclusivity bundle"
+                    or float(row[4] or 0) >= 100.0
+                )
                 bookings.append({
                     "RideID": row[0],
                     "Timestamp_Start": row[1],
                     "Classification": row[2],
-                    "Tessie_DriveID": row[3]
+                    "Tessie_DriveID": row[3],
+                    "Fare": float(row[4] or 0),
+                    "is_bundle": is_bundle
                 })
                 
             if not bookings:
                 logs.append(f"PRIVATE-SYNC: No INV- bookings found for {date_str}.")
                 return
                 
-            logs.append(f"PRIVATE-SYNC: Found {len(bookings)} INV- bookings to process.")
+            logs.append(f"PRIVATE-SYNC: Found {len(bookings)} INV- booking(s) to process.")
             
-            # 2. Fetch all eligible Tessie drives on this day
+            # 2. Fetch ALL Tessie drives on this day (unmatched and client-tagged)
             cursor.execute("""
                 SELECT RideID, Timestamp_Start, Classification, Distance_mi, Duration_min,
                        Start_SOC, End_SOC, Energy_Used_kWh, Efficiency_Wh_mi, Pickup_Location, Dropoff_Location, TripType
                 FROM Rides.Rides
                 WHERE RideID LIKE 'TESSIE-%'
                   AND CAST(Timestamp_Start AS DATE) = ?
-                  AND NOT EXISTS (
-                      SELECT 1 FROM Rides.Rides match 
-                      WHERE match.Tessie_DriveID = Rides.Rides.RideID
-                        AND match.RideID NOT LIKE 'INV-%' -- Exclude this booking if it's already linked, so we can re-evaluate
-                  )
             """, (date_str,))
             
-            tessie_drives = []
+            all_tessie_drives = []
             for row in cursor.fetchall():
-                tessie_drives.append({
+                all_tessie_drives.append({
                     "RideID": row[0],
                     "Timestamp_Start": row[1],
-                    "Classification": row[2],
+                    "Classification": row[2] or "Untagged",
                     "Distance_mi": row[3],
                     "Duration_min": row[4],
                     "Start_SOC": row[5],
@@ -1292,108 +1304,179 @@ class CloudWatcherService:
                     "TripType": row[11]
                 })
                 
-            if not tessie_drives:
-                logs.append(f"PRIVATE-SYNC: No eligible unmatched TESSIE drives found on {date_str}.")
+            if not all_tessie_drives:
+                logs.append(f"PRIVATE-SYNC: No TESSIE drives found on {date_str}.")
                 return
+
+            # Pool of drives still available for 1:1 matching
+            unmatched_drives = list(all_tessie_drives)
                 
-            # 3. For each booking, find the closest Tessie drive
+            # 3. Process each booking
             for booking in bookings:
                 b_id = booking["RideID"]
                 b_dt = booking["Timestamp_Start"]
-                
-                # Find the best matching Tessie drive
-                best_drive = None
-                best_diff_seconds = 999999
-                
-                for drive in tessie_drives:
-                    t_dt = drive["Timestamp_Start"]
-                    
-                    # Check normal time diff, and exact timezone subtraction shift (UTC to Mountain Time local)
-                    diff_naive = abs((b_dt - t_dt).total_seconds())
-                    diff_shifted = abs((b_dt - datetime.timedelta(hours=offset_hours) - t_dt).total_seconds())
-                    
-                    min_diff = min(diff_naive, diff_shifted)
-                    
-                    if min_diff < best_diff_seconds:
-                        best_diff_seconds = min_diff
-                        best_drive = drive
-                        
-                # Proximity tolerance: 3 hours (10800 seconds) to account for some buffers or bookings
-                if best_drive and best_diff_seconds <= 10800:
-                    tessie_id = best_drive["RideID"]
-                    logs.append(f"PRIVATE-SYNC-MATCH: Booking {b_id} matched to Tessie drive {tessie_id} (time diff: {best_diff_seconds/60:.1f}m)")
-                    
-                    # Update booking record with Tessie drive ID and telemetry
-                    cursor.execute("""
-                        UPDATE Rides.Rides
-                        SET Tessie_DriveID = ?,
-                            Distance_mi = ?,
-                            Duration_min = ?,
-                            Start_SOC = ?,
-                            End_SOC = ?,
-                            Energy_Used_kWh = ?,
-                            Efficiency_Wh_mi = ?,
-                            Pickup_Location = COALESCE(Pickup_Location, ?),
-                            Dropoff_Location = COALESCE(Dropoff_Location, ?),
-                            LastUpdated = GETUTCDATE()
-                        WHERE RideID = ?
-                    """, (
-                        tessie_id,
-                        best_drive["Distance_mi"],
-                        best_drive["Duration_min"],
-                        best_drive["Start_SOC"],
-                        best_drive["End_SOC"],
-                        best_drive["Energy_Used_kWh"],
-                        best_drive["Efficiency_Wh_mi"],
-                        best_drive["Pickup_Location"],
-                        best_drive["Dropoff_Location"],
-                        b_id
-                    ))
-                    
-                    # Determine classification for the Tessie drive
-                    tessie_class = "Private_Trip"
-                    if "jacquelyn" in b_id.lower() or "jackie" in b_id.lower():
-                        tessie_class = "Jackie"
-                    elif "daniel" in b_id.lower():
-                        tessie_class = "Private:Daniel"
-                    
-                    # Update the original Tessie drive so it is not treated as an Uber run!
-                    cursor.execute("""
-                        UPDATE Rides.Rides
-                        SET TripType = 'Private',
-                            Classification = ?,
-                            LastUpdated = GETUTCDATE()
-                        WHERE RideID = ?
-                    """, (tessie_class, tessie_id))
-                    logs.append(f"PRIVATE-SYNC-UPDATE: Original Tessie drive {tessie_id} updated to TripType=Private, Classification={tessie_class}")
-                    
-                    # Auto-tag the preceding pickup drive
-                    try:
-                        cursor.execute("""
-                            SELECT TOP 1 RideID 
-                            FROM Rides.Rides 
-                            WHERE Timestamp_Start < ? 
-                              AND Timestamp_Start > DATEADD(minute, -60, ?)
-                              AND (Classification IS NULL OR Classification = 'Untagged' OR Classification = 'Uber_Pickup')
-                            ORDER BY Timestamp_Start DESC
-                        """, (best_drive['Timestamp_Start'], best_drive['Timestamp_Start']))
-                        pickup_row = cursor.fetchone()
-                        if pickup_row:
-                            pickup_id = pickup_row[0]
-                            cursor.execute("""
-                                UPDATE Rides.Rides 
-                                SET TripType = 'Private',
-                                    Classification = 'Private_Pickup',
-                                    LastUpdated = GETUTCDATE() 
-                                WHERE RideID = ?
-                            """, (pickup_id,))
-                            logs.append(f"PRIVATE-SYNC-AUTO-TAG: Preceding drive {pickup_id} labeled as Private_Pickup")
-                    except Exception as pickup_err:
-                        logs.append(f"PRIVATE-SYNC-WARN: Failed to auto-tag preceding pickup: {pickup_err}")
-                        
-                    # Remove this Tessie drive from matching list so it doesn't get matched twice
-                    tessie_drives.remove(best_drive)
+                is_bundle = booking["is_bundle"]
+
+                # Determine the client name from the booking classification or RideID
+                b_class = (booking["Classification"] or "").lower()
+                b_id_lower = b_id.lower()
+                if "jacquelyn" in b_id_lower or "jackie" in b_id_lower or "jackie" in b_class:
+                    client_name = "Jackie"
+                    tessie_class = "Jackie"
+                elif "daniel" in b_id_lower or "daniel" in b_class:
+                    client_name = "Daniel"
+                    tessie_class = "Daniel"
+                elif "esmeralda" in b_id_lower or "esmeralda" in b_class:
+                    client_name = "Esmeralda"
+                    tessie_class = "Esmeralda"
                 else:
-                    logs.append(f"PRIVATE-SYNC-NOMATCH: Booking {b_id} could not be matched to any Tessie drive (best diff: {best_diff_seconds/60:.1f}m)")
+                    client_name = None
+                    tessie_class = "Private_Trip"
+
+                if is_bundle and client_name:
+                    # ── BUNDLE: Link ALL drives tagged with this client's name to the INV- record ──
+                    # These drives already have the client tag from the Tessie app (e.g. 'Jackie').
+                    client_drives = [
+                        d for d in all_tessie_drives
+                        if client_name.lower() in (d["Classification"] or "").lower()
+                    ]
+
+                    if not client_drives:
+                        # Fallback: proximity match the first drive if no client-tagged drives found
+                        logs.append(f"PRIVATE-SYNC-BUNDLE: No drives tagged '{client_name}' found for bundle {b_id} — falling back to proximity match")
+                        is_bundle = False  # drop through to standard match below
+                    else:
+                        logs.append(f"PRIVATE-SYNC-BUNDLE: Bundle booking {b_id} (${booking['Fare']:.2f}) covering {len(client_drives)} '{client_name}' drives")
+
+                        # Link ALL client drives to this INV- record
+                        first_drive = min(client_drives, key=lambda d: d["Timestamp_Start"])
+                        last_drive = max(client_drives, key=lambda d: d["Timestamp_Start"])
+
+                        # Update the INV- booking with aggregate telemetry (first pickup → last dropoff)
+                        total_dist = sum(float(d["Distance_mi"] or 0) for d in client_drives)
+                        total_dur = sum(float(d["Duration_min"] or 0) for d in client_drives)
+                        cursor.execute("""
+                            UPDATE Rides.Rides
+                            SET Tessie_DriveID = ?,
+                                Distance_mi = ?,
+                                Duration_min = ?,
+                                Start_SOC = ?,
+                                End_SOC = ?,
+                                Pickup_Location = COALESCE(Pickup_Location, ?),
+                                Dropoff_Location = COALESCE(Dropoff_Location, ?),
+                                LastUpdated = GETUTCDATE()
+                            WHERE RideID = ?
+                        """, (
+                            first_drive["RideID"],
+                            total_dist,
+                            total_dur,
+                            first_drive["Start_SOC"],
+                            last_drive["End_SOC"],
+                            first_drive["Pickup_Location"],
+                            last_drive["Dropoff_Location"],
+                            b_id
+                        ))
+
+                        # Tag every client drive: client name + bundle flag
+                        for drive in client_drives:
+                            tessie_id = drive["RideID"]
+                            cursor.execute("""
+                                UPDATE Rides.Rides
+                                SET TripType = 'Private',
+                                    Classification = ?,
+                                    LastUpdated = GETUTCDATE()
+                                WHERE RideID = ?
+                            """, (tessie_class, tessie_id))
+                            logs.append(f"PRIVATE-SYNC-BUNDLE-TAG: {tessie_id} → {tessie_class} (bundle)")
+                            # Remove from unmatched pool so standard matching skips it
+                            if drive in unmatched_drives:
+                                unmatched_drives.remove(drive)
+                        continue  # move to next booking
+
+                if not is_bundle:
+                    # ── STANDARD 1:1 PROXIMITY MATCH ──
+                    best_drive = None
+                    best_diff_seconds = 999999
+                    
+                    for drive in unmatched_drives:
+                        t_dt = drive["Timestamp_Start"]
+                        diff_naive = abs((b_dt - t_dt).total_seconds())
+                        diff_shifted = abs((b_dt - datetime.timedelta(hours=offset_hours) - t_dt).total_seconds())
+                        min_diff = min(diff_naive, diff_shifted)
+                        if min_diff < best_diff_seconds:
+                            best_diff_seconds = min_diff
+                            best_drive = drive
+                            
+                    # Proximity tolerance: 3 hours
+                    if best_drive and best_diff_seconds <= 10800:
+                        tessie_id = best_drive["RideID"]
+                        logs.append(f"PRIVATE-SYNC-MATCH: Booking {b_id} matched to Tessie drive {tessie_id} (diff: {best_diff_seconds/60:.1f}m)")
+                        
+                        # Update booking record with Tessie drive ID and telemetry
+                        cursor.execute("""
+                            UPDATE Rides.Rides
+                            SET Tessie_DriveID = ?,
+                                Distance_mi = ?,
+                                Duration_min = ?,
+                                Start_SOC = ?,
+                                End_SOC = ?,
+                                Energy_Used_kWh = ?,
+                                Efficiency_Wh_mi = ?,
+                                Pickup_Location = COALESCE(Pickup_Location, ?),
+                                Dropoff_Location = COALESCE(Dropoff_Location, ?),
+                                LastUpdated = GETUTCDATE()
+                            WHERE RideID = ?
+                        """, (
+                            tessie_id,
+                            best_drive["Distance_mi"],
+                            best_drive["Duration_min"],
+                            best_drive["Start_SOC"],
+                            best_drive["End_SOC"],
+                            best_drive["Energy_Used_kWh"],
+                            best_drive["Efficiency_Wh_mi"],
+                            best_drive["Pickup_Location"],
+                            best_drive["Dropoff_Location"],
+                            b_id
+                        ))
+                        
+                        # Update the Tessie drive classification
+                        cursor.execute("""
+                            UPDATE Rides.Rides
+                            SET TripType = 'Private',
+                                Classification = ?,
+                                LastUpdated = GETUTCDATE()
+                            WHERE RideID = ?
+                        """, (tessie_class, tessie_id))
+                        logs.append(f"PRIVATE-SYNC-UPDATE: {tessie_id} → TripType=Private, Classification={tessie_class}")
+                        
+                        # Auto-tag the preceding pickup drive
+                        try:
+                            cursor.execute("""
+                                SELECT TOP 1 RideID 
+                                FROM Rides.Rides 
+                                WHERE Timestamp_Start < ? 
+                                  AND Timestamp_Start > DATEADD(minute, -60, ?)
+                                  AND (Classification IS NULL OR Classification = 'Untagged' OR Classification = 'Uber_Pickup')
+                                ORDER BY Timestamp_Start DESC
+                            """, (best_drive['Timestamp_Start'], best_drive['Timestamp_Start']))
+                            pickup_row = cursor.fetchone()
+                            if pickup_row:
+                                pickup_id = pickup_row[0]
+                                cursor.execute("""
+                                    UPDATE Rides.Rides 
+                                    SET TripType = 'Private',
+                                        Classification = 'Private_Pickup',
+                                        LastUpdated = GETUTCDATE() 
+                                    WHERE RideID = ?
+                                """, (pickup_id,))
+                                logs.append(f"PRIVATE-SYNC-AUTO-TAG: {pickup_id} labeled as Private_Pickup")
+                        except Exception as pickup_err:
+                            logs.append(f"PRIVATE-SYNC-WARN: Failed to auto-tag pickup: {pickup_err}")
+                            
+                        # Remove matched drive from pool
+                        unmatched_drives.remove(best_drive)
+                    else:
+                        logs.append(f"PRIVATE-SYNC-NOMATCH: Booking {b_id} could not be matched (best diff: {best_diff_seconds/60:.1f}m)")
         except Exception as e:
             logs.append(f"PRIVATE-SYNC-ERROR: Failed to run private booking sync: {e}")
+

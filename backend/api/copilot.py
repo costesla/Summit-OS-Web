@@ -113,6 +113,7 @@ def classify_drive(tag, location):
     meals = ["ihop", "mcdonalds", "starbucks", "dunkin", "taco bell", "burger king", "wendy's", "subway", "chipotle", "panera", "carl's jr", "dutch bros", "coffee", "grocery", "king soopers", "safeway", "walmart"]
     maintenance = ["quickquack", "car wash", "supercharge", "service", "tesla service", "tire", "maintenance", "autozone"]
     personal = ["park", "gym", "museum", "home", "residence", "private"]
+    private_clients = ["jackie", "jacquelyn", "esmeralda", "daniel", "private_trip", "private_pickup"]
     
     for m in meals:
         if m in tag_lower or m in loc_lower:
@@ -125,6 +126,10 @@ def classify_drive(tag, location):
     for p in personal:
         if p in tag_lower or p in loc_lower:
             return "Personal"
+
+    for client in private_clients:
+        if client in tag_lower:
+            return "Private Client"
             
     # If it has a specific mission tag, it's business
     if tag and tag != "Uncategorized":

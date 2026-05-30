@@ -309,6 +309,96 @@ def get_day_trips(req: func.HttpRequest) -> func.HttpResponse:
         logging.error(f"Get Day Trips Error: {e}")
         return func.HttpResponse(json.dumps({"success": False, "error": str(e)}), status_code=500, headers=_cors(req), mimetype="application/json")
 
+@bp.route(route="operations/scrub-day", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+def scrub_day(req: func.HttpRequest) -> func.HttpResponse:
+    """
+    Wipes all pipeline-generated records for a given date so the day can be
+    rescanned cleanly from scratch.
+
+    Deletes:
+      - All TRIP-{YYYYMMDD}-* records (Uber + Private receipt extractions)
+
+    Resets (back to Untagged) any TESSIE drives on that date whose Classification
+    was set by the scan pipeline:
+      - Uber_Matched, Uber_Pickup, Private_Trip, Private_Pickup
+
+    Preserves:
+      - INV-* booking records (real customer bookings)
+      - Manual Tessie tags: Jackie, Daniel, Esmeralda, and any other human-applied tags
+    """
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=_cors(req))
+    try:
+        data = req.get_json() if req.get_body() else {}
+        date_str = data.get("date")
+        if not date_str:
+            return func.HttpResponse(
+                json.dumps({"success": False, "error": "date is required (YYYY-MM-DD)"}),
+                status_code=400, headers=_cors(req), mimetype="application/json"
+            )
+
+        import datetime
+        try:
+            dt = datetime.datetime.strptime(date_str, "%Y-%m-%d")
+        except ValueError:
+            return func.HttpResponse(
+                json.dumps({"success": False, "error": "Invalid date format. Use YYYY-MM-DD."}),
+                status_code=400, headers=_cors(req), mimetype="application/json"
+            )
+
+        date_compact = date_str.replace("-", "")
+        date_only = dt.date()
+
+        from services.database import DatabaseClient
+        db = DatabaseClient()
+        conn = db.get_connection()
+        cursor = conn.cursor()
+        logs = []
+
+        # 1. Delete all TRIP- records for this date
+        cursor.execute(
+            "DELETE FROM Rides.Rides WHERE RideID LIKE ?",
+            (f"TRIP-{date_compact}-%",)
+        )
+        deleted_trips = cursor.rowcount
+        logs.append(f"SCRUB: Deleted {deleted_trips} TRIP-{date_compact}-* records")
+
+        # 2. Reset pipeline-applied Tessie drive classifications back to Untagged.
+        #    Only touch classifications that the scan pipeline writes — never human tags.
+        pipeline_classifications = ('Uber_Matched', 'Uber_Pickup', 'Private_Trip', 'Private_Pickup')
+        placeholders = ",".join("?" for _ in pipeline_classifications)
+        cursor.execute(f"""
+            UPDATE Rides.Rides
+            SET TripType = NULL,
+                Classification = 'Untagged',
+                LastUpdated = GETUTCDATE()
+            WHERE RideID LIKE 'TESSIE-%'
+              AND CAST(Timestamp_Start AS DATE) = ?
+              AND Classification IN ({placeholders})
+        """, (date_only, *pipeline_classifications))
+        reset_drives = cursor.rowcount
+        logs.append(f"SCRUB: Reset {reset_drives} Tessie drive(s) to Untagged on {date_str}")
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        logs.append(f"SCRUB COMPLETE: {date_str} is clean. Upload Uber screenshots to OneDrive then hit Scan Day.")
+        logging.info(f"Scrub Day {date_str}: {deleted_trips} TRIP records deleted, {reset_drives} Tessie drives reset.")
+
+        return func.HttpResponse(
+            json.dumps({"success": True, "date": date_str, "deleted_trips": deleted_trips, "reset_drives": reset_drives, "logs": logs}),
+            status_code=200, headers=_cors(req), mimetype="application/json"
+        )
+    except Exception as e:
+        logging.error(f"Scrub Day Error: {e}")
+        return func.HttpResponse(
+            json.dumps({"success": False, "error": str(e)}),
+            status_code=500, headers=_cors(req), mimetype="application/json"
+        )
+
+
+
 @bp.route(route="operations/scan-day-expenses", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def scan_day_expenses(req: func.HttpRequest) -> func.HttpResponse:
     """Scans and extracts expense receipts from OneDrive daily folders, saving them to SQL and Vector Store."""
