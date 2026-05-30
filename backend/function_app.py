@@ -34,6 +34,7 @@ blueprints = [
     "api.operations",
     "api.diag_drivers",
     "api.timer_reports",
+    "api.timer_nightly_sync",
     "api.cabin",
     "api.weather",
     "api.automation",
