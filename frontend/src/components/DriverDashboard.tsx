@@ -1522,7 +1522,7 @@ const IntelligenceSyncPanel: React.FC<{
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-4 mt-4">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4 mt-4">
                 <button
                     disabled={status === 'running'}
                     onClick={() => runSync(false)}
@@ -1537,25 +1537,8 @@ const IntelligenceSyncPanel: React.FC<{
                     className="flex flex-col items-center justify-center gap-0.5 py-3 rounded-xl text-[10px] font-bold bg-amber-50 border border-amber-200 text-amber-700 hover:bg-amber-100 transition-all disabled:opacity-50"
                 >
                     <span>Rebuild Day</span>
-                    <span className="text-[8px] font-normal text-amber-600/80 normal-case">Tessie + Bank + Scan</span>
+                    <span className="text-[8px] font-normal text-amber-600/80 normal-case">Tessie + OCR + Expenses</span>
                 </button>
-                <div className="flex flex-col gap-1">
-                    <button
-                        disabled={status === 'running'}
-                        onClick={runScanDay}
-                        className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 rounded-t-xl text-[10px] font-bold bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 transition-all disabled:opacity-50"
-                    >
-                        <span>Scan Day</span>
-                        <span className="text-[8px] font-normal text-emerald-600/80 normal-case">Auto-scan OneDrive folder</span>
-                    </button>
-                    <button
-                        disabled={status === 'running'}
-                        onClick={runOneDriveSyncCustom}
-                        className="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-b-xl text-[9px] font-bold bg-emerald-50/50 border border-t-0 border-emerald-200 text-emerald-700 hover:bg-emerald-100 transition-all disabled:opacity-50"
-                    >
-                        <span>Custom Folder ↗</span>
-                    </button>
-                </div>
                 <button
                     disabled={status === 'running'}
                     onClick={runScrubDay}
