@@ -10,6 +10,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
 
+  <!-- heatmap.js — replaces the deprecated Google Maps visualization library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/heatmap.js/2.0.2/heatmap.min.js"></script>
+
   <style>
     :root {
       --bg-dark:     #090d14;
@@ -18,65 +21,28 @@
       --border:      rgba(255,255,255,0.08);
       --accent-blue: #3b82f6;
       --accent-cyan: #06b6d4;
-      --accent-emer: #10b981;
-      --accent-warn: #f59e0b;
-      --accent-red:  #ef4444;
       --text-primary:   #ffffff;
       --text-secondary: #f1f5f9;
       --text-muted:     #cbd5e1;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Inter', sans-serif;
-      background: var(--bg-dark); color: var(--text-primary);
-      height: 100vh; display: flex; flex-direction: column; overflow: hidden;
-    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg-dark); color: var(--text-primary); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
     /* ── Header ── */
-    header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 20px; height: 56px; background: var(--bg-card);
-      border-bottom: 1px solid var(--border); flex-shrink: 0; gap: 12px; z-index: 1000;
-    }
-    .brand {
-      display: flex; align-items: center; gap: 10px;
-      font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700;
-      letter-spacing: -0.3px; white-space: nowrap;
-    }
-    .brand-icon {
-      width: 28px; height: 28px; background: linear-gradient(135deg, #3b82f6, #06b6d4);
-      border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px;
-    }
+    header { display: flex; align-items: center; justify-content: space-between; padding: 0 20px; height: 56px; background: var(--bg-card); border-bottom: 1px solid var(--border); flex-shrink: 0; gap: 12px; z-index: 1000; }
+    .brand { display: flex; align-items: center; gap: 10px; font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: -0.3px; white-space: nowrap; }
+    .brand-icon { width: 28px; height: 28px; background: linear-gradient(135deg, #3b82f6, #06b6d4); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
     .brand span.sub { color: var(--text-secondary); font-weight: 400; font-size: 14px; }
     .controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .ctrl-group {
-      display: flex; align-items: center; gap: 6px;
-      background: var(--bg-surface); border: 1px solid var(--border);
-      border-radius: 8px; padding: 4px 8px;
-    }
+    .ctrl-group { display: flex; align-items: center; gap: 6px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; padding: 4px 8px; }
     .ctrl-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
-    select, input[type="range"] {
-      background: transparent; border: none; color: var(--text-primary);
-      font-family: 'Inter', sans-serif; font-size: 13px; outline: none; cursor: pointer;
-    }
+    select, input[type="range"] { background: transparent; border: none; color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 13px; outline: none; cursor: pointer; }
     select option { background: #1e2a3a; }
-    .mode-tabs {
-      display: flex; gap: 2px; background: var(--bg-surface); border: 1px solid var(--border);
-      border-radius: 8px; padding: 3px;
-    }
-    .mode-tab {
-      padding: 4px 10px; border-radius: 5px; font-size: 12px; font-weight: 500;
-      cursor: pointer; border: none; background: transparent; color: var(--text-secondary);
-      transition: all 0.2s; white-space: nowrap;
-    }
+    .mode-tabs { display: flex; gap: 2px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; padding: 3px; }
+    .mode-tab { padding: 4px 10px; border-radius: 5px; font-size: 12px; font-weight: 500; cursor: pointer; border: none; background: transparent; color: var(--text-secondary); transition: all 0.2s; white-space: nowrap; }
     .mode-tab.active      { background: var(--accent-blue); color: #fff; }
     .mode-tab.active-earn { background: #10b981; color: #fff; }
-    .btn-refresh {
-      display: flex; align-items: center; gap: 6px; padding: 7px 14px;
-      background: linear-gradient(135deg, #3b82f6, #06b6d4);
-      border: none; border-radius: 8px; color: #fff; font-size: 13px; font-weight: 600;
-      cursor: pointer; transition: opacity 0.2s; white-space: nowrap;
-    }
+    .btn-refresh { display: flex; align-items: center; gap: 6px; padding: 7px 14px; background: linear-gradient(135deg, #3b82f6, #06b6d4); border: none; border-radius: 8px; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; white-space: nowrap; }
     .btn-refresh:hover { opacity: 0.85; }
     .btn-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -84,13 +50,8 @@
     .main { display: flex; flex: 1; overflow: hidden; }
 
     /* ── Sidebar ── */
-    .sidebar {
-      width: 270px; flex-shrink: 0; background: var(--bg-card);
-      border-right: 1px solid var(--border); display: flex; flex-direction: column;
-      overflow-y: auto; z-index: 500;
-    }
+    .sidebar { width: 270px; flex-shrink: 0; background: var(--bg-card); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; z-index: 500; }
     .sidebar-section { padding: 14px 16px; border-bottom: 1px solid var(--border); }
-    .sidebar-section:last-child { border-bottom: none; }
     .section-title { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
     .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .stat-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px; transition: border-color 0.2s; }
@@ -101,11 +62,7 @@
     .stat-label { font-size: 10px; color: var(--text-muted); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.3px; }
     .legend-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; color: var(--text-secondary); }
     .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-    .zone-item {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 8px 10px; background: var(--bg-surface); border: 1px solid var(--border);
-      border-radius: 8px; margin-bottom: 6px; font-size: 12px; transition: border-color 0.2s; cursor: pointer;
-    }
+    .zone-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; font-size: 12px; transition: border-color 0.2s; cursor: pointer; }
     .zone-item:hover { border-color: rgba(59,130,246,0.5); }
     .zone-name { color: var(--text-primary); font-weight: 500; }
     .zone-count { font-size: 11px; padding: 2px 8px; border-radius: 100px; background: rgba(59,130,246,0.15); color: var(--accent-blue); font-weight: 600; }
@@ -125,16 +82,18 @@
     .rec-hotspot-item:hover { background: rgba(6,182,212,0.05); border-color: rgba(6,182,212,0.3); transform: translateX(2px); }
     .rec-tip-box { border-left: 3px solid var(--accent-cyan); background: rgba(6,182,212,0.03); padding: 8px 10px; border-radius: 0 8px 8px 0; font-size: 10px; line-height: 1.4; color: var(--text-secondary); margin-top: 8px; }
 
-    /* ── Map ── */
+    /* ── Map area ── */
     .map-wrap { flex: 1; position: relative; display: flex; flex-direction: column; }
     #map { flex: 1; width: 100%; }
 
-    /* ── Loading ── */
-    .loading-overlay {
-      position: absolute; inset: 0; background: rgba(9,13,20,0.92);
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 16px; z-index: 9999; backdrop-filter: blur(6px); transition: opacity 0.4s;
+    /* heatmap.js canvas overlay — must sit on top of tiles, below UI */
+    #heatmap-canvas-container {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 58px; /* 58px = timeline bar */
+      pointer-events: none; z-index: 200;
     }
+
+    /* ── Loading ── */
+    .loading-overlay { position: absolute; inset: 0; background: rgba(9,13,20,0.92); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; z-index: 9999; backdrop-filter: blur(6px); transition: opacity 0.4s; }
     .loading-overlay.hidden { opacity: 0; pointer-events: none; }
     .spinner { width: 44px; height: 44px; border: 3px solid rgba(59,130,246,0.2); border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -144,32 +103,16 @@
     .loading-dismiss:hover { background: rgba(255,255,255,0.15); color: #fff; }
 
     /* ── Map pill ── */
-    .map-pill {
-      position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%);
-      background: rgba(15,22,35,0.92); border: 1px solid var(--border); border-radius: 100px;
-      padding: 8px 20px; font-size: 12px; color: var(--text-secondary);
-      backdrop-filter: blur(8px); z-index: 500; white-space: nowrap; pointer-events: none;
-    }
+    .map-pill { position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%); background: rgba(15,22,35,0.92); border: 1px solid var(--border); border-radius: 100px; padding: 8px 20px; font-size: 12px; color: var(--text-secondary); backdrop-filter: blur(8px); z-index: 500; white-space: nowrap; pointer-events: none; }
     .map-pill strong { color: var(--text-primary); }
 
     /* ── Timeline ── */
-    #timeline-bar {
-      height: 58px; background: rgba(9,13,20,0.95); border-top: 1px solid var(--border);
-      display: flex; align-items: center; gap: 12px; padding: 0 16px; flex-shrink: 0; z-index: 600;
-    }
+    #timeline-bar { height: 58px; background: rgba(9,13,20,0.95); border-top: 1px solid var(--border); display: flex; align-items: center; gap: 12px; padding: 0 16px; flex-shrink: 0; z-index: 600; }
     .tl-label { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; white-space: nowrap; }
-    #play-btn {
-      width: 34px; height: 34px; background: linear-gradient(135deg, #3b82f6, #06b6d4);
-      border: none; border-radius: 50%; color: #fff; font-size: 14px; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      transition: transform 0.15s; box-shadow: 0 0 14px rgba(59,130,246,0.35); flex-shrink: 0;
-    }
+    #play-btn { width: 34px; height: 34px; background: linear-gradient(135deg, #3b82f6, #06b6d4); border: none; border-radius: 50%; color: #fff; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.15s; box-shadow: 0 0 14px rgba(59,130,246,0.35); flex-shrink: 0; }
     #play-btn:hover { transform: scale(1.1); }
     .tl-track { flex: 1; position: relative; height: 34px; display: flex; align-items: center; }
-    #hour-scrubber {
-      width: 100%; -webkit-appearance: none; appearance: none; height: 4px;
-      background: rgba(255,255,255,0.1); border-radius: 2px; outline: none; cursor: pointer; z-index: 1; position: relative;
-    }
+    #hour-scrubber { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; outline: none; cursor: pointer; z-index: 1; position: relative; }
     #hour-scrubber::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: linear-gradient(135deg, #3b82f6, #06b6d4); border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 10px rgba(59,130,246,0.6); cursor: pointer; }
     .tl-fill { position: absolute; left: 0; top: 50%; height: 4px; transform: translateY(-50%); background: linear-gradient(90deg, #3b82f6, #06b6d4); border-radius: 2px; pointer-events: none; }
     .tl-hour-marks { position: absolute; bottom: -2px; left: 0; right: 0; display: flex; justify-content: space-between; pointer-events: none; }
@@ -177,8 +120,7 @@
     #tl-time-display { font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: var(--accent-cyan); min-width: 80px; text-align: right; white-space: nowrap; }
     #tl-count { font-size: 11px; color: var(--text-muted); min-width: 60px; white-space: nowrap; }
 
-    /* InfoWindow */
-    .gm-style .gm-style-iw-c { padding: 0 !important; border-radius: 10px !important; box-shadow: 0 8px 32px rgba(0,0,0,0.4) !important; }
+    .gm-style .gm-style-iw-c { padding: 0 !important; border-radius: 10px !important; }
     .gm-style .gm-style-iw-d { overflow: hidden !important; }
   </style>
 </head>
@@ -187,8 +129,7 @@
 <header>
   <div class="brand">
     <div class="brand-icon">🗺</div>
-    Summit OS
-    <span class="sub">/ Uber Activity Heatmap</span>
+    Summit OS <span class="sub">/ Uber Activity Heatmap</span>
   </div>
   <div class="controls">
     <div class="ctrl-group">
@@ -207,10 +148,10 @@
       <span class="ctrl-label">Map</span>
       <select id="tile-select">
         <option value="dark">Dark Theme</option>
-        <option value="roadmap">Google Streets</option>
-        <option value="satellite">Google Satellite</option>
-        <option value="hybrid" selected>Google Hybrid</option>
-        <option value="terrain">Google Terrain</option>
+        <option value="roadmap">Streets</option>
+        <option value="satellite">Satellite</option>
+        <option value="hybrid" selected>Hybrid</option>
+        <option value="terrain">Terrain</option>
       </select>
     </div>
     <div class="ctrl-group">
@@ -255,7 +196,7 @@
         <div class="stat-card"><div class="stat-value blue"  id="stat-trips">—</div><div class="stat-label">Uber Trips</div></div>
         <div class="stat-card"><div class="stat-value"       id="stat-miles">—</div><div class="stat-label">Total Miles</div></div>
         <div class="stat-card"><div class="stat-value green" id="stat-earn">—</div><div class="stat-label">Earnings</div></div>
-        <div class="stat-card"><div class="stat-value"       id="stat-avg">—</div><div class="stat-label">Avg Miles/Trip</div></div>
+        <div class="stat-card"><div class="stat-value"       id="stat-avg">—</div><div class="stat-label">Avg Mi/Trip</div></div>
       </div>
       <div class="error-box" id="error-box"></div>
     </div>
@@ -279,10 +220,10 @@
 
     <div class="sidebar-section">
       <div class="section-title">🌡 Heat Legend</div>
-      <div class="legend-row"><div class="legend-dot" style="background:rgba(37,99,235,0.9);"></div><span>Low activity</span></div>
-      <div class="legend-row"><div class="legend-dot" style="background:rgba(6,182,212,0.9);"></div><span>Moderate</span></div>
-      <div class="legend-row"><div class="legend-dot" style="background:rgba(16,185,129,1);"></div><span>High activity</span></div>
-      <div class="legend-row"><div class="legend-dot" style="background:rgba(239,68,68,0.9);"></div><span>Very high</span></div>
+      <div class="legend-row"><div class="legend-dot" style="background:#3b82f6;"></div><span>Low activity</span></div>
+      <div class="legend-row"><div class="legend-dot" style="background:#06b6d4;"></div><span>Moderate</span></div>
+      <div class="legend-row"><div class="legend-dot" style="background:#10b981;"></div><span>High activity</span></div>
+      <div class="legend-row"><div class="legend-dot" style="background:#ef4444;"></div><span>Very high</span></div>
     </div>
 
     <div class="sidebar-section">
@@ -315,8 +256,7 @@
 
     <div class="sidebar-section" style="margin-top:auto;">
       <div style="font-size:11px;color:var(--text-muted);line-height:1.5;">
-        <span class="live-dot"></span>
-        Tessie API · Summit OS backend · Uber-tagged drives
+        <span class="live-dot"></span>Tessie API · Summit OS · Uber-tagged drives
       </div>
     </div>
   </aside>
@@ -324,9 +264,12 @@
   <div class="map-wrap">
     <div id="map"></div>
 
+    <!-- heatmap.js renders into this overlay div, positioned over the map -->
+    <div id="heatmap-canvas-container"></div>
+
     <div class="loading-overlay" id="loading-overlay">
       <div class="spinner" id="loading-spinner"></div>
-      <div class="loading-text" id="loading-text">Initializing Google Maps…</div>
+      <div class="loading-text" id="loading-text">Initializing map…</div>
       <div class="loading-error" id="loading-error"></div>
       <button class="loading-dismiss" id="loading-dismiss" onclick="showLoading(false)">Dismiss &amp; Continue</button>
     </div>
@@ -337,19 +280,15 @@
 
     <div id="timeline-bar">
       <span class="tl-label">Timeline</span>
-      <button id="play-btn" onclick="togglePlayback()" title="Play">▶</button>
+      <button id="play-btn" onclick="togglePlayback()">▶</button>
       <div class="tl-track">
         <div class="tl-fill" id="tl-fill" style="width:0%"></div>
         <input type="range" id="hour-scrubber" min="0" max="23" value="0" step="1" />
         <div class="tl-hour-marks">
-          <span class="tl-hour-mark">12a</span>
-          <span class="tl-hour-mark">3a</span>
-          <span class="tl-hour-mark">6a</span>
-          <span class="tl-hour-mark">9a</span>
-          <span class="tl-hour-mark">12p</span>
-          <span class="tl-hour-mark">3p</span>
-          <span class="tl-hour-mark">6p</span>
-          <span class="tl-hour-mark">9p</span>
+          <span class="tl-hour-mark">12a</span><span class="tl-hour-mark">3a</span>
+          <span class="tl-hour-mark">6a</span><span class="tl-hour-mark">9a</span>
+          <span class="tl-hour-mark">12p</span><span class="tl-hour-mark">3p</span>
+          <span class="tl-hour-mark">6p</span><span class="tl-hour-mark">9p</span>
           <span class="tl-hour-mark">11p</span>
         </div>
       </div>
@@ -359,7 +298,7 @@
   </div>
 </div>
 
-<!-- ── Google Maps: new Dynamic Library Import bootstrapper ── -->
+<!-- Google Maps Dynamic Import bootstrapper (no deprecated visualization library) -->
 <script>
 (g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await(a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once. Ignoring:",g):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({
   key: "AIzaSyBT0LFhvFDL-DAKXcLw3ddU8NtDJQfdCGM",
@@ -380,9 +319,9 @@ const BACKEND = (() => {
 const COS_CENTER = { lat: 38.8339, lng: -104.8214 };
 
 const DARK_STYLES = [
-  { elementType: 'geometry',            stylers: [{ color: '#0d1117' }] },
-  { elementType: 'labels.text.stroke',  stylers: [{ color: '#0d1117' }] },
-  { elementType: 'labels.text.fill',    stylers: [{ color: '#4a5568' }] },
+  { elementType: 'geometry',           stylers: [{ color: '#0d1117' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#0d1117' }] },
+  { elementType: 'labels.text.fill',   stylers: [{ color: '#4a5568' }] },
   { featureType: 'road', elementType: 'geometry',         stylers: [{ color: '#1e293b' }] },
   { featureType: 'road', elementType: 'geometry.stroke',  stylers: [{ color: '#111827' }] },
   { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#243244' }] },
@@ -395,32 +334,95 @@ const DARK_STYLES = [
 // ─────────────────────────────────────────────────────────────────────────────
 // State
 // ─────────────────────────────────────────────────────────────────────────────
-let map         = null;
-let heatLayer   = null;
+let map          = null;
+let heatInstance = null;   // heatmap.js instance
+let heatOverlay  = null;   // custom OverlayView wrapper
+let latLngPoints = [];     // current set of { lat, lng, weight } objects
 let openInfoWindow = null;
-let allDrives   = [];
-let carMarker   = null;
-let carHalo     = null;
-let hotspotRings= [];
+let allDrives    = [];
+let carMarker    = null;
+let carHalo      = null;
+let hotspotRings = [];
 let liveLocationActive = false;
-let currentMode = 'both';
-let earnMode    = false;
-let heatRadius  = 30;
-let timelineHour= -1;
+let currentMode  = 'both';
+let earnMode     = false;
+let heatRadius   = 30;
+let timelineHour = -1;
 let playbackTimer = null;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Boot — uses importLibrary so both 'maps' and 'visualization' are guaranteed
+// Custom heatmap overlay — wraps heatmap.js into Google Maps coordinate system
+// ─────────────────────────────────────────────────────────────────────────────
+function createHeatOverlay(googleMap) {
+  const container = document.getElementById('heatmap-canvas-container');
+
+  // Create heatmap.js instance inside the overlay div
+  heatInstance = h337.create({
+    container:  container,
+    maxOpacity: 0.85,
+    minOpacity: 0,
+    blur:       0.85,
+    radius:     heatRadius,
+    gradient: {
+      '0.0': 'rgba(0,0,0,0)',
+      '0.3': '#2563eb',
+      '0.5': '#06b6d4',
+      '0.65': '#10b981',
+      '0.8':  '#f59e0b',
+      '1.0':  '#ef4444',
+    },
+  });
+
+  // Size the container to match the map div
+  function syncSize() {
+    const mapDiv = googleMap.getDiv();
+    container.style.width  = mapDiv.offsetWidth  + 'px';
+    container.style.height = mapDiv.offsetHeight - 58 + 'px'; // subtract timeline bar
+  }
+  syncSize();
+  window.addEventListener('resize', () => { syncSize(); redrawHeat(); });
+
+  // Redraw on pan / zoom
+  googleMap.addListener('bounds_changed', redrawHeat);
+}
+
+// Convert lat/lng to pixel position relative to the map's top-left corner
+function latLngToPixel(latLng) {
+  const mapDiv   = map.getDiv();
+  const bounds   = map.getBounds();
+  const ne       = bounds.getNorthEast();
+  const sw       = bounds.getSouthWest();
+  const w        = mapDiv.offsetWidth;
+  const h        = mapDiv.offsetHeight - 58;
+  const x = (latLng.lng - sw.lng()) / (ne.lng() - sw.lng()) * w;
+  const y = (1 - (latLng.lat - sw.lat()) / (ne.lat() - sw.lat())) * h;
+  return { x: Math.round(x), y: Math.round(y) };
+}
+
+function redrawHeat() {
+  if (!heatInstance || !map || !map.getBounds() || latLngPoints.length === 0) return;
+
+  const mapDiv = map.getDiv();
+  const w = mapDiv.offsetWidth;
+  const h = mapDiv.offsetHeight - 58;
+
+  const pts = latLngPoints
+    .map(p => {
+      const px = latLngToPixel(p);
+      return { x: px.x, y: px.y, value: Math.round(p.weight * 10) };
+    })
+    .filter(p => p.x >= -50 && p.x <= w + 50 && p.y >= -50 && p.y <= h + 50); // clip to visible area
+
+  heatInstance.setData({ max: 10, data: pts });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Boot
 // ─────────────────────────────────────────────────────────────────────────────
 async function boot() {
   try {
     showLoading(true, 'Loading Google Maps…');
-
-    // importLibrary guarantees the library is fully loaded before continuing
     const { Map, StyledMapType } = await google.maps.importLibrary('maps');
-    const { HeatmapLayer }       = await google.maps.importLibrary('visualization');
-
-    showLoading(true, 'Initializing map…');
 
     map = new Map(document.getElementById('map'), {
       center:    COS_CENTER,
@@ -431,54 +433,30 @@ async function boot() {
       zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_BOTTOM },
     });
 
-    // Dark styled map
     const darkType = new StyledMapType(DARK_STYLES, { name: 'Dark' });
     map.mapTypes.set('dark', darkType);
 
-    // Heat layer — guaranteed to exist because importLibrary resolved
-    heatLayer = new HeatmapLayer({
-      data: [],
-      map,
-      radius: heatRadius,
-      gradient: [
-        'rgba(0,0,0,0)',
-        'rgba(37,99,235,0.7)',
-        'rgba(59,130,246,0.85)',
-        'rgba(6,182,212,0.9)',
-        'rgba(16,185,129,1)',
-        'rgba(245,158,11,1)',
-        'rgba(239,68,68,1)',
-      ],
-      maxIntensity: 8,
-      opacity: 0.9,
-    });
+    // Initialise heatmap.js overlay (no Google visualization library needed)
+    createHeatOverlay(map);
 
     showLoading(false);
     wireControls();
 
-    // Auto-load data
     await loadData();
     updateLiveLocation();
     setInterval(updateLiveLocation, 15000);
-
   } catch (err) {
     console.error('boot error:', err);
     showLoading(true, 'Initialization failed', err.message);
   }
 }
 
-// Start as soon as the page is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', boot);
-} else {
-  boot();
-}
+document.addEventListener('DOMContentLoaded', boot);
 
-// Hard 30s fallback
 setTimeout(() => {
   const ov = document.getElementById('loading-overlay');
   if (ov && !ov.classList.contains('hidden'))
-    showLoading(true, 'Taking longer than expected…', 'Check internet connection, then dismiss.');
+    showLoading(true, 'Taking longer than expected…', 'Check connection, then dismiss.');
 }, 30000);
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -492,13 +470,10 @@ function showLoading(show, text, errorMsg) {
   const dis = document.getElementById('loading-dismiss');
   if (text) tx.textContent = text;
   if (errorMsg) {
-    sp.style.display  = 'none';
-    er.style.display  = 'block';
-    er.textContent    = errorMsg;
-    dis.style.display = 'block';
+    sp.style.display = 'none'; er.style.display = 'block';
+    er.textContent = errorMsg; dis.style.display = 'block';
   } else {
-    sp.style.display  = '';
-    er.style.display  = 'none';
+    sp.style.display = ''; er.style.display = 'none';
     if (!show) dis.style.display = 'none';
   }
   ov.classList.toggle('hidden', !show);
@@ -514,7 +489,7 @@ function wireControls() {
   document.getElementById('tile-select').addEventListener('change', e => map.setMapTypeId(e.target.value));
   document.getElementById('radius-slider').addEventListener('input', e => {
     heatRadius = parseInt(e.target.value);
-    if (heatLayer) heatLayer.set('radius', heatRadius);
+    if (heatInstance) { heatInstance.configure({ radius: heatRadius }); redrawHeat(); }
   });
   document.getElementById('days-select').addEventListener('change', loadData);
   document.getElementById('hour-filter-select').addEventListener('change', () => {
@@ -530,8 +505,8 @@ function wireControls() {
 }
 
 function fmtHour(h) {
-  if (h === 0)  return '12:00 AM';
-  if (h < 12)   return h + ':00 AM';
+  if (h === 0) return '12:00 AM';
+  if (h < 12)  return h + ':00 AM';
   if (h === 12) return '12:00 PM';
   return (h - 12) + ':00 PM';
 }
@@ -544,6 +519,13 @@ function animateCount(el, target, prefix, decimals) {
     el.textContent = (prefix || '') + v.toFixed(decimals || 0);
     if (t < 1) requestAnimationFrame(step);
   })(t0);
+}
+
+function parseLocalDate(s) {
+  if (!s) return null;
+  const [y, m, d] = s.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  return isNaN(dt) ? null : dt;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -565,14 +547,7 @@ function setEarnMode(on) {
 }
 
 function flyToZone(lat, lon) {
-  if (map) { map.panTo(new google.maps.LatLng(lat, lon)); map.setZoom(14); }
-}
-
-function parseLocalDate(s) {
-  if (!s) return null;
-  const [y, m, d] = s.split('-').map(Number);
-  const dt = new Date(y, m - 1, d);
-  return isNaN(dt) ? null : dt;
+  if (map) { map.panTo({ lat, lng: lon }); map.setZoom(14); }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -637,12 +612,12 @@ function getFilteredDrives() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Heatmap
+// Render heatmap — builds lat/lng point list, then draws via heatmap.js
 // ─────────────────────────────────────────────────────────────────────────────
 function renderHeatmap() {
-  if (!heatLayer) return;
+  if (!heatInstance) return;
   const drives = getFilteredDrives();
-  const pts = [];
+  latLngPoints = [];
 
   drives.forEach(d => {
     const sLat = d._start_lat || d.start_lat;
@@ -654,19 +629,21 @@ function renderHeatmap() {
       : Math.min(1, 0.4 + (d.distance_miles || 0) / 30);
 
     if ((currentMode === 'both' || currentMode === 'pickup') && sLat && sLon)
-      pts.push({ location: new google.maps.LatLng(sLat, sLon), weight: w });
+      latLngPoints.push({ lat: +sLat, lng: +sLon, weight: w });
     if ((currentMode === 'both' || currentMode === 'dropoff') && eLat && eLon)
-      pts.push({ location: new google.maps.LatLng(eLat, eLon), weight: w });
+      latLngPoints.push({ lat: +eLat, lng: +eLon, weight: w });
   });
 
-  heatLayer.setData(pts);
-  heatLayer.set('radius', heatRadius);
-  document.getElementById('pill-count').textContent = pts.length + ' points';
+  document.getElementById('pill-count').textContent = latLngPoints.length + ' points';
 
-  if (pts.length > 0 && timelineHour < 0) {
+  if (latLngPoints.length > 0 && timelineHour < 0) {
     const bounds = new google.maps.LatLngBounds();
-    pts.forEach(p => bounds.extend(p.location));
+    latLngPoints.forEach(p => bounds.extend(new google.maps.LatLng(p.lat, p.lng)));
     map.fitBounds(bounds, { top: 40, right: 40, bottom: 80, left: 40 });
+    // Wait for bounds to settle before drawing
+    google.maps.event.addListenerOnce(map, 'idle', redrawHeat);
+  } else {
+    redrawHeat();
   }
 }
 
@@ -678,16 +655,8 @@ function renderHotspotRings(zones) {
   hotspotRings = [];
   const radii = [600, 450, 300];
   zones.slice(0, 3).forEach((z, i) => {
-    const ring = new google.maps.Circle({
-      center: { lat: z.lat, lng: z.lon }, radius: radii[i], map,
-      strokeColor: '#06b6d4', strokeOpacity: 0.45 - i * 0.1, strokeWeight: 1.5,
-      fillColor: '#06b6d4', fillOpacity: 0.04, clickable: false,
-    });
-    const pulse = new google.maps.Circle({
-      center: { lat: z.lat, lng: z.lon }, radius: radii[i] * 1.6, map,
-      strokeColor: '#3b82f6', strokeOpacity: 0.2, strokeWeight: 1,
-      fillOpacity: 0, clickable: false,
-    });
+    const ring = new google.maps.Circle({ center: { lat: z.lat, lng: z.lon }, radius: radii[i], map, strokeColor: '#06b6d4', strokeOpacity: 0.45 - i*0.1, strokeWeight: 1.5, fillColor: '#06b6d4', fillOpacity: 0.04, clickable: false });
+    const pulse = new google.maps.Circle({ center: { lat: z.lat, lng: z.lon }, radius: radii[i]*1.6, map, strokeColor: '#3b82f6', strokeOpacity: 0.2, strokeWeight: 1, fillOpacity: 0, clickable: false });
     hotspotRings.push(ring, pulse);
   });
   let phase = 0;
@@ -695,10 +664,7 @@ function renderHotspotRings(zones) {
     phase += 0.03;
     zones.slice(0, 3).forEach((z, i) => {
       const p = hotspotRings[i * 2 + 1];
-      if (p && p.setRadius) {
-        p.setRadius(radii[i] * 1.6 * (1 + 0.08 * Math.sin(phase + i)));
-        p.setOptions({ strokeOpacity: 0.15 + 0.1 * Math.sin(phase + i) });
-      }
+      if (p && p.setRadius) { p.setRadius(radii[i]*1.6*(1+0.08*Math.sin(phase+i))); p.setOptions({ strokeOpacity: 0.15+0.1*Math.sin(phase+i) }); }
     });
     requestAnimationFrame(pulsate);
   })();
@@ -715,33 +681,27 @@ function renderStatsAnimated() {
   animateCount(document.getElementById('stat-miles'), miles);
   if (earn > 0) animateCount(document.getElementById('stat-earn'), earn, '$');
   else document.getElementById('stat-earn').textContent = '—';
-  animateCount(document.getElementById('stat-avg'), count > 0 ? miles / count : 0, '', 1);
+  animateCount(document.getElementById('stat-avg'), count > 0 ? miles/count : 0, '', 1);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Hour chart
+// Charts
 // ─────────────────────────────────────────────────────────────────────────────
 function renderTimeChart() {
   const hc = new Array(24).fill(0);
-  allDrives.forEach(d => {
-    if (d.time_mst) { const h = parseInt(d.time_mst.split(':')[0], 10); if (!isNaN(h)) hc[h]++; }
-  });
+  allDrives.forEach(d => { if (d.time_mst) { const h = parseInt(d.time_mst.split(':')[0],10); if (!isNaN(h)) hc[h]++; } });
   const maxH = Math.max(...hc, 1);
-  const container = document.getElementById('hour-bars');
-  container.innerHTML = '';
+  const container = document.getElementById('hour-bars'); container.innerHTML = '';
   hc.forEach((cnt, hr) => {
     const wrap = document.createElement('div'); wrap.className = 'time-bar-wrap';
     const bar  = document.createElement('div');
     bar.className = 'time-bar' + (hr === timelineHour ? ' highlight' : '');
-    bar.style.height = Math.max(4, (cnt / maxH) * 56) + 'px';
+    bar.style.height = Math.max(4, (cnt/maxH)*56) + 'px';
     bar.title = hr + ':00 — ' + cnt + ' trips';
     wrap.appendChild(bar); container.appendChild(wrap);
   });
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Day-of-week chart
-// ─────────────────────────────────────────────────────────────────────────────
 function renderDowChart() {
   const dc = new Array(7).fill(0);
   allDrives.forEach(d => { const dt = parseLocalDate(d.date); if (dt) dc[dt.getDay()]++; });
@@ -750,14 +710,14 @@ function renderDowChart() {
   const colors = ['#f59e0b','#3b82f6','#3b82f6','#3b82f6','#3b82f6','#10b981','#10b981'];
   dc.forEach((cnt, i) => {
     const bar = document.createElement('div');
-    bar.style.cssText = 'flex:1;height:' + Math.max(3, (cnt / maxD) * 46) + 'px;background:' + colors[i] + ';border-radius:2px 2px 0 0;transition:height 0.6s;';
-    bar.title = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][i] + ': ' + cnt + ' trips';
+    bar.style.cssText = 'flex:1;height:'+Math.max(3,(cnt/maxD)*46)+'px;background:'+colors[i]+';border-radius:2px 2px 0 0;transition:height 0.6s;';
+    bar.title = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][i]+': '+cnt+' trips';
     container.appendChild(bar);
   });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Hot zones
+// Zones
 // ─────────────────────────────────────────────────────────────────────────────
 function renderZones() {
   const grid = {};
@@ -765,16 +725,15 @@ function renderZones() {
     [[d._start_lat||d.start_lat, d._start_lon||d.start_lon, (d.start||'').split(',')[0]],
      [d._end_lat||d.end_lat,     d._end_lon||d.end_lon,     (d.end||'').split(',')[0]]
     ].forEach(([lat,lon,label]) => {
-      if (!lat || !lon) return;
+      if (!lat||!lon) return;
       const key = (Math.floor(lat*100)/100)+','+(Math.floor(lon*100)/100);
-      if (!grid[key]) grid[key] = { lat, lon, count: 0, labels: {} };
+      if (!grid[key]) grid[key] = { lat:+lat, lon:+lon, count:0, labels:{} };
       grid[key].count++;
       if (label) grid[key].labels[label] = (grid[key].labels[label]||0)+1;
     });
   });
   const sorted = Object.values(grid).sort((a,b)=>b.count-a.count).slice(0,8);
   renderHotspotRings(sorted);
-
   const container = document.getElementById('zone-list');
   if (!sorted.length) { container.innerHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:8px 0;">No coordinate data</div>'; return; }
   container.innerHTML = '';
@@ -795,10 +754,7 @@ function renderRecommendations() {
   const day = parseInt(document.getElementById('rec-day-select').value);
   const container = document.getElementById('rec-container');
   const dayDrives = allDrives.filter(d => { const dt = parseLocalDate(d.date); return dt && dt.getDay() === day; });
-  if (!dayDrives.length) {
-    container.innerHTML = '<div style="color:var(--text-muted);font-size:11px;text-align:center;padding:12px 0;line-height:1.4;">No data for this day yet.<br>Try a wider range.</div>';
-    return;
-  }
+  if (!dayDrives.length) { container.innerHTML = '<div style="color:var(--text-muted);font-size:11px;text-align:center;padding:12px 0;line-height:1.4;">No data for this day yet.<br>Try a wider range.</div>'; return; }
   const hc = new Array(24).fill(0);
   dayDrives.forEach(d => { if (d.time_mst) { const h=parseInt(d.time_mst.split(':')[0],10); if(!isNaN(h))hc[h]++; } });
   const shifts = [
@@ -809,26 +765,19 @@ function renderRecommendations() {
   ];
   shifts.forEach(s => s.hours.forEach(h => s.count += hc[h]));
   const best = [...shifts].sort((a,b)=>b.count-a.count)[0];
-
   const zc = {};
   dayDrives.forEach(d => {
     const lat=d._start_lat||d.start_lat, lon=d._start_lon||d.start_lon, name=(d.start||'').split(',')[0].trim();
-    if (name&&lat&&lon) { if(!zc[name])zc[name]={count:0,lat,lon}; zc[name].count++; }
+    if (name&&lat&&lon) { if(!zc[name])zc[name]={count:0,lat:+lat,lon:+lon}; zc[name].count++; }
   });
   const topZones = Object.entries(zc).map(([name,v])=>({name,...v})).sort((a,b)=>b.count-a.count).slice(0,3);
   const topName = topZones[0]?.name || 'your main routes';
-  const tip = (day===5||day===6)
-    ? 'Fri/Sat evenings run hottest near entertainment districts. Position near '+topName+' for the 7p–11p window.'
-    : day===0
-    ? 'Sundays cluster around hotel checkouts. Target airport corridors early.'
+  const tip = (day===5||day===6) ? 'Fri/Sat evenings run hottest near entertainment districts. Position near '+topName+' for 7p–11p.'
+    : day===0 ? 'Sundays cluster around hotel checkouts. Target airport corridors early.'
     : 'Commute hours dominate. Hold at '+topName+' for morning/afternoon traffic.';
-
   container.innerHTML =
-    '<div class="rec-card"><div class="rec-title">⏰ Best Shift</div>' +
-    '<div class="rec-value" style="color:var(--accent-cyan)">'+(best.count>0?best.name:'Varies')+'</div>' +
-    '<div style="font-size:10px;color:var(--text-secondary);margin-top:4px;">From '+dayDrives.length+' historical trips.</div></div>' +
-    (topZones.length?'<div class="rec-card"><div class="rec-title">📍 Top Hotspots</div>'+
-      topZones.map((z,i)=>'<div class="rec-hotspot-item" onclick="flyToZone('+z.lat+','+z.lon+')"><span>'+(i+1)+'. '+z.name.substring(0,20)+'</span><strong style="color:var(--accent-cyan)">'+z.count+'&times;</strong></div>').join('')+'</div>':'') +
+    '<div class="rec-card"><div class="rec-title">⏰ Best Shift</div><div class="rec-value" style="color:var(--accent-cyan)">'+(best.count>0?best.name:'Varies')+'</div><div style="font-size:10px;color:var(--text-secondary);margin-top:4px;">From '+dayDrives.length+' historical trips.</div></div>'+
+    (topZones.length?'<div class="rec-card"><div class="rec-title">📍 Top Hotspots</div>'+topZones.map((z,i)=>'<div class="rec-hotspot-item" onclick="flyToZone('+z.lat+','+z.lon+')"><span>'+(i+1)+'. '+z.name.substring(0,20)+'</span><strong style="color:var(--accent-cyan)">'+z.count+'&times;</strong></div>').join('')+'</div>':'') +
     '<div class="rec-tip-box"><strong>💡</strong> '+tip+'</div>';
 }
 
@@ -838,12 +787,8 @@ function renderRecommendations() {
 function updateTimelineDisplay(hr) {
   document.getElementById('tl-fill').style.width = (hr/23*100).toFixed(1)+'%';
   document.getElementById('tl-time-display').textContent = hr>=0 ? fmtHour(hr) : 'All Day';
-  if (allDrives.length > 0 && hr >= 0) {
-    const count = allDrives.filter(d=>parseInt((d.time_mst||'00:00').split(':')[0],10)<=hr).length;
-    document.getElementById('tl-count').textContent = count+' trips';
-  } else {
-    document.getElementById('tl-count').textContent = allDrives.length+' trips';
-  }
+  const count = hr>=0 ? allDrives.filter(d=>parseInt((d.time_mst||'00:00').split(':')[0],10)<=hr).length : allDrives.length;
+  document.getElementById('tl-count').textContent = count+' trips';
   document.querySelectorAll('.time-bar').forEach((b,i)=>b.classList.toggle('highlight',i===hr));
 }
 
@@ -858,17 +803,10 @@ function togglePlayback() {
   if (parseInt(sc.value) >= 23) { sc.value = 0; timelineHour = 0; }
   btn.textContent = '⏸'; btn.style.background = 'linear-gradient(135deg,#f59e0b,#ef4444)';
   playbackTimer = setInterval(() => {
-    const cur = parseInt(document.getElementById('hour-scrubber').value);
-    const next = cur + 1;
-    if (next > 23) {
-      clearInterval(playbackTimer); playbackTimer = null;
-      btn.textContent = '▶'; btn.style.background = 'linear-gradient(135deg,#3b82f6,#06b6d4)';
-      return;
-    }
+    const next = parseInt(document.getElementById('hour-scrubber').value) + 1;
+    if (next > 23) { clearInterval(playbackTimer); playbackTimer = null; btn.textContent = '▶'; btn.style.background = 'linear-gradient(135deg,#3b82f6,#06b6d4)'; return; }
     document.getElementById('hour-scrubber').value = next;
-    timelineHour = next;
-    updateTimelineDisplay(next);
-    renderHeatmap();
+    timelineHour = next; updateTimelineDisplay(next); renderHeatmap();
   }, 700);
 }
 
@@ -881,26 +819,12 @@ async function updateLiveLocation() {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const body = await res.json();
     const loc  = body?.vehicle?.location;
-
     if (loc && loc.lat && loc.long) {
-      const pos   = { lat: loc.lat, lng: loc.long };
-      const speed = loc.speed || 0;
-      const popup = '<div style="font-family:Inter,sans-serif;font-size:12px;color:#1e293b;padding:10px;">' +
-        '<strong style="color:#2563eb;font-size:13px;">&#x26A1; COS Tesla &mdash; Live</strong>' +
-        '<div style="margin-top:4px;">Speed: <strong>'+speed.toFixed(0)+' mph</strong></div>' +
-        '<div style="font-size:10px;color:#64748b;margin-top:2px;">Live &middot; Updates every 15s</div></div>';
-
+      const pos = { lat: loc.lat, lng: loc.long };
+      const popup = '<div style="font-family:Inter,sans-serif;font-size:12px;color:#1e293b;padding:10px;"><strong style="color:#2563eb;font-size:13px;">&#x26A1; COS Tesla &mdash; Live</strong><div style="margin-top:4px;">Speed: <strong>'+(loc.speed||0).toFixed(0)+' mph</strong></div><div style="font-size:10px;color:#64748b;margin-top:2px;">Live &middot; Updates every 15s</div></div>';
       if (!carMarker) {
-        carMarker = new google.maps.Marker({
-          position: pos, map, title: 'COS Tesla — Live',
-          icon: { path: google.maps.SymbolPath.CIRCLE, scale: 14, fillColor: '#3b82f6', fillOpacity: 1, strokeColor: '#ffffff', strokeWeight: 3 },
-          zIndex: 9999,
-        });
-        carHalo = new google.maps.Circle({
-          center: pos, radius: 80, map,
-          strokeColor: '#3b82f6', strokeOpacity: 0.45, strokeWeight: 1.5,
-          fillColor: '#3b82f6', fillOpacity: 0.1, clickable: false, zIndex: 9998,
-        });
+        carMarker = new google.maps.Marker({ position: pos, map, title: 'COS Tesla — Live', icon: { path: google.maps.SymbolPath.CIRCLE, scale: 14, fillColor: '#3b82f6', fillOpacity: 1, strokeColor: '#ffffff', strokeWeight: 3 }, zIndex: 9999 });
+        carHalo = new google.maps.Circle({ center: pos, radius: 80, map, strokeColor: '#3b82f6', strokeOpacity: 0.45, strokeWeight: 1.5, fillColor: '#3b82f6', fillOpacity: 0.1, clickable: false, zIndex: 9998 });
         const iw = new google.maps.InfoWindow({ content: popup });
         carMarker.addListener('click', () => { if (openInfoWindow) openInfoWindow.close(); iw.open(map, carMarker); openInfoWindow = iw; });
         carMarker._iw = iw;
@@ -915,9 +839,7 @@ async function updateLiveLocation() {
       if (carHalo)   { carHalo.setMap(null);   carHalo   = null; }
       liveLocationActive = false;
     }
-  } catch (err) {
-    console.warn('[Live GPS]', err.message);
-  }
+  } catch (err) { console.warn('[Live GPS]', err.message); }
 }
 </script>
 </body>
