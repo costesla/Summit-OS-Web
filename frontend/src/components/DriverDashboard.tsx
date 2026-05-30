@@ -6,7 +6,7 @@ import {
     Navigation, Receipt, RotateCcw, Clock,
     Battery, BatteryCharging, WifiOff, Download,
     MapPin, Gauge, LogOut, Cpu, RefreshCw, Loader2,
-    DollarSign, Cloud, Moon
+    DollarSign, Cloud, Moon, UserCheck
 } from 'lucide-react';
 import { isBackgroundableError, devDebugError, getAsyncExecutionLogs, pollJobStatus } from '../lib/intelligenceUtils';
 
@@ -14,7 +14,7 @@ import { isBackgroundableError, devDebugError, getAsyncExecutionLogs, pollJobSta
 const AZURE_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://summitos-api.azurewebsites.net/api';
 const VERSION = "1.4.5";
 
-const TAG_FILTERS = ['Uber', 'Uber_Matched', 'Uber_Pickup', 'Jackie', 'Esmeralda', 'Uncategorized'] as const;
+const TAG_FILTERS = ['Uber', 'Uber_Matched', 'Uber_Pickup', 'Jackie', 'Esmeralda', 'Private_Trip', 'Uncategorized'] as const;
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface PrivatePayment {
@@ -405,7 +405,9 @@ const TAG_STYLE: Record<string, string> = {
     uber: 'bg-slate-100 text-slate-700 border-slate-200/80',
     jackie: 'bg-purple-50 text-purple-700 border-purple-200/80',
     esmeralda: 'bg-teal-50 text-teal-700 border-teal-200/80',
-    uncategorized: 'bg-amber-50 text-amber-700 border-amber-200/80',
+    private_trip: 'bg-amber-50 text-amber-800 border-amber-300/80',
+    private: 'bg-amber-50 text-amber-800 border-amber-300/80',
+    uncategorized: 'bg-slate-50 text-slate-500 border-slate-200/80',
 };
 const tagStyle = (tag: string | null) => {
     const key = (tag ?? '').toLowerCase() || 'uncategorized';
@@ -814,6 +816,8 @@ const TessieChargesPanel = ({ onImport, selectedDate }: { onImport: (charge: Tes
 interface UberTrip {
     trip_id: string;
     trip_number: number;
+    trip_type?: string;          // 'Uber' | 'Private' — undefined for legacy records
+    classification?: string;
     timestamp: string | null;
     time_display: string;
     service_type: string;
@@ -843,7 +847,10 @@ const UberTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count: n
                 signal: AbortSignal.timeout(12_000), cache: 'no-store'
             });
             const data = resp.ok ? await resp.json() : { trips: [] };
-            const tripList = (data.trips ?? []) as UberTrip[];
+            // Only show Uber trips in this panel — Private trips go to PrivateTripsPanel
+            const tripList = ((data.trips ?? []) as UberTrip[]).filter(
+                (t) => !t.trip_type || t.trip_type === 'Uber'
+            );
             setTrips(tripList);
             const earnings = tripList.reduce((s, t) => s + t.driver_earnings, 0);
             setTotalEarnings(earnings);
@@ -946,6 +953,136 @@ const UberTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count: n
                                 <p className="text-[10px] text-slate-500 font-mono uppercase">Uber Cut</p>
                                 <p className="text-sm font-bold text-rose-600 tabular-nums">${trip.uber_cut.toFixed(2)}</p>
                             </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+// ─── Private Trips Panel ─────────────────────────────────────────────────────
+interface PrivateTrip extends UberTrip {
+    passenger_name?: string | null;
+    classification?: string;
+}
+
+const PrivateTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count: number, earnings: number) => void }> = ({ selectedDate, onTripsLoaded }) => {
+    const [trips, setTrips] = useState<PrivateTrip[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [totalEarnings, setTotalEarnings] = useState(0);
+
+    const onTripsLoadedRef = useRef(onTripsLoaded);
+    onTripsLoadedRef.current = onTripsLoaded;
+
+    const fetchTrips = useCallback(async () => {
+        setLoading(true);
+        try {
+            const resp = await fetch(`${AZURE_BASE}/operations/get-day-trips?date=${selectedDate}&t=${Date.now()}`, {
+                signal: AbortSignal.timeout(12_000), cache: 'no-store'
+            });
+            const data = resp.ok ? await resp.json() : { trips: [] };
+            // Only show Private trips in this panel
+            const tripList = ((data.trips ?? []) as PrivateTrip[]).filter(
+                (t) => t.trip_type === 'Private'
+            );
+            setTrips(tripList);
+            const earnings = tripList.reduce((s, t) => s + t.driver_earnings, 0);
+            setTotalEarnings(earnings);
+            onTripsLoadedRef.current?.(tripList.length, earnings);
+        } catch {
+            setTrips([]);
+            onTripsLoadedRef.current?.(0, 0);
+        } finally {
+            setLoading(false);
+        }
+    }, [selectedDate]);
+
+    useEffect(() => { fetchTrips(); }, [fetchTrips]);
+
+    return (
+        <div className="rounded-2xl border border-amber-200/80 overflow-hidden bg-amber-50/30 shadow-sm"
+            style={{ backdropFilter: 'blur(16px)' }}>
+            <div className="p-5 border-b border-amber-200/80 flex flex-wrap items-center gap-3 justify-between">
+                <div className="flex items-center gap-2">
+                    <UserCheck className="w-4 h-4 text-amber-600" />
+                    <h2 className="font-bold text-slate-800">Private Bookings</h2>
+                    <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">{selectedDate}</span>
+                    {trips.length > 0 && (
+                        <span className="text-xs font-bold px-2.5 py-0.5 rounded-full border border-amber-200 bg-amber-100/80 text-amber-700 font-mono">
+                            {trips.length} trip{trips.length !== 1 ? 's' : ''} · ${totalEarnings.toFixed(2)}
+                        </span>
+                    )}
+                </div>
+                <div className="flex items-center gap-2">
+                    <button onClick={fetchTrips} disabled={loading}
+                        className="text-xs font-bold px-2.5 py-1 rounded-lg border border-slate-200 text-slate-600 hover:text-amber-600 hover:border-amber-300 hover:bg-amber-50 transition-all">
+                        <RefreshCw className={`w-3 h-3 inline mr-1 ${loading ? 'animate-spin' : ''}`} />
+                        Refresh
+                    </button>
+                </div>
+            </div>
+
+            <div className="divide-y divide-amber-100/50">
+                {loading && (
+                    <div className="p-10 text-center animate-pulse">
+                        <div className="h-2 w-48 bg-amber-100 rounded-full mx-auto mb-3" />
+                        <div className="h-2 w-32 bg-amber-100 rounded-full mx-auto" />
+                    </div>
+                )}
+
+                {!loading && trips.length === 0 && (
+                    <div className="p-10 text-center">
+                        <UserCheck className="w-6 h-6 text-slate-300 mx-auto mb-2" />
+                        <p className="text-xs text-slate-400 font-mono italic">
+                            // no private bookings found for {selectedDate}
+                        </p>
+                    </div>
+                )}
+
+                {!loading && trips.map((trip, idx) => (
+                    <div key={trip.trip_id}
+                        className="p-4 flex flex-col md:flex-row md:items-center gap-3 hover:bg-amber-50/40 transition-colors group">
+                        <div className="shrink-0 flex flex-col items-center justify-center w-10 h-10 rounded-xl bg-amber-100 border border-amber-200">
+                            <span className="text-[10px] font-mono text-amber-500 leading-none">Pvt</span>
+                            <span className="text-sm font-black text-amber-700 leading-none">{idx + 1}</span>
+                        </div>
+
+                        <div className="flex-1 space-y-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-200 bg-amber-100 text-amber-800 font-mono uppercase">
+                                    {trip.service_type || 'Private'}
+                                </span>
+                                <span className="text-[10px] text-slate-400 font-mono">{trip.time_display}</span>
+                                {trip.passenger_name && (
+                                    <span className="text-[10px] font-bold text-amber-700 font-mono">👤 {trip.passenger_name}</span>
+                                )}
+                                {trip.duration_min && (
+                                    <span className="text-[10px] text-slate-500 font-mono">{trip.duration_min.toFixed(0)} min</span>
+                                )}
+                                {trip.distance_mi && (
+                                    <span className="text-[10px] text-slate-500 font-mono">{trip.distance_mi.toFixed(2)} mi</span>
+                                )}
+                            </div>
+                            {(trip.pickup || trip.dropoff) && (
+                                <div className="flex items-start gap-1.5 text-[11px] text-slate-600">
+                                    <MapPin className="w-3 h-3 mt-0.5 text-slate-400 shrink-0" />
+                                    <span className="leading-snug truncate">{trip.pickup ?? '—'} → {trip.dropoff ?? '—'}</span>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex gap-4 shrink-0 text-center">
+                            <div>
+                                <p className="text-[10px] text-slate-500 font-mono uppercase">Total</p>
+                                <p className="text-base font-black text-amber-700 tabular-nums">${trip.driver_earnings.toFixed(2)}</p>
+                            </div>
+                            {trip.tip > 0 && (
+                                <div>
+                                    <p className="text-[10px] text-slate-500 font-mono uppercase">Tip</p>
+                                    <p className="text-base font-black text-emerald-600 tabular-nums">${trip.tip.toFixed(2)}</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 ))}
@@ -2688,6 +2825,10 @@ const DriverDashboard = () => {
                     <UberTripsPanel
                         selectedDate={selectedDate}
                         onTripsLoaded={(count, earnings) => setUberStats({ count, earnings })}
+                    />
+
+                    <PrivateTripsPanel
+                        selectedDate={selectedDate}
                     />
 
                     <TessieDrivesPanel 

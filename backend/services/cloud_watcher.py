@@ -728,14 +728,15 @@ class CloudWatcherService:
     # PUBLIC: Fetch saved TRIP- records from SQL for a given date
     # ─────────────────────────────────────────────────────────────────────────
     def get_trips_for_date(self, date_str: str) -> list:
-        """Fetches saved TRIP-{YYYYMMDD}-* records from SQL."""
+        """Fetches saved TRIP-{YYYYMMDD}-* records from SQL (both Uber and Private)."""
         date_compact = date_str.replace("-", "")
         conn = self.db.get_connection()
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT RideID, Timestamp_Start, Fare, Driver_Earnings, Tip, Platform_Cut, Sidecar_Artifact_JSON
+            SELECT RideID, Timestamp_Start, Fare, Driver_Earnings, Tip, Platform_Cut,
+                   Sidecar_Artifact_JSON, TripType, Classification
             FROM Rides.Rides
-            WHERE RideID LIKE ? AND (TripType = 'Uber' OR TripType IS NULL)
+            WHERE RideID LIKE ?
             ORDER BY Timestamp_Start ASC, RideID ASC
         """, (f"TRIP-{date_compact}-%",))
         rows = cursor.fetchall()
@@ -751,22 +752,30 @@ class CloudWatcherService:
             ts = r[1]
             ts_iso = ts.isoformat() if ts else None
             time_display = ts.strftime("%#I:%M %p" if os.name == "nt" else "%-I:%M %p") if ts else "Unknown"
+            trip_type = r[7] or "Uber"  # default Uber for legacy records without TripType
+            classification = r[8] or "Uber_Matched"
+
+            # For private trips, uber_cut is meaningless (we keep full fare)
+            uber_cut = float(r[5] or 0) if trip_type == "Uber" else 0.0
 
             trips.append({
                 "trip_id": r[0],
                 "trip_number": trip_num,
+                "trip_type": trip_type,
+                "classification": classification,
                 "timestamp": ts_iso,
                 "time_display": time_display,
-                "service_type": sidecar.get("service_type", "UberX"),
+                "service_type": sidecar.get("service_type", "Private" if trip_type == "Private" else "UberX"),
                 "driver_earnings": float(r[3] or 0),
                 "rider_payment": float(r[2] or 0),
                 "tip": float(r[4] or 0),
-                "uber_cut": float(r[5] or 0),
+                "uber_cut": uber_cut,
                 "pickup": sidecar.get("pickup"),
                 "dropoff": sidecar.get("dropoff"),
                 "duration_min": sidecar.get("duration_min"),
                 "distance_mi": sidecar.get("distance_mi"),
                 "filename": sidecar.get("filename"),
+                "passenger_name": sidecar.get("card_data", {}).get("passenger_name") or sidecar.get("passenger_name"),
             })
         return trips
 

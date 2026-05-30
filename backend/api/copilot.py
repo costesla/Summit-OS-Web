@@ -497,13 +497,14 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
                             else:
                                 override_tag = cls
 
-                            # Only override if tag would change classification (prevent overriding
-                            # legitimate Uber drives that are correctly tagged in both places)
+                            # Apply DB classification override when it diverges from the live Tessie tag.
+                            # This covers two cases:
+                            #   a) Tessie says "Uber Trip N" but DB says it's Private/Jackie/etc.
+                            #   b) Tessie has any tag but DB has explicitly reclassified the drive.
                             if override_tag is not None:
                                 original_tag = str(rd.get('tag') or '')
-                                original_lower = original_tag.lower()
-                                # Override if: original tag says "uber" but DB says it's Private/Charging
-                                if 'uber' in original_lower and not cls.startswith('Uber_'):
+                                # Only override if the DB classification produces a different tag
+                                if override_tag.lower() != original_tag.lower():
                                     logging.info(f"DB Override: drive {drive_id_str} tag '{original_tag}' -> '{override_tag}' (DB cls: {cls})")
                                     rd['tag'] = override_tag
             except Exception as ov_err:
