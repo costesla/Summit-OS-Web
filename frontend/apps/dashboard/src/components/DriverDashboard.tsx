@@ -2911,18 +2911,7 @@ const DriverDashboard = () => {
         setShowResetConfirm(false);
     };
 
-    const handleImportCharge = (charge: TessieCharge) => {
-        setExpenses(prev => ({
-            ...prev,
-            charging: [{
-                id: Date.now(),
-                amount: 0,
-                note: `Tesla EV Charging – ${charge.energy_added_kwh.toFixed(1)} kWh${charge.location ? ` @ ${charge.location}` : ''}${charge.time_mst ? ` (${charge.time_mst})` : ''}`,
-                timestamp: `${selectedDate}T${new Date().toTimeString().split(' ')[0]}`,
-            }, ...prev.charging],
-        }));
-        expenseFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    };
+
 
 
 
@@ -3098,7 +3087,7 @@ const DriverDashboard = () => {
 
                         {/* Right Columns */}
                         <div className="lg:col-span-2 space-y-6" ref={expenseFormRef}>
-                            <TessieChargesPanel onImport={handleImportCharge} selectedDate={selectedDate} />
+                            <TessieChargesPanel selectedDate={selectedDate} />
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <ExpenseList
                                     title="Charging Sessions"
@@ -3166,8 +3155,7 @@ const DriverDashboard = () => {
                 />
 
                 {/* ── Tessie Drives Panel (full width) ── */}
-                <TessieDrivesPanel 
-                    onImport={() => {}} 
+                <TessieDrivesPanel
                     selectedDate={selectedDate} 
                     refreshKey={drivesRefreshKey} 
                     privatePayments={privatePayments} 
