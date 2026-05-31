@@ -90,9 +90,11 @@
     #heatmap-canvas-container {
       position: absolute; top: 0; left: 0; right: 0; bottom: 58px;
       pointer-events: none; z-index: 200;
-      mix-blend-mode: screen;  /* blends heat glow with dark satellite tiles */
+      overflow: hidden;
     }
-
+    #heatmap-canvas-container canvas {
+      position: absolute; top: 0; left: 0;
+    }
     /* ── Loading ── */
     .loading-overlay { position: absolute; inset: 0; background: rgba(9,13,20,0.92); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; z-index: 9999; backdrop-filter: blur(6px); transition: opacity 0.4s; }
     .loading-overlay.hidden { opacity: 0; pointer-events: none; }
@@ -378,14 +380,24 @@ function createHeatOverlay(googleMap) {
 
   function syncSize() {
     const mapEl = document.getElementById('map');
-    container.style.width  = mapEl.offsetWidth  + 'px';
-    container.style.height = mapEl.offsetHeight + 'px';
+    const container = document.getElementById('heatmap-canvas-container');
+    // Let CSS handle sizing — just resize the internal heatmap canvas to match
+    const w = mapEl.offsetWidth;
+    const h = mapEl.offsetHeight;
+    const canvas = container.querySelector('canvas');
+    if (canvas) {
+      canvas.width  = w;
+      canvas.height = h;
+      canvas.style.width  = w + 'px';
+      canvas.style.height = h + 'px';
+    }
   }
   syncSize();
   window.addEventListener('resize', () => { syncSize(); redrawHeat(); });
 
-  // Redraw on pan / zoom
+  // Redraw on pan / zoom; also sync canvas size on first idle
   googleMap.addListener('bounds_changed', redrawHeat);
+  google.maps.event.addListenerOnce(googleMap, 'idle', () => { syncSize(); redrawHeat(); });
 }
 
 // Convert lat/lng to pixel coords using Google Maps Overlay projection (Mercator-accurate)
