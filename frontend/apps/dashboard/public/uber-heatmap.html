@@ -434,7 +434,11 @@ function createHeatOverlay(googleMap) {
     redrawHeat();
   });
 
-  window.addEventListener('resize', () => { ensureHeatInstance(); redrawHeat(); });
+  window.addEventListener('resize', () => {
+    heatInstance = null; // Force recreation on any resize
+    ensureHeatInstance();
+    redrawHeat();
+  });
   googleMap.addListener('bounds_changed', redrawHeatDebounced);
 }
 
@@ -699,6 +703,7 @@ async function loadData() {
     box.style.display = 'block';
     box.textContent = 'Load failed: ' + err.message;
   } finally {
+    _loadAbortController = null; // Add this line
     showLoading(false);
     document.getElementById('refresh-btn').disabled = false;
   }
@@ -707,6 +712,14 @@ async function loadData() {
 // ─────────────────────────────────────────────────────────────────────────────
 // Filter
 // ─────────────────────────────────────────────────────────────────────────────
+function getActiveFilterLabels() {
+  const labels = [];
+  if (timelineHour >= 0) labels.push('up to ' + fmtHour(timelineHour));
+  const hf = document.getElementById('hour-filter-select').value;
+  if (hf !== 'all') labels.push(hf);
+  return labels;
+}
+
 function getFilteredDrives() {
   const hf = document.getElementById('hour-filter-select').value;
   return allDrives.filter(d => {
@@ -753,21 +766,8 @@ function renderHeatmap() {
   });
 
   // Combined filter state display (Fix 6)
-  let filterText = '';
-  const activeFilters = [];
-  
-  if (timelineHour >= 0) {
-    activeFilters.push(`up to ${fmtHour(timelineHour)}`);
-  }
-  
-  const hf = document.getElementById('hour-filter-select').value;
-  if (hf !== 'all') {
-    activeFilters.push(hf);
-  }
-  
-  if (activeFilters.length > 0) {
-    filterText = ` (${activeFilters.join(' + ')})`;
-  }
+  const activeFilters = getActiveFilterLabels();
+  const filterText = activeFilters.length > 0 ? ` (${activeFilters.join(' + ')})` : '';
 
   document.getElementById('pill-count').textContent = latLngPoints.length + ' points' + filterText;
 
@@ -955,7 +955,6 @@ function togglePlayback() {
 // Live car
 // ─────────────────────────────────────────────────────────────────────────────
 let carHaloPhase = 0;
-let carHaloAnimationStarted = false;
 
 function animateCarHalo() {
   if (!carHalo) {
