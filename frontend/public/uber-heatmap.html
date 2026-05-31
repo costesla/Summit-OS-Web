@@ -713,6 +713,7 @@ const TILES = {
 // ── State ─────────────────────────────────────────────────────────────
 let map, heatLayer, tileLayer;
 let allDrives = [];
+let allHeatPoints = []; // pre-geocoded points from /heatmap endpoint
 let allCharges = [];
 let chargeMarkers = [];
 let currentMode = 'both';
@@ -752,33 +753,52 @@ function initMap() {
 // ── Load Data ─────────────────────────────────────────────────────────
 async function loadData() {
   const days = document.getElementById('days-select').value;
-  showLoading(true, 'Fetching Uber telemetry from Tessie…');
+  showLoading(true, 'Fetching drive history…');
   document.getElementById('refresh-btn').disabled = true;
   document.getElementById('error-box').style.display = 'none';
 
   try {
-    const drivesUrl = `${BACKEND}/api/copilot/tessie/drives?tag=uber&days=${days}`;
+    const heatmapUrl = `${BACKEND}/api/copilot/tessie/heatmap?days=${days}&batch=80`;
+    const drivesUrl  = `${BACKEND}/api/copilot/tessie/drives?tag=uber&days=${days}`;
     const chargesUrl = `${BACKEND}/api/copilot/tessie/charges?days=${days}`;
-    
-    // Fetch drives and charges in parallel
-    const [drivesRes, chargesRes] = await Promise.all([
-      fetch(drivesUrl, { signal: AbortSignal.timeout(20000) }),
+
+    // Fetch all three in parallel; drives & charges are for sidebar stats only
+    const [heatRes, drivesRes, chargesRes] = await Promise.all([
+      fetch(heatmapUrl, { signal: AbortSignal.timeout(45000) }),
+      fetch(drivesUrl,  { signal: AbortSignal.timeout(20000) }).catch(() => null),
       fetch(chargesUrl, { signal: AbortSignal.timeout(20000) }).catch(() => null)
     ]);
-    
-    if (!drivesRes.ok) throw new Error(`HTTP ${drivesRes.status}`);
-    const drivesData = await drivesRes.json();
-    allDrives = (drivesData.drives || []);
-    
+
+    // Heat points (primary source for map layer)
+    if (heatRes.ok) {
+      const heatData = await heatRes.json();
+      allHeatPoints = heatData.points || [];
+      const remaining = heatData.uncached_remaining || 0;
+      if (remaining > 0) {
+        console.log(`[Heatmap] ${remaining} addresses not yet geocoded — reload to cache more`);
+      }
+    } else {
+      allHeatPoints = [];
+    }
+
+    // Drives (sidebar stats — earnings, miles, charts)
+    if (drivesRes && drivesRes.ok) {
+      const drivesData = await drivesRes.json();
+      allDrives = drivesData.drives || [];
+    } else {
+      allDrives = [];
+    }
+
+    // Charges (charging overlay markers)
     if (chargesRes && chargesRes.ok) {
       const chargesData = await chargesRes.json();
-      allCharges = (chargesData.sessions || []);
+      allCharges = chargesData.sessions || [];
     } else {
       allCharges = [];
     }
-    
-    showLoading(true, `Processing ${allDrives.length} trips & ${allCharges.length} charges…`);
-    await new Promise(r => setTimeout(r, 50)); // let UI breathe
+
+    showLoading(true, `Rendering ${allHeatPoints.length} geocoded points…`);
+    await new Promise(r => setTimeout(r, 50));
 
     renderHeatmap();
     renderStats();
@@ -910,12 +930,21 @@ function getHeatPoints(drives, mode) {
 
 // ── Render heatmap ────────────────────────────────────────────────────
 function renderHeatmap() {
-  const pts = getHeatPoints(allDrives, currentMode);
+  const hourFilter = document.getElementById('hour-filter-select').value;
+
+  // Filter pre-geocoded points by mode (Both / Pickups / Dropoffs)
+  let filtered = allHeatPoints;
+  if (currentMode === 'pickup')  filtered = allHeatPoints.filter(p => p.type === 'pickup');
+  if (currentMode === 'dropoff') filtered = allHeatPoints.filter(p => p.type === 'dropoff');
+
+  // Normalise weights so the hottest point = 1.0
+  const maxW = filtered.reduce((m, p) => Math.max(m, p.weight), 1);
+  const pts = filtered.map(p => [p.lat, p.lon, p.weight / maxW]);
+
   heatLayer.setLatLngs(pts);
   heatLayer.setOptions({ radius: heatRadius });
 
-  document.getElementById('pill-count').textContent =
-    `${pts.length} points`;
+  document.getElementById('pill-count').textContent = `${pts.length} points`;
 
   if (pts.length > 0) {
     const lats = pts.map(p => p[0]);

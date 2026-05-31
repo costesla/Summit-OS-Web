@@ -665,6 +665,8 @@
 
 <script>
 // ── Config ────────────────────────────────────────────────────────────
+// Detect environment: if running from the Next.js dev server use relative URL,
+// otherwise use the production backend.
 const BACKEND = (() => {
   const h = window.location.hostname;
   if (h === 'localhost' || h === '127.0.0.1') return 'http://localhost:7071';
@@ -711,6 +713,7 @@ const TILES = {
 // ── State ─────────────────────────────────────────────────────────────
 let map, heatLayer, tileLayer;
 let allDrives = [];
+let allHeatPoints = []; // pre-geocoded points from /heatmap endpoint
 let allCharges = [];
 let chargeMarkers = [];
 let currentMode = 'both';
@@ -750,33 +753,52 @@ function initMap() {
 // ── Load Data ─────────────────────────────────────────────────────────
 async function loadData() {
   const days = document.getElementById('days-select').value;
-  showLoading(true, 'Fetching Uber telemetry from Tessie…');
+  showLoading(true, 'Fetching drive history…');
   document.getElementById('refresh-btn').disabled = true;
   document.getElementById('error-box').style.display = 'none';
 
   try {
-    const drivesUrl = `${BACKEND}/api/copilot/tessie/drives?tag=uber&days=${days}`;
+    const heatmapUrl = `${BACKEND}/api/copilot/tessie/heatmap?days=${days}&batch=80`;
+    const drivesUrl  = `${BACKEND}/api/copilot/tessie/drives?tag=uber&days=${days}`;
     const chargesUrl = `${BACKEND}/api/copilot/tessie/charges?days=${days}`;
 
-    // Fetch drives and charges in parallel
-    const [drivesRes, chargesRes] = await Promise.all([
-      fetch(drivesUrl, { signal: AbortSignal.timeout(20000) }),
+    // Fetch all three in parallel; drives & charges are for sidebar stats only
+    const [heatRes, drivesRes, chargesRes] = await Promise.all([
+      fetch(heatmapUrl, { signal: AbortSignal.timeout(45000) }),
+      fetch(drivesUrl,  { signal: AbortSignal.timeout(20000) }).catch(() => null),
       fetch(chargesUrl, { signal: AbortSignal.timeout(20000) }).catch(() => null)
     ]);
 
-    if (!drivesRes.ok) throw new Error(`HTTP ${drivesRes.status}`);
-    const drivesData = await drivesRes.json();
-    allDrives = (drivesData.drives || []);
+    // Heat points (primary source for map layer)
+    if (heatRes.ok) {
+      const heatData = await heatRes.json();
+      allHeatPoints = heatData.points || [];
+      const remaining = heatData.uncached_remaining || 0;
+      if (remaining > 0) {
+        console.log(`[Heatmap] ${remaining} addresses not yet geocoded — reload to cache more`);
+      }
+    } else {
+      allHeatPoints = [];
+    }
 
+    // Drives (sidebar stats — earnings, miles, charts)
+    if (drivesRes && drivesRes.ok) {
+      const drivesData = await drivesRes.json();
+      allDrives = drivesData.drives || [];
+    } else {
+      allDrives = [];
+    }
+
+    // Charges (charging overlay markers)
     if (chargesRes && chargesRes.ok) {
       const chargesData = await chargesRes.json();
-      allCharges = (chargesData.sessions || []);
+      allCharges = chargesData.sessions || [];
     } else {
       allCharges = [];
     }
 
-    showLoading(true, `Processing ${allDrives.length} trips & ${allCharges.length} charges…`);
-    await new Promise(r => setTimeout(r, 50)); // let UI breathe
+    showLoading(true, `Rendering ${allHeatPoints.length} geocoded points…`);
+    await new Promise(r => setTimeout(r, 50));
 
     renderHeatmap();
     renderStats();
@@ -821,17 +843,17 @@ function renderCharges() {
   // Clear any existing charge markers
   chargeMarkers.forEach(m => map.removeLayer(m));
   chargeMarkers = [];
-
+  
   const showCharges = document.getElementById('charging-toggle').checked;
   if (!showCharges || allCharges.length === 0) return;
-
+  
   allCharges.forEach(c => {
     if (c.lat && c.lon) {
       const startSoc = c.starting_soc || 0;
       const endSoc = c.ending_soc || 0;
       const addedKwh = c.energy_added_kwh || 0;
       const duration = c.duration_minutes || 0;
-
+      
       const popupHTML = `
         <div style="font-family:'Inter', sans-serif; font-size:12px; color:#1e293b; padding:6px; min-width:180px;">
           <strong style="color:#0ea5e9; display:flex; align-items:center; gap:4px; font-size:13px;">⚡ Tessie Charging Corridor</strong>
@@ -853,14 +875,14 @@ function renderCharges() {
           <div style="font-size:9px; color:#64748b; margin-top:4px; text-align:right;">${c.date} @ ${c.time_mst} MST</div>
         </div>
       `;
-
+      
       const chargeIcon = L.divIcon({
         className: 'charging-session-marker',
         html: '⚡',
         iconSize: [18, 18],
         iconAnchor: [9, 9]
       });
-
+      
       const m = L.marker([c.lat, c.lon], { icon: chargeIcon }).addTo(map);
       m.bindPopup(popupHTML);
       chargeMarkers.push(m);
@@ -872,7 +894,7 @@ function renderCharges() {
 function getHeatPoints(drives, mode) {
   const pts = [];
   const hourFilter = document.getElementById('hour-filter-select').value;
-
+  
   for (const d of drives) {
     // Apply hourly window filter
     if (hourFilter !== 'all' && d.time_mst) {
@@ -884,7 +906,7 @@ function getHeatPoints(drives, mode) {
         if (hourFilter === 'afternoon' && hr >= 15 && hr < 19) matchesFilter = true;
         if (hourFilter === 'evening'   && hr >= 19 && hr < 23) matchesFilter = true;
         if (hourFilter === 'night'     && (hr >= 23 || hr < 5)) matchesFilter = true;
-
+        
         if (!matchesFilter) continue;
       }
     }
@@ -908,12 +930,21 @@ function getHeatPoints(drives, mode) {
 
 // ── Render heatmap ────────────────────────────────────────────────────
 function renderHeatmap() {
-  const pts = getHeatPoints(allDrives, currentMode);
+  const hourFilter = document.getElementById('hour-filter-select').value;
+
+  // Filter pre-geocoded points by mode (Both / Pickups / Dropoffs)
+  let filtered = allHeatPoints;
+  if (currentMode === 'pickup')  filtered = allHeatPoints.filter(p => p.type === 'pickup');
+  if (currentMode === 'dropoff') filtered = allHeatPoints.filter(p => p.type === 'dropoff');
+
+  // Normalise weights so the hottest point = 1.0
+  const maxW = filtered.reduce((m, p) => Math.max(m, p.weight), 1);
+  const pts = filtered.map(p => [p.lat, p.lon, p.weight / maxW]);
+
   heatLayer.setLatLngs(pts);
   heatLayer.setOptions({ radius: heatRadius });
 
-  document.getElementById('pill-count').textContent =
-    `${pts.length} points`;
+  document.getElementById('pill-count').textContent = `${pts.length} points`;
 
   if (pts.length > 0) {
     const lats = pts.map(p => p[0]);
@@ -1045,7 +1076,7 @@ function renderZones() {
 function renderRecommendations() {
   const selectedDay = parseInt(document.getElementById('rec-day-select').value);
   const container = document.getElementById('rec-container');
-
+  
   // Filter drives by day of week (0=Sun, 1=Mon, ..., 6=Sat)
   const dayDrives = allDrives.filter(d => {
     const dt = parseLocalDate(d.date);
@@ -1106,7 +1137,7 @@ function renderRecommendations() {
   // 3. Dynamic strategy pro-tip
   let proTip = "";
   const topZoneName = topZones[0] ? topZones[0].name : "your main routes";
-
+  
   if (selectedDay === 5 || selectedDay === 6) { // Fri/Sat
     proTip = `Friday and Saturday evenings show high density in central and entertainment spots. Positioning near ${topZoneName} during the evening transition will maximize ride matching.`;
   } else if (selectedDay === 0) { // Sun
@@ -1187,7 +1218,7 @@ document.getElementById('tile-select').addEventListener('change', e => {
 document.getElementById('radius-slider').addEventListener('input', e => {
   heatRadius = parseInt(e.target.value);
   if (heatLayer) {
-    heatLayer.setOptions({
+    heatLayer.setOptions({ 
       radius: heatRadius,
       blur: Math.round(heatRadius * 0.5)
     });
@@ -1230,24 +1261,24 @@ async function updateLiveLocation() {
     const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     const body = await res.json();
-
+    
     console.log('[Heatmap Live GPS] Tessie payload received:', body);
-
+    
     // Correct target path: body.vehicle.location
     const vehicle = body.vehicle;
     if (!vehicle) {
       console.warn('[Heatmap Live GPS] No vehicle object in payload');
       return;
     }
-
+    
     const loc = vehicle.location;
     if (loc && typeof loc === 'object' && loc.lat && loc.long) {
       const lat = loc.lat;
       const lon = loc.long;
       const speed = loc.speed || 0;
-
+      
       console.log(`[Heatmap Live GPS] Plotting active position: lat=${lat}, lon=${lon}, speed=${speed}mph`);
-
+      
       const popupText = `
         <div style="font-family:'Inter', sans-serif; font-size:12px; color:#1e293b; padding:4px;">
           <strong style="color:#2563eb; display:flex; align-items:center; gap:4px;">⚡ COS Tesla Active</strong>
@@ -1268,7 +1299,7 @@ async function updateLiveLocation() {
         carMarker.setLatLng([lat, lon]);
         carMarker.setPopupContent(popupText);
       }
-
+      
       // Auto pan to vehicle on first active acquisition
       if (!liveLocationActive) {
         liveLocationActive = true;

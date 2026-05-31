@@ -824,6 +824,153 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500)
 
 
+@bp.route(route="copilot/tessie/heatmap", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+def copilot_tessie_heatmap(req: func.HttpRequest) -> func.HttpResponse:
+    """
+    Returns geocoded lat/lon heat points for the heatmap.
+    Addresses are geocoded via Google Maps API and cached in Rides.GeoCache.
+    Each call geocodes up to `batch` (default 80) new uncached addresses.
+    """
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
+
+    try:
+        days = int(req.params.get("days", 30))
+        if days > 365:
+            days = 365
+        geocode_batch = min(int(req.params.get("batch", 80)), 200)
+
+        cutoff_dt = datetime.datetime.utcnow() - datetime.timedelta(days=days)
+
+        db = DatabaseClient()
+        conn = db.get_connection()
+        if not conn:
+            return func.HttpResponse(
+                json.dumps({"error": "DB unavailable", "points": []}),
+                status_code=500, headers=CORS_HEADERS
+            )
+        cur = conn.cursor()
+
+        # Ensure GeoCache table exists
+        cur.execute("""
+            IF NOT EXISTS (
+                SELECT 1 FROM INFORMATION_SCHEMA.TABLES
+                WHERE TABLE_SCHEMA='Rides' AND TABLE_NAME='GeoCache'
+            )
+            CREATE TABLE Rides.GeoCache (
+                Address  NVARCHAR(500) NOT NULL PRIMARY KEY,
+                Lat      FLOAT,
+                Lon      FLOAT,
+                Created  DATETIME2 DEFAULT GETDATE()
+            )
+        """)
+        conn.commit()
+
+        # Fetch rides in the requested date range
+        cur.execute("""
+            SELECT Pickup_Location, Dropoff_Location, Driver_Earnings
+            FROM Rides.Rides
+            WHERE Timestamp_Start >= ?
+              AND (Pickup_Location IS NOT NULL OR Dropoff_Location IS NOT NULL)
+        """, (cutoff_dt,))
+        rows = cur.fetchall()
+
+        # Collect unique addresses
+        all_addresses = set()
+        for pickup, dropoff, _ in rows:
+            if pickup: all_addresses.add(pickup)
+            if dropoff: all_addresses.add(dropoff)
+
+        # Bulk-load cached geocodes (500 addresses per IN clause to stay under param limits)
+        geo_cache = {}
+        addr_list = list(all_addresses)
+        chunk_size = 500
+        for i in range(0, len(addr_list), chunk_size):
+            chunk = addr_list[i:i + chunk_size]
+            placeholders = ','.join(['?' for _ in chunk])
+            cur.execute(
+                f"SELECT Address, Lat, Lon FROM Rides.GeoCache WHERE Address IN ({placeholders})",
+                chunk
+            )
+            for addr, lat, lon in cur.fetchall():
+                geo_cache[addr] = (float(lat), float(lon)) if (lat is not None and lon is not None) else None
+
+        # Geocode uncached addresses (up to `geocode_batch` per request)
+        uncached = [a for a in all_addresses if a not in geo_cache]
+        newly_geocoded = 0
+
+        if uncached and geocode_batch > 0:
+            api_key = os.environ.get("GOOGLE_MAPS_API_KEY")
+            if not api_key:
+                try:
+                    from services.secret_manager import SecretManager
+                    api_key = SecretManager().get_secret("GOOGLE_MAPS_API_KEY")
+                except Exception:
+                    pass
+
+            if api_key:
+                import googlemaps
+                gmaps = googlemaps.Client(key=api_key)
+                for addr in uncached[:geocode_batch]:
+                    lat, lon = None, None
+                    try:
+                        result = gmaps.geocode(addr)
+                        if result:
+                            loc = result[0]["geometry"]["location"]
+                            lat, lon = loc["lat"], loc["lng"]
+                    except Exception as ge:
+                        logging.warning(f"Geocode failed for {addr[:60]}: {ge}")
+                    geo_cache[addr] = (lat, lon) if (lat and lon) else None
+                    newly_geocoded += 1
+                    try:
+                        cur.execute("""
+                            MERGE Rides.GeoCache AS t
+                            USING (SELECT ? AS Address, ? AS Lat, ? AS Lon) AS s
+                            ON t.Address = s.Address
+                            WHEN NOT MATCHED THEN
+                                INSERT (Address, Lat, Lon) VALUES (s.Address, s.Lat, s.Lon);
+                        """, (addr, lat, lon))
+                    except Exception:
+                        pass
+                try:
+                    conn.commit()
+                except Exception:
+                    pass
+
+        # Build heatmap points
+        points = []
+        for pickup, dropoff, earnings in rows:
+            weight = max(0.1, float(earnings or 1.0))
+            if pickup and geo_cache.get(pickup):
+                lat, lon = geo_cache[pickup]
+                points.append({"lat": lat, "lon": lon, "weight": weight, "type": "pickup"})
+            if dropoff and geo_cache.get(dropoff):
+                lat, lon = geo_cache[dropoff]
+                points.append({"lat": lat, "lon": lon, "weight": weight, "type": "dropoff"})
+
+        conn.close()
+
+        return func.HttpResponse(
+            json.dumps({
+                "points": points,
+                "count": len(points),
+                "cached_addresses": len([v for v in geo_cache.values() if v]),
+                "uncached_remaining": max(0, len(uncached) - newly_geocoded),
+                "newly_geocoded": newly_geocoded,
+            }),
+            status_code=200,
+            headers=CORS_HEADERS,
+            mimetype="application/json"
+        )
+
+    except Exception as e:
+        logging.error(f"copilot_tessie_heatmap error: {e}", exc_info=True)
+        return func.HttpResponse(
+            json.dumps({"error": str(e), "points": []}),
+            status_code=500, headers=CORS_HEADERS
+        )
+
+
 @bp.route(route="copilot/tessie/charges", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def copilot_tessie_charges(req: func.HttpRequest) -> func.HttpResponse:
     if req.method == "OPTIONS": return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
