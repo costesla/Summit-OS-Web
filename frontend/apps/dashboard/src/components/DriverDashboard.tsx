@@ -1949,21 +1949,17 @@ const Bar = ({ label, earned, target, color }: { label: string; earned: number; 
 };
 
 const GoalTrackerPanel: React.FC<{ todayEarnings: number; selectedDate: string }> = ({ todayEarnings, selectedDate }) => {
-    const [history, setHistory] = useState<Record<string, number>>({});
-
-    // Load initial history on mount
-    useEffect(() => {
+    const [history, setHistory] = useState<Record<string, number>>(() => {
         if (typeof window !== 'undefined') {
             try {
                 const stored = localStorage.getItem('cos_daily_history');
-                if (stored) {
-                    setHistory(JSON.parse(stored));
-                }
+                if (stored) return JSON.parse(stored);
             } catch (err) {
                 console.error("Failed to load initial daily history:", err);
             }
         }
-    }, []);
+        return {};
+    });
 
     // Sync from cloud and local private payments when date or today's earnings change
     useEffect(() => {
@@ -2004,7 +2000,9 @@ const GoalTrackerPanel: React.FC<{ todayEarnings: number; selectedDate: string }
                     if (typeof window !== 'undefined') {
                         try {
                             latestHistory = JSON.parse(localStorage.getItem('cos_daily_history') ?? '{}');
-                        } catch {}
+                        } catch (err) {
+                            console.warn("Failed to read cos_daily_history from localStorage:", err);
+                        }
                     }
                     
                     // Parse local private payments to blend them in
@@ -2012,11 +2010,13 @@ const GoalTrackerPanel: React.FC<{ todayEarnings: number; selectedDate: string }
                     if (typeof window !== 'undefined') {
                         try {
                             localPayments = JSON.parse(localStorage.getItem('cos_private_payments') ?? '[]');
-                        } catch {}
+                        } catch (err) {
+                            console.warn("Failed to read cos_private_payments from localStorage:", err);
+                        }
                     }
                     
                     // Populate history map from fetched DB metrics
-                    data.metrics.forEach((m: any) => {
+                    data.metrics.forEach((m: { date: string; earnings?: { amount: number } }) => {
                         if (m.date) {
                             const uberAmt = m.earnings?.amount || 0;
                             const privateAmt = localPayments
@@ -2033,7 +2033,9 @@ const GoalTrackerPanel: React.FC<{ todayEarnings: number; selectedDate: string }
                     if (typeof window !== 'undefined') {
                         try {
                             localStorage.setItem('cos_daily_history', JSON.stringify(latestHistory));
-                        } catch {}
+                        } catch (err) {
+                            console.warn("Failed to write cos_daily_history to localStorage:", err);
+                        }
                     }
                 }
             } catch (err) {
