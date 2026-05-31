@@ -55,9 +55,7 @@ export default function BookingForm() {
                     time: estTime.toString()
                 });
 
-                if (straightDist < 2) setPriceQuote("$10.00");
-                else if (straightDist < 5) setPriceQuote("$15.00");
-                else if (straightDist < 25) setPriceQuote("$20.00");
+                if (straightDist < 25) setPriceQuote("$30.00");
                 else setPriceQuote("Call for Quote");
             }
             setIsCalculating(false);

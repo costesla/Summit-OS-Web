@@ -1483,6 +1483,41 @@ const IntelligenceSyncPanel: React.FC<{
         }
     };
 
+    const runScrubDay = async () => {
+        const confirmed = window.confirm(
+            `⚠️ SCRUB DAY: ${selectedDate}\n\nThis will permanently delete all TRIP records for this date and reset any wrongly-classified Tessie drives back to Untagged.\n\nINV- booking records and manual Tessie tags (Jackie, Daniel, Esmeralda) will be preserved.\n\nContinue?`
+        );
+        if (!confirmed) return;
+
+        cleanupActivePoll();
+        setStatus('running');
+        setLogs([`> Scrubbing ${selectedDate} — wiping TRIP records and resetting Tessie drive classifications...`]);
+
+        try {
+            const resp = await fetch(`${AZURE_BASE}/operations/scrub-day`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ date: selectedDate })
+            });
+            const data = resp.ok ? await resp.json() : { success: false, error: `Server ${resp.status}` };
+            if (data.success) {
+                setStatus('success');
+                setLogs([
+                    ...(data.logs ?? []),
+                    `> [SUCCESS] Scrub complete — ${data.deleted_trips} TRIP record(s) deleted, ${data.reset_drives} Tessie drive(s) reset.`,
+                    `> Now upload your ${selectedDate} Uber screenshots to OneDrive, then hit Rebuild Day.`
+                ]);
+                onRefresh();
+            } else {
+                setStatus('error');
+                setLogs(prev => [...prev, `> [ERROR] ${data.error}`]);
+            }
+        } catch (err: unknown) {
+            setStatus('error');
+            setLogs(prev => [...prev, `> [CRITICAL] ${err instanceof Error ? err.message : String(err)}`]);
+        }
+    };
+
     return (
         <div className="p-6 rounded-2xl border border-slate-200/80 bg-white/80 shadow-sm backdrop-blur-md relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-3xl rounded-full pointer-events-none group-hover:bg-blue-500/10 transition-all duration-1000" />
@@ -1699,14 +1734,105 @@ const Bar = ({ label, earned, target, color }: { label: string; earned: number; 
 };
 
 const GoalTrackerPanel: React.FC<{ todayEarnings: number; selectedDate: string }> = ({ todayEarnings, selectedDate }) => {
-    const getHistory = (): Record<string, number> => {
-        if (typeof window === 'undefined') return {};
-        try { return JSON.parse(localStorage.getItem('cos_daily_history') ?? '{}'); } catch { return {}; }
-    };
+    const [history, setHistory] = useState<Record<string, number>>({});
 
-    const history = getHistory();
+    // Load initial history on mount
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            try {
+                const stored = localStorage.getItem('cos_daily_history');
+                if (stored) {
+                    setHistory(JSON.parse(stored));
+                }
+            } catch (err) {
+                console.error("Failed to load initial daily history:", err);
+            }
+        }
+    }, []);
+
+    // Sync from cloud and local private payments when date or today's earnings change
+    useEffect(() => {
+        let active = true;
+        
+        const fetchHistory = async () => {
+            try {
+                // Calculate week span (Mon – Sun containing selectedDate)
+                const refDate = new Date(selectedDate + 'T12:00:00');
+                const dayOfWeek = refDate.getDay(); // 0 Sun
+                const monday = new Date(refDate);
+                monday.setDate(refDate.getDate() - ((dayOfWeek + 6) % 7));
+                const weekStartStr = monday.toLocaleDateString('sv-SE');
+                
+                const sunday = new Date(monday);
+                sunday.setDate(monday.getDate() + 6);
+                const weekEndStr = sunday.toLocaleDateString('sv-SE');
+                
+                // Calculate month span
+                const ym = selectedDate.slice(0, 7);
+                const monthStartStr = `${ym}-01`;
+                const year = parseInt(ym.split('-')[0]);
+                const month = parseInt(ym.split('-')[1]);
+                const lastDay = new Date(year, month, 0).getDate();
+                const monthEndStr = `${ym}-${String(lastDay).padStart(2, '0')}`;
+                
+                // Get absolute bounds covering both week and month
+                const startDate = weekStartStr < monthStartStr ? weekStartStr : monthStartStr;
+                const endDate = weekEndStr > monthEndStr ? weekEndStr : monthEndStr;
+                
+                const resp = await fetch(`${AZURE_BASE}/copilot/metrics/daily?start_date=${startDate}&end_date=${endDate}`);
+                if (!resp.ok) return;
+                const data = await resp.json();
+                
+                if (active && data && data.metrics) {
+                    // Start with a copy of current state/local storage
+                    let latestHistory: Record<string, number> = {};
+                    if (typeof window !== 'undefined') {
+                        try {
+                            latestHistory = JSON.parse(localStorage.getItem('cos_daily_history') ?? '{}');
+                        } catch {}
+                    }
+                    
+                    // Parse local private payments to blend them in
+                    let localPayments: PrivatePayment[] = [];
+                    if (typeof window !== 'undefined') {
+                        try {
+                            localPayments = JSON.parse(localStorage.getItem('cos_private_payments') ?? '[]');
+                        } catch {}
+                    }
+                    
+                    // Populate history map from fetched DB metrics
+                    data.metrics.forEach((m: any) => {
+                        if (m.date) {
+                            const uberAmt = m.earnings?.amount || 0;
+                            const privateAmt = localPayments
+                                .filter((p: PrivatePayment) => p.date === m.date)
+                                .reduce((s: number, p: PrivatePayment) => s + (p.amount || 0), 0);
+                            latestHistory[m.date] = uberAmt + privateAmt;
+                        }
+                    });
+                    
+                    // Always make sure the currently selected day uses the latest live todayEarnings
+                    latestHistory[selectedDate] = todayEarnings;
+                    
+                    setHistory(latestHistory);
+                    if (typeof window !== 'undefined') {
+                        try {
+                            localStorage.setItem('cos_daily_history', JSON.stringify(latestHistory));
+                        } catch {}
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to fetch daily history from cloud:", err);
+            }
+        };
+
+        fetchHistory();
+        return () => { active = false; };
+    }, [selectedDate, todayEarnings]);
+
     const resolve = (date: string) => date === selectedDate ? todayEarnings : (history[date] ?? 0);
 
+    // Calculate Week Span Earnings
     const refDate = new Date(selectedDate + 'T12:00:00');
     const dayOfWeek = refDate.getDay();
     const monday = new Date(refDate);
@@ -1717,6 +1843,7 @@ const GoalTrackerPanel: React.FC<{ todayEarnings: number; selectedDate: string }
     });
     const weekEarnings = weekDates.reduce((s, d) => s + resolve(d), 0);
 
+    // Calculate Month Span Earnings
     const ym = selectedDate.slice(0, 7);
     const monthEarnings = Object.entries({ ...history, [selectedDate]: todayEarnings })
         .filter(([d]) => d.startsWith(ym))
