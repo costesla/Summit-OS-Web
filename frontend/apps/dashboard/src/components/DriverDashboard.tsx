@@ -1,5 +1,3 @@
-'use client';
-
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import {
     TrendingUp, Car, Zap, Utensils, Trash2,
@@ -1144,7 +1142,7 @@ const TessieDrivesPanel = ({
                                                      const noteLower = (exp.note ?? '').toLowerCase();
                                                      const timeMatch = noteLower.match(/(\d{1,2}):(\d{2})/);
                                                      if (timeMatch) {
-                                                         const [eH, eM] = timeMatch.map(Number);
+                                                         const [, eH, eM] = timeMatch.map(Number);
                                                          const expMins = eH * 60 + eM;
                                                          const diff = Math.abs(driveMins - expMins);
                                                          if (diff < minDiff) {
@@ -2260,6 +2258,7 @@ interface DashboardStats {
     privateTotal: number;
     food: number;
     charging: number;
+    capitalMaintenanceTotal: number;
     totalExpenses: number;
     profit: number;
     hourlyRate: number;
