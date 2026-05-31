@@ -388,7 +388,6 @@ function createHeatOverlay(googleMap) {
       blur:       0.92,
       radius:     heatRadius,
       gradient: {
-        '0.00': 'rgba(0,0,0,0)',
         '0.20': 'rgba(30,58,138,0.6)',
         '0.35': 'rgba(37,99,235,0.85)',
         '0.50': 'rgba(6,182,212,1)',
@@ -398,6 +397,18 @@ function createHeatOverlay(googleMap) {
         '1.00': 'rgba(255,255,255,1)',
       },
     });
+
+    // Enforce matching dimensions on the created canvas DOM element
+    const canvas = container.querySelector('canvas');
+    if (canvas) {
+      canvas.setAttribute('width',  w);
+      canvas.setAttribute('height', h);
+      canvas.style.width  = w + 'px';
+      canvas.style.height = h + 'px';
+      canvas.style.position = 'absolute';
+      canvas.style.left = '0';
+      canvas.style.top = '0';
+    }
   }
 
   // Sync canvas size once the map has rendered and has real pixel dimensions
@@ -458,7 +469,6 @@ function redrawHeat() {
         blur:       0.92,
         radius:     heatRadius,
         gradient: {
-          '0.00': 'rgba(0,0,0,0)',
           '0.20': 'rgba(30,58,138,0.6)',
           '0.35': 'rgba(37,99,235,0.85)',
           '0.50': 'rgba(6,182,212,1)',
@@ -468,6 +478,17 @@ function redrawHeat() {
           '1.00': 'rgba(255,255,255,1)',
         },
       });
+
+      const canvas = container.querySelector('canvas');
+      if (canvas) {
+        canvas.setAttribute('width',  w);
+        canvas.setAttribute('height', h);
+        canvas.style.width  = w + 'px';
+        canvas.style.height = h + 'px';
+        canvas.style.position = 'absolute';
+        canvas.style.left = '0';
+        canvas.style.top = '0';
+      }
     }
   }
 
@@ -486,7 +507,36 @@ function redrawHeat() {
   });
 
   console.log(`[Heatmap] Redrawing: ${pts.length} of ${latLngPoints.length} points visible in current bounds (${w}x${h})`);
+  
+  // Render the heatmap.js layer
   heatInstance.setData({ max: 10, data: pts });
+
+  // Premium glow dots rendered on top of the heat signature layer
+  const canvas = container.querySelector('canvas');
+  if (canvas) {
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      pts.forEach(p => {
+        // glowing outer ring
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 7, 0, 2 * Math.PI);
+        ctx.fillStyle = 'rgba(6, 182, 212, 0.22)';
+        ctx.fill();
+
+        // solid center point
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 2.5, 0, 2 * Math.PI);
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowColor = '#06b6d4';
+        ctx.shadowBlur = 4;
+        ctx.fill();
+        
+        // reset shadow to avoid affecting other operations
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+      });
+    }
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -885,6 +935,28 @@ function togglePlayback() {
 // ─────────────────────────────────────────────────────────────────────────────
 // Live car
 // ─────────────────────────────────────────────────────────────────────────────
+let carHaloPhase = 0;
+let carHaloAnimationStarted = false;
+
+function animateCarHalo() {
+  if (carHalo && carHalo.setRadius) {
+    carHaloPhase += 0.045; // Speed of pulsation
+    // Pulsate radius smoothly between 55m and 115m
+    const baseRadius = 85;
+    const pulseRadius = baseRadius + 30 * Math.sin(carHaloPhase);
+    carHalo.setRadius(pulseRadius);
+    
+    // Pulsate opacity smoothly
+    const baseOpacity = 0.12;
+    const pulseOpacity = baseOpacity + 0.06 * Math.sin(carHaloPhase);
+    carHalo.setOptions({
+      fillOpacity: pulseOpacity,
+      strokeOpacity: pulseOpacity * 2.5
+    });
+  }
+  requestAnimationFrame(animateCarHalo);
+}
+
 async function updateLiveLocation() {
   try {
     const res = await fetch(BACKEND + '/api/copilot/vehicle/status');
@@ -897,6 +969,13 @@ async function updateLiveLocation() {
       if (!carMarker) {
         carMarker = new google.maps.Marker({ position: pos, map, title: 'COS Tesla — Live', icon: { path: google.maps.SymbolPath.CIRCLE, scale: 14, fillColor: '#3b82f6', fillOpacity: 1, strokeColor: '#ffffff', strokeWeight: 3 }, zIndex: 9999 });
         carHalo = new google.maps.Circle({ center: pos, radius: 80, map, strokeColor: '#3b82f6', strokeOpacity: 0.45, strokeWeight: 1.5, fillColor: '#3b82f6', fillOpacity: 0.1, clickable: false, zIndex: 9998 });
+        
+        // Start the pulsating loop if not already running
+        if (!carHaloAnimationStarted) {
+          carHaloAnimationStarted = true;
+          animateCarHalo();
+        }
+
         const iw = new google.maps.InfoWindow({ content: popup });
         carMarker.addListener('click', () => { if (openInfoWindow) openInfoWindow.close(); iw.open(map, carMarker); openInfoWindow = iw; });
         carMarker._iw = iw;
