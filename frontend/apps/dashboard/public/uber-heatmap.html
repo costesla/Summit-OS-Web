@@ -369,6 +369,10 @@ function createHeatOverlay(googleMap) {
     // Only recreate if dimensions have actually changed
     if (container.dataset.width == w && container.dataset.height == h && heatInstance) return;
     
+    // Explicitly size the container to match the map's current offset dimensions
+    container.style.width = w + 'px';
+    container.style.height = h + 'px';
+    
     container.dataset.width = w;
     container.dataset.height = h;
     container.innerHTML = ''; // Clear previous canvas to avoid duplicates
@@ -377,6 +381,8 @@ function createHeatOverlay(googleMap) {
 
     heatInstance = h337.create({
       container,
+      width: w,
+      height: h,
       maxOpacity: 0.92,
       minOpacity: 0,
       blur:       0.92,
@@ -435,11 +441,18 @@ function redrawHeat() {
     const w = mapEl.offsetWidth;
     const h = mapEl.offsetHeight;
     if (w && h) {
+      container.style.width = w + 'px';
+      container.style.height = h + 'px';
       container.dataset.width = w;
       container.dataset.height = h;
       container.innerHTML = '';
+      
+      console.log('[Heatmap] Lazily creating heatmap instance in redrawHeat:', w, 'x', h);
+      
       heatInstance = h337.create({
         container,
+        width: w,
+        height: h,
         maxOpacity: 0.92,
         minOpacity: 0,
         blur:       0.92,
@@ -675,7 +688,6 @@ function getFilteredDrives() {
 // Render heatmap — builds lat/lng point list, then draws via heatmap.js
 // ─────────────────────────────────────────────────────────────────────────────
 function renderHeatmap() {
-  if (!heatInstance) return;
   const drives = getFilteredDrives();
   latLngPoints = [];
 
