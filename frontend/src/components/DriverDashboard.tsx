@@ -14,7 +14,7 @@ import { isBackgroundableError, devDebugError, getAsyncExecutionLogs, pollJobSta
 const AZURE_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://summitos-api.azurewebsites.net/api';
 const VERSION = "1.4.5";
 
-const TAG_FILTERS = ['Uber', 'Uber_Matched', 'Uber_Pickup', 'Jackie', 'Esmeralda', 'Daniel', 'Lauren', 'Staging', 'Private_Trip', 'Uncategorized', 'Charging Session'] as const;
+const TAG_FILTERS = ['Uber', 'Uber_Matched', 'Uber_Pickup', 'Jackie', 'Esmeralda', 'Daniel', 'Lauren', 'Ryan', 'Staging', 'Private_Trip', 'Uncategorized', 'Charging Session'] as const;
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface PrivatePayment {
@@ -416,6 +416,7 @@ const TAG_STYLE: Record<string, string> = {
     esmeralda: 'bg-teal-50 text-teal-700 border-teal-200/80',
     daniel: 'bg-indigo-50 text-indigo-700 border-indigo-200/80',
     lauren: 'bg-rose-50 text-rose-700 border-rose-200/80',
+    ryan: 'bg-cyan-50 text-cyan-700 border-cyan-200/80',
     private_trip: 'bg-amber-50 text-amber-800 border-amber-300/80',
     private: 'bg-amber-50 text-amber-800 border-amber-300/80',
     uncategorized: 'bg-slate-50 text-slate-500 border-slate-200/80',
