@@ -45,3 +45,22 @@ def timer_nightly_sync(nightlyTimer: func.TimerRequest) -> None:
 
     except Exception as e:
         logging.error(f"[NightlySync] ❌ Failed for {today_str}: {e}", exc_info=True)
+
+    # ── Earnings deduplication ─────────────────────────────────────────────────
+    # Zero out Driver_Earnings on TESSIE-* / UBER-* rows that duplicate a
+    # canonical TRIP-* record. Runs after the daily sync so any newly imported
+    # drives are cleaned before morning reporting.
+    try:
+        from services.database import DatabaseClient
+        result = DatabaseClient().dedup_earnings(lookback_days=7)
+        if result.get("error"):
+            logging.warning(f"[NightlyDedup] ⚠️ Error: {result['error']}")
+        elif result["rows_zeroed"] > 0:
+            logging.info(
+                f"[NightlyDedup] ✅ Zeroed {result['rows_zeroed']} duplicate rows "
+                f"(${result['amount_zeroed']:.2f} removed from TESSIE/UBER cross-refs)"
+            )
+        else:
+            logging.info("[NightlyDedup] ✅ No duplicates found — data is clean.")
+    except Exception as e:
+        logging.error(f"[NightlyDedup] ❌ Failed: {e}", exc_info=True)

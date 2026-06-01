@@ -420,10 +420,12 @@ class DatabaseClient:
         return results[0] if results else None
 
     def get_daily_metrics(self, start_date, end_date):
-        # Only count TRIP-* records (canonical OCR-scanned trips).
-        # TESSIE-* and UBER-* rows are cross-reference duplicates that inflate
-        # earnings 2-3x. Reports.DailyKPIs was aggregated before this dedup
-        # logic existed, so query Rides.Rides directly.
+        # Deduplication rule:
+        #   - Days WITH TRIP-* records  → count TRIP-* only (canonical OCR trips)
+        #   - Days WITHOUT TRIP-* records → count non-TESSIE/non-UBER records
+        #     (pre-OCR manual entries from before the pipeline existed)
+        # TESSIE-* and UBER-* are always excluded — they are drive cross-references
+        # that duplicate earnings already on TRIP-* rows.
         query = """
         SELECT
             CONVERT(varchar(10), CAST(Timestamp_Start AS DATE), 23) AS DateStr,
@@ -432,10 +434,24 @@ class DatabaseClient:
             COUNT(*)                               AS TripCount,
             ISNULL(SUM(Distance_mi), 0.0)         AS TotalMiles,
             ISNULL(SUM(Duration_min) / 60.0, 0.0) AS DriveTime_Hours
-        FROM Rides.Rides
+        FROM Rides.Rides r
         WHERE Timestamp_Start >= CAST(? AS DATE)
           AND Timestamp_Start <  DATEADD(day, 1, CAST(? AS DATE))
-          AND RideID LIKE 'TRIP-%'
+          AND Driver_Earnings > 0
+          AND (
+              RideID LIKE 'TRIP-%'
+              OR (
+                  RideID NOT LIKE 'TRIP-%'
+                  AND RideID NOT LIKE 'TESSIE-%'
+                  AND RideID NOT LIKE 'UBER-%'
+                  AND NOT EXISTS (
+                      SELECT 1 FROM Rides.Rides t2
+                      WHERE t2.RideID LIKE 'TRIP-%'
+                        AND t2.Driver_Earnings > 0
+                        AND CAST(t2.Timestamp_Start AS DATE) = CAST(r.Timestamp_Start AS DATE)
+                  )
+              )
+          )
         GROUP BY CAST(Timestamp_Start AS DATE)
         ORDER BY CAST(Timestamp_Start AS DATE) DESC
         """
@@ -456,6 +472,71 @@ class DatabaseClient:
         """
         results = self.execute_query_params(query, (days,))
         return results[0] if results else None
+
+    def dedup_earnings(self, lookback_days: int = 7) -> dict:
+        """
+        Zero out Driver_Earnings on TESSIE-* and UBER-* rows that duplicate a
+        canonical TRIP-* record within ±30 minutes on the same day.
+        Run nightly so new syncs don't re-inflate totals.
+        Returns a dict with rows_zeroed and amount_zeroed for logging.
+        """
+        conn = self.get_connection()
+        if not conn:
+            return {"rows_zeroed": 0, "amount_zeroed": 0.0, "error": "no connection"}
+        cur = conn.cursor()
+        try:
+            cutoff = f"DATEADD(day, -{lookback_days}, GETDATE())"
+            total_rows = 0
+            total_amount = 0.0
+
+            for prefix in ("TESSIE-%", "UBER-%"):
+                # Measure before
+                cur.execute(f"""
+                    SELECT COUNT(*), ISNULL(SUM(Driver_Earnings), 0)
+                    FROM Rides.Rides r
+                    WHERE r.RideID LIKE ?
+                      AND r.Driver_Earnings > 0
+                      AND r.Timestamp_Start >= {cutoff}
+                      AND EXISTS (
+                          SELECT 1 FROM Rides.Rides t
+                          WHERE t.RideID LIKE 'TRIP-%'
+                            AND t.Driver_Earnings > 0
+                            AND CAST(t.Timestamp_Start AS DATE) = CAST(r.Timestamp_Start AS DATE)
+                            AND ABS(DATEDIFF(minute, t.Timestamp_Start, r.Timestamp_Start)) <= 30
+                      )
+                """, (prefix,))
+                row = cur.fetchone()
+                rows, amount = int(row[0] or 0), float(row[1] or 0)
+
+                if rows > 0:
+                    cur.execute(f"""
+                        UPDATE Rides.Rides
+                        SET Driver_Earnings = 0, Tip = 0, LastUpdated = GETDATE()
+                        WHERE RideID LIKE ?
+                          AND Driver_Earnings > 0
+                          AND Timestamp_Start >= {cutoff}
+                          AND EXISTS (
+                              SELECT 1 FROM Rides.Rides t
+                              WHERE t.RideID LIKE 'TRIP-%'
+                                AND t.Driver_Earnings > 0
+                                AND CAST(t.Timestamp_Start AS DATE) = CAST(Rides.Timestamp_Start AS DATE)
+                                AND ABS(DATEDIFF(minute, t.Timestamp_Start, Rides.Timestamp_Start)) <= 30
+                          )
+                    """, (prefix,))
+                    total_rows += rows
+                    total_amount += amount
+
+            conn.commit()
+            return {"rows_zeroed": total_rows, "amount_zeroed": round(total_amount, 2)}
+        except Exception as e:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            return {"rows_zeroed": 0, "amount_zeroed": 0.0, "error": str(e)}
+        finally:
+            cur.close()
+            conn.close()
 
     def create_cabin_token(self, booking_id: str, valid_hours: int = 24, expires_at=None) -> str:
         """Generate a 6-digit cabin access code for a booking, store it in DB."""
