@@ -86,40 +86,46 @@ class VectorStore:
         USING (SELECT ? AS vector_id) AS source
         ON (target.vector_id = source.vector_id)
         WHEN MATCHED THEN
-            UPDATE SET 
-                source_type=?, timestamp_utc=?, vehicle_id=?, driver_id=?, 
-                confidence_score=?, embedding_model_version=?, raw_text_hash=?, 
-                source_pointer=?, derivation_reason=?, embedding=CAST(CAST(? AS NVARCHAR(MAX)) AS VECTOR(1536))
+            UPDATE SET
+                source_type=?, timestamp_utc=?, vehicle_id=?, driver_id=?,
+                confidence_score=?, embedding_model_version=?, raw_text_hash=?,
+                source_pointer=?, derivation_reason=?, artifact_guid=?,
+                embedding=CAST(CAST(? AS NVARCHAR(MAX)) AS VECTOR(1536))
         WHEN NOT MATCHED THEN
-            INSERT (vector_id, source_type, timestamp_utc, vehicle_id, driver_id, confidence_score, 
-                    embedding_model_version, raw_text_hash, source_pointer, derivation_reason, embedding)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(CAST(? AS NVARCHAR(MAX)) AS VECTOR(1536)));
+            INSERT (vector_id, source_type, timestamp_utc, vehicle_id, driver_id,
+                    confidence_score, embedding_model_version, raw_text_hash,
+                    source_pointer, derivation_reason, artifact_guid, embedding)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                    CAST(CAST(? AS NVARCHAR(MAX)) AS VECTOR(1536)));
         """
-        
+
         emb_json = json.dumps(canonical.embedding)
-        
+
         # PRIVACY GHOSTS: Safe placeholders for DB NOT NULL constraints
-        safe_vin_hash = "sha256-summitos-privacy-standard"
+        safe_vin_hash    = "sha256-summitos-privacy-standard"
         safe_driver_hash = "sha256-system-autonomous-segment"
-        
+
         # DB Compatibility Mapping for source_type (CHECK constraint alignment)
         db_source_type_map = {
             "Artifact": "Operations",
-            "Trip": "Passenger",
-            "Charge": "Operations",
-            "Ops": "Operations"
+            "Trip":     "Passenger",
+            "Charge":   "Operations",
+            "Ops":      "Operations",
         }
         db_source_type = db_source_type_map.get(canonical.source_type, "Operations")
-        
+        artifact_guid  = canonical.artifact_guid  # None for legacy vectors
+
         params = (
             canonical.vector_id,
+            # UPDATE branch
             db_source_type, canonical.timestamp_utc, safe_vin_hash, safe_driver_hash,
             1.0, self.model, canonical.raw_text_hash,
-            canonical.source_pointer, canonical.derivation_reason, emb_json,
-            # For NOT MATCHED
-            canonical.vector_id, db_source_type, canonical.timestamp_utc, safe_vin_hash, safe_driver_hash,
+            canonical.source_pointer, canonical.derivation_reason, artifact_guid, emb_json,
+            # INSERT branch
+            canonical.vector_id, db_source_type, canonical.timestamp_utc,
+            safe_vin_hash, safe_driver_hash,
             1.0, self.model, canonical.raw_text_hash,
-            canonical.source_pointer, canonical.derivation_reason, emb_json
+            canonical.source_pointer, canonical.derivation_reason, artifact_guid, emb_json,
         )
         
         try:

@@ -537,18 +537,30 @@ class ReconciliationService:
         date_str: str, source_file: str, vehicle_ref: str
     ):
         try:
+            from services.artifact_registry import ArtifactRegistry
             raw_hash = hashlib.sha256(embedding_text.encode()).hexdigest()
             dt = datetime.strptime(date_str, "%Y-%m-%d") if date_str else datetime.utcnow()
 
+            registry = ArtifactRegistry()
+            guid = registry.register(
+                artifact_type='Reconciliation',
+                entity_id=record_id,
+                entity_table='Rides.Reconciliation_Ledger',
+                source_path=source_file,
+                content_hash=raw_hash,
+                ingestion_path='Reconciliation',
+            )
+
             vector_data = {
-                "vector_id": f"V-{record_id}",
-                "source_type": "Reconciliation",
-                "timestamp_utc": dt,
-                "raw_text_hash": raw_hash,
-                "source_pointer": source_file,
-                "derivation_reason": embedding_text
+                "vector_id":        f"V-{record_id}",
+                "source_type":      "Ops",
+                "timestamp_utc":    dt,
+                "raw_text_hash":    raw_hash,
+                "source_pointer":   registry.pointer(guid),
+                "derivation_reason": embedding_text,
+                "artifact_guid":    guid,
             }
             self.semantic.vector_store.add_vector(vector_data)
-            log.info(f"Vector written for {record_id}")
+            log.info(f"Vector written for {record_id} → artifact://{guid}")
         except Exception as e:
             log.error(f"Vector write error for {record_id}: {e}")

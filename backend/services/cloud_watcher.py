@@ -1029,7 +1029,9 @@ class CloudWatcherService:
 
         # 5. Persist to SQL and Vectorize
         from services.vector_store import VectorStore
+        from services.artifact_registry import ArtifactRegistry
         vs = VectorStore()
+        registry = ArtifactRegistry()
         
         expenses_out = []
         for i, exp in enumerate(deduped_expenses, start=1):
@@ -1054,19 +1056,36 @@ class CloudWatcherService:
                 import hashlib
                 timestamp_epoch = exp["date_time"].timestamp()
                 raw_hash = hashlib.sha256(exp["content_bytes"]).hexdigest()
-                
+                onedrive_path = f"OneDrive://{explicit_path}/{exp['filename']}"
+                derivation = (
+                    f"Verified Expense Receipt: {exp['merchant']} on "
+                    f"{exp['date_time'].strftime('%Y-%m-%d')} for ${exp['amount']:.2f}. "
+                    f"Items: {', '.join(exp['items'])}. Category: {exp['category']}. "
+                    f"Filename: {exp['filename']}"
+                )
+
+                guid = registry.register(
+                    artifact_type='Receipt',
+                    entity_id=exp_id,
+                    entity_table='Rides.ManualExpenses',
+                    source_path=onedrive_path,
+                    content_hash=raw_hash,
+                    ingestion_path='CloudWatcher',
+                )
+
                 vector_data = {
-                    "vector_id": f"VEC-EXP-{hashlib.md5(exp['filename'].encode()).hexdigest()[:8]}-{int(timestamp_epoch)}",
-                    "source_type": "Artifact",
-                    "timestamp_utc": exp["date_time"],
-                    "raw_text_hash": raw_hash,
-                    "source_pointer": f"OneDrive://{explicit_path}/{exp['filename']}",
-                    "derivation_reason": f"Verified Expense Receipt: {exp['merchant']} on {exp['date_time'].strftime('%Y-%m-%d')} for ${exp['amount']:.2f}. Items: {', '.join(exp['items'])}. Category: {exp['category']}. Filename: {exp['filename']}"
+                    "vector_id":        f"VEC-EXP-{guid[:8]}",
+                    "source_type":      "Artifact",
+                    "timestamp_utc":    exp["date_time"],
+                    "raw_text_hash":    raw_hash,
+                    "source_pointer":   registry.pointer(guid),
+                    "derivation_reason": derivation,
+                    "artifact_guid":    guid,
                 }
-                
+
                 v_success = vs.add_vector(vector_data)
                 if v_success:
-                    logs.append(f"VECTOR: Vectorized and indexed '{exp['filename']}' successfully.")
+                    logs.append(f"VECTOR: Vectorized '{exp['filename']}' → artifact://{guid}")
                 else:
                     logs.append(f"WARN: Failed to vectorize '{exp['filename']}'.")
             except Exception as vs_err:

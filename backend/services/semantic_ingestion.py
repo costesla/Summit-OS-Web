@@ -2,10 +2,12 @@ import logging
 import hashlib
 from datetime import datetime
 from .vector_store import VectorStore
+from .artifact_registry import ArtifactRegistry
 
 class SemanticIngestionService:
     def __init__(self):
         self.vector_store = VectorStore()
+        self.registry = ArtifactRegistry()
 
     def ingest_tessie_drive(self, drive_data, telemetry_summary=""):
         """
@@ -41,16 +43,27 @@ class SemanticIngestionService:
             )
             
             raw_hash = hashlib.sha256(summary.encode()).hexdigest()
-            
+
+            source_path = drive_data.get('source_path') or drive_data.get('filename')
+            guid = self.registry.register(
+                artifact_type='Drive',
+                entity_id=str(ride_id),
+                entity_table='Rides.Rides',
+                source_path=source_path,
+                content_hash=raw_hash,
+                ingestion_path='Tessie',
+            )
+
             vector_data = {
-                "vector_id": f"V-{ride_id}",
-                "source_type": "Trip",
-                "timestamp_utc": dt,
-                "raw_text_hash": raw_hash,
-                "source_pointer": ride_id,
-                "derivation_reason": summary
+                "vector_id":        f"V-{ride_id}",
+                "source_type":      "Trip",
+                "timestamp_utc":    dt,
+                "raw_text_hash":    raw_hash,
+                "source_pointer":   self.registry.pointer(guid),
+                "derivation_reason": summary,
+                "artifact_guid":    guid,
             }
-            
+
             return self.vector_store.add_vector(vector_data)
         except Exception as e:
             logging.error(f"Semantic Ingestion Failure (Tessie): {e}")
@@ -83,13 +96,23 @@ class SemanticIngestionService:
 
             raw_hash = hashlib.sha256(summary.encode()).hexdigest()
 
+            guid = self.registry.register(
+                artifact_type='PrivatePayment',
+                entity_id=str(pid),
+                entity_table='Rides.PrivatePayments',
+                source_path='manual://dashboard',
+                content_hash=raw_hash,
+                ingestion_path='PrivatePayment',
+            )
+
             vector_data = {
                 "vector_id":        f"V-PP-{pid}",
                 "source_type":      "Trip",
                 "timestamp_utc":    dt,
                 "raw_text_hash":    raw_hash,
-                "source_pointer":   f"PrivatePayments/{pid}",
+                "source_pointer":   self.registry.pointer(guid),
                 "derivation_reason": summary,
+                "artifact_guid":    guid,
             }
 
             return self.vector_store.add_vector(vector_data)
@@ -126,13 +149,25 @@ class SemanticIngestionService:
                 + f'. Logged on {dt.strftime("%Y-%m-%d")}.'
             )
 
+            raw_hash = hashlib.sha256(summary.encode()).hexdigest()
+
+            guid = self.registry.register(
+                artifact_type='Expense',
+                entity_id=str(exp_id),
+                entity_table='Rides.ManualExpenses',
+                source_path='manual://dashboard',
+                content_hash=raw_hash,
+                ingestion_path='Manual',
+            )
+
             vector_data = {
                 'vector_id':        f'V-EXP-{exp_id}',
                 'source_type':      'Ops',
                 'timestamp_utc':    dt,
-                'raw_text_hash':    hashlib.sha256(summary.encode()).hexdigest(),
-                'source_pointer':   f'ManualExpenses/{exp_id}',
+                'raw_text_hash':    raw_hash,
+                'source_pointer':   self.registry.pointer(guid),
                 'derivation_reason': summary,
+                'artifact_guid':    guid,
             }
 
             return self.vector_store.add_vector(vector_data)
@@ -163,16 +198,25 @@ class SemanticIngestionService:
             )
             
             raw_hash = hashlib.sha256(summary.encode()).hexdigest()
-            
+
+            guid = self.registry.register(
+                artifact_type='Transaction',
+                entity_id=str(tx_id),
+                entity_table='Banking.Transactions',
+                content_hash=raw_hash,
+                ingestion_path='Teller',
+            )
+
             vector_data = {
-                "vector_id": f"V-{tx_id}",
-                "source_type": "Artifact",
-                "timestamp_utc": dt,
-                "raw_text_hash": raw_hash,
-                "source_pointer": tx_id,
-                "derivation_reason": summary
+                "vector_id":        f"V-{tx_id}",
+                "source_type":      "Artifact",
+                "timestamp_utc":    dt,
+                "raw_text_hash":    raw_hash,
+                "source_pointer":   self.registry.pointer(guid),
+                "derivation_reason": summary,
+                "artifact_guid":    guid,
             }
-            
+
             return self.vector_store.add_vector(vector_data)
         except Exception as e:
             logging.error(f"Semantic Ingestion Failure (Teller): {e}")

@@ -101,7 +101,9 @@ def driver_sync(req: func.HttpRequest) -> func.HttpResponse:
         expenses = data.get("expenses", {}) # { fastfood: [], charging: [], capital_maintenance: [] }
         
         from services.semantic_ingestion import SemanticIngestionService
+        from services.artifact_registry import ArtifactRegistry
         semantic = SemanticIngestionService()
+        registry = ArtifactRegistry()
         
         results = {
             "trips_saved": 0,
@@ -138,14 +140,26 @@ def driver_sync(req: func.HttpRequest) -> func.HttpResponse:
                 "tessie_drive_id": tdid,
                 "Classification": "Manual_Entry"
             }
+            # Register artifact first so source_pointer is a stable GUID URI
+            try:
+                trip_payload['source_path'] = 'manual://dashboard'
+                registry.register(
+                    artifact_type='Trip',
+                    entity_id=str(ride_id),
+                    entity_table='Rides.Rides',
+                    source_path='manual://dashboard',
+                    ingestion_path='Manual',
+                )
+            except Exception:
+                pass
             db.save_trip(trip_payload)
             results["trips_saved"] += 1
-            
+
             # Vectorize for Copilot
             try:
                 semantic.ingest_tessie_drive(trip_payload, telemetry_summary="Manually logged trip from Driver Dashboard.")
                 results["vectors_created"] += 1
-            except:
+            except Exception:
                 pass
 
         # 2. Save Fast Food Expenses

@@ -58,3 +58,6 @@ class CanonicalVector(BaseModel):
     source_pointer: str
     derivation_reason: str
     embedding: List[float] = Field(..., min_length=1536, max_length=1536)
+    # Stable artifact GUID — links this vector back to the Artifacts manifest.
+    # Optional for backward compatibility with vectors created before the registry.
+    artifact_guid: Optional[str] = None
