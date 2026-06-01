@@ -459,6 +459,50 @@ def copilot_charging_live(req: func.HttpRequest) -> func.HttpResponse:
         logging.error(f"Live Charging API Error: {e}")
         return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500)
 
+@bp.route(route="copilot/charging/finalize", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+def copilot_charging_finalize(req: func.HttpRequest) -> func.HttpResponse:
+    """
+    Auto-finalize a completed charging session — writes final kWh and cost to SQL.
+    Called by the frontend when it detects a live session has ended (is_charging flipped to false).
+    Body: { session_id, energy_added_kwh, cost, location?, start_time?, end_time? }
+    """
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
+    if not check_rate_limit(req):
+        return func.HttpResponse(json.dumps({"error": "Rate limit exceeded"}), status_code=429)
+
+    try:
+        data = req.get_json()
+        session_id = data.get("session_id")
+        energy_kwh = float(data.get("energy_added_kwh", 0))
+        cost = float(data.get("cost", 0))
+
+        if not session_id:
+            return func.HttpResponse(json.dumps({"error": "session_id is required"}), status_code=400)
+
+        charge_data = {
+            "session_id": session_id,
+            "start_time": data.get("start_time"),
+            "end_time": data.get("end_time"),
+            "location": data.get("location"),
+            "energy_added": energy_kwh,
+            "cost": cost,
+        }
+
+        db = DatabaseClient()
+        db.save_charge(charge_data)
+        logging.info(f"Charging session finalized: {session_id} — {energy_kwh} kWh, ${cost:.2f}")
+
+        return copilot_response({
+            "status": "finalized",
+            "session_id": session_id,
+            "energy_added_kwh": energy_kwh,
+            "cost": cost,
+        })
+    except Exception as e:
+        logging.error(f"Charging Finalize Error: {e}")
+        return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500)
+
 @bp.route(route="copilot/tessie/drives", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
     if req.method == "OPTIONS":

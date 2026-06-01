@@ -52,6 +52,10 @@ interface TeslaStatus {
     outside_temp: number | null;
     vehicle_asleep?: boolean;
     formatted_time?: string;
+    // Live session cost tracking
+    charge_energy_added?: number | null;
+    running_cost_estimate?: number | null;
+    charging_rate_per_kwh?: number;
 }
 
 interface TessieDrive {
@@ -83,6 +87,11 @@ interface TessieCharge {
     duration_minutes: number | null;
     location: string | null;
     charge_type: string | null;
+    // Live session fields — populated when vehicle is actively charging
+    is_live?: boolean;
+    charge_power_kw?: number;
+    running_cost_estimate?: number | null;
+    charging_rate_per_kwh?: number;
 }
 
 // ─── Sub-components ─────────────────────────────────────────────────────────
@@ -423,13 +432,15 @@ const TessieDrivesPanel = ({
     selectedDate,
     refreshKey,
     privatePayments = [],
-    chargingExpenses = []
+    chargingExpenses = [],
+    isVehicleCharging = false
 }: {
     onImport: (drive: TessieDrive) => void;
     selectedDate: string;
     refreshKey?: number;
     privatePayments?: PrivatePayment[];
     chargingExpenses?: Expense[];
+    isVehicleCharging?: boolean;
 }) => {
     const [drives, setDrives] = useState<TessieDrive[]>([]);
     const [loading, setLoading] = useState(true);
@@ -576,8 +587,22 @@ const TessieDrivesPanel = ({
                                          // Cost is shown in the Charging Expenses section — not duplicated here.
                                          if (tagLower.includes('charging') || tagLower.includes('supercharger')) {
                                              return (
-                                                 <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-50 border-slate-200 text-slate-500">
-                                                     <span>⚡ Charging Session</span>
+                                                 <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                                                     isVehicleCharging
+                                                         ? 'bg-emerald-500 border-emerald-500 text-white shadow-[0_0_8px_rgba(16,185,129,0.4)]'
+                                                         : 'bg-slate-50 border-slate-200 text-slate-500'
+                                                 }`}>
+                                                     {isVehicleCharging ? (
+                                                         <>
+                                                             <span className="relative flex h-1.5 w-1.5">
+                                                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
+                                                                 <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white" />
+                                                             </span>
+                                                             <span>⚡ LIVE</span>
+                                                         </>
+                                                     ) : (
+                                                         <span>⚡ Charging Session</span>
+                                                     )}
                                                  </span>
                                              );
                                          }
@@ -688,34 +713,87 @@ const TessieChargesPanel = ({ onImport, selectedDate }: { onImport: (charge: Tes
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
     const [importedIds, setImportedIds] = useState<Set<string>>(new Set());
+    const [liveStatus, setLiveStatus] = useState<TeslaStatus | null>(null);
+    const [finalized, setFinalized] = useState(false);
+    const prevChargingRef = useRef(false);
+
+    // Fetch historical charges
+    const fetchCharges = useCallback(async () => {
+        try {
+            const todayDate = new Date();
+            const targetDate = new Date(selectedDate + 'T12:00:00');
+            const diffMs = todayDate.getTime() - targetDate.getTime();
+            const daysBack = Math.max(1, Math.ceil(diffMs / 86_400_000) + 1);
+
+            const resp = await fetch(`${AZURE_BASE}/copilot/tessie/charges?days=${daysBack}&t=${Date.now()}`, {
+                signal: AbortSignal.timeout(12_000),
+                cache: 'no-store'
+            });
+            const data = resp.ok ? await resp.json() : { sessions: [] };
+            const filtered = ((data.sessions ?? []) as TessieCharge[]).filter((c) => c.date === selectedDate);
+            setCharges(filtered);
+            setError(false);
+        } catch { setError(true); } finally { setLoading(false); }
+    }, [selectedDate]);
 
     useEffect(() => {
         setLoading(true);
-        const fetchCharges = async () => {
-            try {
-                const todayDate = new Date();
-                const targetDate = new Date(selectedDate + 'T12:00:00');
-                const diffMs = todayDate.getTime() - targetDate.getTime();
-                const daysBack = Math.max(1, Math.ceil(diffMs / 86_400_000) + 1);
-
-                const resp = await fetch(`${AZURE_BASE}/copilot/tessie/charges?days=${daysBack}&t=${Date.now()}`, {
-                    signal: AbortSignal.timeout(12_000),
-                    cache: 'no-store'
-                });
-                const data = resp.ok ? await resp.json() : { sessions: [] };
-                const filtered = ((data.sessions ?? []) as TessieCharge[]).filter((c) => c.date === selectedDate);
-                setCharges(filtered);
-                setError(false);
-            } catch { setError(true); } finally { setLoading(false); }
-        };
+        setFinalized(false);
         fetchCharges();
-    }, [selectedDate]);
+    }, [fetchCharges]);
+
+    // Poll live charging status every 60 seconds
+    useEffect(() => {
+        const pollLive = async () => {
+            try {
+                const res = await fetch(`${AZURE_BASE}/copilot/charging/live`, { signal: AbortSignal.timeout(8000) });
+                if (!res.ok) { setLiveStatus(null); return; }
+                const data = await res.json();
+                setLiveStatus(data);
+            } catch { setLiveStatus(null); }
+        };
+        pollLive();
+        const iv = setInterval(pollLive, 60_000);
+        return () => clearInterval(iv);
+    }, []);
+
+    // Auto-finalize: detect transition from charging → not charging
+    useEffect(() => {
+        const wasCharging = prevChargingRef.current;
+        const isNowCharging = liveStatus?.is_charging ?? false;
+        prevChargingRef.current = isNowCharging;
+
+        if (wasCharging && !isNowCharging && liveStatus && !finalized) {
+            setFinalized(true);
+            const sessionId = `live-${selectedDate.replace(/-/g, '')}`;
+            const energy = liveStatus.charge_energy_added ?? 0;
+            const rate = liveStatus.charging_rate_per_kwh ?? 0.40;
+            const cost = Math.round(energy * rate * 100) / 100;
+
+            fetch(`${AZURE_BASE}/copilot/charging/finalize`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    session_id: sessionId,
+                    energy_added_kwh: energy,
+                    cost,
+                    location: liveStatus.location,
+                    end_time: new Date().toISOString(),
+                }),
+            }).catch(() => {});
+            // Refresh charges list to show finalized session
+            setTimeout(() => fetchCharges(), 3000);
+        }
+    }, [liveStatus, selectedDate, finalized, fetchCharges]);
 
     const handleImport = (charge: TessieCharge) => {
         onImport(charge);
         const key = charge.tessie_charge_id ?? `${charge.date}-${charge.time_mst}`;
         setImportedIds((prev) => new Set(prev).add(key ?? ''));
     };
+
+    const isToday = selectedDate === new Date().toLocaleDateString('sv-SE');
+    const showLiveCard = isToday && liveStatus?.is_charging && !finalized;
 
     return (
         <div className="rounded-2xl border border-slate-200/80 bg-white/90 shadow-sm overflow-hidden"
@@ -724,11 +802,61 @@ const TessieChargesPanel = ({ onImport, selectedDate }: { onImport: (charge: Tes
                 <Zap className="w-4 h-4 text-amber-600" />
                 <h2 className="font-bold text-slate-800">Tessie Charging Sessions</h2>
                 <span className="text-xs font-mono text-slate-400 ml-2 uppercase tracking-wider">{selectedDate}</span>
+                {showLiveCard && (
+                    <span className="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500 text-white text-[10px] font-bold uppercase tracking-wider shadow-[0_0_12px_rgba(16,185,129,0.5)]">
+                        <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
+                        </span>
+                        LIVE
+                    </span>
+                )}
             </div>
             <div className="divide-y divide-slate-100">
+                {/* Live charging card */}
+                {showLiveCard && liveStatus && (
+                    <div className="p-4 bg-gradient-to-r from-emerald-50/80 to-green-50/60 border-b border-emerald-200/60">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="relative">
+                                    <div className="p-2 rounded-xl bg-emerald-100 border border-emerald-300">
+                                        <BatteryCharging className="w-4 h-4 text-emerald-600" />
+                                    </div>
+                                    <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                                        <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
+                                    </span>
+                                </div>
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs font-black text-emerald-700 uppercase tracking-wider animate-pulse">LIVE</span>
+                                        <span className="text-[10px] font-mono text-emerald-600 font-bold">· {liveStatus.charge_power_kw} kW</span>
+                                    </div>
+                                    <p className="text-sm font-bold text-slate-800">
+                                        {(liveStatus.charge_energy_added ?? 0).toFixed(1)} kWh added
+                                        {liveStatus.minutes_to_full != null && <span className="font-normal text-slate-500 text-xs ml-2">· {Math.round(liveStatus.minutes_to_full / 60)}h {liveStatus.minutes_to_full % 60}m remaining</span>}
+                                    </p>
+                                    <p className="text-[10px] text-slate-400 font-mono">
+                                        {liveStatus.location || 'Location pending'}
+                                        {liveStatus.current_soc != null && ` · ${liveStatus.current_soc}%`}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-lg font-black text-emerald-700 tabular-nums font-mono">
+                                    ${(liveStatus.running_cost_estimate ?? 0).toFixed(2)}
+                                </p>
+                                <p className="text-[10px] text-emerald-600/60 font-mono">
+                                    @${(liveStatus.charging_rate_per_kwh ?? 0.40).toFixed(2)}/kWh
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {loading && <div className="p-10 text-center animate-pulse"><div className="h-2 w-48 bg-slate-200 rounded-full mx-auto mb-3" /><div className="h-2 w-32 bg-slate-200 rounded-full mx-auto" /></div>}
                 {!loading && error && <div className="p-8 text-center text-slate-400 font-mono text-xs flex items-center justify-center gap-2"><WifiOff className="w-4 h-4" /> Unable to load charging sessions</div>}
-                {!loading && !error && charges.length === 0 && <div className="p-8 text-center text-slate-400 font-mono text-xs italic">// no charging sessions found for {selectedDate}</div>}
+                {!loading && !error && charges.length === 0 && !showLiveCard && <div className="p-8 text-center text-slate-400 font-mono text-xs italic">// no charging sessions found for {selectedDate}</div>}
                 {!loading && !error && charges.map((charge) => {
                     const key = charge.tessie_charge_id ?? `${charge.date}-${charge.time_mst}`;
                     const imported = importedIds.has(key ?? '');
@@ -2442,6 +2570,21 @@ const DriverDashboard = () => {
     const expenseFormRef = useRef<HTMLDivElement>(null);
     const [drivesRefreshKey, setDrivesRefreshKey] = useState(0);
 
+    // Track live vehicle charging state for TessieDrivesPanel LIVE badges
+    const [isVehicleCharging, setIsVehicleCharging] = useState(false);
+    useEffect(() => {
+        const poll = async () => {
+            try {
+                const res = await fetch(`${AZURE_BASE}/copilot/charging/live`, { signal: AbortSignal.timeout(8000) });
+                if (res.ok) { const d = await res.json(); setIsVehicleCharging(d?.is_charging ?? false); }
+                else setIsVehicleCharging(false);
+            } catch { setIsVehicleCharging(false); }
+        };
+        poll();
+        const iv = setInterval(poll, 60_000);
+        return () => clearInterval(iv);
+    }, []);
+
     // ── Persist ────────────────────────────────────────────────────────────────
     useEffect(() => { localStorage.setItem('cos_private_payments', JSON.stringify(privatePayments)); }, [privatePayments]);
     useEffect(() => { localStorage.setItem('cos_expenses', JSON.stringify(expenses)); }, [expenses]);
@@ -2902,6 +3045,7 @@ const DriverDashboard = () => {
                         refreshKey={drivesRefreshKey} 
                         privatePayments={privatePayments} 
                         chargingExpenses={expenses.charging} 
+                        isVehicleCharging={isVehicleCharging}
                     />
 
                     <UberHeatmapPanel />

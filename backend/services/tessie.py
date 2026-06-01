@@ -412,11 +412,16 @@ class TessieClient:
         Returns a dict with charging data on success.
         If the vehicle is asleep, returns a dict with charging_state='Asleep'
         so the frontend can display a meaningful status.
+        Includes charge_energy_added and running_cost_estimate for live session tracking.
         """
+        import os
         state = self.get_vehicle_state(vin)
         if not state:
             return None
         
+        # Charging cost rate — configurable via env var, defaults to $0.40/kWh (Supercharger avg)
+        charging_rate = float(os.environ.get("CHARGING_RATE_PER_KWH", "0.40"))
+
         # Handle asleep/inactive vehicle — return a valid response with "Asleep" state
         if state.get("_vehicle_asleep"):
             import pytz as _pytz
@@ -428,6 +433,9 @@ class TessieClient:
                 "current_soc": None,
                 "charge_power_kw": 0,
                 "charge_rate_mph": None,
+                "charge_energy_added": None,
+                "running_cost_estimate": None,
+                "charging_rate_per_kwh": charging_rate,
                 "minutes_to_full": None,
                 "battery_range_mi": None,
                 "inside_temp": None,
@@ -444,12 +452,19 @@ class TessieClient:
         # Determine charging state
         is_charging = charge_state.get('charging_state') in ['Charging', 'Starting']
         
+        # Energy added so far in this session (only meaningful while charging)
+        energy_added = charge_state.get('charge_energy_added') or 0
+        running_cost = round(energy_added * charging_rate, 2) if is_charging else None
+
         return {
             "is_charging": is_charging,
             "charging_state": charge_state.get('charging_state'),
             "current_soc": charge_state.get('battery_level'),
             "charge_power_kw": charge_state.get('charger_power') or 0,
             "charge_rate_mph": charge_state.get('charge_rate'),
+            "charge_energy_added": round(energy_added, 2) if is_charging else None,
+            "running_cost_estimate": running_cost,
+            "charging_rate_per_kwh": charging_rate,
             "minutes_to_full": charge_state.get('minutes_to_full_charge'),
             "battery_range_mi": charge_state.get('battery_range'),
             "inside_temp": state.get('climate_state', {}).get('inside_temp'),
