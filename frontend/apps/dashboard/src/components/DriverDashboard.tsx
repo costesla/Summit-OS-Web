@@ -1830,6 +1830,82 @@ const getTodayMST = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Am
 
 // ─── Private Payments Panel ─────────────────────────────────────────────────────
 
+// ─── Cash Tips Panel ─────────────────────────────────────────────────────────
+const CashTipsPanel: React.FC<{
+    selectedDate: string;
+    payments: PrivatePayment[];
+    onAdd: (p: Omit<PrivatePayment, 'id'>) => void;
+    onDelete: (id: number) => void;
+}> = ({ selectedDate, payments, onAdd, onDelete }) => {
+    const [amount, setAmount] = useState('');
+    const [note, setNote] = useState('');
+
+    const inputCls = 'w-full p-2.5 text-sm bg-white/80 border border-slate-200/80 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 transition-all shadow-sm';
+
+    const todayTips = payments.filter(p => p.date === selectedDate && p.client === 'Cash Tip');
+    const total = todayTips.reduce((s, p) => s + p.amount, 0);
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!amount) return;
+        onAdd({
+            client: 'Cash Tip',
+            amount: parseFloat(amount) || 0,
+            note,
+            date: selectedDate,
+            timestamp: `${selectedDate}T${new Date().toTimeString().split(' ')[0]}`,
+        });
+        setAmount(''); setNote('');
+    };
+
+    return (
+        <div className="p-6 rounded-2xl border border-amber-200/80 bg-amber-50/40 shadow-sm backdrop-blur-md relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 blur-3xl rounded-full pointer-events-none" />
+            <div className="flex items-center justify-between mb-4">
+                <div>
+                    <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                        <DollarSign className="w-4 h-4 text-amber-600" /> Cash Tips
+                    </h2>
+                    <p className="text-xs font-semibold text-slate-500 tracking-wide">Off-app · Gratuity · Cash</p>
+                </div>
+                {todayTips.length > 0 && (
+                    <span className="text-xl font-black text-amber-700">${total.toFixed(2)}</span>
+                )}
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-3 mb-4">
+                <div className="grid grid-cols-2 gap-2">
+                    <input type="number" placeholder="Amount ($)" step="0.01" value={amount}
+                        onChange={e => setAmount(e.target.value)} className={inputCls} />
+                    <input type="text" placeholder="Note (optional)" value={note}
+                        onChange={e => setNote(e.target.value)} className={inputCls} />
+                </div>
+                <button type="submit"
+                    className="w-full py-2.5 rounded-xl font-bold text-xs uppercase tracking-wide bg-amber-500 text-white hover:bg-amber-600 transition-all shadow-sm border-none">
+                    + Log Cash Tip
+                </button>
+            </form>
+
+            <div className="space-y-2 max-h-[160px] overflow-y-auto">
+                {todayTips.length === 0
+                    ? <p className="text-center text-xs text-slate-400 italic py-3">// no cash tips for {selectedDate}</p>
+                    : todayTips.map(p => (
+                        <div key={p.id} className="flex items-center justify-between p-3 rounded-xl bg-white/70 border border-slate-200/80 hover:bg-slate-50 transition-colors shadow-sm group">
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm font-black text-slate-800">${p.amount.toFixed(2)}</span>
+                                {p.note && <span className="text-[10px] text-slate-500">{p.note}</span>}
+                            </div>
+                            <button onClick={() => onDelete(p.id)}
+                                className="text-slate-400 hover:text-rose-600 opacity-0 group-hover:opacity-100 transition-all">
+                                <Trash2 className="w-3 h-3" />
+                            </button>
+                        </div>
+                    ))}
+            </div>
+        </div>
+    );
+};
+
 const PrivatePaymentsPanel: React.FC<{
     selectedDate: string;
     payments: PrivatePayment[];
@@ -1842,7 +1918,8 @@ const PrivatePaymentsPanel: React.FC<{
 
     const inputCls = 'w-full p-2.5 text-sm bg-white/80 border border-slate-200/80 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 transition-all shadow-sm';
 
-    const todayPayments = payments.filter(p => p.date === selectedDate);
+    // Exclude cash tips — those are shown in CashTipsPanel
+    const todayPayments = payments.filter(p => p.date === selectedDate && p.client !== 'Cash Tip');
     const total = todayPayments.reduce((s, p) => s + p.amount, 0);
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -3188,6 +3265,12 @@ const DriverDashboard = () => {
                                 onHoursChange={(h) => setManualHoursMap(prev => ({ ...prev, [selectedDate]: h }))}
                             />
                             <PrivatePaymentsPanel
+                                selectedDate={selectedDate}
+                                payments={privatePayments}
+                                onAdd={addPrivatePayment}
+                                onDelete={deletePrivatePayment}
+                            />
+                            <CashTipsPanel
                                 selectedDate={selectedDate}
                                 payments={privatePayments}
                                 onAdd={addPrivatePayment}
