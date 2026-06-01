@@ -753,49 +753,62 @@ function initMap() {
 // ── Load Data ─────────────────────────────────────────────────────────
 async function loadData() {
   const days = document.getElementById('days-select').value;
-  showLoading(true, 'Fetching drive history…');
   document.getElementById('refresh-btn').disabled = true;
   document.getElementById('error-box').style.display = 'none';
 
+  // Heatmap endpoint may be slow on Azure cold-start + geocoding.
+  // Try up to 2 attempts with clear status messages.
+  let heatRes = null;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      showLoading(true, attempt === 1
+        ? 'Fetching drive history…'
+        : 'Backend warming up — retrying…');
+      heatRes = await fetch(
+        `${BACKEND}/api/copilot/tessie/heatmap?days=${days}&batch=80`,
+        { signal: AbortSignal.timeout(90000) }  // 90s — covers cold-start + geocoding
+      );
+      break; // success
+    } catch (e) {
+      if (attempt === 2 || !String(e).includes('timeout')) {
+        document.getElementById('error-box').style.display = 'block';
+        document.getElementById('error-box').textContent =
+          'Backend unavailable — check connection or try again in a moment.';
+        showLoading(false);
+        document.getElementById('refresh-btn').disabled = false;
+        return;
+      }
+      // First attempt timed out — brief pause then retry
+      await new Promise(r => setTimeout(r, 2000));
+    }
+  }
+
   try {
-    const heatmapUrl = `${BACKEND}/api/copilot/tessie/heatmap?days=${days}&batch=80`;
     const drivesUrl  = `${BACKEND}/api/copilot/tessie/drives?tag=uber&days=${days}`;
     const chargesUrl = `${BACKEND}/api/copilot/tessie/charges?days=${days}`;
 
-    // Fetch all three in parallel; drives & charges are for sidebar stats only
-    const [heatRes, drivesRes, chargesRes] = await Promise.all([
-      fetch(heatmapUrl, { signal: AbortSignal.timeout(45000) }),
+    // Sidebar stats calls run after the heatmap succeeds
+    const [drivesRes, chargesRes] = await Promise.all([
       fetch(drivesUrl,  { signal: AbortSignal.timeout(20000) }).catch(() => null),
       fetch(chargesUrl, { signal: AbortSignal.timeout(20000) }).catch(() => null)
     ]);
 
-    // Heat points (primary source for map layer)
-    if (heatRes.ok) {
+    // Heat points
+    if (heatRes && heatRes.ok) {
       const heatData = await heatRes.json();
       allHeatPoints = heatData.points || [];
       const remaining = heatData.uncached_remaining || 0;
       if (remaining > 0) {
-        console.log(`[Heatmap] ${remaining} addresses not yet geocoded — reload to cache more`);
+        showLoading(true, `Rendering ${allHeatPoints.length} points… (${remaining} addresses still geocoding)`);
+        await new Promise(r => setTimeout(r, 50));
       }
     } else {
       allHeatPoints = [];
     }
 
-    // Drives (sidebar stats — earnings, miles, charts)
-    if (drivesRes && drivesRes.ok) {
-      const drivesData = await drivesRes.json();
-      allDrives = drivesData.drives || [];
-    } else {
-      allDrives = [];
-    }
-
-    // Charges (charging overlay markers)
-    if (chargesRes && chargesRes.ok) {
-      const chargesData = await chargesRes.json();
-      allCharges = chargesData.sessions || [];
-    } else {
-      allCharges = [];
-    }
+    // Drives (sidebar stats)
+    allDrives  = (drivesRes  && drivesRes.ok)  ? (await drivesRes.json()).drives   || [] : [];
+    allCharges = (chargesRes && chargesRes.ok) ? (await chargesRes.json()).sessions || [] : [];
 
     showLoading(true, `Rendering ${allHeatPoints.length} geocoded points…`);
     await new Promise(r => setTimeout(r, 50));
@@ -809,10 +822,9 @@ async function loadData() {
     renderCharges();
 
   } catch (err) {
-    console.error('Load error:', err);
     document.getElementById('error-box').style.display = 'block';
     document.getElementById('error-box').textContent =
-      `Failed to load data: ${err.message}. Make sure the backend is running.`;
+      `Failed to load data: ${err.message}.`;
   } finally {
     showLoading(false);
     document.getElementById('refresh-btn').disabled = false;
