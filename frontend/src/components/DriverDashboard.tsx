@@ -14,7 +14,7 @@ import { isBackgroundableError, devDebugError, getAsyncExecutionLogs, pollJobSta
 const AZURE_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://summitos-api.azurewebsites.net/api';
 const VERSION = "1.4.5";
 
-const TAG_FILTERS = ['Uber', 'Uber_Matched', 'Uber_Pickup', 'Jackie', 'Esmeralda', 'Daniel', 'Private_Trip', 'Uncategorized'] as const;
+const TAG_FILTERS = ['Uber', 'Uber_Matched', 'Uber_Pickup', 'Jackie', 'Esmeralda', 'Daniel', 'Lauren', 'Private_Trip', 'Uncategorized'] as const;
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface PrivatePayment {
@@ -406,6 +406,7 @@ const TAG_STYLE: Record<string, string> = {
     jackie: 'bg-purple-50 text-purple-700 border-purple-200/80',
     esmeralda: 'bg-teal-50 text-teal-700 border-teal-200/80',
     daniel: 'bg-indigo-50 text-indigo-700 border-indigo-200/80',
+    lauren: 'bg-rose-50 text-rose-700 border-rose-200/80',
     private_trip: 'bg-amber-50 text-amber-800 border-amber-300/80',
     private: 'bg-amber-50 text-amber-800 border-amber-300/80',
     uncategorized: 'bg-slate-50 text-slate-500 border-slate-200/80',
@@ -572,49 +573,8 @@ const TessieDrivesPanel = ({
                                          const tagLower = drive.tag.toLowerCase();
 
                                          // 1. Check if it's an operational charging session
+                                         // Cost is shown in the Charging Expenses section — not duplicated here.
                                          if (tagLower.includes('charging') || tagLower.includes('supercharger')) {
-                                             const numMatch = tagLower.match(/(?:session|charging)\s*(\d+)/) || tagLower.match(/(\d+)/);
-                                             const sessionNum = numMatch ? numMatch[1] : null;
-                                             let matchedExpense = null;
-                                             
-                                             if (sessionNum && chargingExpenses && chargingExpenses.length > 0) {
-                                                 matchedExpense = chargingExpenses.find(e => {
-                                                     const noteLower = (e.note ?? '').toLowerCase();
-                                                     return noteLower.includes(`session ${sessionNum}`) || 
-                                                            noteLower.includes(`charging ${sessionNum}`) || 
-                                                            noteLower.includes(`charge ${sessionNum}`) ||
-                                                            (sessionNum === '1' && !noteLower.includes('session 2') && !noteLower.includes('session 3'));
-                                                 });
-                                             }
-                                             if (!matchedExpense && drive.time_mst && chargingExpenses && chargingExpenses.length > 0) {
-                                                 const [dH, dM] = drive.time_mst.split(':').map(Number);
-                                                 const driveMins = dH * 60 + dM;
-                                                 let minDiff = 120;
-                                                 for (const exp of chargingExpenses) {
-                                                     const noteLower = (exp.note ?? '').toLowerCase();
-                                                     const timeMatch = noteLower.match(/(\d{1,2}):(\d{2})/);
-                                                     if (timeMatch) {
-                                                         const [eH, eM] = timeMatch.map(Number);
-                                                         const expMins = eH * 60 + eM;
-                                                         const diff = Math.abs(driveMins - expMins);
-                                                         if (diff < minDiff) {
-                                                             minDiff = diff;
-                                                             matchedExpense = exp;
-                                                         }
-                                                     }
-                                                 }
-                                             }
-                                             if (!matchedExpense && chargingExpenses && chargingExpenses.length === 1) {
-                                                 matchedExpense = chargingExpenses[0];
-                                             }
-                                             if (matchedExpense && matchedExpense.amount > 0) {
-                                                 return (
-                                                     <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-50 border-amber-200 text-amber-700">
-                                                         <span>⚡ Charged</span>
-                                                         <span>(${matchedExpense.amount.toFixed(2)})</span>
-                                                     </span>
-                                                 );
-                                             }
                                              return (
                                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-50 border-slate-200 text-slate-500">
                                                      <span>⚡ Charging Session</span>
