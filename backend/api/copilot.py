@@ -851,21 +851,6 @@ def copilot_tessie_heatmap(req: func.HttpRequest) -> func.HttpResponse:
             )
         cur = conn.cursor()
 
-        # Ensure GeoCache table exists
-        cur.execute("""
-            IF NOT EXISTS (
-                SELECT 1 FROM INFORMATION_SCHEMA.TABLES
-                WHERE TABLE_SCHEMA='Rides' AND TABLE_NAME='GeoCache'
-            )
-            CREATE TABLE Rides.GeoCache (
-                Address  NVARCHAR(500) NOT NULL PRIMARY KEY,
-                Lat      FLOAT,
-                Lon      FLOAT,
-                Created  DATETIME2 DEFAULT GETDATE()
-            )
-        """)
-        conn.commit()
-
         # Fetch rides in the requested date range
         cur.execute("""
             SELECT Pickup_Location, Dropoff_Location, Driver_Earnings
