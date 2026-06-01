@@ -274,6 +274,14 @@ async def _src_onedrive_trip_count(date_str: str) -> int:
     Folder pattern: Uber Driver/YYYY/Month/Week X/M.DD.YY
     Uses MS Graph API.
     """
+    # FAST-PATH: Check category-level cache before Graph token exchange
+    if date_str:
+        cache_key = f"{date_str}:trips"
+        cached = _onedrive_count_cache.get(cache_key)
+        if cached and time.time() < cached["expires"]:
+            log.info(f"[PreShift] OneDrive trips count cache HIT (fast path) for {date_str}: {cached['value']}")
+            return cached["value"]
+
     token = await _get_graph_token()
     if not token:
         raise ValueError("MS Graph credentials not configured")
@@ -291,6 +299,14 @@ async def _src_onedrive_trip_count(date_str: str) -> int:
 
 async def _src_onedrive_expense_count(date_str: str) -> int:
     """Count non-Uber-Driver expense screenshots in the date folder."""
+    # FAST-PATH: Check category-level cache before Graph token exchange
+    if date_str:
+        cache_key = f"{date_str}:expenses"
+        cached = _onedrive_count_cache.get(cache_key)
+        if cached and time.time() < cached["expires"]:
+            log.info(f"[PreShift] OneDrive expenses count cache HIT (fast path) for {date_str}: {cached['value']}")
+            return cached["value"]
+
     token = await _get_graph_token()
     if not token:
         raise ValueError("MS Graph credentials not configured")
@@ -329,6 +345,13 @@ _drive_cache: dict = {}
 _onedrive_count_cache: dict = {}
 _last_resolution_meta = {"source": "env", "site_id": None, "resolution_latency_ms": 0.0}
 _warmup_started = False
+
+def _normalize(val: str) -> str:
+    """Normalize paths/names for exact comparison (lowercase, unquoted, stripped)."""
+    if not val:
+        return ""
+    import urllib.parse
+    return urllib.parse.unquote(str(val)).lower().strip().strip("/")
 
 async def _warmup_cache():
     """Perform a best-effort cold-start warmup of the SharePoint Site & Drive ID."""
@@ -437,10 +460,23 @@ async def _get_sharepoint_drive_id(token: str) -> tuple[str | None, str, str, fl
                 sites = res.json().get("value", [])
                 matched_sites = []
                 for s in sites:
-                    if s.get("name") == site_name or s.get("displayName") == site_name:
-                        web_url = s.get("webUrl", "")
-                        if hostname in web_url:
-                            matched_sites.append(s)
+                    name_norm = _normalize(s.get("name", ""))
+                    disp_norm = _normalize(s.get("displayName", ""))
+                    site_name_norm = _normalize(site_name)
+                    web_url = s.get("webUrl", "")
+                    web_url_norm = _normalize(web_url)
+                    
+                    # Strict guard: hostname check (must strictly equal costesla.sharepoint.com)
+                    if hostname not in web_url_norm:
+                        continue
+                        
+                    # Deterministic path normalization comparison
+                    if (name_norm == site_name_norm or 
+                        disp_norm == site_name_norm or 
+                        web_url_norm.endswith(site_name_norm) or
+                        f"/sites/{site_name_norm}" in web_url_norm):
+                        matched_sites.append(s)
+                        
                 if len(matched_sites) == 1:
                     site_id = matched_sites[0].get("id")
                     log.info(f"[PreShift] SharePoint Site ID resolved via search: {site_id}")
@@ -457,7 +493,22 @@ async def _get_sharepoint_drive_id(token: str) -> tuple[str | None, str, str, fl
             raise ValueError(f"Failed to fetch document libraries for SharePoint site {site_id}")
 
         drives = res.json().get("value", [])
-        matched_drives = [d for d in drives if d.get("name") == lib_name]
+        matched_drives = [d for d in drives if _normalize(d.get("name", "")) == _normalize(lib_name)]
+        
+        # Resilient fallback: Try "Shared Documents" if "Documents" isn't matched directly
+        if not matched_drives and _normalize(lib_name) == "documents":
+            matched_drives = [d for d in drives if _normalize(d.get("name", "")) == "shared documents"]
+            
+        # Resilient fallback: First documentLibrary drive
+        if not matched_drives and drives:
+            doc_libs = [d for d in drives if d.get("driveType") == "documentLibrary"]
+            if doc_libs:
+                matched_drives = [doc_libs[0]]
+                log.info(f"[PreShift] Document library '{lib_name}' not found. Falling back to library: '{doc_libs[0].get('name')}'")
+            else:
+                matched_drives = [drives[0]]
+                log.info(f"[PreShift] Document library '{lib_name}' not found. Falling back to drive: '{drives[0].get('name')}'")
+
         if len(matched_drives) == 1:
             resolved_drive_id = matched_drives[0].get("id")
             log.info(f"[PreShift] SharePoint Drive ID resolved for library '{lib_name}': {resolved_drive_id}")
@@ -700,7 +751,7 @@ async def _graph_count_files(token: str, folder_path: str,
                              exclude_patterns: list[str],
                              date_str: str = "",
                              cache_type: str = "") -> int:
-    """Count files in an OneDrive folder via MS Graph. Handles 429 with 1 retry."""
+    """Count files in an OneDrive folder via MS Graph. Handles 429 with 1 retry and supports paging."""
     global _last_resolution_meta, _onedrive_count_cache
     
     # Check count cache first if caching parameters are provided
@@ -724,28 +775,36 @@ async def _graph_count_files(token: str, folder_path: str,
     import requests as _req
     encoded = folder_path.replace(" ", "%20")
     # Payload Optimization: Fetch only $select=name since we only count files (no size required)
-    url = (f"https://graph.microsoft.com/v1.0/drives/{drive_id}"
-           f"/root:/{encoded}:/children?$select=name&$top=999")
+    base_url = (f"https://graph.microsoft.com/v1.0/drives/{drive_id}"
+                f"/root:/{encoded}:/children?$select=name&$top=999")
     headers = {"Authorization": f"Bearer {token}"}
 
-    def _fetch():
-        resp = _req.get(url, headers=headers, timeout=_ONEDRIVE_TIMEOUT_S)
+    def _fetch_page(url_to_fetch):
+        resp = _req.get(url_to_fetch, headers=headers, timeout=_ONEDRIVE_TIMEOUT_S)
         if resp.status_code == 429:
             retry_after = int(resp.headers.get("Retry-After", "2"))
             time.sleep(min(retry_after, 3))
-            resp = _req.get(url, headers=headers, timeout=_ONEDRIVE_TIMEOUT_S)
+            resp = _req.get(url_to_fetch, headers=headers, timeout=_ONEDRIVE_TIMEOUT_S)
         resp.raise_for_status()
         return resp.json()
 
+    def _fetch_all():
+        all_files = []
+        next_url = base_url
+        while next_url:
+            data = _fetch_page(next_url)
+            all_files.extend(data.get("value", []))
+            next_url = data.get("@odata.nextLink")
+        return all_files
+
     try:
         loop = asyncio.get_running_loop()
-        data = await loop.run_in_executor(None, _fetch)
+        files = await loop.run_in_executor(None, _fetch_all)
     except Exception as e:
         if "404" in str(e):
             return 0
         raise
 
-    files = data.get("value", [])
     count = 0
     for f in files:
         name = f.get("name", "")
@@ -1281,10 +1340,12 @@ def pre_shift_check(req: func.HttpRequest) -> func.HttpResponse:
             "db_latency_ms": db_latency,
             "graph_drive_source": _last_resolution_meta["source"],
             "graph_resolution_latency_ms": _last_resolution_meta["resolution_latency_ms"],
-            "onedrive_file_count": od_trips["value"] if od_trips["value"] is not None else None,
-            "onedrive_status": "OK" if od_trips["status"] == "OK" and od_expenses["status"] == "OK" else "UNAVAILABLE",
             "onedrive_trips_latency_ms": od_trips["latency_ms"],
             "onedrive_expenses_latency_ms": od_expenses["latency_ms"],
+            "onedrive_file_count_trips": od_trips["value"] if od_trips["value"] is not None else None,
+            "onedrive_file_count_expenses": od_expenses["value"] if od_expenses["value"] is not None else None,
+            "onedrive_status_trips": "OK" if od_trips["status"] == "OK" else "UNAVAILABLE",
+            "onedrive_status_expenses": "OK" if od_expenses["status"] == "OK" else "UNAVAILABLE",
             "tessie_latency_ms": tessie_trips["latency_ms"]
         }
         log.info(f"[PreShift Diagnostic] {json.dumps(diagnostics)}")

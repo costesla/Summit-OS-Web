@@ -16,17 +16,13 @@ conn_str = os.environ.get("SQL_CONNECTION_STRING")
 conn = pyodbc.connect(conn_str)
 cursor = conn.cursor()
 
-drive_id = 'TESSIE-397010117'
-
-print(f"=== Querying Rides.Rides for {drive_id} ===")
-cursor.execute("SELECT * FROM Rides.Rides WHERE RideID = ?", (drive_id,))
-columns = [col[0] for col in cursor.description]
+print("=== Stored Tessie Drives Boundaries ===")
+cursor.execute("SELECT MIN(Timestamp_Start) AS Earliest, MAX(Timestamp_Start) AS Latest, COUNT(*) AS TotalDrives FROM Rides.Rides")
 row = cursor.fetchone()
 if row:
-    for col, val in zip(columns, row):
-        print(f"{col}: {val}")
-else:
-    print("Not found in Rides.Rides")
+    print(f"Earliest Drive Stored: {row[0]}")
+    print(f"Latest Drive Stored:   {row[1]}")
+    print(f"Total Drives in DB:    {row[2]}")
 
 cursor.close()
 conn.close()

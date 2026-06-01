@@ -31,10 +31,10 @@ class SummitPipeline:
         # Load environment if needed (ConfigLoader already called in entry points)
         logging.info("SummitPipeline: Modernized 3-Phase Orchestrator Initialized.")
 
-    def simulate(self, blob_url: str) -> Tuple[bool, Dict[str, Any], Optional[str]]:
+    def simulate(self, blob_url: str, custom_artifact_id: Optional[str] = None, custom_filename: Optional[str] = None) -> Tuple[bool, Dict[str, Any], Optional[str]]:
         """Phase 1: Produce ProposedActions with no side effects."""
         start_time = time.time()
-        artifact_id = f"sha256-{hashlib.sha256(blob_url.encode()).hexdigest()}"
+        artifact_id = custom_artifact_id or f"sha256-{hashlib.sha256(blob_url.encode()).hexdigest()}"
         
         raw_text = self.ocr.extract_text(blob_url)
         if not raw_text:
@@ -45,12 +45,14 @@ class SummitPipeline:
         
         proposed_actions = {
             "artifact_id": artifact_id,
-           "source_url": blob_url,
+            "source_url": blob_url,
             "classification": classification,
             "raw_text": raw_text,
             "timestamp_epoch": time.time(),
             "confidence": 95.0 # Placeholder for LLM confidence
         }
+        if custom_filename:
+            proposed_actions["custom_filename"] = custom_filename
         
         self.gate.log_event(artifact_id, "Analyze", "SIMULATE", int((time.time()-start_time)*1000), "SUCCESS")
         return True, proposed_actions, None
@@ -66,9 +68,10 @@ class SummitPipeline:
             semantics = self._derive_mobility_semantics(proposed_actions['raw_text'])
             
             # 2. Build ArtifactRecord
+            filename = proposed_actions.get("custom_filename") or os.path.basename(proposed_actions['source_url'])
             artifact_data = {
                 "artifact_id": artifact_id,
-                "filename": os.path.basename(proposed_actions['source_url']),
+                "filename": filename,
                 "source_url": proposed_actions['source_url'],
                 "integrity_hash": artifact_id, # Simplified for now
                 "ocr_output": {
@@ -185,7 +188,11 @@ class SummitPipeline:
             prov = record.get('provenance', {}).get('ingestion_timestamp', datetime.now().isoformat())
             ts = datetime.fromisoformat(prov.replace('Z', '+00:00'))
             dest_folder = ts.strftime("%Y/%m/%d")
-            filename = f"{record['artifact_id'][:12]}.jpg"
+            orig_filename = record.get('filename') or ""
+            ext = "." + orig_filename.rsplit(".", 1)[-1].lower() if "." in orig_filename else ".jpg"
+            if ext not in [".jpg", ".jpeg", ".png", ".pdf"]:
+                ext = ".jpg"
+            filename = f"{record['artifact_id'][:12]}{ext}"
             dest_path = f"{dest_folder}/{filename}"
 
             logging.info(f"Archiving artifact to SharePoint: {dest_path}")

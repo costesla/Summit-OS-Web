@@ -1243,11 +1243,13 @@ class CloudWatcherService:
             offset_hours = abs(int(dt_sample.utcoffset().total_seconds() / 3600))
             logs.append(f"PRIVATE-SYNC: Mountain Time offset for {date_str} is UTC-{offset_hours}")
             
-            # 1. Fetch all INV- bookings for this day (include Fare and Sidecar for bundle detection)
+            # 1. Fetch all private bookings for this day: INV- records (from invoicing system)
+            #    and TRIP- records with TripType='Private' (from booking confirmation email screenshots)
             cursor.execute("""
                 SELECT RideID, Timestamp_Start, Classification, Tessie_DriveID, Fare, Sidecar_Artifact_JSON
                 FROM Rides.Rides
-                WHERE CAST(Timestamp_Start AS DATE) = ? AND RideID LIKE 'INV-%'
+                WHERE CAST(Timestamp_Start AS DATE) = ?
+                  AND (RideID LIKE 'INV-%' OR (RideID LIKE 'TRIP-%' AND TripType = 'Private'))
             """, (date_str,))
             bookings = []
             for row in cursor.fetchall():
@@ -1269,12 +1271,12 @@ class CloudWatcherService:
                     "Fare": float(row[4] or 0),
                     "is_bundle": is_bundle
                 })
-                
+
             if not bookings:
-                logs.append(f"PRIVATE-SYNC: No INV- bookings found for {date_str}.")
+                logs.append(f"PRIVATE-SYNC: No private bookings found for {date_str}.")
                 return
-                
-            logs.append(f"PRIVATE-SYNC: Found {len(bookings)} INV- booking(s) to process.")
+
+            logs.append(f"PRIVATE-SYNC: Found {len(bookings)} private booking(s) to process (INV- and TRIP-Private).")
             
             # 2. Fetch ALL Tessie drives on this day (unmatched and client-tagged)
             cursor.execute("""

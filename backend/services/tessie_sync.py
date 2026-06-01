@@ -122,7 +122,7 @@ class TessieSyncService:
                 charge_data = {
                     "session_id":   str(charge.get('id')),
                     "start_time":   self._format_ts(charge.get('started_at') or charge.get('starting_at')),
-                    "end_time":     self._format_ts(charge.get('ended_at') or charge.get('ending_at')),
+                    "end_time":     self._format_ts(charge.get('finished_at') or charge.get('ended_at') or charge.get('ending_at')),
                     "energy_added": charge.get('energy_added', 0),
                     "cost":         charge.get('cost', 0),
                     "location":     charge.get('location', 'Unknown')

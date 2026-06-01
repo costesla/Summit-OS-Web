@@ -1001,6 +1001,72 @@ def copilot_openapi(req: func.HttpRequest) -> func.HttpResponse:
                         }
                     }
                 }
+            },
+            "/pre-shift-check": {
+                "get": {
+                    "operationId": "runPreShiftCheck",
+                    "summary": "Run pre-session data verification check",
+                    "description": "ALWAYS call this at the start of any session or when the user says 'pre-shift', 'check the system', 'are we good?', or asks about data integrity. Runs a 4-tier multi-source verification check for a given date: Tier 1 = Trip Count consensus (DB vs Tessie vs OneDrive), Tier 2 = Earnings consensus (DB vs OCR vs Bank), Tier 3 = Expense Count consensus, Tier 4 = Timeline integrity. Returns an overall_status of VERIFIED, PARTIAL, or UNVERIFIED, plus per-system online/latency health for db, tessie, onedrive, and bank. Defaults to yesterday in Mountain Time if no date provided.",
+                    "parameters": [
+                        {
+                            "name": "date",
+                            "in": "query",
+                            "description": "Date to verify (YYYY-MM-DD, Mountain Time). Defaults to yesterday.",
+                            "required": False,
+                            "schema": {"type": "string", "format": "date"}
+                        },
+                        {
+                            "name": "refresh",
+                            "in": "query",
+                            "description": "Set to '1' to bypass cache and force a fresh check.",
+                            "required": False,
+                            "schema": {"type": "string", "enum": ["0", "1"], "default": "0"}
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "Pre-shift verification result",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "date": {"type": "string"},
+                                            "generated_at": {"type": "string", "format": "date-time"},
+                                            "overall_status": {
+                                                "type": "string",
+                                                "enum": ["VERIFIED", "PARTIAL", "UNVERIFIED", "N_A"],
+                                                "description": "VERIFIED = all sources in consensus. PARTIAL = minor gaps. UNVERIFIED = significant discrepancy detected."
+                                            },
+                                            "overall_confidence": {
+                                                "type": "integer",
+                                                "description": "Composite confidence score 0-100"
+                                            },
+                                            "tiers": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "tier1_trips": {"type": "object", "description": "Trip count consensus across DB, Tessie, OneDrive"},
+                                                    "tier2_earnings": {"type": "object", "description": "Earnings consensus across DB, OCR, Bank"},
+                                                    "tier3_expenses": {"type": "object", "description": "Expense count consensus"},
+                                                    "tier4_timeline": {"type": "object", "description": "Timeline integrity check"}
+                                                }
+                                            },
+                                            "systems": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "db": {"type": "object", "properties": {"online": {"type": "boolean"}, "latency_ms": {"type": "number"}}},
+                                                    "tessie": {"type": "object", "properties": {"online": {"type": "boolean"}, "latency_ms": {"type": "number"}}},
+                                                    "onedrive": {"type": "object", "properties": {"online": {"type": "boolean"}, "latency_ms": {"type": "number"}}},
+                                                    "bank": {"type": "object", "properties": {"online": {"type": "boolean"}, "latency_ms": {"type": "number"}}}
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
         "components": {
