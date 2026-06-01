@@ -630,121 +630,131 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
             except Exception as ov_err:
                 logging.warning(f"DB classification override lookup failed: {ov_err}")
 
-        # Database query fallback when raw_drives is empty
-        if not raw_drives:
-            logging.info(f"Tessie API returned 0 drives for range {from_ts} to {to_ts}. Initiating database fallback.")
-            try:
-                db = DatabaseClient()
-                conn = db.get_connection()
-                if conn:
-                    # Convert UTC UNIX timestamps back to Mountain Time for database query
-                    from_dt_mt = _ts_to_mt(from_ts)
-                    to_dt_mt = _ts_to_mt(to_ts)
+        # ── DB Supplement: inject any DB-only drives that Tessie API missed ─────
+        # The Tessie API is inconsistent about returning older drives. Always query
+        # the DB and merge in any TESSIE-* drives not already present in raw_drives.
+        tessie_ids_seen = set(str(rd.get("id") or "") for rd in raw_drives)
+        logging.info(f"Tessie API returned {len(raw_drives)} drives. Checking DB for any missing drives...")
+        try:
+            db = DatabaseClient()
+            conn = db.get_connection()
+            if conn:
+                # Convert UTC UNIX timestamps back to Mountain Time for database query
+                from_dt_mt = _ts_to_mt(from_ts)
+                to_dt_mt = _ts_to_mt(to_ts)
+                
+                cur = conn.cursor()
+                cur.execute("""
+                    SELECT RideID, TripType, Classification, Distance_mi, Duration_min, 
+                           Tessie_DriveID, Start_SOC, End_SOC, Energy_Used_kWh, Efficiency_Wh_mi, 
+                           Timestamp_Start, Pickup_Location, Dropoff_Location, Sidecar_Artifact_JSON
+                    FROM Rides.Rides 
+                    WHERE Timestamp_Start >= ? AND Timestamp_Start <= ?
+                    ORDER BY Timestamp_Start
+                """, (from_dt_mt.replace(tzinfo=None), to_dt_mt.replace(tzinfo=None)))
+                
+                db_injected = 0
+                rows = cur.fetchall()
+                for row in rows:
+                    ride_id = row[0]
+                    trip_type = row[1]
+                    classification = row[2]
+                    distance_mi = float(row[3] or 0)
+                    duration_min = float(row[4] or 0)
+                    tessie_drive_id = row[5]
+                    start_soc = float(row[6] or 0)
+                    end_soc = float(row[7] or 0)
+                    energy_used_kwh = float(row[8] or 0)
+                    efficiency_wh_mi = float(row[9] or 0)
+                    timestamp_start = row[10]
+                    pickup_location = row[11] or "Unknown"
+                    dropoff_location = row[12] or "Unknown"
+                    sidecar_json = row[13]
                     
-                    cur = conn.cursor()
-                    cur.execute("""
-                        SELECT RideID, TripType, Classification, Distance_mi, Duration_min, 
-                               Tessie_DriveID, Start_SOC, End_SOC, Energy_Used_kWh, Efficiency_Wh_mi, 
-                               Timestamp_Start, Pickup_Location, Dropoff_Location, Sidecar_Artifact_JSON
-                        FROM Rides.Rides 
-                        WHERE Timestamp_Start >= ? AND Timestamp_Start <= ?
-                        ORDER BY Timestamp_Start
-                    """, (from_dt_mt.replace(tzinfo=None), to_dt_mt.replace(tzinfo=None)))
+                    # Determine drive_id for dedup check
+                    drive_id = tessie_drive_id
+                    if not drive_id:
+                        if ride_id.startswith("TESSIE-"):
+                            drive_id = ride_id[len("TESSIE-"):]
+                        else:
+                            drive_id = ride_id
+
+                    # Skip if Tessie API already returned this drive
+                    if str(drive_id) in tessie_ids_seen:
+                        continue
                     
-                    rows = cur.fetchall()
-                    for row in rows:
-                        ride_id = row[0]
-                        trip_type = row[1]
-                        classification = row[2]
-                        distance_mi = float(row[3] or 0)
-                        duration_min = float(row[4] or 0)
-                        tessie_drive_id = row[5]
-                        start_soc = float(row[6] or 0)
-                        end_soc = float(row[7] or 0)
-                        energy_used_kwh = float(row[8] or 0)
-                        efficiency_wh_mi = float(row[9] or 0)
-                        timestamp_start = row[10]
-                        pickup_location = row[11] or "Unknown"
-                        dropoff_location = row[12] or "Unknown"
-                        sidecar_json = row[13]
+                    # Load sidecar if available
+                    sidecar = {}
+                    if sidecar_json:
+                        try:
+                            sidecar = json.loads(sidecar_json)
+                        except:
+                            pass
+                    
+                    # Reconstruct tag
+                    tag = classification
+                    if classification in ('Uber_Dropoff', 'Uber_Matched'):
+                        tag = 'uber'
+                    elif classification == 'Jackie':
+                        tag = 'Jackie'
+                    elif classification == 'Esmeralda':
+                        tag = 'Esmeralda'
+                    elif classification and classification.startswith('Private:'):
+                        tag = classification[len('Private:'):]
+                    elif not tag:
+                        tag = 'Uncategorized'
                         
-                        # Load sidecar if available
-                        sidecar = {}
-                        if sidecar_json:
-                            try:
-                                sidecar = json.loads(sidecar_json)
-                            except:
-                                pass
+                    # Localize timestamp to Mountain Time to get UTC UNIX timestamp
+                    dt_start_mt = _MT.localize(timestamp_start)
+                    started_at = int(dt_start_mt.timestamp())
+                    
+                    # Handle ended_at
+                    ended_at = None
+                    if "Timestamp_End" in sidecar:
+                        try:
+                            dt_end_mt = _MT.localize(datetime.datetime.strptime(sidecar["Timestamp_End"], "%Y-%m-%d %H:%M:%S"))
+                            ended_at = int(dt_end_mt.timestamp())
+                        except:
+                            pass
+                    if not ended_at:
+                        ended_at = started_at + int(duration_min * 60)
                         
-                        # Reconstruct tag
-                        tag = classification
-                        if classification in ('Uber_Dropoff', 'Uber_Matched'):
-                            tag = 'uber'
-                        elif classification == 'Jackie':
-                            tag = 'Jackie'
-                        elif classification == 'Esmeralda':
-                            tag = 'Esmeralda'
-                        elif classification and classification.startswith('Private:'):
-                            tag = classification[len('Private:'):]
-                        elif not tag:
-                            tag = 'Uncategorized'
-                            
-                        # Localize timestamp to Mountain Time to get UTC UNIX timestamp
-                        dt_start_mt = _MT.localize(timestamp_start)
-                        started_at = int(dt_start_mt.timestamp())
-                        
-                        # Handle ended_at
-                        ended_at = None
-                        if "Timestamp_End" in sidecar:
-                            try:
-                                dt_end_mt = _MT.localize(datetime.datetime.strptime(sidecar["Timestamp_End"], "%Y-%m-%d %H:%M:%S"))
-                                ended_at = int(dt_end_mt.timestamp())
-                            except:
-                                pass
-                        if not ended_at:
-                            ended_at = started_at + int(duration_min * 60)
-                            
-                        # average speed in kph
-                        avg_speed_kph = 0.0
-                        if duration_min > 0 and distance_mi > 0:
-                            avg_speed_mph = distance_mi / (duration_min / 60)
-                            avg_speed_kph = avg_speed_mph / 0.621371
-                            
-                        drive_id = tessie_drive_id
-                        if not drive_id:
-                            if ride_id.startswith("TESSIE-"):
-                                drive_id = ride_id[len("TESSIE-"):]
-                            else:
-                                drive_id = ride_id
+                    # average speed in kph
+                    avg_speed_kph = 0.0
+                    if duration_min > 0 and distance_mi > 0:
+                        avg_speed_mph = distance_mi / (duration_min / 60)
+                        avg_speed_kph = avg_speed_mph / 0.621371
                                 
-                        d = {
-                            "id": drive_id,
-                            "tag": tag,
-                            "started_at": started_at,
-                            "ended_at": ended_at,
-                            "distance": distance_mi,
-                            "distance_miles": distance_mi,
-                            "odometer_distance": distance_mi,
-                            "energy_used": energy_used_kwh,
-                            "autopilot_distance": 0.0,
-                            "max_speed": 0.0,
-                            "average_speed": avg_speed_kph,
-                            "starting_location": pickup_location,
-                            "ending_location": dropoff_location,
-                            "starting_battery": start_soc,
-                            "ending_battery": end_soc,
-                            "starting_latitude": sidecar.get("starting_latitude") or sidecar.get("start_lat"),
-                            "starting_longitude": sidecar.get("starting_longitude") or sidecar.get("start_lon"),
-                            "ending_latitude": sidecar.get("ending_latitude") or sidecar.get("end_lat"),
-                            "ending_longitude": sidecar.get("ending_longitude") or sidecar.get("end_lon")
-                        }
-                        raw_drives.append(d)
-                    
-                    logging.info(f"Fallback matched {len(raw_drives)} mock raw drives from Rides.Rides.")
-                    cur.close()
-                    conn.close()
-            except Exception as fallback_err:
-                logging.error(f"Error during database drives query fallback: {fallback_err}")
+                    d = {
+                        "id": drive_id,
+                        "tag": tag,
+                        "started_at": started_at,
+                        "ended_at": ended_at,
+                        "distance": distance_mi,
+                        "distance_miles": distance_mi,
+                        "odometer_distance": distance_mi,
+                        "energy_used": energy_used_kwh,
+                        "autopilot_distance": 0.0,
+                        "max_speed": 0.0,
+                        "average_speed": avg_speed_kph,
+                        "starting_location": pickup_location,
+                        "ending_location": dropoff_location,
+                        "starting_battery": start_soc,
+                        "ending_battery": end_soc,
+                        "starting_latitude": sidecar.get("starting_latitude") or sidecar.get("start_lat"),
+                        "starting_longitude": sidecar.get("starting_longitude") or sidecar.get("start_lon"),
+                        "ending_latitude": sidecar.get("ending_latitude") or sidecar.get("end_lat"),
+                        "ending_longitude": sidecar.get("ending_longitude") or sidecar.get("end_lon")
+                    }
+                    raw_drives.append(d)
+                    tessie_ids_seen.add(str(drive_id))
+                    db_injected += 1
+                
+                logging.info(f"DB supplement: injected {db_injected} drives not found in Tessie API.")
+                cur.close()
+                conn.close()
+        except Exception as fallback_err:
+            logging.error(f"Error during database drives supplement: {fallback_err}")
 
         # Grouping/Blending Logic
         from collections import defaultdict
