@@ -53,15 +53,15 @@ export default function LiveMap({ className = "h-[600px]", overridePos }: { clas
             const res = await fetch('https://summitos-api.azurewebsites.net/api/vehicle-location');
             if (res.ok) {
                 const data = await res.json();
-                setPos(data);
-                setError("");
-
-                // BROADCAST STATE
-                if (channelRef) {
-                    channelRef.postMessage({ type: 'SYNC', payload: data });
+                if (data) {
+                    setPos(data);
+                    setError("");
+                    if (channelRef) {
+                        channelRef.postMessage({ type: 'SYNC', payload: data });
+                    }
                 }
             } else {
-                console.log("Tracking update failed");
+                setError("Connection lost");
             }
         } catch (e) {
             console.error(e);

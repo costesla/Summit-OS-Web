@@ -4,8 +4,6 @@ import { useEffect, useState } from "react";
 import { Battery, Zap, Moon, AlertCircle } from "lucide-react";
 
 interface CarStatus {
-    vin: string;
-    name: string;
     battery_level: number;
     battery_range: number;
     is_charging: boolean;
@@ -20,10 +18,16 @@ export default function BatteryWidget() {
     useEffect(() => {
         async function fetchStatus() {
             try {
-                const res = await fetch("/api/car-status");
+                const res = await fetch("https://summitos-api.azurewebsites.net/api/copilot/charging/live");
                 if (!res.ok) throw new Error("Failed");
                 const json = await res.json();
-                setData(json);
+                // Map copilot/charging/live response to the shape this widget needs
+                setData({
+                    battery_level: json.current_soc ?? 0,
+                    battery_range: json.battery_range_mi ?? 0,
+                    is_charging: json.is_charging ?? false,
+                    status: json.vehicle_asleep ? "Sleeping" : (json.charging_state ?? "Online"),
+                });
             } catch (e) {
                 setError(true);
             } finally {
@@ -32,8 +36,7 @@ export default function BatteryWidget() {
         }
 
         fetchStatus();
-        // Refresh every 5 minutes (300000ms) to be polite to API limits
-        const interval = setInterval(fetchStatus, 300000);
+        const interval = setInterval(fetchStatus, 60000); // refresh every 60s
         return () => clearInterval(interval);
     }, []);
 
@@ -67,7 +70,7 @@ export default function BatteryWidget() {
             {/* Header */}
             <div className="flex justify-between items-start z-10">
                 <div>
-                    <h3 className="text-white font-medium text-lg tracking-tight">{data.name}</h3>
+                    <h3 className="text-white font-medium text-lg tracking-tight">COS Tesla</h3>
                     <p className="text-xs text-gray-400 uppercase tracking-widest mt-1 flex items-center gap-1">
                         {isSleeping ? <Moon className="w-3 h-3" /> : <Zap className="w-3 h-3 text-yellow-400" />}
                         {isSleeping ? "Asleep" : "Online"}
