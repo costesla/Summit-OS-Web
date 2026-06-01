@@ -2014,13 +2014,10 @@ const GoalTrackerPanel: React.FC<{ todayEarnings: number; selectedDate: string }
                     }
                     
                     // Populate history map from fetched DB metrics
+                    // Cloud already includes private payments in earnings.amount
                     data.metrics.forEach((m: { date: string; earnings?: { amount: number } }) => {
                         if (m.date) {
-                            const uberAmt = m.earnings?.amount || 0;
-                            const privateAmt = localPayments
-                                .filter((p: PrivatePayment) => p.date === m.date)
-                                .reduce((s: number, p: PrivatePayment) => s + (p.amount || 0), 0);
-                            latestHistory[m.date] = uberAmt + privateAmt;
+                            latestHistory[m.date] = m.earnings?.amount || 0;
                         }
                     });
                     
@@ -2833,25 +2830,39 @@ const DriverDashboard = () => {
     const fetchFromCloud = useCallback(async (date: string) => {
         setIsFetchingCloud(true);
         try {
-            const resp = await fetch(`${AZURE_BASE}/driver/sync?date=${date}&t=${Date.now()}`, { cache: 'no-store' });
-            if (resp.ok) {
-                const data = await resp.json();
+            const [expResp, ppResp] = await Promise.all([
+                fetch(`${AZURE_BASE}/driver/sync?date=${date}&t=${Date.now()}`, { cache: 'no-store' }),
+                fetch(`${AZURE_BASE}/copilot/private-payments?start_date=${date}&end_date=${date}`, {
+                    cache: 'no-store', signal: AbortSignal.timeout(8000)
+                }).catch(() => null),
+            ]);
+
+            // Expenses
+            if (expResp.ok) {
+                const data = await expResp.json();
                 if (data.success && data.expenses) {
                     const cloudFood = data.expenses.fastfood || [];
                     const cloudCharging = data.expenses.charging || [];
                     const cloudMaintenance = data.expenses.capital_maintenance || [];
-                    // Only overwrite local data if cloud actually has entries for this date
                     if (cloudFood.length > 0 || cloudCharging.length > 0 || cloudMaintenance.length > 0) {
-                        setExpenses({
-                            fastfood: cloudFood,
-                            charging: cloudCharging,
-                            capital_maintenance: cloudMaintenance
-                        });
+                        setExpenses({ fastfood: cloudFood, charging: cloudCharging, capital_maintenance: cloudMaintenance });
                         const now = new Date().toLocaleTimeString();
                         setLastSync(now);
                         localStorage.setItem('cos_last_sync', now);
                     }
-                    // If cloud is empty, keep whatever is in localStorage (don't wipe)
+                }
+            }
+
+            // Private payments — cloud wins for synced records; local-only entries remain
+            if (ppResp && ppResp.ok) {
+                const ppData = await ppResp.json();
+                const cloudPayments: PrivatePayment[] = (ppData.payments || []);
+                if (cloudPayments.length > 0) {
+                    setPrivatePayments(prev => {
+                        const cloudIds = new Set(cloudPayments.map((p: PrivatePayment) => p.id));
+                        const localOnly = prev.filter(p => !cloudIds.has(p.id));
+                        return [...cloudPayments, ...localOnly];
+                    });
                 }
             }
         } catch (err) { console.error('Failed to fetch from cloud:', err); }
@@ -2976,11 +2987,26 @@ const DriverDashboard = () => {
     const deleteExpense = (cat: keyof Expenses, id: number) =>
         setExpenses((prev) => ({ ...prev, [cat]: prev[cat].filter((e) => e.id !== id) }));
 
-    const addPrivatePayment = (p: Omit<PrivatePayment, 'id'>) =>
-        setPrivatePayments(prev => [{ id: Date.now(), ...p }, ...prev]);
+    const addPrivatePayment = (p: Omit<PrivatePayment, 'id'>) => {
+        const newPayment: PrivatePayment = { id: Date.now(), ...p };
+        setPrivatePayments(prev => [newPayment, ...prev]);
+        // Persist to cloud — fire and forget (localStorage is the offline fallback)
+        fetch(`${AZURE_BASE}/copilot/private-payments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ payments: [newPayment], deleted_ids: [] }),
+        }).catch(() => {});
+    };
 
-    const deletePrivatePayment = (id: number) =>
+    const deletePrivatePayment = (id: number) => {
         setPrivatePayments(prev => prev.filter(p => p.id !== id));
+        // Soft-delete on cloud — fire and forget
+        fetch(`${AZURE_BASE}/copilot/private-payments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ payments: [], deleted_ids: [id] }),
+        }).catch(() => {});
+    };
 
     const resetSession = () => {
         localStorage.removeItem('cos_private_payments');

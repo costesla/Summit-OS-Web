@@ -242,6 +242,69 @@ def copilot_metrics_daily(req: func.HttpRequest) -> func.HttpResponse:
         logging.error(f"Copilot API Error: {e}")
         return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500)
 
+
+@bp.route(route="copilot/private-payments", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+def copilot_private_payments_get(req: func.HttpRequest) -> func.HttpResponse:
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
+    if not check_rate_limit(req):
+        return func.HttpResponse(json.dumps({"error": "Rate limit exceeded"}), status_code=429)
+    try:
+        start_date = req.params.get("start_date")
+        end_date   = req.params.get("end_date")
+        if not start_date or not end_date:
+            now_mt     = _utc_to_mt(datetime.datetime.utcnow())
+            end_date   = now_mt.strftime("%Y-%m-%d")
+            start_date = (now_mt - datetime.timedelta(days=30)).strftime("%Y-%m-%d")
+        for d in [start_date, end_date]:
+            try:
+                datetime.datetime.strptime(d, "%Y-%m-%d")
+            except ValueError:
+                return func.HttpResponse(
+                    json.dumps({"error": f"Invalid date: {d}. Use YYYY-MM-DD."}),
+                    status_code=400, headers=CORS_HEADERS
+                )
+        db   = DatabaseClient()
+        rows = db.get_private_payments(start_date, end_date)
+        payments = []
+        for r in rows:
+            ts = r.get("Timestamp") or ""
+            payments.append({
+                "id":        int(r["PaymentID"]),
+                "client":    r["Client"],
+                "amount":    float(r["Amount"]),
+                "note":      r.get("Note") or "",
+                "date":      r["PaymentDate"],
+                "timestamp": ts.replace(" ", "T") if ts else "",
+            })
+        return copilot_response({"payments": payments})
+    except Exception as e:
+        logging.error(f"private_payments GET error: {e}")
+        return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500, headers=CORS_HEADERS)
+
+
+@bp.route(route="copilot/private-payments", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
+def copilot_private_payments_post(req: func.HttpRequest) -> func.HttpResponse:
+    if not check_rate_limit(req):
+        return func.HttpResponse(json.dumps({"error": "Rate limit exceeded"}), status_code=429)
+    try:
+        body = req.get_json()
+    except Exception:
+        return func.HttpResponse(json.dumps({"error": "Invalid JSON"}), status_code=400, headers=CORS_HEADERS)
+    try:
+        payments    = body.get("payments", [])
+        deleted_ids = body.get("deleted_ids", [])
+        db = DatabaseClient()
+        if payments:
+            db.upsert_private_payments(payments)
+        for pid in deleted_ids:
+            db.soft_delete_private_payment(str(pid))
+        return copilot_response({"upserted": len(payments), "deleted": len(deleted_ids)})
+    except Exception as e:
+        logging.error(f"private_payments POST error: {e}")
+        return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500, headers=CORS_HEADERS)
+
+
 @bp.route(route="copilot/metrics/summary", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def copilot_metrics_summary(req: func.HttpRequest) -> func.HttpResponse:
     if req.method == "OPTIONS": return func.HttpResponse(status_code=204, headers=CORS_HEADERS)

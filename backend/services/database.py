@@ -420,42 +420,75 @@ class DatabaseClient:
         return results[0] if results else None
 
     def get_daily_metrics(self, start_date, end_date):
-        # Deduplication rule:
-        #   - Days WITH TRIP-* records  → count TRIP-* only (canonical OCR trips)
-        #   - Days WITHOUT TRIP-* records → count non-TESSIE/non-UBER records
-        #     (pre-OCR manual entries from before the pipeline existed)
-        # TESSIE-* and UBER-* are always excluded — they are drive cross-references
-        # that duplicate earnings already on TRIP-* rows.
+        # Combined Uber + Private earnings per day.
+        # UberEarnings dedup rule:
+        #   days WITH TRIP-*  → only TRIP-* (canonical OCR)
+        #   days WITHOUT TRIP-* → non-TESSIE/UBER legacy records (pre-OCR)
+        # PrivateEarnings comes from Rides.PrivatePayments (Jackie/Daniel etc.)
         query = """
-        SELECT
-            CONVERT(varchar(10), CAST(Timestamp_Start AS DATE), 23) AS DateStr,
-            ISNULL(SUM(Driver_Earnings), 0)       AS TotalEarnings,
-            ISNULL(SUM(Tip), 0)                   AS TotalTips,
-            COUNT(*)                               AS TripCount,
-            ISNULL(SUM(Distance_mi), 0.0)         AS TotalMiles,
-            ISNULL(SUM(Duration_min) / 60.0, 0.0) AS DriveTime_Hours
-        FROM Rides.Rides r
-        WHERE Timestamp_Start >= CAST(? AS DATE)
-          AND Timestamp_Start <  DATEADD(day, 1, CAST(? AS DATE))
-          AND Driver_Earnings > 0
-          AND (
-              RideID LIKE 'TRIP-%'
-              OR (
-                  RideID NOT LIKE 'TRIP-%'
-                  AND RideID NOT LIKE 'TESSIE-%'
-                  AND RideID NOT LIKE 'UBER-%'
-                  AND NOT EXISTS (
-                      SELECT 1 FROM Rides.Rides t2
-                      WHERE t2.RideID LIKE 'TRIP-%'
-                        AND t2.Driver_Earnings > 0
-                        AND CAST(t2.Timestamp_Start AS DATE) = CAST(r.Timestamp_Start AS DATE)
+        WITH UberEarnings AS (
+            SELECT
+                CAST(Timestamp_Start AS DATE)          AS EarningDate,
+                ISNULL(SUM(Driver_Earnings), 0)        AS TotalEarnings,
+                ISNULL(SUM(Tip), 0)                    AS TotalTips,
+                COUNT(*)                               AS TripCount,
+                ISNULL(SUM(Distance_mi), 0.0)          AS TotalMiles,
+                ISNULL(SUM(Duration_min) / 60.0, 0.0)  AS DriveTime_Hours
+            FROM Rides.Rides r
+            WHERE Timestamp_Start >= CAST(? AS DATE)
+              AND Timestamp_Start <  DATEADD(day, 1, CAST(? AS DATE))
+              AND Driver_Earnings > 0
+              AND (
+                  RideID LIKE 'TRIP-%'
+                  OR (
+                      RideID NOT LIKE 'TRIP-%'
+                      AND RideID NOT LIKE 'TESSIE-%'
+                      AND RideID NOT LIKE 'UBER-%'
+                      AND NOT EXISTS (
+                          SELECT 1 FROM Rides.Rides t2
+                          WHERE t2.RideID LIKE 'TRIP-%'
+                            AND t2.Driver_Earnings > 0
+                            AND CAST(t2.Timestamp_Start AS DATE) = CAST(r.Timestamp_Start AS DATE)
+                      )
                   )
               )
-          )
-        GROUP BY CAST(Timestamp_Start AS DATE)
-        ORDER BY CAST(Timestamp_Start AS DATE) DESC
+            GROUP BY CAST(Timestamp_Start AS DATE)
+        ),
+        PrivateEarnings AS (
+            SELECT
+                PaymentDate             AS EarningDate,
+                ISNULL(SUM(Amount), 0)  AS TotalEarnings,
+                0.0                     AS TotalTips,
+                COUNT(*)                AS TripCount,
+                0.0                     AS TotalMiles,
+                0.0                     AS DriveTime_Hours
+            FROM Rides.PrivatePayments
+            WHERE PaymentDate >= CAST(? AS DATE)
+              AND PaymentDate <= CAST(? AS DATE)
+              AND DeletedAt IS NULL
+            GROUP BY PaymentDate
+        ),
+        Combined AS (
+            SELECT EarningDate,
+                   ISNULL(SUM(TotalEarnings),   0)   AS TotalEarnings,
+                   ISNULL(SUM(TotalTips),        0)   AS TotalTips,
+                   ISNULL(SUM(TripCount),        0)   AS TripCount,
+                   ISNULL(SUM(TotalMiles),       0.0) AS TotalMiles,
+                   ISNULL(SUM(DriveTime_Hours),  0.0) AS DriveTime_Hours
+            FROM (
+                SELECT * FROM UberEarnings
+                UNION ALL
+                SELECT * FROM PrivateEarnings
+            ) AS AllEarnings
+            GROUP BY EarningDate
+        )
+        SELECT
+            CONVERT(varchar(10), EarningDate, 23) AS DateStr,
+            TotalEarnings, TotalTips, TripCount, TotalMiles, DriveTime_Hours
+        FROM Combined
+        ORDER BY EarningDate DESC
         """
-        return self.execute_query_params(query, (start_date, end_date))
+        return self.execute_query_params(query, (start_date, end_date, start_date, end_date))
 
 
     def get_summary_metrics(self, days=30):
@@ -472,6 +505,87 @@ class DatabaseClient:
         """
         results = self.execute_query_params(query, (days,))
         return results[0] if results else None
+
+    # ── Private Payments ──────────────────────────────────────────────────────
+
+    def get_private_payments(self, start_date: str, end_date: str) -> list:
+        query = """
+        SELECT
+            PaymentID,
+            Client,
+            CAST(Amount AS FLOAT)                    AS Amount,
+            ISNULL(Note, '')                         AS Note,
+            CONVERT(varchar(10), PaymentDate, 23)    AS PaymentDate,
+            CONVERT(varchar(19), Timestamp,   120)   AS Timestamp
+        FROM Rides.PrivatePayments
+        WHERE PaymentDate >= CAST(? AS DATE)
+          AND PaymentDate <= CAST(? AS DATE)
+          AND DeletedAt IS NULL
+        ORDER BY Timestamp DESC
+        """
+        return self.execute_query_params(query, (start_date, end_date))
+
+    def upsert_private_payments(self, payments: list) -> None:
+        if not payments:
+            return
+        conn = self.get_connection()
+        if not conn:
+            return
+        cursor = conn.cursor()
+        query = """
+        MERGE INTO Rides.PrivatePayments AS target
+        USING (SELECT ? AS PaymentID) AS source
+        ON (target.PaymentID = source.PaymentID)
+        WHEN MATCHED AND target.DeletedAt IS NULL THEN
+            UPDATE SET Client = ?, Amount = ?, Note = ?,
+                       PaymentDate = CAST(? AS DATE),
+                       Timestamp   = CAST(? AS DATETIME2)
+        WHEN NOT MATCHED THEN
+            INSERT (PaymentID, Client, Amount, Note, PaymentDate, Timestamp)
+            VALUES (?, ?, ?, ?, CAST(? AS DATE), CAST(? AS DATETIME2));
+        """
+        try:
+            for p in payments:
+                pid    = str(p.get('id', ''))
+                client = str(p.get('client', 'Private'))[:100]
+                amount = float(p.get('amount', 0))
+                note   = str(p.get('note', '') or '')[:500]
+                date   = str(p.get('date', ''))
+                ts     = str(p.get('timestamp', ''))
+                if not pid or not date:
+                    continue
+                cursor.execute(query, (
+                    pid,
+                    client, amount, note, date, ts,
+                    pid, client, amount, note, date, ts
+                ))
+            conn.commit()
+        except Exception as e:
+            logging.error(f"upsert_private_payments error: {e}")
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        finally:
+            cursor.close()
+            conn.close()
+
+    def soft_delete_private_payment(self, payment_id: str) -> None:
+        conn = self.get_connection()
+        if not conn:
+            return
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "UPDATE Rides.PrivatePayments SET DeletedAt = GETDATE() WHERE PaymentID = ?",
+                (str(payment_id),)
+            )
+            conn.commit()
+        except Exception as e:
+            logging.error(f"soft_delete_private_payment error: {e}")
+        finally:
+            cursor.close()
+            conn.close()
 
     def dedup_earnings(self, lookback_days: int = 7) -> dict:
         """
