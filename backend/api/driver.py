@@ -150,39 +150,62 @@ def driver_sync(req: func.HttpRequest) -> func.HttpResponse:
 
         # 2. Save Fast Food Expenses
         for exp in expenses.get("fastfood", []):
-            db.save_manual_expense({
+            payload = {
                 "id": str(exp.get("id") or exp.get("ExpenseID")),
                 "category": "FastFood",
                 "amount": float(exp.get("amount") or exp.get("Amount") or 0),
                 "note": exp.get("note") or exp.get("Note"),
                 "timestamp": exp.get("timestamp") or exp.get("Timestamp"),
                 "included_in_kpi": 1
-            })
+            }
+            db.save_manual_expense(payload)
             results["expenses_saved"] += 1
+            try:
+                semantic.ingest_manual_expense(payload, "FastFood")
+                results["vectors_created"] += 1
+            except Exception:
+                pass
 
         # 3. Save Charging Expenses
         for charge in expenses.get("charging", []):
+            payload = {
+                "id": str(charge.get("id") or charge.get("SessionID")),
+                "amount": float(charge.get("amount") or charge.get("Amount") or 0),
+                "note": charge.get("note") or charge.get("Note") or "Manual Entry",
+                "timestamp": charge.get("timestamp") or charge.get("Timestamp") or charge.get("Start_Time"),
+            }
             db.save_charge({
-                "session_id": str(charge.get("id") or charge.get("SessionID")),
-                "start_time": charge.get("timestamp") or charge.get("Timestamp") or charge.get("Start_Time"),
-                "end_time": charge.get("timestamp") or charge.get("Timestamp") or charge.get("End_Time"),
-                "location": charge.get("note") or charge.get("Note") or "Manual Entry",
-                "energy_added": 0, 
-                "cost": float(charge.get("amount") or charge.get("Amount") or 0)
+                "session_id": payload["id"],
+                "start_time": payload["timestamp"],
+                "end_time":   payload["timestamp"],
+                "location":   payload["note"],
+                "energy_added": 0,
+                "cost": payload["amount"]
             })
             results["expenses_saved"] += 1
+            try:
+                semantic.ingest_manual_expense(payload, "Charging")
+                results["vectors_created"] += 1
+            except Exception:
+                pass
 
         # 4. Save Capital & Maintenance Expenses
         for exp in expenses.get("capital_maintenance", []):
-            db.save_manual_expense({
+            payload = {
                 "id": str(exp.get("id") or exp.get("ExpenseID")),
                 "category": exp.get("category") or "Maintenance",
                 "amount": float(exp.get("amount") or exp.get("Amount") or 0),
                 "note": exp.get("note") or exp.get("Note"),
                 "timestamp": exp.get("timestamp") or exp.get("Timestamp"),
                 "included_in_kpi": 0
-            })
+            }
+            db.save_manual_expense(payload)
             results["expenses_saved"] += 1
+            try:
+                semantic.ingest_manual_expense(payload, "Maintenance")
+                results["vectors_created"] += 1
+            except Exception:
+                pass
 
         return func.HttpResponse(
             json.dumps({"success": True, "results": results}),

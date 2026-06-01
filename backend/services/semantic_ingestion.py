@@ -97,6 +97,49 @@ class SemanticIngestionService:
             logging.error(f"Semantic Ingestion Failure (PrivatePayment): {e}")
             return False
 
+    def ingest_manual_expense(self, expense: dict, category: str) -> bool:
+        """
+        Vectorizes a manually entered expense (food, charging, maintenance) so
+        the Copilot can answer spending queries across all expense types.
+        """
+        try:
+            exp_id  = str(expense.get('id', ''))
+            amount  = float(expense.get('amount') or expense.get('Amount') or 0)
+            note    = str(expense.get('note') or expense.get('Note') or '').strip()
+            ts      = str(expense.get('timestamp') or expense.get('Timestamp') or '')
+
+            try:
+                dt = datetime.fromisoformat(ts.replace('T', ' ')) if ts else datetime.utcnow()
+            except ValueError:
+                dt = datetime.utcnow()
+
+            category_labels = {
+                'FastFood':    'food and drink',
+                'Charging':    'EV charging session',
+                'Maintenance': 'capital / maintenance',
+            }
+            label = category_labels.get(category, category.lower())
+
+            summary = (
+                f"Manual expense [{exp_id}]: ${amount:.2f} for {label}"
+                + (f' — {note}' if note else '')
+                + f'. Logged on {dt.strftime("%Y-%m-%d")}.'
+            )
+
+            vector_data = {
+                'vector_id':        f'V-EXP-{exp_id}',
+                'source_type':      'Ops',
+                'timestamp_utc':    dt,
+                'raw_text_hash':    hashlib.sha256(summary.encode()).hexdigest(),
+                'source_pointer':   f'ManualExpenses/{exp_id}',
+                'derivation_reason': summary,
+            }
+
+            return self.vector_store.add_vector(vector_data)
+        except Exception as e:
+            logging.error(f'Semantic Ingestion Failure (ManualExpense): {e}')
+            return False
+
     def ingest_teller_transaction(self, tx_data):
         """
         Transforms a bank transaction into a vectorized semantic summary.
