@@ -2080,16 +2080,6 @@ const GoalTrackerPanel: React.FC<{ todayEarnings: number; selectedDate: string }
                         }
                     }
                     
-                    // Parse local private payments to blend them in
-                    let localPayments: PrivatePayment[] = [];
-                    if (typeof window !== 'undefined') {
-                        try {
-                            localPayments = JSON.parse(localStorage.getItem('cos_private_payments') ?? '[]');
-                        } catch (err) {
-                            console.warn("Failed to read cos_private_payments from localStorage:", err);
-                        }
-                    }
-                    
                     // Populate history map from fetched DB metrics
                     // Cloud already includes private payments in earnings.amount
                     data.metrics.forEach((m: { date: string; earnings?: { amount: number } }) => {
