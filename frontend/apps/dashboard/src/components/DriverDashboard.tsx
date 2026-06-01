@@ -1163,9 +1163,6 @@ const TessieDrivesPanel = ({
                                                      }
                                                  }
                                              }
-                                             if (!matchedExpense && chargingExpenses && chargingExpenses.length === 1) {
-                                                 matchedExpense = chargingExpenses[0];
-                                             }
                                              if (matchedExpense && matchedExpense.amount > 0) {
                                                  // If the vehicle is currently charging, show a pulsing LIVE badge instead of static cost
                                                  if (isVehicleCharging) {
