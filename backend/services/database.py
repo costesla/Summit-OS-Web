@@ -420,47 +420,39 @@ class DatabaseClient:
         return results[0] if results else None
 
     def get_daily_metrics(self, start_date, end_date):
+        # Only count TRIP-* records (canonical OCR-scanned trips).
+        # TESSIE-* and UBER-* rows are cross-reference duplicates that inflate
+        # earnings 2-3x. Reports.DailyKPIs was aggregated before this dedup
+        # logic existed, so query Rides.Rides directly.
         query = """
         SELECT
-            Format(kpi.[Date], 'yyyy-MM-dd') as DateStr,
-            kpi.TotalEarnings, kpi.TotalTips, kpi.RideCount AS TripCount,
-            ISNULL(rd.TotalMiles, 0.0) AS TotalMiles,
-            ISNULL(rd.DriveTime_Hours, 0.0) AS DriveTime_Hours
-        FROM Reports.DailyKPIs kpi
-        LEFT JOIN (
-            SELECT
-                CAST(Timestamp_Start AS DATE) AS RideDate,
-                SUM(Distance_mi) AS TotalMiles,
-                SUM(Duration_min) / 60.0 AS DriveTime_Hours
-            FROM Rides.Rides r
-            WHERE Timestamp_Start >= CAST(? AS DATE)
-              AND Timestamp_Start <= DATEADD(day, 1, CAST(? AS DATE))
-              AND NOT (r.RideID LIKE 'TESSIE-%' AND EXISTS (
-                  SELECT 1 FROM Rides.Rides match 
-                  WHERE match.Tessie_DriveID = r.RideID
-              ))
-            GROUP BY CAST(Timestamp_Start AS DATE)
-        ) rd ON kpi.[Date] = rd.RideDate
-        WHERE kpi.[Date] >= CAST(? AS DATE) AND kpi.[Date] <= CAST(? AS DATE)
-        ORDER BY kpi.[Date] DESC
+            CONVERT(varchar(10), CAST(Timestamp_Start AS DATE), 23) AS DateStr,
+            ISNULL(SUM(Driver_Earnings), 0)       AS TotalEarnings,
+            ISNULL(SUM(Tip), 0)                   AS TotalTips,
+            COUNT(*)                               AS TripCount,
+            ISNULL(SUM(Distance_mi), 0.0)         AS TotalMiles,
+            ISNULL(SUM(Duration_min) / 60.0, 0.0) AS DriveTime_Hours
+        FROM Rides.Rides
+        WHERE Timestamp_Start >= CAST(? AS DATE)
+          AND Timestamp_Start <  DATEADD(day, 1, CAST(? AS DATE))
+          AND RideID LIKE 'TRIP-%'
+        GROUP BY CAST(Timestamp_Start AS DATE)
+        ORDER BY CAST(Timestamp_Start AS DATE) DESC
         """
-        return self.execute_query_params(query, (start_date, end_date, start_date, end_date))
+        return self.execute_query_params(query, (start_date, end_date))
 
 
     def get_summary_metrics(self, days=30):
         query = """
-        SELECT 
-            Count(*) as TotalTrips,
-            Sum(Driver_Earnings) as TotalEarnings,
-            Sum(Tip) as TotalTips,
-            Sum(Distance_mi) as TotalDistance,
-            Avg(Fare) as AvgFare
-        FROM Rides.Rides r
+        SELECT
+            COUNT(*)                AS TotalTrips,
+            SUM(Driver_Earnings)    AS TotalEarnings,
+            SUM(Tip)                AS TotalTips,
+            SUM(Distance_mi)        AS TotalDistance,
+            AVG(Fare)               AS AvgFare
+        FROM Rides.Rides
         WHERE Timestamp_Start >= DATEADD(day, -?, GETDATE())
-          AND NOT (r.RideID LIKE 'TESSIE-%' AND EXISTS (
-              SELECT 1 FROM Rides.Rides match 
-              WHERE match.Tessie_DriveID = r.RideID
-          ))
+          AND RideID LIKE 'TRIP-%'
         """
         results = self.execute_query_params(query, (days,))
         return results[0] if results else None
