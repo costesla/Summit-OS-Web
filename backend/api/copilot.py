@@ -297,6 +297,14 @@ def copilot_private_payments_post(req: func.HttpRequest) -> func.HttpResponse:
         db = DatabaseClient()
         if payments:
             db.upsert_private_payments(payments)
+            # Vectorize each payment so the Copilot can answer semantic queries
+            try:
+                from services.semantic_ingestion import SemanticIngestionService
+                ingestion = SemanticIngestionService()
+                for p in payments:
+                    ingestion.ingest_private_payment(p)
+            except Exception as ve:
+                logging.warning(f"private_payments vectorization failed (non-fatal): {ve}")
         for pid in deleted_ids:
             db.soft_delete_private_payment(str(pid))
         return copilot_response({"upserted": len(payments), "deleted": len(deleted_ids)})

@@ -56,6 +56,47 @@ class SemanticIngestionService:
             logging.error(f"Semantic Ingestion Failure (Tessie): {e}")
             return False
 
+    def ingest_private_payment(self, payment: dict) -> bool:
+        """
+        Vectorizes a private cash/charter payment so the Copilot can answer
+        semantic queries about Jackie, Daniel, Esmeralda, etc.
+        """
+        try:
+            pid    = str(payment.get('id', ''))
+            client = payment.get('client', 'Private')
+            amount = float(payment.get('amount', 0))
+            note   = payment.get('note', '') or ''
+            date   = payment.get('date', '')
+            ts_str = payment.get('timestamp', '')
+
+            try:
+                dt = datetime.fromisoformat(ts_str.replace('T', ' ')) if ts_str else datetime.utcnow()
+            except ValueError:
+                dt = datetime.utcnow()
+
+            summary = (
+                f"Private charter payment [{pid}]: ${amount:.2f} received from {client} "
+                f"on {date}."
+                + (f" Note: {note}." if note else "")
+                + f" This is a direct booking cash payment outside of the Uber platform."
+            )
+
+            raw_hash = hashlib.sha256(summary.encode()).hexdigest()
+
+            vector_data = {
+                "vector_id":        f"V-PP-{pid}",
+                "source_type":      "Trip",
+                "timestamp_utc":    dt,
+                "raw_text_hash":    raw_hash,
+                "source_pointer":   f"PrivatePayments/{pid}",
+                "derivation_reason": summary,
+            }
+
+            return self.vector_store.add_vector(vector_data)
+        except Exception as e:
+            logging.error(f"Semantic Ingestion Failure (PrivatePayment): {e}")
+            return False
+
     def ingest_teller_transaction(self, tx_data):
         """
         Transforms a bank transaction into a vectorized semantic summary.
