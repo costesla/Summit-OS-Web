@@ -909,7 +909,7 @@ def copilot_tessie_heatmap(req: func.HttpRequest) -> func.HttpResponse:
         days = int(req.params.get("days", 30))
         if days > 365:
             days = 365
-        geocode_batch = min(int(req.params.get("batch", 80)), 200)
+        geocode_batch = min(int(req.params.get("batch", 20)), 30)
 
         cutoff_dt = datetime.datetime.utcnow() - datetime.timedelta(days=days)
 
@@ -966,7 +966,7 @@ def copilot_tessie_heatmap(req: func.HttpRequest) -> func.HttpResponse:
 
             if api_key:
                 import googlemaps
-                gmaps = googlemaps.Client(key=api_key)
+                gmaps = googlemaps.Client(key=api_key, timeout=5)  # 5s per call — prevents indefinite hang
                 for addr in uncached[:geocode_batch]:
                     lat, lon = None, None
                     try:

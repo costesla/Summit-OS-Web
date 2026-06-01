@@ -765,7 +765,7 @@ async function loadData() {
         ? 'Fetching drive history…'
         : 'Backend warming up — retrying…');
       heatRes = await fetch(
-        `${BACKEND}/api/copilot/tessie/heatmap?days=${days}&batch=80`,
+        `${BACKEND}/api/copilot/tessie/heatmap?days=${days}&batch=20`,
         { signal: AbortSignal.timeout(90000) }  // 90s — covers cold-start + geocoding
       );
       break; // success
