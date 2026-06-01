@@ -49,6 +49,9 @@ def create_checkout_session(req: func.HttpRequest) -> func.HttpResponse:
         session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             customer_email=customer_email if customer_email else None,
+            payment_intent_data={
+                'receipt_email': customer_email if customer_email else None,
+            },
             line_items=[{
                 'price_data': {
                     'currency': 'usd',

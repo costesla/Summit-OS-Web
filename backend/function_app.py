@@ -23,6 +23,7 @@ blueprints = [
     "api.pricing",
     "api.checkout",
     "api.finalize",
+    "api.webhook",
     "api.ocr",
     "api.bookings",
     "api.tessie",

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { formatTime, formatDate } from "@/lib/calendar";
-import { Calendar, Clock, CheckCircle, ChevronRight } from "lucide-react";
+import { Calendar, Clock, CheckCircle, ChevronRight, Loader2 } from "lucide-react";
 
 interface CalendarBookingProps {
     customerName: string;
@@ -66,6 +66,7 @@ export default function CalendarBooking({
     const [loadingSlots, setLoadingSlots] = useState(false);
     const [booking, setBooking] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [stripeLoading, setStripeLoading] = useState(false);
 
     // Dynamic Data
     const [hop, setHop] = useState<HopData | null>(null);
@@ -193,6 +194,7 @@ export default function CalendarBooking({
         }
 
         // --- STANDARD STRIPE CHECKOUT ---
+        setStripeLoading(true);
         try {
             const bookingResponse = await fetch("https://summitos-api.azurewebsites.net/api/create-checkout-session", {
                 method: "POST",
@@ -225,6 +227,8 @@ export default function CalendarBooking({
             setError(err.message);
             console.error("Checkout redirect error:", err);
             setBooking(false);
+        } finally {
+            setStripeLoading(false);
         }
     };
 
@@ -394,10 +398,12 @@ export default function CalendarBooking({
             <div className="space-y-3">
                 <button
                     onClick={() => handleBooking('stripe')}
-                    disabled={!selectedTime || booking}
-                    className={`w-full bg-gradient-to-r from-[#635bff] to-[#8f86ff] text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-[#635bff]/40 flex justify-center items-center gap-2 text-lg transition-all ${!selectedTime || booking ? "opacity-50 cursor-not-allowed" : ""}`}
+                    disabled={!selectedTime || booking || stripeLoading}
+                    className={`w-full bg-gradient-to-r from-[#635bff] to-[#8f86ff] text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-[#635bff]/40 flex justify-center items-center gap-2 text-lg transition-all ${!selectedTime || booking || stripeLoading ? "opacity-60 cursor-not-allowed" : ""}`}
                 >
-                    {booking ? (
+                    {stripeLoading ? (
+                        <><Loader2 className="w-5 h-5 animate-spin" /> Redirecting to secure checkout...</>
+                    ) : booking ? (
                         <><span className="animate-spin inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full" /> Processing...</>
                     ) : (
                         <>⚡ Pay Now (Stripe) <ChevronRight /></>
