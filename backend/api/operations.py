@@ -591,3 +591,60 @@ def daily_sync(req: func.HttpRequest) -> func.HttpResponse:
             headers=_cors(req),
             mimetype="application/json"
         )
+
+@bp.route(route="operations/screenshot-url", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+def screenshot_url(req: func.HttpRequest) -> func.HttpResponse:
+    """Resolves a screenshot filename + date to a OneDrive web URL."""
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=_cors(req))
+
+    try:
+        date_str = req.params.get("date")
+        filename = req.params.get("filename")
+
+        if not date_str or not filename:
+            return func.HttpResponse(
+                json.dumps({"success": False, "error": "date (YYYY-MM-DD) and filename are required"}),
+                status_code=400, headers=_cors(req), mimetype="application/json"
+            )
+
+        # Build the OneDrive path using the same logic as _execute_sync_folders
+        dt = datetime.strptime(date_str, "%Y-%m-%d")
+        year = dt.strftime("%Y")
+        month = dt.strftime("%B")
+        week_num = calendar_week_of_month(dt)
+        week_folder = f"Week {week_num}"
+        short_year = dt.strftime("%y")
+        month_num = dt.month
+        day_padded = dt.strftime("%d")
+        folder_name = f"{month_num}.{day_padded}.{short_year}"
+        full_path = f"Uber Driver/{year}/{month}/{week_folder}/{folder_name}/{filename}"
+
+        graph = GraphClient()
+        item = graph.get_item_by_path(full_path)
+
+        if not item:
+            return func.HttpResponse(
+                json.dumps({"success": False, "error": "File not found"}),
+                status_code=404, headers=_cors(req), mimetype="application/json"
+            )
+
+        return func.HttpResponse(
+            json.dumps({
+                "success": True,
+                "url": item.get("webUrl"),
+                "downloadUrl": item.get("@microsoft.graph.downloadUrl")
+            }),
+            status_code=200, headers=_cors(req), mimetype="application/json"
+        )
+    except ValueError:
+        return func.HttpResponse(
+            json.dumps({"success": False, "error": "Invalid date format. Use YYYY-MM-DD."}),
+            status_code=400, headers=_cors(req), mimetype="application/json"
+        )
+    except Exception as e:
+        logging.error(f"Screenshot URL Error: {e}")
+        return func.HttpResponse(
+            json.dumps({"success": False, "error": str(e)}),
+            status_code=500, headers=_cors(req), mimetype="application/json"
+        )

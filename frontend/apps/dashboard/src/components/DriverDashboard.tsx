@@ -1525,6 +1525,26 @@ const UberTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count: n
 
     useEffect(() => { fetchTrips(); }, [fetchTrips]);
 
+    const [loadingScreenshot, setLoadingScreenshot] = useState<string | null>(null);
+    const [lightbox, setLightbox] = useState<{ imageUrl: string; webUrl: string; trip: UberTrip } | null>(null);
+
+    const openScreenshot = async (trip: UberTrip) => {
+        if (!trip.filename) return;
+        setLoadingScreenshot(trip.trip_id);
+        try {
+            const resp = await fetch(
+                `${AZURE_BASE}/operations/screenshot-url?date=${selectedDate}&filename=${encodeURIComponent(trip.filename)}&t=${Date.now()}`,
+                { signal: AbortSignal.timeout(10_000), cache: 'no-store' }
+            );
+            const data = resp.ok ? await resp.json() : null;
+            if (data?.downloadUrl) {
+                setLightbox({ imageUrl: data.downloadUrl, webUrl: data.url ?? '', trip });
+            } else if (data?.url) {
+                window.open(data.url, '_blank', 'noopener');
+            }
+        } catch { /* silently fail */ }
+        setLoadingScreenshot(null);
+    };
 
     return (
         <div className="rounded-2xl border border-violet-200/80 overflow-hidden bg-violet-50/30 shadow-sm"
@@ -1570,12 +1590,19 @@ const UberTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count: n
 
                 {!loading && trips.map((trip) => (
                     <div key={trip.trip_id}
-                        className="p-4 flex flex-col md:flex-row md:items-center gap-3 hover:bg-violet-50/20 transition-colors group">
+                        onClick={() => trip.filename && openScreenshot(trip)}
+                        className={`p-4 flex flex-col md:flex-row md:items-center gap-3 transition-colors group
+                            ${trip.filename ? 'cursor-pointer hover:bg-violet-50/50' : 'hover:bg-violet-50/20'}`}>
 
                         {/* Trip number badge */}
-                        <div className="shrink-0 flex flex-col items-center justify-center w-10 h-10 rounded-xl bg-violet-100 border border-violet-200">
+                        <div className="shrink-0 flex flex-col items-center justify-center w-10 h-10 rounded-xl bg-violet-100 border border-violet-200 relative">
                             <span className="text-[10px] font-mono text-violet-500 leading-none">Trip</span>
                             <span className="text-sm font-black text-violet-700 leading-none">{trip.trip_number}</span>
+                            {trip.filename && (
+                                loadingScreenshot === trip.trip_id
+                                    ? <Loader2 className="absolute -top-1 -right-1 w-3 h-3 text-violet-500 animate-spin" />
+                                    : <ExternalLink className="absolute -top-1 -right-1 w-3 h-3 text-violet-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            )}
                         </div>
 
                         {/* Left: meta */}
@@ -1624,6 +1651,40 @@ const UberTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count: n
                     </div>
                 ))}
             </div>
+
+            {/* Screenshot Lightbox */}
+            {lightbox && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}
+                    onClick={() => setLightbox(null)}>
+                    <div className="relative max-w-sm w-full" onClick={e => e.stopPropagation()}>
+                        {/* Header */}
+                        <div className="flex items-center justify-between mb-3">
+                            <span className="text-xs font-bold text-white/90 font-mono">
+                                Trip {lightbox.trip.trip_number} · {lightbox.trip.time_display} · ${lightbox.trip.driver_earnings.toFixed(2)}
+                            </span>
+                            <div className="flex items-center gap-2">
+                                {lightbox.webUrl && (
+                                    <a href={lightbox.webUrl} target="_blank" rel="noopener noreferrer"
+                                        className="text-[10px] font-bold text-white/60 hover:text-white transition-colors flex items-center gap-1">
+                                        <ExternalLink className="w-3 h-3" /> OneDrive
+                                    </a>
+                                )}
+                                <button onClick={() => setLightbox(null)}
+                                    className="text-white/60 hover:text-white text-lg font-bold leading-none transition-colors">✕</button>
+                            </div>
+                        </div>
+                        {/* Image with black border */}
+                        <div className="rounded-xl overflow-hidden border-4 border-black shadow-2xl">
+                            <img
+                                src={lightbox.imageUrl}
+                                alt={`Trip ${lightbox.trip.trip_number} receipt`}
+                                className="w-full h-auto block"
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -571,6 +571,10 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
         tessie = TessieClient()
         raw_drives = tessie.get_tagged_drives(vin, from_ts, to_ts)
 
+        # Pre-compute Mountain Time boundaries for DB queries (override + supplement)
+        from_dt_mt = _ts_to_mt(from_ts)
+        to_dt_mt = _ts_to_mt(to_ts)
+
         # ── DB Classification Override ──────────────────────────────────────────
         # After getting live Tessie drives, apply any manual classification overrides
         # stored in the database. This allows reclassifying drives (e.g. an "Uber Trip N"
@@ -581,15 +585,18 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
                 conn_ov = db_override.get_connection()
                 if conn_ov:
                     cur_ov = conn_ov.cursor()
-                    # Fetch all manually reclassified drives (i.e., where our DB
-                    # classification conflicts with what the tag would normally produce)
+                    # Fetch manually reclassified drives WITHIN the requested time range.
+                    # Without a date filter, stale classifications from old days (e.g. a
+                    # previous Jackie booking that matched this drive) would leak into
+                    # today's view and override correct live Tessie tags.
                     cur_ov.execute("""
                         SELECT RideID, Classification, TripType
                         FROM Rides.Rides
                         WHERE RideID LIKE 'TESSIE-%'
                           AND Classification IS NOT NULL
                           AND Classification != 'Untagged'
-                    """)
+                          AND Timestamp_Start >= ? AND Timestamp_Start <= ?
+                    """, (from_dt_mt.replace(tzinfo=None), to_dt_mt.replace(tzinfo=None)))
                     db_classifications = {}
                     for ov_row in cur_ov.fetchall():
                         rid = str(ov_row[0])
@@ -639,17 +646,19 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
             db = DatabaseClient()
             conn = db.get_connection()
             if conn:
-                # Convert UTC UNIX timestamps back to Mountain Time for database query
-                from_dt_mt = _ts_to_mt(from_ts)
-                to_dt_mt = _ts_to_mt(to_ts)
-                
+                # from_dt_mt / to_dt_mt already computed above (before override block)
                 cur = conn.cursor()
+                # Only inject actual TESSIE-* drives — not INV- bookings or TRIP-
+                # records. Previously, INV-JACKIE-* and other non-Tessie records
+                # were injected into the Tessie Drives panel with private client
+                # tags, causing false "Jackie" / "Unpaid" entries.
                 cur.execute("""
                     SELECT RideID, TripType, Classification, Distance_mi, Duration_min, 
                            Tessie_DriveID, Start_SOC, End_SOC, Energy_Used_kWh, Efficiency_Wh_mi, 
                            Timestamp_Start, Pickup_Location, Dropoff_Location, Sidecar_Artifact_JSON
                     FROM Rides.Rides 
-                    WHERE Timestamp_Start >= ? AND Timestamp_Start <= ?
+                    WHERE RideID LIKE 'TESSIE-%'
+                      AND Timestamp_Start >= ? AND Timestamp_Start <= ?
                     ORDER BY Timestamp_Start
                 """, (from_dt_mt.replace(tzinfo=None), to_dt_mt.replace(tzinfo=None)))
                 
@@ -671,8 +680,13 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
                     dropoff_location = row[12] or "Unknown"
                     sidecar_json = row[13]
                     
-                    # Determine drive_id for dedup check
+                    # Determine drive_id for dedup check.
+                    # Strip 'TESSIE-' prefix if present — tessie_ids_seen stores
+                    # bare numeric IDs (e.g. "123456") from the Tessie API, but
+                    # the DB Tessie_DriveID field may store "TESSIE-123456".
                     drive_id = tessie_drive_id
+                    if drive_id and str(drive_id).startswith("TESSIE-"):
+                        drive_id = str(drive_id)[len("TESSIE-"):]
                     if not drive_id:
                         if ride_id.startswith("TESSIE-"):
                             drive_id = ride_id[len("TESSIE-"):]
