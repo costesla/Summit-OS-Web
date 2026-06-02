@@ -516,13 +516,36 @@ class CloudWatcherService:
         # 3b. Deduplication — if two screenshots of the SAME trip were captured
         #     (same driver_earnings ± $0.01 AND timestamps within 5 minutes), keep only the first.
         #     This prevents the "two screenshots of one receipt → two TRIP records" bug.
+        #     GUARD: If the screenshots' *filename* timestamps are >10 minutes apart,
+        #     they are clearly different trips even if GPT extracted the same OCR timestamp.
         import datetime as _dt
+
+        def _filename_ts(fname: str):
+            """Extract datetime from filename like Screenshot_20260602_161642_..."""
+            m = re.search(r'(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})', fname or '')
+            if m:
+                try:
+                    return _dt.datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)),
+                                        int(m.group(4)), int(m.group(5)), int(m.group(6)))
+                except:
+                    pass
+            return None
+
         deduped_cards = []
         for card in dated_cards:
             is_dup = False
             for existing in deduped_cards:
                 earn_match = abs((card["card"].get("driver_earnings") or 0) - (existing["card"].get("driver_earnings") or 0)) <= 0.01
                 if earn_match:
+                    # Check screenshot capture timestamps first — if files were taken
+                    # >10 min apart, they are different trips regardless of OCR results
+                    f_ts_card = _filename_ts(card.get("filename"))
+                    f_ts_existing = _filename_ts(existing.get("filename"))
+                    if f_ts_card and f_ts_existing:
+                        capture_diff = abs((f_ts_card - f_ts_existing).total_seconds())
+                        if capture_diff > 600:  # >10 minutes apart
+                            continue  # Not a duplicate — different capture times
+
                     c_dt  = card["trip_dt"]
                     e_dt  = existing["trip_dt"]
                     if c_dt and e_dt:
