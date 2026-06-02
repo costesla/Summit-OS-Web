@@ -1400,11 +1400,9 @@ class CloudWatcherService:
                     
                     for drive in unmatched_drives:
                         t_dt = drive["Timestamp_Start"]
-                        diff_naive = abs((b_dt - t_dt).total_seconds())
-                        diff_shifted = abs((b_dt - datetime.timedelta(hours=offset_hours) - t_dt).total_seconds())
-                        min_diff = min(diff_naive, diff_shifted)
-                        if min_diff < best_diff_seconds:
-                            best_diff_seconds = min_diff
+                        diff = abs((b_dt - t_dt).total_seconds())
+                        if diff < best_diff_seconds:
+                            best_diff_seconds = diff
                             best_drive = drive
                             
                     # Proximity tolerance: 3 hours
