@@ -1,19 +1,15 @@
 $appName = "summitsyncfuncus23436"
 $resourceGroup = "rg-summitos-us2"
-$zipName = "deploy.zip"
+$zipName = "summit_sync_deploy_pkg.zip"
 
 Write-Host "Preparing deployment for $appName..."
 
 # Remove old zip if exists
 if (Test-Path $zipName) { Remove-Item $zipName }
 
-# Create Zip (excluding venv, __pycache__, .git, etc.)
-# Using 7z or standard Compress-Archive. Compress-Archive is safer standard.
-# We need to explicitly include files to avoid zipping the parent folder or unnecessary large folders.
-$files = Get-ChildItem -Path . -Exclude ".venv", "venv", "*__pycache__*", "*.zip", ".git", ".vscode", "scripts", "local_watcher.py"
-
-Write-Host "Zipping files..."
-Compress-Archive -Path $files -DestinationPath $zipName -Force
+# Create Zip using Python script (preserves structure and is extremely fast)
+Write-Host "Zipping files using python script..."
+..\.venv\Scripts\python.exe create_deploy_zip.py
 
 # Deploy
 Write-Host "Deploying to Azure..."

@@ -415,7 +415,7 @@ def log_private_trip(req: func.HttpRequest) -> func.HttpResponse:
             "payment_method": req_body.get('paymentMethod', "Website Booking"),
             "raw_text": f"Private Booking: {name} ({email})",
             "timestamp_epoch": timestamp_epoch,
-            "Timestamp_Offer": dt_utc.strftime("%Y-%m-%d %H:%M:%S") if dt_utc else None,
+            "Timestamp_Offer": datetime_utils.utc_to_local(dt_utc).strftime("%Y-%m-%d %H:%M:%S") if dt_utc else None,
             
             # Compliance Fields
             "is_cdot_reportable": True, # Private trips are ALWAYS reportable
@@ -519,7 +519,7 @@ def calendar_book(req: func.HttpRequest) -> func.HttpResponse:
             "end_location": req_body.get('dropoff'),
             "fare": req_body.get('price', 0),
             "timestamp_epoch": timestamp_epoch,
-            "Timestamp_Offer": dt_utc.strftime("%Y-%m-%d %H:%M:%S") if dt_utc else None
+            "Timestamp_Offer": datetime_utils.utc_to_local(dt_utc).strftime("%Y-%m-%d %H:%M:%S") if dt_utc else None
         })
 
         return func.HttpResponse(

@@ -148,5 +148,62 @@ class TestReconciliationSim(unittest.TestCase):
         # Verify set_drive_tag was called for the rebuilt sequence
         mock_tessie.set_drive_tag.assert_called_with('TEST_VIN', 'DRIVE2', 'Jackie trip two')
 
+    def test_production_june4_state(self):
+        """
+        Read-only assertion against the real production database for June 4th corrected rows.
+        Validates start times, matched drive links, and timezone alignment.
+        """
+        # Proactively check if real environment is available
+        from dotenv import load_dotenv
+        env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env')
+        load_dotenv(env_path)
+        if not os.environ.get("SQL_CONNECTION_STRING"):
+            self.skipTest("SQL_CONNECTION_STRING not set in environment; skipping production state assertion.")
+            
+        import pyodbc
+        import json
+        conn = pyodbc.connect(os.environ.get("SQL_CONNECTION_STRING"))
+        cursor = conn.cursor()
+        
+        try:
+            # 1. Jackie's Booking Assertion (June 4 Afternoon)
+            cursor.execute("""
+                SELECT Timestamp_Start, Tessie_DriveID, Classification, Sidecar_Artifact_JSON
+                FROM Rides.Rides WHERE RideID = ?
+            """, ("INV-JACKIE-Thursday-1848",))
+            jackie = cursor.fetchone()
+            self.assertIsNotNone(jackie, "Jackie June 4 booking (INV-JACKIE-Thursday-1848) missing in database!")
+            
+            # Start time: 2:30 PM local Mountain Time
+            self.assertEqual(jackie[0].strftime("%Y-%m-%d %H:%M:%S"), "2026-06-04 14:30:00")
+            self.assertEqual(jackie[1], "TESSIE-400589590")
+            self.assertEqual(jackie[2], "Private_Booking")
+            
+            # Check epoch alignment in sidecar
+            sc_jackie = json.loads(jackie[3]) if jackie[3] else {}
+            self.assertEqual(sc_jackie.get("timestamp_epoch"), 1780605000.0) # 14:30 MT (20:30 UTC)
+            
+            # 2. Terrance's Booking Assertion (June 4 Evening)
+            cursor.execute("""
+                SELECT Timestamp_Start, Tessie_DriveID, Classification, Sidecar_Artifact_JSON
+                FROM Rides.Rides WHERE RideID = ?
+            """, ("INV-TERRANCE-Thursday-1209",))
+            terrance = cursor.fetchone()
+            self.assertIsNotNone(terrance, "Terrance June 4 booking (INV-TERRANCE-Thursday-1209) missing in database!")
+            
+            # Start time: 8:30 PM local Mountain Time
+            self.assertEqual(terrance[0].strftime("%Y-%m-%d %H:%M:%S"), "2026-06-04 20:30:00")
+            self.assertEqual(terrance[1], "TESSIE-400666384")
+            self.assertEqual(terrance[2], "Private_Booking")
+            
+            # Check epoch alignment in sidecar
+            sc_terrance = json.loads(terrance[3]) if terrance[3] else {}
+            self.assertEqual(sc_terrance.get("timestamp_epoch"), 1780626600.0) # 20:30 MT (02:30 UTC next day)
+            
+            print("[PASS] Production state assertions for June 4th verified successfully!")
+        finally:
+            cursor.close()
+            conn.close()
+
 if __name__ == '__main__':
     unittest.main()

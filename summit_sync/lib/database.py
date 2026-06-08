@@ -180,12 +180,13 @@ class DatabaseClient:
         t_pickup = trip_data.get('timestamp_pickup_epoch')
         t_dropoff = trip_data.get('timestamp_dropoff_epoch')
         
-        if t_offer:
-            t_offer = datetime.datetime.fromtimestamp(t_offer)
-        if t_pickup:
-            t_pickup = datetime.datetime.fromtimestamp(t_pickup)
-        if t_dropoff:
-            t_dropoff = datetime.datetime.fromtimestamp(t_dropoff)
+        from lib.datetime_utils import utc_to_local
+        if t_offer and isinstance(t_offer, (int, float)):
+            t_offer = utc_to_local(datetime.datetime.fromtimestamp(t_offer, tz=datetime.timezone.utc)).replace(tzinfo=None)
+        if t_pickup and isinstance(t_pickup, (int, float)):
+            t_pickup = utc_to_local(datetime.datetime.fromtimestamp(t_pickup, tz=datetime.timezone.utc)).replace(tzinfo=None)
+        if t_dropoff and isinstance(t_dropoff, (int, float)):
+            t_dropoff = utc_to_local(datetime.datetime.fromtimestamp(t_dropoff, tz=datetime.timezone.utc)).replace(tzinfo=None)
 
         core_params = (
             trip_data.get('block_name'), trip_type, t_offer, t_pickup, t_dropoff,
@@ -286,3 +287,32 @@ class DatabaseClient:
             logging.error(f"Error saving weather record: {e}")
         finally:
             conn.close()
+
+    def get_known_client_names(self):
+        import re
+        conn = self.get_connection()
+        if not conn:
+            return ["jackie", "esmeralda", "daniel", "ryan", "lauren", "terrance", "lorynne", "nancy", "adrienne"]
+        cursor = conn.cursor()
+        try:
+            cursor.execute("""
+                SELECT DISTINCT RideID 
+                FROM Rides.Rides 
+                WHERE RideID LIKE 'INV-%'
+            """)
+            names = {"jackie", "esmeralda", "daniel", "ryan", "lauren", "terrance", "lorynne", "nancy", "adrienne"}
+            for row in cursor.fetchall():
+                if row[0]:
+                    parts = row[0].split('-')
+                    if len(parts) >= 2:
+                        name = parts[1].lower()
+                        name = re.sub(r'[^a-z]', '', name)
+                        if name:
+                            names.add(name)
+            return list(names)
+        except Exception as e:
+            logging.error(f"Error getting known client names: {e}")
+            return ["jackie", "esmeralda", "daniel", "ryan", "lauren", "terrance", "lorynne", "nancy", "adrienne"]
+        finally:
+            conn.close()
+

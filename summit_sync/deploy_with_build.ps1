@@ -11,8 +11,10 @@ Write-Host "Zipping files..."
 $zipPath = "$env:TEMP\summit_sync_deploy.zip"
 if (Test-Path $zipPath) { Remove-Item $zipPath }
 
-# Zip the current directory
-Compress-Archive -Path * -DestinationPath $zipPath -Force
+# Zip the current directory using Python script
+python create_deploy_zip.py
+# Move zip to temp destination to match original script expectations
+Move-Item deploy.zip $zipPath -Force
 
 Write-Host "Deploying to Azure with remote build..."
 
