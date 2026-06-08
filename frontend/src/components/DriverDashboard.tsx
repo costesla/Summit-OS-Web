@@ -928,6 +928,25 @@ const UberTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count: n
     const onTripsLoadedRef = useRef(onTripsLoaded);
     onTripsLoadedRef.current = onTripsLoaded;
 
+    const handleDeleteTrip = async (rideId: string) => {
+        const confirmed = window.confirm(`Permanently delete this trip record? This cannot be undone.`);
+        if (!confirmed) return;
+        
+        try {
+            const resp = await fetch(`${AZURE_BASE}/operations/delete-trip/${rideId}`, {
+                method: 'DELETE'
+            });
+            if (resp.ok) {
+                fetchTrips();
+            } else {
+                const err = await resp.json();
+                alert(`Error deleting trip: ${err.error || 'Unknown error'}`);
+            }
+        } catch (e: any) {
+            alert(`Error connecting to server: ${e.message}`);
+        }
+    };
+
     const fetchTrips = useCallback(async () => {
         setLoading(true);
         try {
@@ -1042,6 +1061,15 @@ const UberTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count: n
                                 <p className="text-sm font-bold text-rose-600 tabular-nums">${trip.uber_cut.toFixed(2)}</p>
                             </div>
                         </div>
+                        <div className="flex items-center justify-center shrink-0 ml-auto md:ml-0 pl-2">
+                            <button
+                                onClick={() => handleDeleteTrip(trip.trip_id)}
+                                className="text-slate-400 dark:text-slate-500 hover:text-rose-500 hover:bg-rose-500/10 opacity-0 group-hover:opacity-100 transition-all duration-200 p-2 rounded-xl active:scale-95"
+                                title="Delete Trip"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+                        </div>
                     </div>
                 ))}
             </div>
@@ -1062,6 +1090,25 @@ const PrivateTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count
 
     const onTripsLoadedRef = useRef(onTripsLoaded);
     onTripsLoadedRef.current = onTripsLoaded;
+
+    const handleDeleteTrip = async (rideId: string) => {
+        const confirmed = window.confirm(`Permanently delete this private booking record? This cannot be undone.`);
+        if (!confirmed) return;
+        
+        try {
+            const resp = await fetch(`${AZURE_BASE}/operations/delete-trip/${rideId}`, {
+                method: 'DELETE'
+            });
+            if (resp.ok) {
+                fetchTrips();
+            } else {
+                const err = await resp.json();
+                alert(`Error deleting trip: ${err.error || 'Unknown error'}`);
+            }
+        } catch (e: any) {
+            alert(`Error connecting to server: ${e.message}`);
+        }
+    };
 
     const fetchTrips = useCallback(async () => {
         setLoading(true);
@@ -1171,6 +1218,15 @@ const PrivateTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count
                                     <p className="text-base font-black text-emerald-600 tabular-nums">${trip.tip.toFixed(2)}</p>
                                 </div>
                             )}
+                        </div>
+                        <div className="flex items-center justify-center shrink-0 ml-auto md:ml-0 pl-2">
+                            <button
+                                onClick={() => handleDeleteTrip(trip.trip_id)}
+                                className="text-slate-400 dark:text-slate-500 hover:text-rose-500 hover:bg-rose-500/10 opacity-0 group-hover:opacity-100 transition-all duration-200 p-2 rounded-xl active:scale-95"
+                                title="Delete Trip"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </button>
                         </div>
                     </div>
                 ))}

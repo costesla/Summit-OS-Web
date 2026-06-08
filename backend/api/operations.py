@@ -648,3 +648,77 @@ def screenshot_url(req: func.HttpRequest) -> func.HttpResponse:
             json.dumps({"success": False, "error": str(e)}),
             status_code=500, headers=_cors(req), mimetype="application/json"
         )
+
+@bp.route(route="operations/delete-trip/{ride_id}", methods=["DELETE", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+def delete_trip(req: func.HttpRequest) -> func.HttpResponse:
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=_cors(req))
+    
+    ride_id = req.route_params.get("ride_id")
+    if not ride_id:
+        return func.HttpResponse(
+            json.dumps({"success": False, "error": "ride_id is required"}),
+            status_code=400, headers=_cors(req), mimetype="application/json"
+        )
+        
+    try:
+        from services.database import DatabaseClient
+        db = DatabaseClient()
+        conn = db.get_connection()
+        if not conn:
+            return func.HttpResponse(
+                json.dumps({"success": False, "error": "Database connection failed"}),
+                status_code=500, headers=_cors(req), mimetype="application/json"
+            )
+        cursor = conn.cursor()
+        
+        # Check if the trip exists and get its Tessie_DriveID
+        cursor.execute("SELECT Tessie_DriveID FROM Rides.Rides WHERE RideID = ?", (ride_id,))
+        row = cursor.fetchone()
+        if not row:
+            cursor.close()
+            conn.close()
+            return func.HttpResponse(
+                json.dumps({"success": False, "error": "Trip not found"}),
+                status_code=404, headers=_cors(req), mimetype="application/json"
+            )
+            
+        tessie_drive_id = row[0]
+        
+        # Delete the trip record
+        cursor.execute("DELETE FROM Rides.Rides WHERE RideID = ?", (ride_id,))
+        rows_deleted = cursor.rowcount
+        
+        # If there was a Tessie_DriveID, check if there are other trips mapped to it
+        if tessie_drive_id:
+            cursor.execute(
+                "SELECT COUNT(*) FROM Rides.Rides WHERE Tessie_DriveID = ? AND RideID <> ?",
+                (tessie_drive_id, ride_id)
+            )
+            other_trips_count = cursor.fetchone()[0]
+            
+            # If no other trips are mapped, reset the Tessie drive's classification back to Untagged
+            if other_trips_count == 0:
+                cursor.execute("""
+                    UPDATE Rides.Rides
+                    SET TripType = NULL,
+                        Classification = 'Untagged',
+                        LastUpdated = GETUTCDATE()
+                    WHERE RideID = ?
+                """, (tessie_drive_id,))
+                
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return func.HttpResponse(
+            json.dumps({"success": True, "message": f"Deleted trip {ride_id}"}),
+            status_code=200, headers=_cors(req), mimetype="application/json"
+        )
+    except Exception as e:
+        logging.error(f"Delete Trip Error: {e}")
+        return func.HttpResponse(
+            json.dumps({"success": False, "error": str(e)}),
+            status_code=500, headers=_cors(req), mimetype="application/json"
+        )
+
