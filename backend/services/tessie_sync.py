@@ -9,6 +9,8 @@ from services.database import DatabaseClient
 from services.semantic_ingestion import SemanticIngestionService
 from services.telemetry_analysis import TelemetryAnalysisService
 
+from services.datetime_utils import get_timezone
+
 log = logging.getLogger(__name__)
 
 class TessieSyncService:
@@ -17,7 +19,7 @@ class TessieSyncService:
         self.db     = DatabaseClient()
         self.semantic = SemanticIngestionService()
         self.telemetry = TelemetryAnalysisService()
-        self.mdt    = timezone(timedelta(hours=-6)) # Mountain Time Support
+        self.mdt    = get_timezone() # DST-aware Mountain Time Support
 
     def sync_day(self, target_date: str = None) -> Dict[str, Any]:
         """
@@ -156,8 +158,19 @@ class TessieSyncService:
             return f'Private:{tag}'
         if 'uber' in t:
             return 'Uber_Dropoff'   # Required by UberMatcherService._find_match()
-        if 'jackie' in t:
-            return 'Jackie'
-        if 'esmeralda' in t:
-            return 'Esmeralda'
+        
+        try:
+            known_clients = self.db.get_known_client_names()
+        except Exception:
+            known_clients = ["jackie", "esmeralda", "daniel", "ryan", "lauren", "terrance", "lorynne", "nancy", "adrienne"]
+
+        search_str = t
+        if "jacquelyn" in search_str:
+            search_str += " jackie"
+            
+        for client in known_clients:
+            if client in search_str:
+                return client.capitalize()
+                
         return f'Private:{tag}'
+

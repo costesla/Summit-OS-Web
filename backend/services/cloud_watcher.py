@@ -583,8 +583,44 @@ class CloudWatcherService:
             if deleted:
                 logs.append(f"INFO: Cleared {deleted} existing TRIP records for {date_str}.")
 
+            # Reset any TESSIE- drives for this date that were previously matched (Classification='Uber_Matched')
+            # back to their original Tessie classification based on the sidecar tag.
+            try:
+                cursor.execute("""
+                    SELECT RideID, Sidecar_Artifact_JSON
+                    FROM Rides.Rides
+                    WHERE RideID LIKE 'TESSIE-%'
+                      AND CAST(Timestamp_Start AS DATE) = ?
+                      AND Classification = 'Uber_Matched'
+                """, (date_str,))
+                to_reset = cursor.fetchall()
+                if to_reset:
+                    from services.tessie_sync import TessieSyncService
+                    sync_service = TessieSyncService()
+                    reset_count = 0
+                    for r_id, sc_json in to_reset:
+                        orig_tag = None
+                        if sc_json:
+                            try:
+                                sc = json.loads(sc_json)
+                                orig_tag = sc.get("tag")
+                            except:
+                                pass
+                        cls = sync_service._classify_drive(orig_tag)
+                        tt = "Uber" if "uber" in (orig_tag or "").lower() else "Private"
+                        cursor.execute("""
+                            UPDATE Rides.Rides
+                            SET Classification = ?, TripType = ?, LastUpdated = GETUTCDATE()
+                            WHERE RideID = ?
+                        """, (cls, tt, r_id))
+                        reset_count += 1
+                    logs.append(f"INFO: Reset {reset_count} previously matched TESSIE drives back to original states.")
+            except Exception as reset_err:
+                logs.append(f"WARN: Failed to reset matched Tessie drives: {reset_err}")
+
             # 6. Write numbered TRIP records & try to link to Tessie
             trips_out = []
+            matched_tessie_ids = set()
             for i, c in enumerate(dated_cards, start=1):
                 trip_id = f"TRIP-{date_compact}-{i:02d}"
                 card = c["card"]
@@ -604,9 +640,10 @@ class CloudWatcherService:
                 tessie_drive_id = None
                 tessie_telemetry = {}
                 if trip_dt and not is_private:
-                    match = self.uber._find_match(trip_dt, tolerance_hours=4)
+                    match = self.uber._find_match(trip_dt, tolerance_hours=4, exclude_ids=matched_tessie_ids)
                     if match:
                         tessie_drive_id = match["RideID"]
+                        matched_tessie_ids.add(tessie_drive_id)
                         trip_dt_naive = trip_dt.replace(tzinfo=None) if trip_dt.tzinfo else trip_dt
                         logs.append(f"LINK: {trip_id} matched to {tessie_drive_id} (diff: {abs((match['Timestamp_Start'] - trip_dt_naive).total_seconds())/60:.1f}m)")
                         
@@ -1343,17 +1380,26 @@ class CloudWatcherService:
                 # Determine the client name from the booking classification or RideID
                 b_class = (booking["Classification"] or "").lower()
                 b_id_lower = b_id.lower()
-                if "jacquelyn" in b_id_lower or "jackie" in b_id_lower or "jackie" in b_class:
-                    client_name = "Jackie"
-                    tessie_class = "Jackie"
-                elif "daniel" in b_id_lower or "daniel" in b_class:
-                    client_name = "Daniel"
-                    tessie_class = "Daniel"
-                elif "esmeralda" in b_id_lower or "esmeralda" in b_class:
-                    client_name = "Esmeralda"
-                    tessie_class = "Esmeralda"
+                
+                # Normalize jacquelyn -> jackie
+                search_str = f"{b_id_lower} {b_class}"
+                if "jacquelyn" in search_str:
+                    search_str += " jackie"
+                
+                client_name = None
+                try:
+                    known_clients = self.db.get_known_client_names()
+                except Exception:
+                    known_clients = ["jackie", "esmeralda", "daniel", "ryan", "lauren", "terrance", "lorynne", "nancy", "adrienne"]
+                for client in known_clients:
+                    if client in search_str:
+                        client_name = client.capitalize()
+                        break
+
+                
+                if client_name:
+                    tessie_class = client_name
                 else:
-                    client_name = None
                     tessie_class = "Private_Trip"
 
                 if is_bundle and client_name:

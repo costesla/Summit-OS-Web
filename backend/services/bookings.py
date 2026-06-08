@@ -47,10 +47,11 @@ class BookingsClient:
             
         return resp.json().get("value", [])
 
-    def create_appointment(self, customer_data: dict, start_dt: datetime, end_dt: datetime, service_id: str):
+    def create_appointment(self, customer_data: dict, start_dt: datetime, end_dt: datetime, service_id: str, transaction_id: str = None):
         """
         Creates a new booking appointment using standard Graph Calendar API 
         (Bypassing Bookings API due to persistent 401 Service Principal issues).
+        When transaction_id is provided, Graph prevents duplicate events natively.
         """
         # Construct Event Details
         name = customer_data.get('name', 'Customer')
@@ -79,14 +80,15 @@ class BookingsClient:
         logging.info(f"Creating Calendar Event (Fallback) for {email} at {start_dt}")
         
         try:
-            # create_calendar_event(self, subject, body, start_dt, end_dt, location, attendee_email)
+            # create_calendar_event(self, subject, body, start_dt, end_dt, location, attendee_email, transaction_id)
             resp = self.graph.create_calendar_event(
                 subject=subject,
                 body=body,
                 start_dt=start_dt,
                 end_dt=end_dt,
                 location=location,
-                attendee_email=None # Prevent Graph from sending a duplicate basic calendar invite
+                attendee_email=None, # Prevent Graph from sending a duplicate basic calendar invite
+                transaction_id=transaction_id,
             )
             return resp
         except Exception as e:

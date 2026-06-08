@@ -14,7 +14,7 @@ import { isBackgroundableError, devDebugError, getAsyncExecutionLogs, pollJobSta
 const AZURE_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://summitos-api.azurewebsites.net/api';
 const VERSION = "1.4.5";
 
-const TAG_FILTERS = ['Uber', 'Uber_Matched', 'Uber_Pickup', 'Jackie', 'Esmeralda', 'Daniel', 'Lauren', 'Ryan', 'Staging', 'Private_Trip', 'Uncategorized', 'Charging Session'] as const;
+const TAG_FILTERS = ['Uber', 'Uber_Matched', 'Uber_Pickup', 'Jackie', 'Esmeralda', 'Daniel', 'Lauren', 'Ryan', 'Terrance', 'Lorynne', 'Staging', 'Private_Trip', 'Uncategorized', 'Charging Session'] as const;
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface PrivatePayment {
@@ -99,7 +99,7 @@ interface TessieCharge {
 const StatCard = ({
     label, value, sub, icon, highlight = false,
 }: {
-    label: string; value: string | number; sub: string;
+    label: string; value: string | number; sub: React.ReactNode;
     icon: React.ReactNode; highlight?: boolean;
 }) => (
     <div
@@ -417,6 +417,8 @@ const TAG_STYLE: Record<string, string> = {
     daniel: 'bg-indigo-50 text-indigo-700 border-indigo-200/80',
     lauren: 'bg-rose-50 text-rose-700 border-rose-200/80',
     ryan: 'bg-cyan-50 text-cyan-700 border-cyan-200/80',
+    terrance: 'bg-orange-50 text-orange-700 border-orange-200/80',
+    lorynne: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200/80',
     private_trip: 'bg-amber-50 text-amber-800 border-amber-300/80',
     private: 'bg-amber-50 text-amber-800 border-amber-300/80',
     uncategorized: 'bg-slate-50 text-slate-500 border-slate-200/80',
@@ -513,11 +515,23 @@ const TessieDrivesPanel = ({
                 </div>
                 <div className="flex items-center gap-3 flex-wrap">
                     <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">{selectedDate}</span>
-                    {TAG_FILTERS.map((t) => (
-                        <span key={t} className={`text-[10px] font-bold px-2 py-0.5 rounded-full border font-mono uppercase tracking-wider ${tagStyle(t)}`}>
-                            {t}
-                        </span>
-                    ))}
+                    {TAG_FILTERS.map((t) => {
+                        const isJackie = t.toLowerCase() === 'jackie';
+                        return (
+                            <span key={t} className={`text-[10px] font-bold px-2 py-0.5 rounded-full border font-mono uppercase tracking-wider ${tagStyle(t)}`}>
+                                {isJackie ? (
+                                    <a 
+                                        href="/jackie" 
+                                        target="_blank" 
+                                        rel="noopener noreferrer" 
+                                        className="hover:underline font-bold"
+                                    >
+                                        {t}
+                                    </a>
+                                ) : t}
+                            </span>
+                        );
+                    })}
                     <button
                         onClick={() => fetchAll()}
                         disabled={loading}
@@ -1661,7 +1675,7 @@ const IntelligenceSyncPanel: React.FC<{
                     onClick={runDailySync}
                     className="flex flex-col items-center justify-center gap-0.5 py-3 rounded-xl text-[10px] font-bold bg-amber-50 border border-amber-200 text-amber-700 hover:bg-amber-100 transition-all disabled:opacity-50"
                 >
-                    <span>Rebuild Day</span>
+                    <span>Run Daily Sync</span>
                     <span className="text-[8px] font-normal text-amber-600/80 normal-case">Tessie + OCR + Expenses</span>
                 </button>
                 <button
@@ -2932,7 +2946,19 @@ const DriverDashboard = () => {
                             sub={`${stats.uberCount || 0} OCR trips`}
                             icon={<Receipt className="text-blue-600 w-5 h-5" />} highlight />
                         <StatCard label="Private Income" value={`$${(stats.privateTotal || 0).toFixed(2)}`}
-                            sub="Jackie · Esmeralda · Other"
+                            sub={
+                                <span>
+                                    <a 
+                                        href="/jackie" 
+                                        target="_blank" 
+                                        rel="noopener noreferrer" 
+                                        className="hover:text-purple-600 underline font-bold"
+                                    >
+                                        Jackie
+                                    </a>
+                                    {' · Esmeralda · Other'}
+                                </span>
+                            }
                             icon={<DollarSign className="text-purple-600 w-5 h-5" />} />
                         <StatCard label="Expenses" value={`$${(stats.totalExpenses || 0).toFixed(2)}`}
                             sub={`Food $${(stats.food||0).toFixed(2)} · Charge $${(stats.charging||0).toFixed(2)}`}

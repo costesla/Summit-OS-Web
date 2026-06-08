@@ -94,7 +94,7 @@ class GraphClient:
         data = resp.json()
         return data.get("value", [])
 
-    def create_calendar_event(self, subject, body, start_dt, end_dt, location, attendee_email):
+    def create_calendar_event(self, subject, body, start_dt, end_dt, location, attendee_email, transaction_id=None):
         token = self._get_token()
         url = f"https://graph.microsoft.com/v1.0/users/{self.user_email}/calendar/events"
         
@@ -139,6 +139,13 @@ class GraphClient:
             "isReminderOn": True,
             "reminderMinutesBeforeStart": 30
         }
+
+        # Graph Calendar transactionId: if set, Graph rejects duplicate
+        # creates with the same key (409 Conflict) — provider-level
+        # idempotency that prevents duplicate events regardless of what
+        # the caller's SQL or retry logic does.
+        if transaction_id:
+            payload["transactionId"] = transaction_id
         
         # Only add attendee if email is provided (prevents duplicate calendar invites to customer)
         if attendee_email:

@@ -631,7 +631,8 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
                             if override_tag is not None:
                                 original_tag = str(rd.get('tag') or '')
                                 # Only override if the DB classification produces a different tag
-                                if override_tag.lower() != original_tag.lower():
+                                # and the original tag does not already contain the override tag (to preserve leg numbers and descriptors)
+                                if override_tag.lower() not in original_tag.lower():
                                     logging.info(f"DB Override: drive {drive_id_str} tag '{original_tag}' -> '{override_tag}' (DB cls: {cls})")
                                     rd['tag'] = override_tag
             except Exception as ov_err:

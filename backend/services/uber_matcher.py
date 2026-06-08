@@ -193,7 +193,7 @@ class UberMatcherService:
         return None
 
 
-    def _find_match(self, card_dt: datetime.datetime, tolerance_hours: int = 4) -> Optional[Dict[str, Any]]:
+    def _find_match(self, card_dt: datetime.datetime, tolerance_hours: int = 4, exclude_ids = None) -> Optional[Dict[str, Any]]:
         conn = self.db.get_connection()
         cursor = conn.cursor()
         
@@ -208,15 +208,28 @@ class UberMatcherService:
 
         # Search for Uber-labeled drives around that time
         # Relaxed classification to include 'Untagged' drives that might belong to the trip
-        cursor.execute("""
+        query = """
             SELECT RideID, Timestamp_Start, Classification
             FROM Rides.Rides
-            WHERE (Classification IN ('Uber_Dropoff', 'Untagged', 'Uber_Matched'))
+            WHERE RideID LIKE 'TESSIE-%'
+              AND (Classification IN ('Uber_Dropoff', 'Untagged', 'Uber_Matched'))
               AND Timestamp_Start BETWEEN ? AND ?
+        """
+        params = [start_bound, end_bound]
+        
+        if exclude_ids:
+            placeholders = ",".join("?" for _ in exclude_ids)
+            query += f" AND RideID NOT IN ({placeholders})"
+            params.extend(exclude_ids)
+            
+        query += """
             ORDER BY 
                 CASE WHEN Classification IN ('Uber_Dropoff', 'Untagged') THEN 0 ELSE 1 END,
                 ABS(DATEDIFF(SECOND, Timestamp_Start, ?)) ASC
-        """, (start_bound, end_bound, card_dt))
+        """
+        params.append(card_dt)
+        
+        cursor.execute(query, params)
         
         row = cursor.fetchone()
         if row:

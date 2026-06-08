@@ -189,8 +189,8 @@ class TessieClient:
             logging.info(f"Searching {len(drives)} drives for match near {trip_end_dt}")
 
             for drive in drives:
-                # Tessie ending_time is usually Unix timestamp
-                drive_end_ts = drive.get('ending_time')
+                # Tessie ended_at / ending_time is usually Unix timestamp
+                drive_end_ts = drive.get('ended_at') or drive.get('ending_time')
                 if not drive_end_ts:
                     continue
                     
@@ -642,3 +642,29 @@ class TessieClient:
         except Exception as e:
             logging.error(f"Error setting drive tag in Tessie: {str(e)}")
             raise
+
+    def get_driving_path(self, vin, started_at, ended_at, simplify=True, details=True):
+        """
+        Returns the driving path of a vehicle during a given timeframe.
+        """
+        if not self.api_key:
+            return []
+
+        logging.info(f"Fetching driving path for VIN: {vin} from {started_at} to {ended_at}")
+        try:
+            url = f"{self.base_url}/{vin}/path"
+            headers = {"Authorization": f"Bearer {self.api_key}"}
+            params = {
+                "from": started_at,
+                "to": ended_at,
+                "simplify": "true" if simplify else "false",
+                "details": "true" if details else "false"
+            }
+            response = requests.get(url, headers=headers, params=params, timeout=self.timeout)
+            response.raise_for_status()
+            
+            data = response.json()
+            return data.get("results", [])
+        except Exception as e:
+            logging.error(f"Error fetching driving path: {str(e)}")
+            return []

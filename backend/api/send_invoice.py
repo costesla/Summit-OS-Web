@@ -89,30 +89,52 @@ def send_invoice(req: func.HttpRequest) -> func.HttpResponse:
             create_stripe_payment_link,
             build_invoice_html,
             build_invoice_id,
+            calculate_fsd_percentage,
+            generate_static_map_url,
         )
         from services.graph import GraphClient
+        from services.secret_manager import SecretManager
     except Exception as e:
         logging.error(f"Service import error: {e}")
         return _json_response({"error": f"Internal service error: {str(e)}"}, 500)
 
-    # ── Try to pull Tessie telemetry if not provided ──────────────────────────
-    if distance_miles == 0 or energy_kwh == 0:
+    # ── Try to pull Tessie telemetry and route data ───────────────────────────
+    drive = None
+    path_points = None
+    fsd_percentage = None
+    map_url = None
+
+    try:
+        from services.tessie import TessieClient
+        vin = os.environ.get("TESSIE_VIN") or os.environ.get("TESLA_VIN", "")
+        if vin:
+            tessie = TessieClient()
+            trip_ts = int(trip_date_obj.timestamp()) + (18 * 3600)  # assume ~6pm
+            drive = tessie.match_drive_to_trip(vin, trip_ts, is_private=True)
+            if drive:
+                if distance_miles == 0:
+                    distance_miles = float(drive.get("distance", 0) or 0)
+                if energy_kwh == 0:
+                    energy_kwh = float(drive.get("energy_used", 0) or 0)
+                logging.info(f"Tessie auto-match: {distance_miles} mi, {energy_kwh} kWh")
+
+                # Fetch path details for maps and FSD calculations
+                start_ts = drive.get("started_at") or drive.get("starting_time")
+                end_ts = drive.get("ended_at") or drive.get("ending_time")
+                if start_ts and end_ts:
+                    path_points = tessie.get_driving_path(vin, start_ts, end_ts)
+    except Exception as te:
+        logging.warning(f"Tessie auto-match/path fetch failed (non-fatal): {te}")
+
+    # ── Calculate FSD and Generate Map URL ────────────────────────────────────
+    if drive:
         try:
-            from services.tessie import TessieClient
-            vin = os.environ.get("TESSIE_VIN") or os.environ.get("TESLA_VIN", "")
-            if vin:
-                tessie = TessieClient()
-                import time
-                trip_ts = int(trip_date_obj.timestamp()) + (18 * 3600)  # assume ~6pm
-                drive = tessie.match_drive_to_trip(vin, trip_ts, is_private=True)
-                if drive:
-                    if distance_miles == 0:
-                        distance_miles = float(drive.get("distance", 0) or 0)
-                    if energy_kwh == 0:
-                        energy_kwh = float(drive.get("energy_used", 0) or 0)
-                    logging.info(f"Tessie auto-match: {distance_miles} mi, {energy_kwh} kWh")
-        except Exception as te:
-            logging.warning(f"Tessie auto-match failed (non-fatal): {te}")
+            fsd_percentage = calculate_fsd_percentage(drive, path_points)
+            gmaps_key = os.environ.get("GOOGLE_MAPS_API_KEY") or SecretManager().get_secret("GOOGLE_MAPS_API_KEY")
+            if gmaps_key:
+                map_url = generate_static_map_url(path_points, gmaps_key)
+        except Exception as fe:
+            logging.warning(f"Failed to calculate FSD percentage/map URL: {fe}")
 
     # ── Build invoice ID ──────────────────────────────────────────────────────
     invoice_id = build_invoice_id(customer_name, trip_date_raw)
@@ -137,7 +159,9 @@ def send_invoice(req: func.HttpRequest) -> func.HttpResponse:
         invoice_id=invoice_id,
         telemetry=telemetry,
         stripe_url=stripe_url,
-        notes=notes
+        notes=notes,
+        map_url=map_url,
+        fsd_percentage=fsd_percentage
     )
 
     # ── Send via Microsoft Graph ──────────────────────────────────────────────

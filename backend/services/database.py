@@ -98,7 +98,9 @@ class DatabaseClient:
         t_start = trip_data.get('timestamp_epoch') or trip_data.get('started_at')
         if t_start: 
             if isinstance(t_start, (int, float)):
-                t_start = datetime.datetime.fromtimestamp(t_start)
+                from services.datetime_utils import utc_to_local
+                dt_utc = datetime.datetime.fromtimestamp(t_start, tz=datetime.timezone.utc)
+                t_start = utc_to_local(dt_utc).replace(tzinfo=None)
             # If it's already a string or datetime, we'll let pyodbc handle it or it's handled in params
         
         # Check for pre-formatted fields from TessieSyncService
@@ -116,14 +118,43 @@ class DatabaseClient:
         # Check existing row in DB for Ingestion Guardrails
         existing_classification = None
         existing_triptype = None
+        existing_sidecar = None
         try:
-            cursor.execute("SELECT Classification, TripType FROM Rides.Rides WHERE RideID = ?", (ride_id,))
+            cursor.execute("SELECT Classification, TripType, Sidecar_Artifact_JSON FROM Rides.Rides WHERE RideID = ?", (ride_id,))
             row = cursor.fetchone()
             if row:
                 existing_classification = row[0]
                 existing_triptype = row[1]
+                existing_sidecar = row[2]
         except Exception as query_err:
             logging.warning(f"Failed to query existing ride {ride_id} classification: {query_err}")
+
+        # Bypass guardrail if the Tessie tag itself was explicitly changed in the Tessie app
+        tessie_tag_changed = False
+        if existing_sidecar and ride_id.startswith("TESSIE-"):
+            try:
+                old_sc = json.loads(existing_sidecar)
+                old_tag = old_sc.get("tag")
+                if not old_tag and "Sidecar_Artifact_JSON" in old_sc:
+                    try:
+                        nested = json.loads(old_sc["Sidecar_Artifact_JSON"])
+                        old_tag = nested.get("tag")
+                    except:
+                        pass
+                
+                new_tag = trip_data.get("tag")
+                if not new_tag and "Sidecar_Artifact_JSON" in trip_data:
+                    try:
+                        nested = json.loads(trip_data["Sidecar_Artifact_JSON"])
+                        new_tag = nested.get("tag")
+                    except:
+                        pass
+                        
+                if (old_tag or "").strip().lower() != (new_tag or "").strip().lower():
+                    tessie_tag_changed = True
+                    logging.info(f"Tessie Tag Change Detected for {ride_id}: '{old_tag}' -> '{new_tag}'. Bypassing Ingestion Guardrail.")
+            except Exception as sc_err:
+                logging.warning(f"Failed to parse existing sidecar for {ride_id} tag comparison: {sc_err}")
 
         # Ingestion Guardrails: Database classification takes precedence over incoming updates for non-Uber/Private drives
         is_existing_private = (
@@ -141,7 +172,7 @@ class DatabaseClient:
             ))
         )
 
-        if is_existing_private and not is_incoming_private:
+        if is_existing_private and not is_incoming_private and not tessie_tag_changed:
             logging.info(f"Ingestion Guardrail: Preserving database classification '{existing_classification}' for {ride_id} (Blocked incoming update '{incoming_classification}')")
             incoming_classification = existing_classification
             incoming_triptype = 'Private'
@@ -758,3 +789,32 @@ class DatabaseClient:
             logging.error(f"Error saving telemetry payload for {drive_id}: {e}")
         finally:
             conn.close()
+
+    def get_known_client_names(self):
+        import re
+        conn = self.get_connection()
+        if not conn:
+            return ["jackie", "esmeralda", "daniel", "ryan", "lauren", "terrance", "lorynne", "nancy", "adrienne"]
+        cursor = conn.cursor()
+        try:
+            cursor.execute("""
+                SELECT DISTINCT RideID 
+                FROM Rides.Rides 
+                WHERE RideID LIKE 'INV-%'
+            """)
+            names = {"jackie", "esmeralda", "daniel", "ryan", "lauren", "terrance", "lorynne", "nancy", "adrienne"}
+            for row in cursor.fetchall():
+                if row[0]:
+                    parts = row[0].split('-')
+                    if len(parts) >= 2:
+                        name = parts[1].lower()
+                        name = re.sub(r'[^a-z]', '', name)
+                        if name:
+                            names.add(name)
+            return list(names)
+        except Exception as e:
+            logging.error(f"Error getting known client names: {e}")
+            return ["jackie", "esmeralda", "daniel", "ryan", "lauren", "terrance", "lorynne", "nancy", "adrienne"]
+        finally:
+            conn.close()
+

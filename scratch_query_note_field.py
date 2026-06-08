@@ -16,11 +16,12 @@ conn_str = os.environ.get("SQL_CONNECTION_STRING")
 conn = pyodbc.connect(conn_str)
 cursor = conn.cursor()
 
-print("=== Last 10 Background Jobs in Rides.BackgroundJobs ===")
+print("=== ALL EXPENSES FOR 2026-05-26 ===")
 cursor.execute("""
-    SELECT TOP 10 job_id, operation, target_path, status, completed_at, error
-    FROM Rides.BackgroundJobs
-    ORDER BY completed_at DESC
+    SELECT ExpenseID, Category, Amount, Note, Timestamp
+    FROM Rides.ManualExpenses
+    WHERE CAST(Timestamp AS DATE) = '2026-05-26'
+    ORDER BY Timestamp
 """)
 columns = [col[0] for col in cursor.description]
 for r in cursor.fetchall():

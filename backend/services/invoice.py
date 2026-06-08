@@ -105,6 +105,93 @@ def calculate_thor_telemetry(distance_miles: float, energy_used_kwh: float = Non
     }
 
 
+# ─── Tessie Route Visuals & FSD Math ───────────────────────────────────────────
+
+def calculate_fsd_percentage(drive: dict, path_points: list = None) -> float:
+    """
+    Calculates the percentage of the trip driven using Full Self-Driving (FSD) / Autopilot.
+    Checks 'autopilot_distance' and 'distance' first, then falls back to path_points.
+    """
+    if not drive:
+        return None
+
+    autopilot_distance = drive.get("autopilot_distance")
+    
+    # Check if we can calculate it from the drive summary fields
+    total_distance = drive.get("distance")
+    if total_distance is None:
+        start_odo = drive.get("starting_odometer")
+        end_odo = drive.get("ending_odometer")
+        if start_odo is not None and end_odo is not None:
+            total_distance = end_odo - start_odo
+
+    if autopilot_distance is not None and total_distance and total_distance > 0:
+        pct = (autopilot_distance / total_distance) * 100
+        return min(max(pct, 0.0), 100.0)
+
+    # Fallback to checking the details path points
+    if path_points:
+        total_pts = len(path_points)
+        if total_pts > 0:
+            fsd_pts = sum(1 for pt in path_points if pt.get("autopilot") is True)
+            pct = (fsd_pts / total_pts) * 100
+            return min(max(pct, 0.0), 100.0)
+
+    return None
+
+
+def generate_static_map_url(path_points: list, api_key: str) -> str:
+    """
+    Constructs a styled Google Static Maps URL showing the driving route path,
+    optimized with coordinate simplification/sampling to fit standard limits.
+    """
+    if not path_points or not api_key:
+        return None
+
+    coords = []
+    for pt in path_points:
+        lat = pt.get("latitude")
+        lon = pt.get("longitude")
+        if lat is not None and lon is not None:
+            coords.append((lat, lon))
+
+    if not coords:
+        return None
+
+    # Sample points to keep the URL concise and avoid client/server URL limits
+    max_points = 40
+    if len(coords) > max_points:
+        indices = [int(i * (len(coords) - 1) / (max_points - 1)) for i in range(max_points)]
+        sampled_coords = [coords[i] for i in indices]
+    else:
+        sampled_coords = coords
+
+    path_str = "|".join(f"{lat:.5f},{lon:.5f}" for lat, lon in sampled_coords)
+    
+    start_lat, start_lon = coords[0]
+    end_lat, end_lon = coords[-1]
+
+    # Minimal dark styled parameters for high-end dark aesthetic map
+    styles = (
+        "&style=feature:all|element:geometry|color:0x1b1b1b"
+        "&style=feature:water|element:geometry|color:0x0f0f1b"
+        "&style=feature:road|element:geometry|color:0x333333"
+        "&style=feature:road|element:labels.text.fill|color:0x888888"
+        "&style=feature:all|element:labels.text.stroke|visibility:off"
+    )
+
+    url = (
+        f"https://maps.googleapis.com/maps/api/staticmap"
+        f"?size=600x300&scale=2&maptype=roadmap"
+        f"{styles}"
+        f"&path=color:0x06b6d4|weight:5|{path_str}"
+        f"&markers=color:0x34c759|label:S|{start_lat:.5f},{start_lon:.5f}"
+        f"&markers=color:0xff3b30|label:E|{end_lat:.5f},{end_lon:.5f}"
+        f"&key={api_key}"
+    )
+    return url
+
+
 # ─── HTML Email Template ───────────────────────────────────────────────────────
 
 def build_invoice_html(
@@ -117,13 +204,41 @@ def build_invoice_html(
     invoice_id: str,
     telemetry: dict,
     stripe_url: str = None,
-    notes: str = ""
+    notes: str = "",
+    map_url: str = None,
+    fsd_percentage: float = None
 ) -> str:
     """
     Generates a premium, Outlook-safe HTML invoice email.
     """
     amount_display = f"${amount_usd:,.2f}"
     first_name = customer_name.split()[0] if customer_name else "there"
+    site_url = os.environ.get("SITE_URL") or os.environ.get("SITE_BASE_URL") or "https://www.costesla.com"
+
+    fsd_badge = ""
+    if fsd_percentage is not None:
+        fsd_display = f"{fsd_percentage:.0f}%" if fsd_percentage.is_integer() else f"{fsd_percentage:.1f}%"
+        star_char = " ⭐" if fsd_percentage > 95 else ""
+        fsd_badge = f"""
+        <div style="margin-top: 4px;">
+          <p style="margin:0; color:#06b6d4; font-size:11px; font-family:Arial,sans-serif; background:#082f49; padding:4px 10px; border-radius:20px; display:inline-block; border: 1px solid #0e7490; white-space: nowrap;">🤖 {fsd_display} FSD{star_char}</p>
+        </div>
+        """
+
+    map_section = ""
+    if map_url:
+        map_section = f"""
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:16px; border-top:1px solid #1a3a1a; padding-top:16px;">
+          <tr>
+            <td>
+              <p style="margin:0 0 8px 0; color:#4a6a4a; font-size:11px; font-family:Arial,sans-serif; text-transform:uppercase; letter-spacing:1px;">Route Visual Map</p>
+              <div style="border-radius:8px; overflow:hidden; border:1px solid #1a3a1a;">
+                <img src="{map_url}" alt="Route Map" width="480" style="display:block; width:100%; height:auto; max-width:100%; border:0;" />
+              </div>
+            </td>
+          </tr>
+        </table>
+        """
 
     stripe_section = ""
     if stripe_url:
@@ -175,6 +290,7 @@ def build_invoice_html(
           <!-- Header -->
           <tr>
             <td style="background:linear-gradient(135deg, #1a1a2e 0%, #0f3460 60%, #16213e 100%); padding:36px 40px; text-align:center;">
+              <img src="{site_url}/logo.png" alt="COS Tesla Logo" style="display: block; margin: 0 auto 15px; height: 60px; width: auto;" />
               <p style="margin:0 0 4px 0; color:#ffffff; font-size:24px; font-weight:bold; font-family:Arial,sans-serif; letter-spacing:1px;">COS TESLA LLC</p>
               <p style="margin:0; color:#8ecae6; font-size:12px; font-family:Arial,sans-serif; letter-spacing:2px; text-transform:uppercase;">Powered by: SummitOS</p>
             </td>
@@ -328,8 +444,9 @@ def build_invoice_html(
                           <p style="margin:0; color:#4ade80; font-size:13px; font-family:Arial,sans-serif; font-weight:bold; letter-spacing:1px;">⚡ THOR TRIP TELEMETRY</p>
                           <p style="margin:2px 0 0 0; color:#5a7a5a; font-size:11px; font-family:Arial,sans-serif;">What it cost to move you vs. a traditional vehicle · {telemetry['data_source']}</p>
                         </td>
-                        <td align="right">
+                        <td align="right" style="white-space:nowrap; vertical-align:top;">
                           <p style="margin:0; color:#4ade80; font-size:11px; font-family:Arial,sans-serif; background:#1a3a1a; padding:4px 10px; border-radius:20px; display:inline-block;">100% Electric</p>
+                          {fsd_badge}
                         </td>
                       </tr>
                     </table>
@@ -365,6 +482,7 @@ def build_invoice_html(
                         </td>
                       </tr>
                     </table>
+                    {map_section}
                   </td>
                 </tr>
               </table>

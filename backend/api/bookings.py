@@ -9,7 +9,7 @@ from services.calendar import generate_time_slots_for_day, calculate_buffers, ti
 from services.graph import GraphClient
 from services.database import DatabaseClient
 from services.flight import AviationStackClient
-from services.datetime_utils import normalize_to_utc
+from services.datetime_utils import normalize_to_utc, utc_to_local
 from services.invoice import create_stripe_payment_link, build_invoice_id
 from services.auth_guard import cors_headers as _get_cors
 
@@ -91,14 +91,13 @@ def calendar_book(req: func.HttpRequest) -> func.HttpResponse:
         pickup = req_body.get('pickup')
         dropoff = req_body.get('dropoff')
         passengers = req_body.get('passengers', 1)
+        session_id = req_body.get('sessionId')  # Stripe session_id for idempotency
 
         start_time = parser.parse(appt_start)
         buffers = calculate_buffers(start_time, int(req_body.get('duration', 60)))
         
-        # Import BookingsClient
         from services.bookings import BookingsClient
         
-        # Create booking via Microsoft Bookings API
         bookings = BookingsClient()
         service_id = os.environ.get('MS_BOOKINGS_SERVICE_ID', 'dc16877c-160d-436e-b53b-52ae6f419604')
         
@@ -116,15 +115,83 @@ def calendar_book(req: func.HttpRequest) -> func.HttpResponse:
                 customer_data=customer_data,
                 start_dt=buffers['buffer_start'],
                 end_dt=buffers['buffer_end'],
-                service_id=service_id
+                service_id=service_id,
+                transaction_id=session_id,  # Graph rejects duplicate transactionIds with 409
             )
             logging.info(f"Appointment created successfully: {appointment.get('id')}")
         except Exception as inner_e:
+            error_str = str(inner_e)
+
+            # Graph returns 409 when transactionId was already used — this IS
+            # the idempotency working.  Look up the existing eventId from our
+            # cache table and return it so finalize gets a valid eventId.
+            if session_id and "409" in error_str:
+                logging.info(f"Graph 409 for transactionId {session_id} — looking up existing event")
+                # The winner may not have written its cache row yet.
+                # Retry briefly (3 × 500ms) to cover the timing window.
+                import time as _time
+                for attempt in range(3):
+                    try:
+                        db = DatabaseClient()
+                        conn = db.get_connection()
+                        if conn:
+                            cur = conn.cursor()
+                            cur.execute(
+                                "SELECT EventId FROM Bookings.CalendarIdempotency WHERE IdempotencyKey = ?",
+                                (session_id,),
+                            )
+                            row = cur.fetchone()
+                            cur.close()
+                            conn.close()
+                            if row and row[0]:
+                                logging.info(f"Calendar-book dedupe: returning cached eventId {row[0]} (attempt {attempt + 1})")
+                                return func.HttpResponse(
+                                    json.dumps({"success": True, "eventId": row[0], "deduplicated": True}),
+                                    status_code=200,
+                                    headers=_cors_headers(),
+                                    mimetype="application/json"
+                                )
+                    except Exception as lookup_err:
+                        logging.warning(f"CalendarIdempotency lookup failed (attempt {attempt + 1}): {lookup_err}")
+                    if attempt < 2:
+                        _time.sleep(0.5)
+
+                # 409 but no cached eventId after retries — Graph blocked the
+                # duplicate but we don't have the original ID.  Return error
+                # so finalize can release the claim and Stripe retries.
+                logging.error(f"Graph 409 but no cached eventId for {session_id} after 3 attempts")
+
             logging.error(f"Inner Booking Error: {inner_e}")
             raise inner_e
         
+        event_id = appointment.get('id')
+
+        # ── Cache the sessionId → eventId mapping ─────────────────────
+        # This is a plain lookup cache, not a lock.  Graph's transactionId
+        # is the serialization point; this table just lets us return the
+        # eventId on a 409 without querying Graph for it.
+        if session_id and event_id:
+            try:
+                db = DatabaseClient()
+                conn = db.get_connection()
+                if conn:
+                    cur = conn.cursor()
+                    cur.execute(
+                        "INSERT INTO Bookings.CalendarIdempotency (IdempotencyKey, EventId, CreatedAt) "
+                        "VALUES (?, ?, GETUTCDATE())",
+                        (session_id, event_id),
+                    )
+                    conn.commit()
+                    cur.close()
+                    conn.close()
+            except Exception as cache_err:
+                # Non-fatal: the event was created, we just can't cache
+                # the mapping.  A future 409 won't find it, but the event
+                # still exists and finalize will succeed.
+                logging.warning(f"Failed to cache calendar idempotency mapping: {cache_err}")
+
         return func.HttpResponse(
-            json.dumps({"success": True, "eventId": appointment.get('id')}),
+            json.dumps({"success": True, "eventId": event_id}),
             status_code=200,
             headers=_cors_headers(),
             mimetype="application/json"
@@ -180,7 +247,7 @@ def log_private_trip(req: func.HttpRequest) -> func.HttpResponse:
             "classification": "Private_Booking",
             "fare": price,
             "timestamp_epoch": timestamp_epoch,
-            "Timestamp_Offer": dt_utc.strftime("%Y-%m-%d %H:%M:%S") if dt_utc else None,
+            "Timestamp_Offer": utc_to_local(dt_utc).strftime("%Y-%m-%d %H:%M:%S") if dt_utc else None,
             "raw_text": f"Booking for {name}"
         }
         db.save_trip(trip_data)
@@ -311,6 +378,7 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
                             <!-- Header -->
                             <tr>
                                 <td style="background-color: #000000; color: #ffffff; padding: 30px 20px; text-align: center;">
+                                    <img src="{site_url}/logo.png" alt="COS Tesla Logo" style="display: block; margin: 0 auto 15px; height: 60px; width: auto;" />
                                     <h1 style="margin: 0; font-size: 20px; font-weight: bold;">COS TESLA LLC</h1>
                                     <p style="margin: 5px 0 0; color: #aaaaaa; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Powered by: SummitOS</p>
                                 </td>
@@ -506,7 +574,7 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
                 "classification": "Private_Booking",
                 "fare": float(price.replace('$', '').replace(',', '')) if '$' in price else 0,
                 "timestamp_epoch": timestamp_epoch,
-                "Timestamp_Offer": dt_utc.strftime("%Y-%m-%d %H:%M:%S") if dt_utc else None
+                "Timestamp_Offer": utc_to_local(dt_utc).strftime("%Y-%m-%d %H:%M:%S") if dt_utc else None
             })
             db.save_trip(db_data)
         except Exception as db_err:
