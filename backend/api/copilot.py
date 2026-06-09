@@ -134,8 +134,76 @@ def classify_drive(tag, location):
     # If it has a specific mission tag, it's business
     if tag and tag != "Uncategorized":
          return "Business/Mission"
-         
+
     return "Personal"
+
+
+# ─── Operational / Leg Suffix Handling ──────────────────────────────────────
+# Matches operational/leg keywords at the end of a tag (case-insensitive),
+# optionally preceded by a hyphen and optionally followed by a leg number
+# (e.g. "pickup 1", "Stop 1", "Dropoff 1", "en route 2"). Used to strip leg
+# descriptors so multi-leg missions blend into a single base tag.
+OPERATIONAL_SUFFIX_REGEX = re.compile(
+    r'\s*(?:-\s*)?(?:en\s*route|enroute|in\s*route|inroute|in-route|pickup|pick\s*up|dropoff|drop\s*off|drop-off|arrival|stop|staging|reposition|home|break)\b(?:\s+\d+|\d+)?$',
+    re.IGNORECASE
+)
+
+# Keywords indicating an operational/empty (deadhead) leg — staging, home,
+# en route, pickup, etc. Note: "stop" and "dropoff" are intentionally absent
+# because those legs carry the passenger and define the billed start/end.
+OPERATIONAL_LEG_KEYWORDS = ["en route", "enroute", "staging", "reposition", "home", "break", "pickup", "pick up", "arrival"]
+
+
+def is_operational_leg(tag: str) -> bool:
+    """Return True if a leg tag denotes an operational/deadhead leg.
+
+    Handles numbered leg suffixes such as "pickup 1" or "Jackie 1 En Route".
+    """
+    if not tag:
+        return False
+    t_lower = tag.lower().strip()
+    # Strip an optional trailing leg number (e.g. "pickup 1" -> "pickup")
+    t_lower = re.sub(r'\s+\d+$', '', t_lower)
+    for kw in OPERATIONAL_LEG_KEYWORDS:
+        if t_lower == kw or t_lower.endswith(f" {kw}") or t_lower.endswith(f"-{kw}") or t_lower.endswith(f" - {kw}"):
+            return True
+    return False
+
+
+def strip_operational_suffix(raw_tag: str) -> str:
+    """Strip a trailing operational/leg descriptor to produce a base tag.
+
+    Falls back to the original tag if stripping would empty it (e.g. a tag
+    that is purely "Staging" or "Home").
+    """
+    base_tag = OPERATIONAL_SUFFIX_REGEX.sub("", raw_tag).strip()
+    if not base_tag:
+        base_tag = raw_tag.strip()
+    return base_tag
+
+
+def resolve_blended_endpoints(drives: list):
+    """Resolve display start/end (address, lat, lon) for a blended mission.
+
+    Leading deadhead legs (e.g. "pickup 1") are skipped when choosing the
+    start point so the card resolves to the passenger pickup rather than the
+    empty repositioning leg. Likewise trailing operational legs are skipped
+    for the end point. Falls back to the first/last leg if every leg is
+    operational. Assumes ``drives`` is sorted chronologically.
+    """
+    if not drives:
+        return None
+    start_leg = next((d for d in drives if not is_operational_leg(d.get("tag"))), drives[0])
+    end_leg = next((d for d in reversed(drives) if not is_operational_leg(d.get("tag"))), drives[-1])
+    return {
+        "start": start_leg.get("starting_location"),
+        "end": end_leg.get("ending_location"),
+        "start_lat": start_leg.get("starting_latitude"),
+        "start_lon": start_leg.get("starting_longitude"),
+        "end_lat": end_leg.get("ending_latitude"),
+        "end_lon": end_leg.get("ending_longitude"),
+    }
+
 
 @bp.route(route="copilot/trips/latest", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def copilot_trips_latest(req: func.HttpRequest) -> func.HttpResponse:
@@ -777,41 +845,17 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
         
         tag_lower = tag_filter.lower()
         
-        # Suffixes to strip for mission blending (case-insensitive)
-        # We handle both space-separated and camelCase variants common in the user's manual tagging
-        suffixes_to_strip = [
-            " en route", " enroute", " - en route",
-            " in route", " inroute", " - in route", " in-route",
-            " pickup", " pick up", " pickup", " - pickup", "pickup", "pick up",
-            " dropoff", " drop off", " drop-off", " - dropoff", "dropoff", "drop off",
-            " arrival", " - arrival", " arrival",
-            " stop ", " stop-", " stop"
-        ]
-
         for d in raw_drives:
             raw_tag = str(d.get("tag") or "Uncategorized")
             # Filter if tag_filter is provided
             if tag_filter and tag_lower not in raw_tag.lower():
                 continue
-                
-            # Create base_tag by stripping mission descriptors
-            base_tag = raw_tag
-            tag_l = base_tag.lower()
-            
-            # Iteratively strip suffixes from the end of the tag
-            changed = True
-            while changed:
-                changed = False
-                for s in suffixes_to_strip:
-                    if tag_l.endswith(s):
-                        idx = tag_l.rfind(s)
-                        base_tag = base_tag[:idx]
-                        tag_l = base_tag.lower()
-                        changed = True
-                        break
-            
-            base_tag = base_tag.strip()
-            
+
+            # Create base_tag by stripping mission/leg descriptors. The regex
+            # handles numbered leg suffixes (e.g. "pickup 1", "Stop 1") so
+            # multi-leg missions blend into a single base tag.
+            base_tag = strip_operational_suffix(raw_tag)
+
             # Map start time to MST for date grouping (prevents midnight splits)
             start_ts = d.get("started_at", 0)
             start_dt_mst = _ts_to_mt(start_ts) if start_ts else None
@@ -832,7 +876,12 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
             
             first = drives[0]
             last = drives[-1]
-            
+
+            # Resolve display endpoints, skipping leading/trailing deadhead legs
+            # so the card shows the passenger pickup/dropoff rather than the
+            # empty repositioning legs (e.g. "pickup 1").
+            endpoints = resolve_blended_endpoints(drives)
+
             total_dist = sum(float(d.get("distance") or d.get("distance_miles") or d.get("odometer_distance") or 0) for d in drives)
             total_energy = sum(float(d.get("energy_used") or 0) for d in drives)
             total_autopilot = sum(float(d.get("autopilot_distance") or d.get("autopilot") or 0) for d in drives)
@@ -868,21 +917,21 @@ def copilot_tessie_drives(req: func.HttpRequest) -> func.HttpResponse:
                 "energy_used_kwh": round(total_energy, 2),
                 "efficiency_wh_mi": efficiency,
                 "autopilot_miles": round(total_autopilot, 2),
-                "start": _sanitize_pii_address(first.get("starting_location")),
-                "end": _sanitize_pii_address(last.get("ending_location")),
+                "start": _sanitize_pii_address(endpoints["start"]),
+                "end": _sanitize_pii_address(endpoints["end"]),
                 "starting_battery": first.get("starting_battery"),
                 "ending_battery": last.get("ending_battery"),
                 "duration_minutes": round((last.get("ended_at", 0) - first.get("started_at", 0)) / 60, 1) if first.get("started_at") and last.get("ended_at") else 0,
                 "tessie_drive_id": first.get("id"),
                 "leg_ids": [d.get("id") for d in drives],
-                "start_lat": first.get("starting_latitude"),
-                "start_lon": first.get("starting_longitude"),
-                "_start_lat": first.get("starting_latitude"),
-                "_start_lon": first.get("starting_longitude"),
-                "end_lat": last.get("ending_latitude"),
-                "end_lon": last.get("ending_longitude"),
-                "_end_lat": last.get("ending_latitude"),
-                "_end_lon": last.get("ending_longitude")
+                "start_lat": endpoints["start_lat"],
+                "start_lon": endpoints["start_lon"],
+                "_start_lat": endpoints["start_lat"],
+                "_start_lon": endpoints["start_lon"],
+                "end_lat": endpoints["end_lat"],
+                "end_lon": endpoints["end_lon"],
+                "_end_lat": endpoints["end_lat"],
+                "_end_lon": endpoints["end_lon"]
             })
 
         # Sort by most recent first

@@ -155,13 +155,7 @@ def main():
         
         # 3. Process grouping/blending logic
         grouped = defaultdict(list)
-        suffixes_to_strip = [
-            " en route", " enroute", " - en route",
-            " pickup", " pick up", " pickup", " - pickup", "pickup", "pick up",
-            " dropoff", " drop off", " drop-off", " - dropoff", "dropoff", "drop off",
-            " arrival", " - arrival", " arrival",
-            " stop ", " stop-", " stop"
-        ]
+        from api.copilot import strip_operational_suffix
         
         tag_filter = ""
         tag_lower = tag_filter.lower()
@@ -171,21 +165,7 @@ def main():
             if tag_filter and tag_lower not in raw_tag.lower():
                 continue
                 
-            base_tag = raw_tag
-            tag_l = base_tag.lower()
-            
-            changed = True
-            while changed:
-                changed = False
-                for s in suffixes_to_strip:
-                    if tag_l.endswith(s):
-                        idx = tag_l.rfind(s)
-                        base_tag = base_tag[:idx]
-                        tag_l = base_tag.lower()
-                        changed = True
-                        break
-            
-            base_tag = base_tag.strip()
+            base_tag = strip_operational_suffix(raw_tag)
             
             start_ts = d.get("started_at", 0)
             start_dt_mst = _ts_to_mt(start_ts) if start_ts else None
@@ -204,10 +184,14 @@ def main():
             first = drives[0]
             last = drives[-1]
             
+            from api.copilot import resolve_blended_endpoints
+            endpoints = resolve_blended_endpoints(drives)
+            
             total_dist = sum(float(d.get("distance") or 0) for d in drives)
             total_energy = sum(float(d.get("energy_used") or 0) for d in drives)
             total_autopilot = sum(float(d.get("autopilot_distance") or 0) for d in drives)
             
+            # Calculate MST time for the mission start
             start_ts = first.get("started_at", 0)
             start_dt_mst = _ts_to_mt(start_ts) if start_ts else None
             
@@ -235,8 +219,8 @@ def main():
                 "energy_used_kwh": round(total_energy, 2),
                 "efficiency_wh_mi": efficiency,
                 "autopilot_miles": round(total_autopilot, 2),
-                "start": first.get("starting_location"),
-                "end": last.get("ending_location"),
+                "start": endpoints["start"],
+                "end": endpoints["end"],
                 "starting_battery": first.get("starting_battery"),
                 "ending_battery": last.get("ending_battery"),
                 "duration_minutes": round((last.get("ended_at", 0) - first.get("started_at", 0)) / 60, 1) if first.get("started_at") and last.get("ended_at") else 0,
