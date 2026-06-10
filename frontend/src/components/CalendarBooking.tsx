@@ -191,6 +191,7 @@ export default function CalendarBooking({
                 });
                 const data = await res.json();
                 if (data.success) {
+                    setBooking(false);
                     if (onBookingComplete) onBookingComplete(data.eventId || "manual");
                 } else {
                     throw new Error(data.error || "Booking failed.");

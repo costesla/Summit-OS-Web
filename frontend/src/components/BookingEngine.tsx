@@ -618,7 +618,7 @@ export default function BookingEngine() {
                             )}
 
                             {/* Calendar Booking or Checkout Button */}
-                            {showCalendar ? (
+                            {showCalendar && !bookingComplete ? (
                                 <CalendarBooking
                                     customerName={name}
                                     customerEmail={email}
