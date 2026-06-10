@@ -93,6 +93,16 @@ export default function CalendarBooking({
         fetchConfig();
     }, []);
 
+    // Reset the "Processing..." state when the page is restored from the
+    // back/forward cache (e.g. user hits Back from the Stripe checkout page)
+    useEffect(() => {
+        const onPageShow = (e: PageTransitionEvent) => {
+            if (e.persisted) setBooking(false);
+        };
+        window.addEventListener('pageshow', onPageShow);
+        return () => window.removeEventListener('pageshow', onPageShow);
+    }, []);
+
     // Check if a slot start time is within HOP for its weekday
     const withinHop = (dateObj: Date): boolean => {
         if (!hop) return true;
