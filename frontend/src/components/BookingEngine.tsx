@@ -205,7 +205,7 @@ export default function BookingEngine() {
                             Single Trip (Fairness Engine)
                         </button>
                         <button
-                            onClick={() => setQuoteType('bundle')}
+                            onClick={() => { setQuoteType('bundle'); setTripType('one-way'); }}
                             className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${quoteType === 'bundle' ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-500/20' : 'text-gray-400 hover:text-white'}`}
                         >
                             All-Day Bundle ($100)
@@ -282,6 +282,13 @@ export default function BookingEngine() {
                             />
                         )}
                     </div>
+
+                    {quoteType === 'bundle' && (
+                        <div className="p-3 rounded-lg bg-white/[0.03] border border-white/10 flex items-center gap-2">
+                            <MapPin size={14} className="text-cyan-400 shrink-0" />
+                            <span className="text-xs text-gray-400">Destination: as directed — your driver is dedicated to you for the day, no fixed dropoff needed.</span>
+                        </div>
+                    )}
 
                     {quoteType === 'bundle' && pickup.length > 5 && !showCalendar && (
                         <div className="p-4 bg-cyan-500/10 border border-cyan-500/30 rounded-xl animate-in fade-in slide-in-from-top-4 duration-500">
