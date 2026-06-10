@@ -12,5 +12,5 @@ googlemaps>=4.10.0
 pytz
 openai
 pydantic
-stripe>=8.6.0
+stripe>=8.6.0,<15  # v15 removes dict-style StripeObject (.get) used by finalize_service
 cryptography==40.0.2
