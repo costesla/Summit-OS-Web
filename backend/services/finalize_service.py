@@ -190,7 +190,11 @@ def finalize_stripe_session(session_id: str) -> dict:
         from services.datetime_utils import normalize_to_utc
 
         start_time = normalize_to_utc(meta.get("appointmentStart"))
-        buffers = calculate_buffers(start_time, 60)
+        try:
+            duration_minutes = max(30, min(int(float(meta.get("duration", "60"))), 720))
+        except (TypeError, ValueError):
+            duration_minutes = 60
+        buffers = calculate_buffers(start_time, duration_minutes)
         appointment = BookingsClient().create_appointment(
             customer_data={
                 "name": meta.get("customerName"),

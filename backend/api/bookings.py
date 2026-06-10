@@ -316,12 +316,19 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
 
         # --- NEW: Create Calendar Event for Invoice/Venmo flows ---
         # (Paid flow handles this in finalize-booking calling calendar-book)
+        # Block the calendar for the real trip span (drive time + layover/wait),
+        # clamped to sane bounds — round trips were only reserving 1 hour.
+        try:
+            duration_minutes = max(30, min(int(float(data.get('duration', 60))), 720))
+        except (TypeError, ValueError):
+            duration_minutes = 60
+
         if payment_method in ["Invoice", "Venmo", "Cash"] and raw_time:
             try:
                 from services.bookings import BookingsClient
                 bookings = BookingsClient()
                 dt_utc = normalize_to_utc(raw_time)
-                
+
                 # Create appointment in calendar
                 bookings.create_appointment(
                     customer_data={
@@ -333,7 +340,7 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
                         'notes': f"Payment Method: {payment_method}"
                     },
                     start_dt=dt_utc,
-                    end_dt=dt_utc + timedelta(hours=1),
+                    end_dt=dt_utc + timedelta(minutes=duration_minutes),
                     service_id=os.environ.get('MS_BOOKINGS_SERVICE_ID', 'dc16877c-160d-436e-b53b-52ae6f419604')
                 )
                 logging.info(f"Calendar event created for {payment_method} booking: {booking_id}")

@@ -640,6 +640,10 @@ export default function BookingEngine() {
                                     quoteType={quoteType}
                                     tripDistance={quote?.distance?.toFixed(1) || undefined}
                                     tripDuration={quote?.time?.toString() || undefined}
+                                    durationMinutes={Math.round((quote?.time || 60)
+                                        + (quoteType === 'single'
+                                            ? (tripType === 'round-trip' ? layoverHours : waitTimeHours) * 60
+                                            : 0))}
                                     onBookingComplete={(eventId) => {
                                         console.log('✅ Booking complete:', eventId);
                                         setBookingComplete(true);
