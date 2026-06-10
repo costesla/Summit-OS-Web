@@ -16,6 +16,7 @@ interface CalendarBookingProps {
     tripDistance?: string;
     tripDuration?: string;
     durationMinutes?: number;
+    returnScheduled?: boolean;
     onBookingComplete: (eventId: string) => void;
 }
 
@@ -60,12 +61,18 @@ export default function CalendarBooking({
     tripDistance,
     tripDuration,
     durationMinutes = 60,
+    returnScheduled = false,
     onBookingComplete,
 }: CalendarBookingProps) {
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedTime, setSelectedTime] = useState<string | null>(null);
     const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
     const [loadingSlots, setLoadingSlots] = useState(false);
+    // Scheduled-return round trips: the return leg's own date/time
+    const [returnDate, setReturnDate] = useState<Date | null>(null);
+    const [returnTime, setReturnTime] = useState<string | null>(null);
+    const [returnSlots, setReturnSlots] = useState<TimeSlot[]>([]);
+    const [loadingReturnSlots, setLoadingReturnSlots] = useState(false);
     const [booking, setBooking] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [stripeLoading, setStripeLoading] = useState(false);
@@ -161,11 +168,52 @@ export default function CalendarBooking({
         fetchSlots();
     }, [selectedDate]);
 
+    // Fetch return-leg slots when a return date is selected
+    useEffect(() => {
+        if (!returnScheduled || !returnDate) {
+            setReturnSlots([]);
+            return;
+        }
+
+        const fetchReturnSlots = async () => {
+            setLoadingReturnSlots(true);
+            try {
+                const response = await fetch(
+                    `https://summitos-api.azurewebsites.net/api/calendar-availability?date=${returnDate.toLocaleDateString("en-CA")}`
+                );
+                const data = await response.json();
+                if (data.success) {
+                    const sorted = data.slots.sort((a: TimeSlot, b: TimeSlot) =>
+                        new Date(a.start).getTime() - new Date(b.start).getTime()
+                    );
+                    setReturnSlots(sorted.filter((slot: TimeSlot) => withinHop(new Date(slot.start))));
+                } else {
+                    setError(`API Error: ${data.error || "Failed to load return times"}`);
+                }
+            } catch (err: any) {
+                setError(`Connectivity Error: ${err.message || "Failed to reach booking server"}`);
+            } finally {
+                setLoadingReturnSlots(false);
+            }
+        };
+
+        fetchReturnSlots();
+    }, [returnScheduled, returnDate]);
+
+    // Return pickup can't start before the outbound leg is done (+30 min buffer)
+    const earliestReturnMs = selectedTime
+        ? new Date(selectedTime).getTime() + (durationMinutes + 30) * 60000
+        : 0;
+    const selectableReturnSlots = returnSlots.filter(
+        slot => new Date(slot.start).getTime() >= earliestReturnMs
+    );
+
     // Clients who pay via Venmo/Zelle and should bypass Stripe entirely
     const VENMO_CLIENTS = new Set<string>([]);
 
     const handleBooking = async (method: 'stripe' | 'invoice' | 'cash') => {
         if (!selectedTime) return;
+        if (returnScheduled && !returnTime) return;
 
         setBooking(true);
         setError(null);
@@ -188,6 +236,7 @@ export default function CalendarBooking({
                         tripDistance,
                         tripDuration,
                         duration: durationMinutes,
+                        returnStart: returnScheduled ? returnTime : undefined,
                         quoteType,
                         paymentMethod: method === 'invoice' ? "Invoice" : (method === 'cash' ? "Cash" : "Venmo"),
                     }),
@@ -225,6 +274,7 @@ export default function CalendarBooking({
                     tripDistance,
                     tripDuration,
                     duration: durationMinutes,
+                    returnStart: returnScheduled ? returnTime : undefined,
                     quoteType,
                     successUrl: `${window.location.origin}/book/success?session_id={CHECKOUT_SESSION_ID}`,
                     cancelUrl: `${window.location.origin}/book?payment_cancelled=true`
@@ -314,6 +364,8 @@ export default function CalendarBooking({
                                     onClick={() => {
                                         setSelectedDate(date);
                                         setSelectedTime(null);
+                                        setReturnDate(null);
+                                        setReturnTime(null);
                                     }}
                                     className={`p-3 rounded-lg border transition-all text-center relative overflow-hidden ${blocked
                                         ? "bg-red-900/10 border-red-900/20 opacity-50 cursor-not-allowed grayscale"
@@ -370,7 +422,7 @@ export default function CalendarBooking({
                                 return (
                                     <button
                                         key={slot.start}
-                                        onClick={() => setSelectedTime(slot.start)}
+                                        onClick={() => { setSelectedTime(slot.start); setReturnTime(null); }}
                                         className={`p-3 rounded-lg border transition-all ${isSelected
                                             ? "bg-cyan-600 border-cyan-600 text-white shadow-lg shadow-cyan-500/20"
                                             : "bg-white/5 border-white/10 text-gray-300 hover:bg-white/10 hover:border-white/20"
@@ -385,16 +437,84 @@ export default function CalendarBooking({
                 </div>
             )}
 
+            {/* Return Leg Selection (scheduled-return round trips) */}
+            {returnScheduled && selectedTime && (
+                <div className="pt-4 border-t border-white/10 space-y-4 animate-in fade-in slide-in-from-top-4 duration-300">
+                    <div className="flex items-center gap-3">
+                        <Calendar className="text-blue-400" size={20} />
+                        <h3 className="text-lg font-bold text-white">Select Your Return Pickup Time</h3>
+                    </div>
+
+                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                        {availableDates.slice(0, 15).map((date) => {
+                            // Return can't be before the outbound day
+                            const beforeOutbound = selectedDate !== null
+                                && new Date(date).setHours(0, 0, 0, 0) < new Date(selectedDate).setHours(0, 0, 0, 0);
+                            const blocked = isDateBlocked(date) || beforeOutbound;
+                            const isSelected = returnDate?.toDateString() === date.toDateString();
+                            return (
+                                <button
+                                    key={`ret-${date.toISOString()}`}
+                                    disabled={blocked}
+                                    onClick={() => { setReturnDate(date); setReturnTime(null); }}
+                                    className={`p-3 rounded-lg border transition-all text-center ${blocked
+                                        ? "bg-white/[0.02] border-white/5 opacity-30 cursor-not-allowed"
+                                        : isSelected
+                                            ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20"
+                                            : "bg-white/5 border-white/10 text-gray-300 hover:bg-white/10 hover:border-white/20"
+                                        }`}
+                                >
+                                    <div className="text-xs font-bold">{date.toLocaleDateString("en-US", { weekday: "short" })}</div>
+                                    <div className="text-lg font-bold">{date.getDate()}</div>
+                                    <div className="text-[10px] text-gray-500">{date.toLocaleDateString("en-US", { month: "short" })}</div>
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {returnDate && (
+                        loadingReturnSlots ? (
+                            <div className="text-center py-6 text-gray-500">Loading return times...</div>
+                        ) : selectableReturnSlots.length === 0 ? (
+                            <div className="text-center py-6 text-gray-500 bg-white/5 rounded-lg border border-white/10">
+                                No return times available after your outbound trip on this date. Try another day.
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-64 overflow-y-auto">
+                                {selectableReturnSlots.map((slot) => {
+                                    const isSelected = returnTime === slot.start;
+                                    return (
+                                        <button
+                                            key={`retslot-${slot.start}`}
+                                            onClick={() => setReturnTime(slot.start)}
+                                            className={`p-3 rounded-lg border transition-all ${isSelected
+                                                ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20"
+                                                : "bg-white/5 border-white/10 text-gray-300 hover:bg-white/10 hover:border-white/20"
+                                                }`}
+                                        >
+                                            <div className="text-sm font-bold">{formatTime(new Date(slot.start))}</div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )
+                    )}
+                </div>
+            )}
+
             {/* Buffer Info */}
-            {selectedTime && (
+            {selectedTime && (!returnScheduled || returnTime) && (
                 <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 text-sm">
                     <div className="flex items-start gap-2">
                         <CheckCircle className="text-blue-400 flex-shrink-0 mt-0.5" size={16} />
                         <div className="text-blue-100">
-                            <strong>Appointment includes buffers:</strong>
+                            <strong>{returnScheduled ? "Two appointments will be booked:" : "Appointment includes buffers:"}</strong>
                             <ul className="mt-2 space-y-1 text-xs">
+                                {returnScheduled && returnTime && (
+                                    <li>• <strong>Outbound:</strong> {formatTime(new Date(selectedTime))} &nbsp;|&nbsp; <strong>Return:</strong> {formatTime(new Date(returnTime))}</li>
+                                )}
                                 <li>• <strong>30 min before:</strong> Driver travel time to pickup</li>
-                                <li>• <strong>1 hour:</strong> Your trip</li>
+                                <li>• <strong>{durationMinutes >= 60 ? `${Math.floor(durationMinutes / 60)}h ${durationMinutes % 60 ? `${durationMinutes % 60}m` : ''}`.trim() : `${durationMinutes} min`}:</strong> Your trip{returnScheduled ? " (each leg)" : ""}</li>
                                 <li>• <strong>30 min after:</strong> Driver break/reset time</li>
                             </ul>
                         </div>
@@ -413,8 +533,8 @@ export default function CalendarBooking({
             <div className="space-y-3">
                 <button
                     onClick={() => handleBooking('stripe')}
-                    disabled={!selectedTime || booking || stripeLoading}
-                    className={`w-full bg-gradient-to-r from-[#635bff] to-[#8f86ff] text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-[#635bff]/40 flex justify-center items-center gap-2 text-lg transition-all ${!selectedTime || booking || stripeLoading ? "opacity-60 cursor-not-allowed" : ""}`}
+                    disabled={!selectedTime || (returnScheduled && !returnTime) || booking || stripeLoading}
+                    className={`w-full bg-gradient-to-r from-[#635bff] to-[#8f86ff] text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-[#635bff]/40 flex justify-center items-center gap-2 text-lg transition-all ${!selectedTime || (returnScheduled && !returnTime) || booking || stripeLoading ? "opacity-60 cursor-not-allowed" : ""}`}
                 >
                     {stripeLoading ? (
                         <><Loader2 className="w-5 h-5 animate-spin" /> Redirecting to secure checkout...</>
@@ -427,16 +547,16 @@ export default function CalendarBooking({
 
                 <button
                     onClick={() => handleBooking('invoice')}
-                    disabled={!selectedTime || booking}
-                    className={`w-full bg-white/10 text-white font-bold py-4 rounded-xl border border-white/20 hover:bg-white/20 flex justify-center items-center gap-2 text-lg transition-all ${!selectedTime || booking ? "opacity-50 cursor-not-allowed" : ""}`}
+                    disabled={!selectedTime || (returnScheduled && !returnTime) || booking}
+                    className={`w-full bg-white/10 text-white font-bold py-4 rounded-xl border border-white/20 hover:bg-white/20 flex justify-center items-center gap-2 text-lg transition-all ${!selectedTime || (returnScheduled && !returnTime) || booking ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
                     ✉️ Pay Later (Post-Trip Invoice)
                 </button>
 
                 <button
                     onClick={() => handleBooking('cash')}
-                    disabled={!selectedTime || booking}
-                    className={`w-full bg-green-500/10 text-green-400 font-bold py-4 rounded-xl border border-green-500/30 hover:bg-green-500/20 flex justify-center items-center gap-2 text-lg transition-all ${!selectedTime || booking ? "opacity-50 cursor-not-allowed" : ""}`}
+                    disabled={!selectedTime || (returnScheduled && !returnTime) || booking}
+                    className={`w-full bg-green-500/10 text-green-400 font-bold py-4 rounded-xl border border-green-500/30 hover:bg-green-500/20 flex justify-center items-center gap-2 text-lg transition-all ${!selectedTime || (returnScheduled && !returnTime) || booking ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
                     💵 Pay Cash to Driver
                 </button>

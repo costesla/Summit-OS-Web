@@ -221,6 +221,29 @@ def finalize_stripe_session(session_id: str) -> dict:
         _release_claim(session_id)
         raise RuntimeError(f"create_appointment returned no event id for {session_id}")
 
+    # Scheduled-return round trip: book the return leg as its own appointment.
+    # Best-effort — the outbound is already booked, so don't fail the flow
+    # (and don't release the claim) if only the return leg fails.
+    return_start = meta.get("returnStart")
+    if return_start:
+        try:
+            ret_buffers = calculate_buffers(normalize_to_utc(return_start), duration_minutes)
+            BookingsClient().create_appointment(
+                customer_data={
+                    "name": meta.get("customerName"),
+                    "email": customer_email,
+                    "phone": meta.get("customerPhone"),
+                    "pickup": meta.get("dropoff"),
+                    "dropoff": meta.get("pickup"),
+                    "notes": "Return leg — Payment Method: Stripe (paid)",
+                },
+                start_dt=ret_buffers["buffer_start"],
+                end_dt=ret_buffers["buffer_end"],
+                service_id=os.environ.get("MS_BOOKINGS_SERVICE_ID", "dc16877c-160d-436e-b53b-52ae6f419604"),
+            )
+        except Exception as ret_err:
+            logging.error(f"Return-leg booking failed for {session_id} (outbound is booked, schedule manually): {ret_err}")
+
     # 2. Receipt email + DB log, in-process and best-effort: the booking
     #    already exists in the calendar, so a failed email doesn't warrant
     #    releasing the claim. (Previously posted to /api/book, which sent
@@ -292,6 +315,15 @@ def _send_paid_receipt(session, meta):
         except Exception:
             pickup_time = raw_time
 
+    return_row = ""
+    raw_return = meta.get("returnStart")
+    if raw_return:
+        try:
+            return_fmt = format_local_time(normalize_to_utc(raw_return))
+        except Exception:
+            return_fmt = raw_return
+        return_row = f'<tr><td style="padding: 6px 0; font-size: 14px; color: #666666;">Return Pickup</td><td style="padding: 6px 0; font-size: 14px; color: #333333; text-align: right; font-weight: 600;">{return_fmt}</td></tr>'
+
     booking_id = session.id[-8:].upper()
 
     # Cabin-access token (same behavior as the invoice flow)
@@ -350,6 +382,7 @@ def _send_paid_receipt(session, meta):
                                     <td style="padding: 6px 0; font-size: 14px; color: #666666;">Pickup Time</td>
                                     <td style="padding: 6px 0; font-size: 14px; color: #333333; text-align: right; font-weight: 600;">{pickup_time}</td>
                                 </tr>
+                                {return_row}
                                 <tr><td colspan="2" style="padding: 15px 0 6px; font-size: 14px; color: #666666;">Pickup Location</td></tr>
                                 <tr><td colspan="2" style="padding: 0 0 6px; font-size: 14px; color: #333333; font-weight: 600;">{pickup}</td></tr>
                                 <tr><td colspan="2" style="padding: 15px 0 6px; font-size: 14px; color: #666666;">Dropoff Location</td></tr>

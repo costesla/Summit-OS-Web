@@ -45,6 +45,9 @@ export default function BookingEngine() {
     // Return Leg State
     const [returnStops, setReturnStops] = useState<string[]>([]);
     const [layoverHours, setLayoverHours] = useState(0);
+    // 'layover': driver waits at destination ($20/hr). 'scheduled': customer
+    // picks a return pickup time — no wait fee, two calendar appointments.
+    const [returnMode, setReturnMode] = useState<'layover' | 'scheduled'>('layover');
 
     // Wait Time (Single Trip)
     const [waitTimeHours, setWaitTimeHours] = useState(0);
@@ -106,7 +109,7 @@ export default function BookingEngine() {
                         dropoff,
                         stops: stops.filter(s => s.trim()),
                         returnStops: returnStops.filter(s => s.trim()),
-                        layoverHours: parseFloat(layoverHours.toString()) || 0,
+                        layoverHours: returnMode === 'scheduled' ? 0 : (parseFloat(layoverHours.toString()) || 0),
                         waitTimeHours: parseFloat(waitTimeHours.toString()) || 0,
                         quoteType,
                         email: email.trim()
@@ -152,7 +155,7 @@ export default function BookingEngine() {
         const timeout = setTimeout(fetchQuote, 500); // Debounce
         return () => clearTimeout(timeout);
 
-    }, [pickup, dropoff, stops, returnStops, tripType, layoverHours, waitTimeHours, quoteType, email]);
+    }, [pickup, dropoff, stops, returnStops, tripType, layoverHours, returnMode, waitTimeHours, quoteType, email]);
 
     const addStop = () => { if (stops.length < 5) setStops([...stops, ""]); };
     const updateStop = (index: number, val: string) => { const newStops = [...stops]; newStops[index] = val; setStops(newStops); };
@@ -385,21 +388,42 @@ export default function BookingEngine() {
                             <div className="animate-in fade-in slide-in-from-top-4 duration-300 bg-white/5 p-4 rounded-xl border border-white/10">
                                 <label className="flex items-center gap-3 mb-3">
                                     <Clock size={16} className="text-blue-400" />
-                                    <span className="text-sm font-bold text-blue-100 uppercase tracking-widest">Layover Duration</span>
+                                    <span className="text-sm font-bold text-blue-100 uppercase tracking-widest">Return Trip Style</span>
                                 </label>
-                                <div className="flex gap-4 items-center">
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        max="24"
-                                        step="0.5"
-                                        value={layoverHours}
-                                        onChange={e => setLayoverHours(parseFloat(e.target.value) || 0)}
-                                        className="w-20 bg-black/30 border border-blue-500/30 rounded-lg p-2 text-center !text-white font-mono text-lg focus:border-blue-500 focus:outline-none"
-                                        style={{ color: '#ffffff', backgroundColor: 'rgba(0, 0, 0, 0.3)', borderColor: 'rgba(59, 130, 246, 0.3)' }}
-                                    />
-                                    <span className="text-gray-400 text-sm">Hours @ $20/hr</span>
+                                <div className="bg-black/30 p-1 rounded-lg flex border border-white/10 mb-3">
+                                    <button
+                                        onClick={() => setReturnMode('layover')}
+                                        className={`flex-1 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${returnMode === 'layover' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                                    >
+                                        Driver Waits (Layover)
+                                    </button>
+                                    <button
+                                        onClick={() => setReturnMode('scheduled')}
+                                        className={`flex-1 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${returnMode === 'scheduled' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                                    >
+                                        Schedule Return Time
+                                    </button>
                                 </div>
+                                {returnMode === 'layover' ? (
+                                    <div className="flex gap-4 items-center">
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            max="24"
+                                            step="0.5"
+                                            value={layoverHours}
+                                            onChange={e => setLayoverHours(parseFloat(e.target.value) || 0)}
+                                            className="w-20 bg-black/30 border border-blue-500/30 rounded-lg p-2 text-center !text-white font-mono text-lg focus:border-blue-500 focus:outline-none"
+                                            style={{ color: '#ffffff', backgroundColor: 'rgba(0, 0, 0, 0.3)', borderColor: 'rgba(59, 130, 246, 0.3)' }}
+                                        />
+                                        <span className="text-gray-400 text-sm">Hours @ $20/hr — driver stays with you</span>
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-gray-400">
+                                        You'll pick a <strong className="text-blue-200">return pickup time</strong> in the calendar step.
+                                        No wait fee — the driver returns for you, and each leg gets its own appointment.
+                                    </p>
+                                )}
                             </div>
                         ) : quoteType === 'single' ? (
                             <div className="animate-in fade-in slide-in-from-top-4 duration-300 bg-white/5 p-4 rounded-xl border border-white/10">
@@ -634,16 +658,22 @@ export default function BookingEngine() {
                                     pickup={quote?.debug?.origin || pickup}
                                     dropoff={((quote?.debug?.destination || dropoff) || "As Directed (All-Day Bundle)")
                                         + (quoteType === 'single' && tripType === 'round-trip'
-                                            ? ` (Round Trip${layoverHours > 0 ? `, ${layoverHours}hr layover` : ''})`
+                                            ? (returnMode === 'scheduled'
+                                                ? ' (Round Trip — scheduled return)'
+                                                : ` (Round Trip${layoverHours > 0 ? `, ${layoverHours}hr layover` : ''})`)
                                             : '')}
                                     price={quote ? `$${quote.total.toFixed(2)}` : '$0.00'}
                                     quoteType={quoteType}
                                     tripDistance={quote?.distance?.toFixed(1) || undefined}
                                     tripDuration={quote?.time?.toString() || undefined}
-                                    durationMinutes={Math.round((quote?.time || 60)
-                                        + (quoteType === 'single'
-                                            ? (tripType === 'round-trip' ? layoverHours : waitTimeHours) * 60
-                                            : 0))}
+                                    durationMinutes={quoteType === 'single' && tripType === 'round-trip' && returnMode === 'scheduled'
+                                        // Per-leg duration: each appointment covers one direction
+                                        ? Math.max(30, Math.round((quote?.time || 60) / 2))
+                                        : Math.round((quote?.time || 60)
+                                            + (quoteType === 'single'
+                                                ? (tripType === 'round-trip' ? layoverHours : waitTimeHours) * 60
+                                                : 0))}
+                                    returnScheduled={quoteType === 'single' && tripType === 'round-trip' && returnMode === 'scheduled'}
                                     onBookingComplete={(eventId) => {
                                         console.log('✅ Booking complete:', eventId);
                                         setBookingComplete(true);

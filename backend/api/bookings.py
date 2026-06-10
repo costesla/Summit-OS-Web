@@ -347,6 +347,35 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
             except Exception as cal_err:
                 logging.error(f"Failed to create calendar event for {payment_method} booking: {cal_err}")
 
+        # Scheduled-return round trip: the return leg gets its own appointment
+        return_start = data.get('returnStart')
+        return_time_fmt = None
+        if return_start:
+            try:
+                return_time_fmt = format_local_time(normalize_to_utc(return_start))
+            except Exception:
+                return_time_fmt = str(return_start)
+        if payment_method in ["Invoice", "Venmo", "Cash"] and return_start:
+            try:
+                from services.bookings import BookingsClient
+                ret_utc = normalize_to_utc(return_start)
+                BookingsClient().create_appointment(
+                    customer_data={
+                        'name': name,
+                        'email': email,
+                        'phone': phone,
+                        'pickup': dropoff,
+                        'dropoff': pickup,
+                        'notes': f"Return leg — Payment Method: {payment_method}"
+                    },
+                    start_dt=ret_utc,
+                    end_dt=ret_utc + timedelta(minutes=duration_minutes),
+                    service_id=os.environ.get('MS_BOOKINGS_SERVICE_ID', 'dc16877c-160d-436e-b53b-52ae6f419604')
+                )
+                logging.info(f"Return-leg calendar event created for booking: {booking_id}")
+            except Exception as cal_err:
+                logging.error(f"Failed to create return-leg calendar event for {booking_id}: {cal_err}")
+
         # Generate cabin access token
         # Valid from now until 6 hours after the trip starts (ensures access on trip day)
         try:
@@ -420,6 +449,7 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
                                             <td style="padding: 6px 0; font-size: 14px; color: #666666;">Pickup Time</td>
                                             <td style="padding: 6px 0; font-size: 14px; color: #333333; text-align: right; font-weight: 600;">{pickup_time}</td>
                                         </tr>
+                                        {f'<tr><td style="padding: 6px 0; font-size: 14px; color: #666666;">Return Pickup</td><td style="padding: 6px 0; font-size: 14px; color: #333333; text-align: right; font-weight: 600;">{return_time_fmt}</td></tr>' if return_time_fmt else ''}
                                         <tr>
                                             <td colspan="2" style="padding: 15px 0 6px; font-size: 14px; color: #666666;">Pickup Location</td>
                                         </tr>
