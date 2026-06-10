@@ -19,7 +19,7 @@ def stripe_webhook(req: func.HttpRequest) -> func.HttpResponse:
 
     try:
         event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
-    except stripe.error.SignatureVerificationError:
+    except stripe.SignatureVerificationError:
         logging.warning("Invalid Stripe webhook signature")
         return func.HttpResponse("Invalid signature", status_code=400)
     except Exception as e:
