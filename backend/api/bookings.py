@@ -297,7 +297,7 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
             amount_num = float(re.sub(r'[^0-9.]', '', str(price)))
             if amount_num > 0:
                 trip_label = f"{pickup} -> {dropoff} ({pickup_time})"
-                stripe_url = create_stripe_payment_link(name, amount_num, trip_label)
+                stripe_url = create_stripe_payment_link(name, email, amount_num, trip_label)
         except Exception as se:
             logging.error(f"Failed to generate pre-trip Stripe link: {se}")
 
