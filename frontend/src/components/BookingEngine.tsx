@@ -544,7 +544,7 @@ export default function BookingEngine() {
                                     )}
                                     {quote.stopFee > 0 && (
                                         <div className="flex justify-between text-sm text-gray-300">
-                                            <span>Waypoints ({parseInt(stops.length.toString()) + parseInt(returnStops.length.toString())})</span>
+                                            <span>Waypoints ({stops.filter(s => s.trim()).length + returnStops.filter(s => s.trim()).length})</span>
                                             <span>${quote.stopFee.toFixed(2)}</span>
                                         </div>
                                     )}
@@ -625,7 +625,10 @@ export default function BookingEngine() {
                                     customerPhone={phone}
                                     passengers={passengers}
                                     pickup={quote?.debug?.origin || pickup}
-                                    dropoff={(quote?.debug?.destination || dropoff) || "As Directed (All-Day Bundle)"}
+                                    dropoff={((quote?.debug?.destination || dropoff) || "As Directed (All-Day Bundle)")
+                                        + (quoteType === 'single' && tripType === 'round-trip'
+                                            ? ` (Round Trip${layoverHours > 0 ? `, ${layoverHours}hr layover` : ''})`
+                                            : '')}
                                     price={quote ? `$${quote.total.toFixed(2)}` : '$0.00'}
                                     quoteType={quoteType}
                                     tripDistance={quote?.distance?.toFixed(1) || undefined}
