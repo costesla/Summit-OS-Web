@@ -2788,18 +2788,16 @@ const UberHeatmapPanel = () => (
         href="/uber-heatmap.html"
         target="_blank"
         rel="noopener noreferrer"
-        className="rounded-2xl border border-slate-800 bg-slate-900/90 overflow-hidden shadow-sm backdrop-blur-md w-full p-4 flex items-center justify-between hover:bg-slate-800/50 transition-all duration-200 group"
+        className="rounded-xl border border-slate-200/80 bg-white/70 shadow-sm w-full px-4 py-2.5 flex items-center justify-between hover:bg-slate-50 hover:border-sky-300/60 transition-all duration-200 group"
     >
-        <div className="flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-sky-400" />
-            <div>
-                <h3 className="font-bold text-sm text-white">Uber Activity Heatmap</h3>
-                <p className="text-[10px] text-slate-100 font-semibold font-mono uppercase tracking-wider">Pickup &amp; Dropoff Density · Colorado Springs</p>
-            </div>
-        </div>
-        <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-300 group-hover:text-sky-400 transition-colors">
-            <ExternalLink className="w-4 h-4" />
-            <span className="hidden sm:inline">Open Heatmap</span>
+        <span className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+            <MapPin className="w-4 h-4 text-sky-500" />
+            Uber Activity Heatmap
+            <span className="hidden md:inline text-[10px] font-medium text-slate-400">· Pickup &amp; dropoff density, Colorado Springs</span>
+        </span>
+        <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 group-hover:text-sky-600 transition-colors">
+            <span className="hidden sm:inline">Open</span>
+            <ExternalLink className="w-3.5 h-3.5" />
         </span>
     </a>
 );
