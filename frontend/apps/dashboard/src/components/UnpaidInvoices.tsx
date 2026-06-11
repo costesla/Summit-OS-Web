@@ -45,8 +45,8 @@ const UnpaidInvoicesPanel: React.FC = () => {
             } else {
                 setError(data.error || 'Failed to load unpaid trips');
             }
-        } catch (e: any) {
-            setError(e.message || 'Connection error');
+        } catch (e) {
+            setError(e instanceof Error ? e.message : 'Connection error');
         } finally {
             setLoading(false);
         }
@@ -68,8 +68,8 @@ const UnpaidInvoicesPanel: React.FC = () => {
             } else {
                 setError(data.error || `Failed to mark ${rideId} paid`);
             }
-        } catch (e: any) {
-            setError(e.message || 'Connection error');
+        } catch (e) {
+            setError(e instanceof Error ? e.message : 'Connection error');
         } finally {
             setMarking(null);
         }
