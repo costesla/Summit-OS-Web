@@ -25,3 +25,23 @@ body {
   min-height: 100vh;
   background-color: #f8fafc;
 }
+
+/* ── Mobile ──────────────────────────────────────────────────────────────
+   iOS Safari auto-zooms the page when a focused input is under 16px.
+   Force 16px on small screens so tapping a field never zooms the layout. */
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Comfortable touch targets for icon-only buttons */
+  button:has(> svg:only-child) {
+    min-width: 36px;
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
