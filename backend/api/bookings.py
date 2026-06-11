@@ -254,6 +254,51 @@ def log_private_trip(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(json.dumps({"status": "success"}), status_code=200)
     except Exception as e:
         return func.HttpResponse(str(e), status_code=500)
+@bp.route(route="unpaid-trips", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+def unpaid_trips(req: func.HttpRequest) -> func.HttpResponse:
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=_cors_headers())
+    try:
+        trips = DatabaseClient().get_unpaid_trips()
+        return func.HttpResponse(
+            json.dumps({"success": True, "trips": trips}),
+            status_code=200, headers=_cors_headers(), mimetype="application/json"
+        )
+    except Exception as e:
+        logging.error(f"unpaid-trips error: {e}")
+        return func.HttpResponse(
+            json.dumps({"success": False, "error": str(e)}),
+            status_code=500, headers=_cors_headers(), mimetype="application/json"
+        )
+
+@bp.route(route="mark-paid", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+def mark_paid(req: func.HttpRequest) -> func.HttpResponse:
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=_cors_headers())
+    try:
+        data = req.get_json()
+        ride_id = data.get("rideId")
+        if not ride_id:
+            return func.HttpResponse(
+                json.dumps({"success": False, "error": "rideId is required"}),
+                status_code=400, headers=_cors_headers(), mimetype="application/json"
+            )
+        # Allow undo ('Pending') and explicit channels, default Paid
+        status = data.get("status", "Paid")
+        if status not in ("Paid", "Pending"):
+            status = "Paid"
+        ok = DatabaseClient().set_payment_status(ride_id, status)
+        return func.HttpResponse(
+            json.dumps({"success": ok, "rideId": ride_id, "status": status}),
+            status_code=200 if ok else 404, headers=_cors_headers(), mimetype="application/json"
+        )
+    except Exception as e:
+        logging.error(f"mark-paid error: {e}")
+        return func.HttpResponse(
+            json.dumps({"success": False, "error": str(e)}),
+            status_code=500, headers=_cors_headers(), mimetype="application/json"
+        )
+
 @bp.route(route="book", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
 def book(req: func.HttpRequest) -> func.HttpResponse:
     logging.info("Legacy/Receipt booking bridge hit")
@@ -614,6 +659,8 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
                 "Timestamp_Offer": utc_to_local(dt_utc).strftime("%Y-%m-%d %H:%M:%S") if dt_utc else None
             })
             db.save_trip(db_data)
+            # Invoice/Cash/Venmo bookings start unpaid; cleared via Mark Paid on the dashboard
+            db.set_payment_status(booking_id, "Pending")
         except Exception as db_err:
             logging.error(f"Failed to log booking to DB: {db_err}")
             

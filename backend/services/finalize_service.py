@@ -289,6 +289,8 @@ def _log_trip(session, meta):
         "dropoff_place": meta.get("dropoff"),
         "raw_text": f"Stripe booking for {meta.get('customerName')} ({meta.get('fareString')})",
     })
+    # Card was charged before the webhook fired — this booking is settled
+    db.set_payment_status(session.id, "Paid")
 
 
 def _send_paid_receipt(session, meta):

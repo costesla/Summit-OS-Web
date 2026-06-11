@@ -1318,18 +1318,27 @@ class CloudWatcherService:
                     sidecar = json.loads(str(row[5])) if row[5] else {}
                 except:
                     pass
-                is_bundle = (
-                    sidecar.get("pricing_type") == "bundle"
-                    or sidecar.get("customer_tier", "").lower() == "daily exclusivity bundle"
-                    or float(row[4] or 0) >= 100.0
-                )
+                # The booking sidecar records what was actually sold ('single' or
+                # 'bundle'). Trust it when present — round trips routinely cost
+                # $100+ now, so the fare heuristic is only a fallback for old
+                # rows whose sidecar predates quoteType.
+                quote_type = (sidecar.get("quoteType") or "").lower()
+                if quote_type:
+                    is_bundle = quote_type == "bundle"
+                else:
+                    is_bundle = (
+                        sidecar.get("pricing_type") == "bundle"
+                        or sidecar.get("customer_tier", "").lower() == "daily exclusivity bundle"
+                        or float(row[4] or 0) >= 100.0
+                    )
                 bookings.append({
                     "RideID": row[0],
                     "Timestamp_Start": row[1],
                     "Classification": row[2],
                     "Tessie_DriveID": row[3],
                     "Fare": float(row[4] or 0),
-                    "is_bundle": is_bundle
+                    "is_bundle": is_bundle,
+                    "return_start": sidecar.get("returnStart")
                 })
 
             if not bookings:
@@ -1542,6 +1551,36 @@ class CloudWatcherService:
                             
                         # Remove matched drive from pool
                         unmatched_drives.remove(best_drive)
+
+                        # ── Scheduled-return round trip: tag the return-leg drive too ──
+                        # The booking sidecar carries returnStart (UTC ISO); without
+                        # this, the return drive stays untagged on the dashboard.
+                        return_start = booking.get("return_start")
+                        if return_start:
+                            try:
+                                ret_utc = datetime.datetime.fromisoformat(str(return_start).replace("Z", "+00:00"))
+                                ret_local = ret_utc.replace(tzinfo=None) - datetime.timedelta(hours=offset_hours)
+                                ret_drive = None
+                                ret_diff = 999999
+                                for drive in unmatched_drives:
+                                    diff = abs((ret_local - drive["Timestamp_Start"]).total_seconds())
+                                    if diff < ret_diff:
+                                        ret_diff = diff
+                                        ret_drive = drive
+                                if ret_drive and ret_diff <= 10800:
+                                    cursor.execute("""
+                                        UPDATE Rides.Rides
+                                        SET TripType = 'Private',
+                                            Classification = ?,
+                                            LastUpdated = GETUTCDATE()
+                                        WHERE RideID = ?
+                                    """, (tessie_class, ret_drive["RideID"]))
+                                    logs.append(f"PRIVATE-SYNC-RETURN: Booking {b_id} return leg matched to {ret_drive['RideID']} (diff: {ret_diff/60:.1f}m)")
+                                    unmatched_drives.remove(ret_drive)
+                                else:
+                                    logs.append(f"PRIVATE-SYNC-RETURN: No drive matched the return leg of {b_id} (best diff: {ret_diff/60:.1f}m)")
+                            except Exception as ret_err:
+                                logs.append(f"PRIVATE-SYNC-WARN: Return-leg match failed for {b_id}: {ret_err}")
                     else:
                         logs.append(f"PRIVATE-SYNC-NOMATCH: Booking {b_id} could not be matched (best diff: {best_diff_seconds/60:.1f}m)")
         except Exception as e:

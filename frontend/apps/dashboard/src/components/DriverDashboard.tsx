@@ -8,6 +8,7 @@ import {
     ChevronDown, ChevronUp
 } from 'lucide-react';
 import { isBackgroundableError, devDebugError, getAsyncExecutionLogs, pollJobStatus } from '../../../../src/lib/intelligenceUtils';
+import UnpaidInvoicesPanel from './UnpaidInvoices';
 
 
 // ─── Constants ─────────────────────────────────────────────────────────────
@@ -3469,6 +3470,7 @@ const DriverDashboard = () => {
                                 hours={manualHoursMap[selectedDate] || 0}
                                 onHoursChange={(h) => setManualHoursMap(prev => ({ ...prev, [selectedDate]: h }))}
                             />
+                            <UnpaidInvoicesPanel />
                             <PrivatePaymentsPanel
                                 selectedDate={selectedDate}
                                 payments={privatePayments}

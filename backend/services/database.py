@@ -44,6 +44,73 @@ class DatabaseClient:
             logging.error(f"SQL Connection Error: {e}")
             return None
 
+    def _ensure_payment_status_column(self, cursor):
+        cursor.execute(
+            "IF COL_LENGTH('Rides.Rides', 'PaymentStatus') IS NULL "
+            "ALTER TABLE Rides.Rides ADD PaymentStatus NVARCHAR(20) NULL"
+        )
+
+    def set_payment_status(self, ride_id: str, status: str) -> bool:
+        """Set PaymentStatus ('Pending', 'Paid', ...) on a ride. Auto-creates the column."""
+        conn = self.get_connection()
+        if not conn:
+            return False
+        try:
+            cursor = conn.cursor()
+            self._ensure_payment_status_column(cursor)
+            cursor.execute(
+                "UPDATE Rides.Rides SET PaymentStatus = ?, LastUpdated = GETUTCDATE() WHERE RideID = ?",
+                (status, ride_id),
+            )
+            updated = cursor.rowcount
+            conn.commit()
+            return updated > 0
+        except Exception as e:
+            logging.error(f"set_payment_status failed for {ride_id}: {e}")
+            return False
+        finally:
+            conn.close()
+
+    def get_unpaid_trips(self):
+        """All bookings still awaiting payment, oldest first."""
+        conn = self.get_connection()
+        if not conn:
+            return []
+        try:
+            cursor = conn.cursor()
+            self._ensure_payment_status_column(cursor)
+            conn.commit()
+            cursor.execute("""
+                SELECT RideID, Timestamp_Start, Fare, Classification,
+                       Pickup_Location, Dropoff_Location, Sidecar_Artifact_JSON
+                FROM Rides.Rides
+                WHERE PaymentStatus = 'Pending'
+                ORDER BY Timestamp_Start ASC
+            """)
+            trips = []
+            for row in cursor.fetchall():
+                sidecar = {}
+                try:
+                    sidecar = json.loads(str(row[6])) if row[6] else {}
+                except Exception:
+                    pass
+                trips.append({
+                    "rideId": row[0],
+                    "start": row[1].isoformat() if row[1] else None,
+                    "fare": float(row[2] or 0),
+                    "classification": row[3],
+                    "pickup": row[4],
+                    "dropoff": row[5],
+                    "customerName": sidecar.get("customerName") or sidecar.get("name"),
+                    "paymentMethod": sidecar.get("paymentMethod"),
+                })
+            return trips
+        except Exception as e:
+            logging.error(f"get_unpaid_trips failed: {e}")
+            return []
+        finally:
+            conn.close()
+
     def execute_query_with_results(self, query):
         conn = self.get_connection()
         if not conn: return []
