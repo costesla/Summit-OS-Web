@@ -138,13 +138,7 @@ def quote(req: func.HttpRequest) -> func.HttpResponse:
 
         pricing = PricingEngine()
         
-        if quote_type == 'bundle':
-            quote_data = pricing.calculate_bundle_price(
-                distance_miles=total_dist_miles,
-                is_teller_county=is_teller_county
-            )
-        else:
-            quote_data = pricing.calculate_trip_price(
+        quote_data = pricing.calculate_trip_price(
                 distance_miles=dist_miles,
                 stops_count=len(valid_stops),
                 wait_time_hours=wait_hours,
