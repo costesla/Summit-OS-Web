@@ -2,7 +2,7 @@ from typing import Dict, Any, Optional
 
 class PricingEngine:
     """
-    SummitOS Pricing Engine v3.0
+    SummitOS Pricing Engine v5.0
     Python port of the high-precision pricing logic.
     $30 base. No mileage rate.
     Supports customer-specific pricing overrides.

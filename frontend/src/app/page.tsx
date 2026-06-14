@@ -229,7 +229,7 @@ export default function Home() {
             <div className="flex items-center gap-3 mb-2">
               <span className="font-mono text-xs font-bold text-blue-600 tracking-widest uppercase">SummitOS</span>
             </div>
-            <h3 className="text-3xl font-bold mb-2 text-slate-900">Fairness Engine v4.0</h3>
+            <h3 className="text-3xl font-bold mb-2 text-slate-900">Fairness Engine v5.0</h3>
             <p className="text-slate-500 text-sm mb-8 leading-relaxed">
               Pricing emerges from your actual route — not a menu. Every dollar is earned by real distance, real time, and real complexity.
             </p>
