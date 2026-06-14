@@ -3,7 +3,7 @@
 /// <reference types="@types/google.maps" />
 
 import { useState, useEffect, useRef } from "react";
-import { Minus, Plus, MapPin, Clock, DollarSign, ChevronRight, AlertCircle } from "lucide-react";
+import { Minus, Plus, MapPin, Clock, ChevronRight, AlertCircle, X } from "lucide-react";
 import styles from "./BookingForm.module.css"; // Reuse existing clean styles
 import { PriceBreakdown } from "../utils/pricing";
 import dynamic from "next/dynamic";
@@ -74,8 +74,8 @@ export default function BookingEngine() {
             setToastMessage(null); // Clear previous errors
             try {
 
-                // Direct fetch to Azure Function Backend
-                const res = await fetch('https://summitos-api.azurewebsites.net/api/quote', {
+                // Route through SWA linked backend proxy (function key stays in Azure)
+                const res = await fetch('/api/quote', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
