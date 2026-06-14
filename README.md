@@ -24,15 +24,20 @@ The central digital command center for SummitOS operations. This Next.js applica
 - **Resend API**: Transactional email notifications for trip confirmations.
 - **Tessie API**: (In Progress) Live vehicle telemetry and battery status.
 
+### 4. **System Emulator**
+- **Virtual Telemetry**: Manually override vehicle GPS, speed, and battery status for testing.
+- **Broadcast Sync**: Updates live maps across all active sessions via BroadcastChannel API.
+- **Scenario Testing**: Run automated "driving" simulations to verify map responsiveness.
+
 ---
 
 ## 🛠️ Tech Stack
 
-- **Framework**: [Next.js 14](https://nextjs.org/) (App Router)
+- **Framework**: [Next.js 14](https://nextjs.org/) (Static Export)
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/) + Glassmorphism Design System
 - **Maps**: Google Maps JavaScript API + React Google Maps
-- **Backend API**: Next.js Server Actions & Route Handlers
-- **Deployment**: Vercel
+- **Backend API**: Python Azure Functions (Standalone)
+- **Deployment**: Azure Static Web Apps (Frontend) + Azure Functions (Backend)
 
 ---
 
@@ -73,10 +78,10 @@ Open [http://localhost:3000](http://localhost:3000) to see the result.
 
 ## 🚢 Deployment
 
-The project is optimized for deployment on [Vercel](https://vercel.com).
-1. Connect your GitHub repository.
-2. Configure the **Environment Variables** in Vercel Project Settings.
-3. Deploy!
+The project is deployed via GitHub Actions to **Azure Static Web Apps**.
+1. Push changes to the `master` branch.
+2. The GitHub Action in `.github/workflows/azure-static-web-apps-*.yml` will trigger automatically.
+3. Secrets (API Keys, etc.) are managed in **GitHub Repository Secrets**.
 
 ---
 

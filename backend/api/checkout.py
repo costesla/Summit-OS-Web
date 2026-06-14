@@ -36,6 +36,8 @@ def create_checkout_session(req: func.HttpRequest) -> func.HttpResponse:
         passengers = req_body.get("passengers", 1)
         trip_distance = req_body.get("tripDistance", "N/A")
         trip_duration = req_body.get("tripDuration", "N/A")
+        duration = req_body.get("duration", 60)
+        return_start = req_body.get("returnStart") or ""
         success_url = req_body.get("successUrl")
         cancel_url = req_body.get("cancelUrl")
         
@@ -76,6 +78,8 @@ def create_checkout_session(req: func.HttpRequest) -> func.HttpResponse:
                 'passengers': str(passengers),
                 'tripDistance': trip_distance,
                 'tripDuration': trip_duration,
+                'duration': str(duration),
+                'returnStart': return_start,
                 'fareString': str(price)
             }
         )

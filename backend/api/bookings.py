@@ -254,6 +254,51 @@ def log_private_trip(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(json.dumps({"status": "success"}), status_code=200)
     except Exception as e:
         return func.HttpResponse(str(e), status_code=500)
+@bp.route(route="unpaid-trips", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+def unpaid_trips(req: func.HttpRequest) -> func.HttpResponse:
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=_cors_headers())
+    try:
+        trips = DatabaseClient().get_unpaid_trips()
+        return func.HttpResponse(
+            json.dumps({"success": True, "trips": trips}),
+            status_code=200, headers=_cors_headers(), mimetype="application/json"
+        )
+    except Exception as e:
+        logging.error(f"unpaid-trips error: {e}")
+        return func.HttpResponse(
+            json.dumps({"success": False, "error": str(e)}),
+            status_code=500, headers=_cors_headers(), mimetype="application/json"
+        )
+
+@bp.route(route="mark-paid", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+def mark_paid(req: func.HttpRequest) -> func.HttpResponse:
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=_cors_headers())
+    try:
+        data = req.get_json()
+        ride_id = data.get("rideId")
+        if not ride_id:
+            return func.HttpResponse(
+                json.dumps({"success": False, "error": "rideId is required"}),
+                status_code=400, headers=_cors_headers(), mimetype="application/json"
+            )
+        # Allow undo ('Pending') and explicit channels, default Paid
+        status = data.get("status", "Paid")
+        if status not in ("Paid", "Pending"):
+            status = "Paid"
+        ok = DatabaseClient().set_payment_status(ride_id, status)
+        return func.HttpResponse(
+            json.dumps({"success": ok, "rideId": ride_id, "status": status}),
+            status_code=200 if ok else 404, headers=_cors_headers(), mimetype="application/json"
+        )
+    except Exception as e:
+        logging.error(f"mark-paid error: {e}")
+        return func.HttpResponse(
+            json.dumps({"success": False, "error": str(e)}),
+            status_code=500, headers=_cors_headers(), mimetype="application/json"
+        )
+
 @bp.route(route="book", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
 def book(req: func.HttpRequest) -> func.HttpResponse:
     logging.info("Legacy/Receipt booking bridge hit")
@@ -297,7 +342,7 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
             amount_num = float(re.sub(r'[^0-9.]', '', str(price)))
             if amount_num > 0:
                 trip_label = f"{pickup} -> {dropoff} ({pickup_time})"
-                stripe_url = create_stripe_payment_link(name, amount_num, trip_label)
+                stripe_url = create_stripe_payment_link(name, email, amount_num, trip_label)
         except Exception as se:
             logging.error(f"Failed to generate pre-trip Stripe link: {se}")
 
@@ -316,12 +361,19 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
 
         # --- NEW: Create Calendar Event for Invoice/Venmo flows ---
         # (Paid flow handles this in finalize-booking calling calendar-book)
+        # Block the calendar for the real trip span (drive time + layover/wait),
+        # clamped to sane bounds — round trips were only reserving 1 hour.
+        try:
+            duration_minutes = max(30, min(int(float(data.get('duration', 60))), 720))
+        except (TypeError, ValueError):
+            duration_minutes = 60
+
         if payment_method in ["Invoice", "Venmo", "Cash"] and raw_time:
             try:
                 from services.bookings import BookingsClient
                 bookings = BookingsClient()
                 dt_utc = normalize_to_utc(raw_time)
-                
+
                 # Create appointment in calendar
                 bookings.create_appointment(
                     customer_data={
@@ -333,12 +385,41 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
                         'notes': f"Payment Method: {payment_method}"
                     },
                     start_dt=dt_utc,
-                    end_dt=dt_utc + timedelta(hours=1),
+                    end_dt=dt_utc + timedelta(minutes=duration_minutes),
                     service_id=os.environ.get('MS_BOOKINGS_SERVICE_ID', 'dc16877c-160d-436e-b53b-52ae6f419604')
                 )
                 logging.info(f"Calendar event created for {payment_method} booking: {booking_id}")
             except Exception as cal_err:
                 logging.error(f"Failed to create calendar event for {payment_method} booking: {cal_err}")
+
+        # Scheduled-return round trip: the return leg gets its own appointment
+        return_start = data.get('returnStart')
+        return_time_fmt = None
+        if return_start:
+            try:
+                return_time_fmt = format_local_time(normalize_to_utc(return_start))
+            except Exception:
+                return_time_fmt = str(return_start)
+        if payment_method in ["Invoice", "Venmo", "Cash"] and return_start:
+            try:
+                from services.bookings import BookingsClient
+                ret_utc = normalize_to_utc(return_start)
+                BookingsClient().create_appointment(
+                    customer_data={
+                        'name': name,
+                        'email': email,
+                        'phone': phone,
+                        'pickup': dropoff,
+                        'dropoff': pickup,
+                        'notes': f"Return leg — Payment Method: {payment_method}"
+                    },
+                    start_dt=ret_utc,
+                    end_dt=ret_utc + timedelta(minutes=duration_minutes),
+                    service_id=os.environ.get('MS_BOOKINGS_SERVICE_ID', 'dc16877c-160d-436e-b53b-52ae6f419604')
+                )
+                logging.info(f"Return-leg calendar event created for booking: {booking_id}")
+            except Exception as cal_err:
+                logging.error(f"Failed to create return-leg calendar event for {booking_id}: {cal_err}")
 
         # Generate cabin access token
         # Valid from now until 6 hours after the trip starts (ensures access on trip day)
@@ -413,6 +494,7 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
                                             <td style="padding: 6px 0; font-size: 14px; color: #666666;">Pickup Time</td>
                                             <td style="padding: 6px 0; font-size: 14px; color: #333333; text-align: right; font-weight: 600;">{pickup_time}</td>
                                         </tr>
+                                        {f'<tr><td style="padding: 6px 0; font-size: 14px; color: #666666;">Return Pickup</td><td style="padding: 6px 0; font-size: 14px; color: #333333; text-align: right; font-weight: 600;">{return_time_fmt}</td></tr>' if return_time_fmt else ''}
                                         <tr>
                                             <td colspan="2" style="padding: 15px 0 6px; font-size: 14px; color: #666666;">Pickup Location</td>
                                         </tr>
@@ -577,6 +659,8 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
                 "Timestamp_Offer": utc_to_local(dt_utc).strftime("%Y-%m-%d %H:%M:%S") if dt_utc else None
             })
             db.save_trip(db_data)
+            # Invoice/Cash/Venmo bookings start unpaid; cleared via Mark Paid on the dashboard
+            db.set_payment_status(booking_id, "Pending")
         except Exception as db_err:
             logging.error(f"Failed to log booking to DB: {db_err}")
             

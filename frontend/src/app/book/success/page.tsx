@@ -15,7 +15,7 @@ function SuccessContent() {
     const router = useRouter();
     const sessionId = searchParams.get('session_id');
 
-    const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+    const [status, setStatus] = useState<'loading' | 'success' | 'pending' | 'error'>('loading');
     const [errorMsg, setErrorMsg] = useState('');
     const [bookingDetails, setBookingDetails] = useState<BookingDetails | null>(null);
 
@@ -33,12 +33,19 @@ function SuccessContent() {
             return;
         }
 
+        // Stripe only redirects here after the charge succeeds, so confirmation
+        // must never hinge on this request: the webhook fulfills server-side.
+        // If finalize is slow or unreachable, show "pending" rather than spin forever.
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 20000);
+
         const finalize = async () => {
             try {
                 const res = await fetch('https://summitos-api.azurewebsites.net/api/finalize-booking', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ session_id: sessionId })
+                    body: JSON.stringify({ session_id: sessionId }),
+                    signal: controller.signal
                 });
 
                 const data = await res.json();
@@ -49,17 +56,25 @@ function SuccessContent() {
                         amount: data.amount || null,
                         eventId: data.eventId || null,
                     });
-                } else {
+                } else if (data.error === 'Payment not completed') {
                     setStatus('error');
-                    setErrorMsg(data.error || 'Failed to confirm booking.');
+                    setErrorMsg(data.error);
+                } else {
+                    // Payment is done; only the booking/receipt step misbehaved
+                    setStatus('pending');
                 }
             } catch (err: any) {
-                setStatus('error');
-                setErrorMsg('An unexpected error occurred while finalizing your booking.');
+                setStatus('pending');
+            } finally {
+                clearTimeout(timeout);
             }
         };
 
         finalize();
+        return () => {
+            clearTimeout(timeout);
+            controller.abort();
+        };
     }, [sessionId]);
 
     return (
@@ -132,6 +147,22 @@ function SuccessContent() {
                         <button
                             onClick={() => router.push('/')}
                             className="w-full bg-cyan-600 text-white font-bold py-3 rounded-lg hover:bg-cyan-700 transition-colors mt-4"
+                        >
+                            Return Home
+                        </button>
+                    </div>
+                )}
+
+                {status === 'pending' && (
+                    <div className="flex flex-col items-center animate-in zoom-in-95 fade-in duration-500">
+                        <CheckCircle className="w-20 h-20 text-green-500 mb-6" />
+                        <h2 className="text-3xl font-bold tracking-tight mb-2 text-white">Payment Received!</h2>
+                        <p className="text-gray-300 text-base mb-8">
+                            Your payment was processed successfully. We're finishing up your booking confirmation — your receipt email will arrive shortly. No further action is needed.
+                        </p>
+                        <button
+                            onClick={() => router.push('/')}
+                            className="w-full bg-cyan-600 text-white font-bold py-3 rounded-lg hover:bg-cyan-700 transition-colors"
                         >
                             Return Home
                         </button>

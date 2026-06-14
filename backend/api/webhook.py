@@ -19,7 +19,7 @@ def stripe_webhook(req: func.HttpRequest) -> func.HttpResponse:
 
     try:
         event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
-    except stripe.error.SignatureVerificationError:
+    except stripe.SignatureVerificationError:
         logging.warning("Invalid Stripe webhook signature")
         return func.HttpResponse("Invalid signature", status_code=400)
     except Exception as e:
@@ -28,7 +28,7 @@ def stripe_webhook(req: func.HttpRequest) -> func.HttpResponse:
 
     if event["type"] == "checkout.session.completed":
         session = event["data"]["object"]
-        session_id = session.get("id")
+        session_id = session["id"]
         logging.info(f"Webhook: checkout.session.completed for {session_id}")
         try:
             from services.finalize_service import finalize_stripe_session
