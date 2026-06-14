@@ -33,20 +33,20 @@ def _validate_token(token):
         from services.database import DatabaseClient
         db = DatabaseClient()
         valid = db.validate_cabin_token(token)
-        
-        # If valid is None, it means the database connection failed
+
+        # If valid is None, DB connection failed — fail CLOSED, never allow through
         if valid is None:
-            logging.warning("Token validation DB connection failed - allowing for graceful degradation")
-            return True
-            
+            logging.error("Token validation: DB connection failed — rejecting token (fail-closed)")
+            return False
+
         return valid
     except Exception as e:
-        logging.warning(f"Token validation error (allowing): {e}")
-        return True  # graceful fallback if logic itself fails
+        logging.error(f"Token validation error — rejecting token (fail-closed): {e}")
+        return False  # fail-closed: any unexpected error rejects the request
 
 
 # ─── GET /cabin/state ─────────────────────────────────────────────────
-@bp.route(route="cabin/state", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+@bp.route(route="cabin/state", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.FUNCTION)
 def cabin_state(req: func.HttpRequest) -> func.HttpResponse:
     """Returns flattened cabin state for the passenger UI."""
     if req.method == "OPTIONS":
@@ -152,7 +152,7 @@ def cabin_state(req: func.HttpRequest) -> func.HttpResponse:
 
 
 # ─── POST /cabin/command ──────────────────────────────────────────────
-@bp.route(route="cabin/command", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+@bp.route(route="cabin/command", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.FUNCTION)
 def cabin_command(req: func.HttpRequest) -> func.HttpResponse:
     """Dispatches cabin control commands from the passenger UI."""
     if req.method == "OPTIONS":
