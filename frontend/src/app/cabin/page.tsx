@@ -37,7 +37,9 @@ interface CabinState {
     charging_state: string | null;
 }
 
-const API_BASE = "https://summitos-api.azurewebsites.net";
+// Relative path — works when SWA linked backend proxies /api/* to summitos-api
+// Until linked backend is configured, set NEXT_PUBLIC_API_BASE in .env.local
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "https://summitos-api.azurewebsites.net";
 
 const INITIAL_STATE: CabinState = {
     speed: 0,
@@ -73,6 +75,7 @@ function CabinContent() {
     const [authorized, setAuthorized] = useState<boolean | null>(null);
     const [manualToken, setManualToken] = useState("");
     const [state, setState] = useState<CabinState>(INITIAL_STATE);
+    const [vehicleStatus, setVehicleStatus] = useState<"connecting" | "online" | "waking" | "offline">("connecting");
     const [connected, setConnected] = useState(false);
     const [sending, setSending] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -98,18 +101,31 @@ function CabinContent() {
             }
             if (!res.ok) throw new Error(res.statusText);
             const data = await res.json();
-            if (data && data.error === "Unauthorized") {
+            if (data?.error === "Unauthorized") {
                 setAuthorized(false);
                 setError("Invalid or expired access code.");
                 router.push("/cabin");
                 return;
             }
+            // Proxy surfaces waking/offline as { status: 'waking' | 'offline' }
+            if (data?.status === "waking") {
+                setVehicleStatus("waking");
+                setConnected(false);
+                return;
+            }
+            if (data?.status === "offline") {
+                setVehicleStatus("offline");
+                setConnected(false);
+                return;
+            }
             if (data && !data.error) {
                 setState((prev) => ({ ...prev, ...data }));
+                setVehicleStatus("online");
                 setConnected(true);
                 setError(null);
             }
         } catch {
+            setVehicleStatus("offline");
             setConnected(false);
         }
     }, [token, router]);
@@ -130,7 +146,7 @@ function CabinContent() {
     const sendCommand = async (payload: Record<string, unknown>) => {
         setSending(payload.command as string);
         try {
-            await fetch(`${API_BASE}/api/cabin/command`, {
+            await fetch(`${API_BASE}/api/cabin/control`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ token, ...payload }),
@@ -229,11 +245,49 @@ function CabinContent() {
         );
     }
 
-    // ── Loading ──────────────────────────────────────────────────────
+    // ── Loading / Vehicle status screens ─────────────────────────────
     if (authorized === null) {
         return (
             <div className="min-h-screen bg-black flex items-center justify-center">
                 <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
+    }
+
+    // Vehicle not yet online — show status screen instead of broken UI
+    if (authorized && vehicleStatus !== "online" && !connected) {
+        const isWaking = vehicleStatus === "waking";
+        return (
+            <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
+                <div className="w-full max-w-sm text-center space-y-6">
+                    <div className="w-20 h-20 mx-auto rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
+                        {isWaking ? (
+                            <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                            <WifiOff size={32} className="text-gray-600" />
+                        )}
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold">
+                            {isWaking ? "Vehicle Waking Up…" : vehicleStatus === "connecting" ? "Connecting to Vehicle…" : "Vehicle Offline"}
+                        </h2>
+                        <p className="text-gray-500 text-sm mt-2">
+                            {isWaking
+                                ? "The vehicle is waking from sleep mode. This takes 15–30 seconds."
+                                : vehicleStatus === "connecting"
+                                ? "Establishing a secure connection to COS Tesla."
+                                : "The vehicle is currently unreachable. Try again in a moment."}
+                        </p>
+                    </div>
+                    {vehicleStatus === "offline" && (
+                        <button
+                            onClick={() => { setVehicleStatus("connecting"); fetchState(); }}
+                            className="bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-8 rounded-xl transition-all"
+                        >
+                            Retry
+                        </button>
+                    )}
+                </div>
             </div>
         );
     }
