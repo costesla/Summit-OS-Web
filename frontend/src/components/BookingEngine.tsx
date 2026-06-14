@@ -3,7 +3,7 @@
 /// <reference types="@types/google.maps" />
 
 import { useState, useEffect, useRef } from "react";
-import { Plus, X, MapPin, Clock, DollarSign, ChevronRight, AlertCircle } from "lucide-react";
+import { Minus, Plus, MapPin, Clock, DollarSign, ChevronRight, AlertCircle } from "lucide-react";
 import styles from "./BookingForm.module.css"; // Reuse existing clean styles
 import { PriceBreakdown } from "../utils/pricing";
 import dynamic from "next/dynamic";
@@ -31,7 +31,11 @@ export default function BookingEngine() {
 
     const [pickup, setPickup] = useState("");
     const [dropoff, setDropoff] = useState("");
-    const [stops, setStops] = useState<string[]>([]);
+    // Stop counters — $5 per stop per leg
+    const [stopCount, setStopCount] = useState(0);
+    const [stopAddresses, setStopAddresses] = useState<string[]>([]);
+    const [returnStopCount, setReturnStopCount] = useState(0);
+    const [returnStopAddresses, setReturnStopAddresses] = useState<string[]>([]);
 
     // Toast notification state
     const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -39,11 +43,6 @@ export default function BookingEngine() {
     // Autocomplete refs
     const pickupAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
     const dropoffAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
-    const stopAutocompleteRefs = useRef<(google.maps.places.Autocomplete | null)[]>([]);
-    const returnStopAutocompleteRefs = useRef<(google.maps.places.Autocomplete | null)[]>([]);
-
-    // Return Leg State
-    const [returnStops, setReturnStops] = useState<string[]>([]);
     const [layoverHours, setLayoverHours] = useState(0);
 
     // Wait Time (Single Trip)
@@ -85,8 +84,8 @@ export default function BookingEngine() {
                         tripType,
                         pickup,
                         dropoff,
-                        stops: stops.filter(s => s.trim()),
-                        returnStops: returnStops.filter(s => s.trim()),
+                        stops: stopAddresses.length > 0 ? stopAddresses : Array(stopCount).fill(''),
+                        returnStops: returnStopAddresses.length > 0 ? returnStopAddresses : Array(returnStopCount).fill(''),
                         layoverHours: parseFloat(layoverHours.toString()) || 0,
                         waitTimeHours: parseFloat(waitTimeHours.toString()) || 0
                     })
@@ -131,15 +130,33 @@ export default function BookingEngine() {
         const timeout = setTimeout(fetchQuote, 500); // Debounce
         return () => clearTimeout(timeout);
 
-    }, [pickup, dropoff, stops, returnStops, tripType, layoverHours, waitTimeHours]);
+    }, [pickup, dropoff, stopCount, returnStopCount, stopAddresses, returnStopAddresses, tripType, layoverHours, waitTimeHours]);
 
-    const addStop = () => { if (stops.length < 5) setStops([...stops, ""]); };
-    const updateStop = (index: number, val: string) => { const newStops = [...stops]; newStops[index] = val; setStops(newStops); };
-    const removeStop = (index: number) => { const newStops = stops.filter((_, i) => i !== index); setStops(newStops); };
-
-    const addReturnStop = () => { if (returnStops.length < 5) setReturnStops([...returnStops, ""]); };
-    const updateReturnStop = (index: number, val: string) => { const newStops = [...returnStops]; newStops[index] = val; setReturnStops(newStops); };
-    const removeReturnStop = (index: number) => { const newStops = returnStops.filter((_, i) => i !== index); setReturnStops(newStops); };
+    // Stop address helpers — keep arrays in sync with counts
+    const handleStopCountChange = (newCount: number) => {
+        const clamped = Math.max(0, Math.min(5, newCount));
+        setStopCount(clamped);
+        setStopAddresses(prev => {
+            const next = [...prev];
+            while (next.length < clamped) next.push('');
+            return next.slice(0, clamped);
+        });
+    };
+    const handleReturnStopCountChange = (newCount: number) => {
+        const clamped = Math.max(0, Math.min(5, newCount));
+        setReturnStopCount(clamped);
+        setReturnStopAddresses(prev => {
+            const next = [...prev];
+            while (next.length < clamped) next.push('');
+            return next.slice(0, clamped);
+        });
+    };
+    const updateStopAddress = (idx: number, val: string) => {
+        setStopAddresses(prev => { const a = [...prev]; a[idx] = val; return a; });
+    };
+    const updateReturnStopAddress = (idx: number, val: string) => {
+        setReturnStopAddresses(prev => { const a = [...prev]; a[idx] = val; return a; });
+    };
 
     // Validation: Check if address is outside Colorado
     const validateLocation = (address: string) => {
@@ -244,30 +261,59 @@ export default function BookingEngine() {
 
 
 
-                    {stops.map((stop, idx) => (
-                        <div key={idx} className="relative flex gap-2 items-end animate-in slide-in-from-left-4 fade-in duration-300">
-                            <div className="flex-1">
-                                <label className="text-[10px] font-bold text-cyan-400 tracking-widest uppercase mb-1 block">Stop #{idx + 1} (+ $5.00)</label>
-                                <input
-                                    type="text"
-                                    value={stop}
-                                    onChange={e => updateStop(idx, e.target.value)}
-                                    placeholder="Add Stop..."
-                                    className="w-full bg-white/5 border border-cyan-500/30 rounded-xl p-3 !text-white focus:outline-none focus:border-cyan-500 transition-colors"
-                                    style={{ color: '#ffffff', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderColor: 'rgba(6, 182, 212, 0.3)' }}
-                                />
+                    {/* Stop Counter */}
+                    <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 space-y-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Extra Stops</p>
+                                <p className="text-[11px] text-gray-500 mt-0.5">$5.00 per stop, outbound leg</p>
                             </div>
-                            <button onClick={() => removeStop(idx)} className="p-4 bg-white/5 hover:bg-cyan-500/20 rounded-xl border border-white/10 transition-colors text-gray-400 hover:text-cyan-400">
-                                <X size={20} />
+                            {stopCount > 0 && (
+                                <span className="text-xs font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-2 py-1 rounded-lg">
+                                    +${(stopCount * 5).toFixed(2)}
+                                </span>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <button
+                                onClick={() => handleStopCountChange(stopCount - 1)}
+                                disabled={stopCount === 0}
+                                className="w-10 h-10 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center text-gray-300 hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                            >
+                                <Minus size={16} />
+                            </button>
+                            <div className="flex-1 text-center">
+                                <span className="text-3xl font-bold text-white tabular-nums">{stopCount}</span>
+                                <span className="text-gray-500 text-sm ml-2">{stopCount === 1 ? 'stop' : 'stops'}</span>
+                            </div>
+                            <button
+                                onClick={() => handleStopCountChange(stopCount + 1)}
+                                disabled={stopCount === 5}
+                                className="w-10 h-10 rounded-xl border border-cyan-500/30 bg-cyan-500/10 flex items-center justify-center text-cyan-400 hover:bg-cyan-500/20 hover:text-cyan-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                            >
+                                <Plus size={16} />
                             </button>
                         </div>
-                    ))}
-
-                    {stops.length < 5 && (
-                        <button onClick={addStop} className="text-sm text-gray-400 hover:text-white flex items-center gap-2 transition-colors pl-1">
-                            <Plus size={16} /> Add Stop
-                        </button>
-                    )}
+                        {/* Optional address fields — animate in when stops > 0 */}
+                        {stopCount > 0 && (
+                            <div className="space-y-2 pt-2 border-t border-white/5 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Stop Addresses <span className="normal-case font-normal">(optional)</span></p>
+                                {Array.from({ length: stopCount }).map((_, idx) => (
+                                    <div key={idx} className="flex items-center gap-2">
+                                        <span className="text-[10px] font-bold text-cyan-500/60 w-5 text-center">{idx + 1}</span>
+                                        <input
+                                            type="text"
+                                            value={stopAddresses[idx] || ''}
+                                            onChange={e => updateStopAddress(idx, e.target.value)}
+                                            placeholder={`Stop ${idx + 1} address (optional)`}
+                                            className="flex-1 bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm !text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 transition-colors"
+                                            style={{ color: '#ffffff', backgroundColor: 'rgba(0,0,0,0.2)' }}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
 
                     <div className="relative group pt-2">
                         <label className="text-xs font-bold text-gray-500 tracking-widest uppercase mb-2 block">
@@ -373,19 +419,59 @@ export default function BookingEngine() {
                                     </div>
                                 </div>
 
-                                {returnStops.map((stop, idx) => (
-                                    <div key={idx} className="relative flex gap-2 items-end animate-in slide-in-from-left-4 fade-in duration-300">
-                                        <div className="flex-1">
-                                            <label className="text-[10px] font-bold text-cyan-400 tracking-widest uppercase mb-1 block">Return Stop #{idx + 1}</label>
-                                            <input type="text" value={stop} onChange={e => updateReturnStop(idx, e.target.value)} placeholder="Add Stop on way back..." className="w-full bg-white/5 border border-cyan-500/30 rounded-xl p-3 !text-white focus:outline-none focus:border-cyan-500 transition-colors" list="locations" style={{ color: '#ffffff', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderColor: 'rgba(6, 182, 212, 0.3)' }} />
+                                {/* Return Stop Counter */}
+                                <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Return Stops</p>
+                                            <p className="text-[11px] text-gray-500 mt-0.5">$5.00 per stop, return leg</p>
                                         </div>
-                                        <button onClick={() => removeReturnStop(idx)} className="p-4 bg-white/5 hover:bg-cyan-500/20 rounded-xl border border-white/10 transition-colors text-gray-400 hover:text-cyan-400"><X size={20} /></button>
+                                        {returnStopCount > 0 && (
+                                            <span className="text-xs font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-2 py-1 rounded-lg">
+                                                +${(returnStopCount * 5).toFixed(2)}
+                                            </span>
+                                        )}
                                     </div>
-                                ))}
-
-                                {returnStops.length < 5 && (
-                                    <button onClick={addReturnStop} className="text-sm text-gray-400 hover:text-white flex items-center gap-2 transition-colors mt-2"><Plus size={16} /> Add Return Stop</button>
-                                )}
+                                    <div className="flex items-center gap-4">
+                                        <button
+                                            onClick={() => handleReturnStopCountChange(returnStopCount - 1)}
+                                            disabled={returnStopCount === 0}
+                                            className="w-10 h-10 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center text-gray-300 hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                        >
+                                            <Minus size={16} />
+                                        </button>
+                                        <div className="flex-1 text-center">
+                                            <span className="text-3xl font-bold text-white tabular-nums">{returnStopCount}</span>
+                                            <span className="text-gray-500 text-sm ml-2">{returnStopCount === 1 ? 'stop' : 'stops'}</span>
+                                        </div>
+                                        <button
+                                            onClick={() => handleReturnStopCountChange(returnStopCount + 1)}
+                                            disabled={returnStopCount === 5}
+                                            className="w-10 h-10 rounded-xl border border-cyan-500/30 bg-cyan-500/10 flex items-center justify-center text-cyan-400 hover:bg-cyan-500/20 hover:text-cyan-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                        >
+                                            <Plus size={16} />
+                                        </button>
+                                    </div>
+                                    {/* Optional return address fields */}
+                                    {returnStopCount > 0 && (
+                                        <div className="space-y-2 pt-2 border-t border-white/5 animate-in fade-in slide-in-from-top-2 duration-300">
+                                            <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Stop Addresses <span className="normal-case font-normal">(optional)</span></p>
+                                            {Array.from({ length: returnStopCount }).map((_, idx) => (
+                                                <div key={idx} className="flex items-center gap-2">
+                                                    <span className="text-[10px] font-bold text-cyan-500/60 w-5 text-center">{idx + 1}</span>
+                                                    <input
+                                                        type="text"
+                                                        value={returnStopAddresses[idx] || ''}
+                                                        onChange={e => updateReturnStopAddress(idx, e.target.value)}
+                                                        placeholder={`Return stop ${idx + 1} address (optional)`}
+                                                        className="flex-1 bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm !text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 transition-colors"
+                                                        style={{ color: '#ffffff', backgroundColor: 'rgba(0,0,0,0.2)' }}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
 
                                 <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 flex items-center gap-3">
                                     <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
@@ -412,7 +498,7 @@ export default function BookingEngine() {
                             <RouteMap
                                 pickupAddress={quote?.debug?.origin || pickup} // Use Validated if available
                                 dropoffAddress={quote?.debug?.destination || dropoff} // Use Validated if available
-                                stops={stops} // RouteMap handles generic stops
+                                stops={[]} // Stops are now count-only; no addresses to display
                             />
                         ) : (
                             <div className="w-full h-full bg-gradient-to-br from-gray-900 to-black flex items-center justify-center">
@@ -430,7 +516,7 @@ export default function BookingEngine() {
                         {/* Open in Google Maps Button */}
                         {(pickup || dropoff) && (
                             <a
-                                href={`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(pickup)}&destination=${encodeURIComponent(dropoff)}&waypoints=${stops.map(s => encodeURIComponent(s)).join('|')}`}
+                                href={`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(pickup)}&destination=${encodeURIComponent(dropoff)}`}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="absolute top-2 right-2 bg-white/10 hover:bg-white/20 hover:text-white backdrop-blur-md text-gray-300 p-2 rounded-lg transition-all z-10 border border-white/10 shadow-lg"
@@ -466,7 +552,7 @@ export default function BookingEngine() {
                                     )}
                                     {quote.stopFee > 0 && (
                                         <div className="flex justify-between text-sm text-gray-300">
-                                            <span>Waypoints ({parseInt(stops.length.toString()) + parseInt(returnStops.length.toString())})</span>
+                                            <span>Extra Stops ({stopCount + returnStopCount}×)</span>
                                             <span>${quote.stopFee.toFixed(2)}</span>
                                         </div>
                                     )}
