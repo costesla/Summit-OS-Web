@@ -26,7 +26,7 @@ export default function BookingEngine() {
         libraries
     });
 
-    const [quoteType, setQuoteType] = useState<'single' | 'bundle'>('single');
+
     const [tripType, setTripType] = useState<'one-way' | 'round-trip'>('one-way');
 
     const [pickup, setPickup] = useState("");
@@ -65,10 +65,7 @@ export default function BookingEngine() {
 
     // Auto-Calculate Quote when inputs change
     useEffect(() => {
-        const isSingleInvalid = quoteType === 'single' && (!pickup || !dropoff || pickup.length < 10 || dropoff.length < 10);
-        const isBundleInvalid = quoteType === 'bundle' && (!pickup || pickup.length < 10);
-
-        if (isSingleInvalid || isBundleInvalid) {
+        if (!pickup || !dropoff || pickup.length < 10 || dropoff.length < 10) {
             setQuote(null);
             return;
         }
@@ -77,22 +74,6 @@ export default function BookingEngine() {
             setLoading(true);
             setToastMessage(null); // Clear previous errors
             try {
-                // If it's a bundle and they didn't provide a dropoff, default to $100 flat rate locally
-                if (quoteType === 'bundle' && (!dropoff || dropoff.length < 10)) {
-                    setQuote({
-                        baseFare: 100.0,
-                        overage: 0,
-                        deadheadFee: 0,
-                        stopFee: 0,
-                        tellerFee: 0,
-                        waitFee: 0,
-                        total: 100.0,
-                        distance: 0,
-                        time: 0
-                    });
-                    setLoading(false);
-                    return;
-                }
 
                 // Direct fetch to Azure Function Backend
                 const res = await fetch('https://summitos-api.azurewebsites.net/api/quote', {
@@ -107,9 +88,7 @@ export default function BookingEngine() {
                         stops: stops.filter(s => s.trim()),
                         returnStops: returnStops.filter(s => s.trim()),
                         layoverHours: parseFloat(layoverHours.toString()) || 0,
-                        waitTimeHours: parseFloat(waitTimeHours.toString()) || 0,
-                        quoteType,
-                        email: email.trim()
+                        waitTimeHours: parseFloat(waitTimeHours.toString()) || 0
                     })
                 });
                 if (!res.ok) {
@@ -152,7 +131,7 @@ export default function BookingEngine() {
         const timeout = setTimeout(fetchQuote, 500); // Debounce
         return () => clearTimeout(timeout);
 
-    }, [pickup, dropoff, stops, returnStops, tripType, layoverHours, waitTimeHours, quoteType, email]);
+    }, [pickup, dropoff, stops, returnStops, tripType, layoverHours, waitTimeHours]);
 
     const addStop = () => { if (stops.length < 5) setStops([...stops, ""]); };
     const updateStop = (index: number, val: string) => { const newStops = [...stops]; newStops[index] = val; setStops(newStops); };
@@ -195,22 +174,20 @@ export default function BookingEngine() {
                     <p className="text-gray-400 text-sm mt-1 tracking-wide uppercase">COS Tesla LLC | Powered by: SummitOS</p>
                 </div>
 
-                {/* Pricing Type Toggle */}
-                <div className="flex flex-col items-end gap-2">
-                    <div className="bg-white/10 p-1 rounded-xl flex">
-                        <button
-                            onClick={() => setQuoteType('single')}
-                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${quoteType === 'single' ? 'bg-white text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
-                        >
-                            Single Trip (Fairness Engine)
-                        </button>
-                        <button
-                            onClick={() => setQuoteType('bundle')}
-                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${quoteType === 'bundle' ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-500/20' : 'text-gray-400 hover:text-white'}`}
-                        >
-                            All-Day Bundle ($100)
-                        </button>
-                    </div>
+                {/* Trip Type Toggle */}
+                <div className="bg-white/10 p-1 rounded-xl flex">
+                    <button
+                        onClick={() => setTripType('one-way')}
+                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${tripType === 'one-way' ? 'bg-white text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                    >
+                        One Way
+                    </button>
+                    <button
+                        onClick={() => setTripType('round-trip')}
+                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${tripType === 'round-trip' ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-500/20' : 'text-gray-400 hover:text-white'}`}
+                    >
+                        Round Trip
+                    </button>
                 </div>
             </div>
 
@@ -221,25 +198,7 @@ export default function BookingEngine() {
                 </p>
             </div>
 
-            {/* Trip Type Toggle (Leg 2 control) */}
-            {quoteType === 'single' && (
-                <div className="flex justify-end mb-6">
-                    <div className="bg-white/5 p-1 rounded-lg flex border border-white/10">
-                        <button
-                            onClick={() => setTripType('one-way')}
-                            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${tripType === 'one-way' ? 'bg-white/20 text-white' : 'text-gray-400 hover:text-white'}`}
-                        >
-                            One Way
-                        </button>
-                        <button
-                            onClick={() => setTripType('round-trip')}
-                            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${tripType === 'round-trip' ? 'bg-white/20 text-white' : 'text-gray-400 hover:text-white'}`}
-                        >
-                            Round Trip
-                        </button>
-                    </div>
-                </div>
-            )}
+
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
 
@@ -283,29 +242,7 @@ export default function BookingEngine() {
                         )}
                     </div>
 
-                    {quoteType === 'bundle' && pickup.length > 5 && !showCalendar && (
-                        <div className="p-4 bg-cyan-500/10 border border-cyan-500/30 rounded-xl animate-in fade-in slide-in-from-top-4 duration-500">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h4 className="text-cyan-400 font-bold text-sm">Step 2: Pick Your Date</h4>
-                                    <p className="text-xs text-cyan-200/60 mt-1">Select when you need the driver for the day.</p>
-                                </div>
-                                <button
-                                    onClick={() => {
-                                        if (!name || !email || !phone) {
-                                            setToastMessage("Please fill in contact info first (on the right)");
-                                            return;
-                                        }
-                                        setShowCalendar(true);
-                                    }}
-                                    className="bg-cyan-600 hover:bg-cyan-700 text-white p-3 rounded-lg flex items-center gap-2 font-bold transition-all shadow-lg shadow-cyan-500/20"
-                                >
-                                    <Clock size={18} />
-                                    Select Date
-                                </button>
-                            </div>
-                        </div>
-                    )}
+
 
                     {stops.map((stop, idx) => (
                         <div key={idx} className="relative flex gap-2 items-end animate-in slide-in-from-left-4 fade-in duration-300">
@@ -332,8 +269,7 @@ export default function BookingEngine() {
                         </button>
                     )}
 
-                    {quoteType === 'single' && (
-                        <div className="relative group pt-2">
+                    <div className="relative group pt-2">
                         <label className="text-xs font-bold text-gray-500 tracking-widest uppercase mb-2 block">
                             Destination
                         </label>
@@ -368,9 +304,8 @@ export default function BookingEngine() {
                                 className="w-full bg-white/5 border border-white/10 rounded-xl p-4 !text-white focus:outline-none focus:border-cyan-500 transition-colors text-lg"
                                 style={{ color: '#ffffff', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderColor: 'rgba(255, 255, 255, 0.1)' }}
                             />
-                            )}
-                        </div>
-                    )}
+                        )}
+                    </div>
 
                     {/* --- LAYOVER / WAIT TIME --- */}
                     <div className="pt-6 border-t border-white/10">
@@ -394,7 +329,7 @@ export default function BookingEngine() {
                                     <span className="text-gray-400 text-sm">Hours @ $20/hr</span>
                                 </div>
                             </div>
-                        ) : quoteType === 'single' ? (
+                        ) : (
                             <div className="animate-in fade-in slide-in-from-top-4 duration-300 bg-white/5 p-4 rounded-xl border border-white/10">
                                 <label className="flex items-center gap-3 mb-3">
                                     <Clock size={16} className="text-cyan-400" />
@@ -414,24 +349,11 @@ export default function BookingEngine() {
                                     <span className="text-gray-400 text-sm">Hours @ $20/hr</span>
                                 </div>
                             </div>
-                        ) : (
-                            <div className="flex flex-col gap-2">
-                                <div className="p-4 rounded-xl bg-cyan-900/20 border border-cyan-500/20">
-                                    <span className="text-cyan-200 text-sm font-bold flex items-center gap-2">
-                                        <Clock size={16} /> Dedicated On-Call status included (up to 8 hours)
-                                    </span>
-                                </div>
-                                <div className="p-3 rounded-lg border border-red-500/30 bg-red-500/10">
-                                    <span className="text-red-200 text-xs font-medium">
-                                        <strong>⚠️ Disclaimer:</strong> Valid ONLY within El Paso County. For trips extending beyond county lines, please select the Single Trip (À La Carte) option.
-                                    </span>
-                                </div>
-                            </div>
                         )}
                     </div>
 
                     {/* --- LEG 2 (Round Trip Only) --- */}
-                    {tripType === 'round-trip' && quoteType === 'single' && (
+                    {tripType === 'round-trip' && (
                         <div className="pt-6 border-t border-white/10 animate-in fade-in slide-in-from-top-10 duration-500">
                             <div className="flex items-center gap-2 mb-4">
                                 <div className="h-6 w-1 bg-cyan-600 rounded-full"></div>
@@ -498,10 +420,10 @@ export default function BookingEngine() {
                             </div>
                         )}
 
-                        {/* Round Trip/Bundle Badge Overlay */}
-                        {(tripType === 'round-trip' || quoteType === 'bundle') && (
+                        {/* Round Trip Badge Overlay */}
+                        {tripType === 'round-trip' && (
                             <div className="absolute bottom-2 right-2 bg-cyan-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg uppercase tracking-widest z-10">
-                                {quoteType === 'bundle' ? 'Bundle Active' : 'Round Trip Active'}
+                                Round Trip Active
                             </div>
                         )}
 
@@ -625,9 +547,8 @@ export default function BookingEngine() {
                                     customerPhone={phone}
                                     passengers={passengers}
                                     pickup={quote?.debug?.origin || pickup}
-                                    dropoff={(quote?.debug?.destination || dropoff) || "As Directed (All-Day Bundle)"}
+                                    dropoff={quote?.debug?.destination || dropoff}
                                     price={quote ? `$${quote.total.toFixed(2)}` : '$0.00'}
-                                    quoteType={quoteType}
                                     tripDistance={quote?.distance?.toFixed(1) || undefined}
                                     tripDuration={quote?.time?.toString() || undefined}
                                     onBookingComplete={(eventId) => {
@@ -642,7 +563,7 @@ export default function BookingEngine() {
                                     <p className="text-sm text-gray-300">You'll receive a confirmation email shortly.</p>
                                 </div>
                             ) : (
-                                // --- BOTH SINGLE TRIP & ALL-DAY BUNDLE: Continue to Calendar ---
+                                // --- Continue to Calendar ---
                                 <button
                                     onClick={() => {
                                         if (!name || !email || !phone) {
