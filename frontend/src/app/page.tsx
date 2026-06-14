@@ -226,16 +226,66 @@ export default function Home() {
           <div className="bg-white/95 backdrop-blur-md rounded-[3rem] p-12 border border-slate-200/80 shadow-lg relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-[100px] rounded-full pointer-events-none" />
 
-            <h3 className="text-3xl font-bold mb-8 text-slate-900">Fairness Engine v4.0</h3>
-            <div className="space-y-8">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                <span className="text-slate-600">Base Engagement</span>
+            <div className="flex items-center gap-3 mb-2">
+              <span className="font-mono text-xs font-bold text-blue-600 tracking-widest uppercase">SummitOS</span>
+            </div>
+            <h3 className="text-3xl font-bold mb-2 text-slate-900">Fairness Engine v4.0</h3>
+            <p className="text-slate-500 text-sm mb-8 leading-relaxed">
+              Pricing emerges from your actual route — not a menu. Every dollar is earned by real distance, real time, and real complexity.
+            </p>
+
+            <div className="space-y-0 divide-y divide-slate-100">
+              <div className="flex items-center justify-between py-4">
+                <div>
+                  <div className="font-semibold text-slate-800">Base Fare</div>
+                  <div className="text-xs text-slate-400 mt-0.5">Every trip starts here</div>
+                </div>
                 <span className="text-2xl font-bold text-slate-900">$30.00</span>
               </div>
+
+              <div className="flex items-center justify-between py-4">
+                <div>
+                  <div className="font-semibold text-slate-800">Distance</div>
+                  <div className="text-xs text-slate-400 mt-0.5">Free within El Paso County · $1.75/mi beyond</div>
+                </div>
+                <span className="font-mono text-sm font-bold text-slate-500">by route</span>
+              </div>
+
+              <div className="flex items-center justify-between py-4">
+                <div>
+                  <div className="font-semibold text-slate-800">Extra Stops</div>
+                  <div className="text-xs text-slate-400 mt-0.5">Each intermediate stop on either leg</div>
+                </div>
+                <span className="text-lg font-bold text-blue-600">$5.00 <span className="text-slate-400 text-sm font-normal">/ stop</span></span>
+              </div>
+
+              <div className="flex items-center justify-between py-4">
+                <div>
+                  <div className="font-semibold text-slate-800">Driver Wait Time</div>
+                  <div className="text-xs text-slate-400 mt-0.5">Layover or on-site wait</div>
+                </div>
+                <span className="text-lg font-bold text-slate-700">$20.00 <span className="text-slate-400 text-sm font-normal">/ hr</span></span>
+              </div>
+
+              <div className="flex items-center justify-between py-4">
+                <div>
+                  <div className="font-semibold text-slate-800">Teller County</div>
+                  <div className="text-xs text-slate-400 mt-0.5">Woodland Park, Cripple Creek, Divide</div>
+                </div>
+                <span className="text-lg font-bold text-slate-700">$15.00 <span className="text-slate-400 text-sm font-normal">surcharge</span></span>
+              </div>
+
+              <div className="flex items-center justify-between py-4 bg-slate-50 -mx-4 px-4 rounded-2xl mt-2">
+                <div>
+                  <div className="font-bold text-slate-900">Round Trip</div>
+                  <div className="text-xs text-slate-400 mt-0.5">Each leg priced independently</div>
+                </div>
+                <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 border border-blue-100 px-3 py-1.5 rounded-lg">LEG 1 + LEG 2</span>
+              </div>
             </div>
-            <p className="mt-8 text-xs text-slate-500 font-mono leading-relaxed">
-              *$30 FLAT FEE IS VALID ONLY WITHIN EL PASO COUNTY, COLORADO. ANYTHING BEYOND THIS RANGE WILL INCLUDE $1.75/MILE.<br /><br />
-              *PRICING CALCULATED VIA GOOGLE DISTANCE MATRIX API. NO SURGE PRICING. EVER.
+
+            <p className="mt-8 text-xs text-slate-400 font-mono leading-relaxed border-t border-slate-100 pt-6">
+              ROUTE CALCULATED VIA GOOGLE DISTANCE MATRIX. NO SURGE PRICING. NO HIDDEN FEES. DETERMINISTIC — SAME ROUTE ALWAYS YIELDS SAME PRICE.
             </p>
           </div>
 
