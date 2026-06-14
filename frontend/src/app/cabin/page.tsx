@@ -37,9 +37,9 @@ interface CabinState {
     charging_state: string | null;
 }
 
-// Relative path — works when SWA linked backend proxies /api/* to summitos-api
-// Until linked backend is configured, set NEXT_PUBLIC_API_BASE in .env.local
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "https://summitos-api.azurewebsites.net";
+// SWA linked backend confirmed — /api/* on costesla.com proxies to summitos-api automatically
+// Function key stays in Azure; browser never sees it.
+const API_BASE = "";
 
 const INITIAL_STATE: CabinState = {
     speed: 0,
