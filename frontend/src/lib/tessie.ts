@@ -34,7 +34,7 @@ export class TessieClient {
 
     constructor() {
         this.apiKey = process.env.TESSIE_API_KEY || "";
-        this.vin = "5YJ3E1EA9NF288034"; // Thor
+        this.vin = "7SAYGDEEXRF075302"; // Thor
 
         if (!this.apiKey) {
             console.error("TESSIE_API_KEY is missing");
