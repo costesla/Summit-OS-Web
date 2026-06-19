@@ -55,6 +55,10 @@
             "rewrite": "https://summitos-api.azurewebsites.net/api/cabin/command"
         },
         {
+            "route": "/api/cabin/control",
+            "rewrite": "https://summitos-api.azurewebsites.net/api/cabin/command"
+        },
+        {
             "route": "/api/cabin",
             "rewrite": "https://summitos-api.azurewebsites.net/api/cabin/state"
         },

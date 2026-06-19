@@ -46,7 +46,7 @@ def _validate_token(token):
 
 
 # ─── GET /cabin/state ─────────────────────────────────────────────────
-@bp.route(route="cabin/state", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.FUNCTION)
+@bp.route(route="cabin/state", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def cabin_state(req: func.HttpRequest) -> func.HttpResponse:
     """Returns flattened cabin state for the passenger UI."""
     if req.method == "OPTIONS":
@@ -152,7 +152,7 @@ def cabin_state(req: func.HttpRequest) -> func.HttpResponse:
 
 
 # ─── POST /cabin/command ──────────────────────────────────────────────
-@bp.route(route="cabin/command", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.FUNCTION)
+@bp.route(route="cabin/command", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def cabin_command(req: func.HttpRequest) -> func.HttpResponse:
     """Dispatches cabin control commands from the passenger UI."""
     if req.method == "OPTIONS":

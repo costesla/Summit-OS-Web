@@ -63,12 +63,7 @@
       }
     }
   ],
-  "responseOverrides": {
-    "401": {
-      "redirect": "/.auth/login/aad",
-      "statusCode": 302
-    }
-  },
+  "responseOverrides": {},
   "auth": {
     "identityProviders": {}
   }
