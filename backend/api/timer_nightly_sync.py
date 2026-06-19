@@ -24,27 +24,37 @@ def timer_nightly_sync(nightlyTimer: func.TimerRequest) -> None:
     if nightlyTimer.past_due:
         logging.warning("[NightlySync] Timer is past due — running now anyway.")
 
-    # Determine today's date in Mountain Time
+    # Determine today's and yesterday's date in Mountain Time
     now_mdt = datetime.datetime.now(tz=MDT)
     today_str = now_mdt.strftime("%Y-%m-%d")
+    yesterday_str = (now_mdt - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
 
-    logging.info(f"[NightlySync] Starting automatic Daily Sync for {today_str} (MDT: {now_mdt.strftime('%Y-%m-%d %H:%M %Z')})")
+    logging.info(f"[NightlySync] Starting automatic Daily Sync lookback for {yesterday_str} and {today_str} (MDT: {now_mdt.strftime('%Y-%m-%d %H:%M %Z')})")
 
+    # Run for yesterday
     try:
         from api.operations import _execute_daily_sync
-        result = _execute_daily_sync(target_date_str=today_str)
-
-        logs = result.get("logs", [])
-        for line in logs:
-            logging.info(f"[NightlySync] {line}")
-
-        logging.info(
-            f"[NightlySync] ✅ Completed for {today_str}. "
-            f"Success={result.get('success')}"
-        )
-
+        logging.info(f"[NightlySync] Running sync for yesterday ({yesterday_str})...")
+        result_yesterday = _execute_daily_sync(target_date_str=yesterday_str)
+        logs_y = result_yesterday.get("logs", [])
+        for line in logs_y:
+            logging.info(f"[NightlySync] [Yesterday] {line}")
+        logging.info(f"[NightlySync] [Yesterday] Completed. Success={result_yesterday.get('success')}")
     except Exception as e:
-        logging.error(f"[NightlySync] ❌ Failed for {today_str}: {e}", exc_info=True)
+        logging.error(f"[NightlySync] ❌ Yesterday Sync Failed: {e}", exc_info=True)
+
+    # Run for today
+    try:
+        from api.operations import _execute_daily_sync
+        logging.info(f"[NightlySync] Running sync for today ({today_str})...")
+        result_today = _execute_daily_sync(target_date_str=today_str)
+        logs_t = result_today.get("logs", [])
+        for line in logs_t:
+            logging.info(f"[NightlySync] [Today] {line}")
+        logging.info(f"[NightlySync] [Today] Completed. Success={result_today.get('success')}")
+    except Exception as e:
+        logging.error(f"[NightlySync] ❌ Today Sync Failed: {e}", exc_info=True)
+
 
     # ── Earnings deduplication ─────────────────────────────────────────────────
     # Zero out Driver_Earnings on TESSIE-* / UBER-* rows that duplicate a

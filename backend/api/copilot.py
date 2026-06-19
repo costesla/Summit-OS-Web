@@ -113,7 +113,7 @@ def classify_drive(tag, location):
     meals = ["ihop", "mcdonalds", "starbucks", "dunkin", "taco bell", "burger king", "wendy's", "subway", "chipotle", "panera", "carl's jr", "dutch bros", "coffee", "grocery", "king soopers", "safeway", "walmart"]
     maintenance = ["quickquack", "car wash", "supercharge", "service", "tesla service", "tire", "maintenance", "autozone"]
     personal = ["park", "gym", "museum", "home", "residence", "private"]
-    private_clients = ["jackie", "jacquelyn", "esmeralda", "daniel", "private_trip", "private_pickup"]
+    private_clients = ["jackie", "jacquelyn", "jacquelyn heslep", "esmeralda", "daniel", "david", "emerson", "private_trip", "private_pickup"]
     
     for m in meals:
         if m in tag_lower or m in loc_lower:

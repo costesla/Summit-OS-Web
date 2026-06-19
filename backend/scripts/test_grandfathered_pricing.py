@@ -31,13 +31,13 @@ for distance in test_distances:
     print(f"  Tier: {result.get('customer_tier', 'N/A')}")
     print()
 
-print("\n2. Testing Jacquelyn (Flat $20 pricing)")
+print("\n2. Testing Jacquelyn Heslep (Comped pricing)")
 print("-" * 60)
 for distance in test_distances:
     pricing = PricingEngine()
     result = pricing.calculate_trip_price(
         distance_miles=distance,
-        customer_email="jacquelyn@example.com"  # Update with real email
+        customer_email="jacquelyn.heslep@playaba.net"
     )
     print(f"  Distance: {distance} mi")
     print(f"  Total: ${result['total']}")

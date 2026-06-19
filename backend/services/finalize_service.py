@@ -278,19 +278,38 @@ OWNER_EMAIL = "peter.teehan@costesla.com"
 
 def _log_trip(session, meta):
     import time
+    import re
+    from services.datetime_utils import normalize_to_utc
+    
+    booking_id = session.id[-8:].upper()
+    customer_name = meta.get("customerName", "Guest")
+    first_name = re.sub(r'[^A-Za-z0-9]', '', customer_name.split()[0]).capitalize()
+    ride_id = f"INV-{first_name}-{booking_id}"
+    
+    raw_time = meta.get("appointmentStart")
+    timestamp_epoch = time.time()
+    if raw_time:
+        try:
+            dt_utc = normalize_to_utc(raw_time)
+            if dt_utc:
+                timestamp_epoch = dt_utc.timestamp()
+        except Exception as pe:
+            logging.error(f"Failed to parse appointmentStart for epoch in _log_trip: {pe}")
+
     db = DatabaseClient()
     db.save_trip({
-        "trip_id": session.id,
-        "classification": "Private_Booking",
+        "trip_id": ride_id,
+        "classification": first_name,
         "trip_type": "Private",
         "fare": (session.amount_total or 0) / 100.0,
-        "timestamp_epoch": time.time(),
+        "timestamp_epoch": timestamp_epoch,
         "pickup_place": meta.get("pickup"),
         "dropoff_place": meta.get("dropoff"),
-        "raw_text": f"Stripe booking for {meta.get('customerName')} ({meta.get('fareString')})",
+        "raw_text": f"Stripe booking for {customer_name} ({meta.get('fareString')})",
     })
     # Card was charged before the webhook fired — this booking is settled
-    db.set_payment_status(session.id, "Paid")
+    db.set_payment_status(ride_id, "Paid")
+
 
 
 def _send_paid_receipt(session, meta):

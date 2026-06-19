@@ -292,7 +292,7 @@ class DatabaseClient:
         import re
         conn = self.get_connection()
         if not conn:
-            return ["jackie", "esmeralda", "daniel", "ryan", "lauren", "terrance", "lorynne", "nancy", "adrienne"]
+            return ["jackie", "jacquelyn", "jacquelyn heslep", "esmeralda", "daniel", "ryan", "lauren", "terrance", "lorynne", "nancy", "adrienne", "david", "emerson"]
         cursor = conn.cursor()
         try:
             cursor.execute("""
@@ -300,7 +300,7 @@ class DatabaseClient:
                 FROM Rides.Rides 
                 WHERE RideID LIKE 'INV-%'
             """)
-            names = {"jackie", "esmeralda", "daniel", "ryan", "lauren", "terrance", "lorynne", "nancy", "adrienne"}
+            names = {"jackie", "jacquelyn", "jacquelyn heslep", "esmeralda", "daniel", "ryan", "lauren", "terrance", "lorynne", "nancy", "adrienne", "david", "emerson"}
             for row in cursor.fetchall():
                 if row[0]:
                     parts = row[0].split('-')
@@ -312,7 +312,7 @@ class DatabaseClient:
             return list(names)
         except Exception as e:
             logging.error(f"Error getting known client names: {e}")
-            return ["jackie", "esmeralda", "daniel", "ryan", "lauren", "terrance", "lorynne", "nancy", "adrienne"]
+            return ["jackie", "jacquelyn", "jacquelyn heslep", "esmeralda", "daniel", "ryan", "lauren", "terrance", "lorynne", "nancy", "adrienne", "david", "emerson"]
         finally:
             conn.close()
 

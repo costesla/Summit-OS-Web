@@ -150,16 +150,16 @@ class DatabaseClient:
                 Driver_Earnings = CASE WHEN ? > 0 THEN ? ELSE target.Driver_Earnings END,
                 Platform_Cut = CASE WHEN ? <> 0 THEN ? ELSE target.Platform_Cut END,
                 Start_SOC = ?, End_SOC = ?, Energy_Used_kWh = ?, Efficiency_Wh_mi = ?,
-                Source_URL = ?, Classification = ?, Sidecar_Artifact_JSON = ?, LastUpdated = GETDATE()
+                Source_URL = ?, Classification = ?, Tessie_Label = COALESCE(target.Tessie_Label, ?), Sidecar_Artifact_JSON = ?, LastUpdated = GETDATE()
         WHEN NOT MATCHED THEN
             INSERT (
                 RideID, TripType, Timestamp_Start, Pickup_Location, Dropoff_Location,
                 Distance_mi, Duration_min, Tessie_DriveID, Tessie_Distance,
                 Fare, Tip, Driver_Earnings, Platform_Cut,
                 Start_SOC, End_SOC, Energy_Used_kWh, Efficiency_Wh_mi,
-                Source_URL, Classification, Sidecar_Artifact_JSON, CreatedAt
+                Source_URL, Classification, Tessie_Label, Sidecar_Artifact_JSON, CreatedAt
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE());
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE());
         """
         
         t_start = trip_data.get('timestamp_epoch') or trip_data.get('started_at')
@@ -244,6 +244,8 @@ class DatabaseClient:
             incoming_classification = existing_classification
             incoming_triptype = 'Private'
 
+        tessie_label = trip_data.get('Tessie_Label') or trip_data.get('tessie_label') or trip_data.get('tag')
+
         params = (
             ride_id,
             incoming_triptype,
@@ -264,6 +266,7 @@ class DatabaseClient:
             trip_data.get('efficiency_wh_mi') or trip_data.get('Efficiency_Wh_mi'),
             source_url,
             incoming_classification,
+            tessie_label,
             json.dumps(trip_data) if trip_data else None,
             # For INSERT:
             ride_id,
@@ -285,6 +288,7 @@ class DatabaseClient:
             trip_data.get('efficiency_wh_mi') or trip_data.get('Efficiency_Wh_mi'),
             source_url,
             incoming_classification,
+            tessie_label,
             json.dumps(trip_data) if trip_data else None
         )
 
@@ -324,6 +328,103 @@ class DatabaseClient:
             conn.commit()
         except Exception as e:
             logging.error(f"SQL Save Charge Error: {e}")
+        finally:
+            conn.close()
+
+    def upsert_location_intelligence(self, label: str, lat: float, lon: float, address: str, derived_type: str, timestamp_str: str) -> None:
+        """
+        Upserts a record in dbo.Location_Intelligence.
+        Matches exactly by label + coordinates rounded to 5 decimal places.
+        Increments frequency and updates confidence score for all locations with same label.
+        """
+        if not label or lat is None or lon is None:
+            return
+            
+        conn = self.get_connection()
+        if not conn: return
+        cursor = conn.cursor()
+        
+        lat_rounded = round(float(lat), 6)
+        lon_rounded = round(float(lon), 6)
+        
+        import datetime
+        if not timestamp_str:
+            timestamp_str = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+            
+        try:
+            # Check if record exists matching label and coordinates
+            cursor.execute("""
+                SELECT LocationID, Frequency FROM dbo.Location_Intelligence
+                WHERE Tessie_Label = ? 
+                  AND ABS(Latitude - ?) < 0.0001
+                  AND ABS(Longitude - ?) < 0.0001
+            """, (label, lat_rounded, lon_rounded))
+            row = cursor.fetchone()
+            
+            if row:
+                loc_id, freq = row
+                new_freq = freq + 1
+                
+                # Get total occurrences of this label
+                cursor.execute("SELECT SUM(Frequency) FROM dbo.Location_Intelligence WHERE Tessie_Label = ?", (label,))
+                sum_row = cursor.fetchone()
+                total_occurrences = (sum_row[0] or 0) + 1
+                
+                # Update existing record
+                cursor.execute("""
+                    UPDATE dbo.Location_Intelligence
+                    SET Frequency = ?,
+                        Last_Seen = ?,
+                        Confidence_Score = CAST((? * 100.0) / ? AS DECIMAL(5,2))
+                    WHERE LocationID = ?
+                """, (new_freq, timestamp_str, new_freq, total_occurrences, loc_id))
+                
+                # Update other locations with same label
+                cursor.execute("""
+                    SELECT LocationID, Frequency FROM dbo.Location_Intelligence
+                    WHERE Tessie_Label = ? AND LocationID <> ?
+                """, (label, loc_id))
+                other_rows = cursor.fetchall()
+                for o_row in other_rows:
+                    o_id, o_freq = o_row
+                    cursor.execute("""
+                        UPDATE dbo.Location_Intelligence
+                        SET Confidence_Score = CAST((? * 100.0) / ? AS DECIMAL(5,2))
+                        WHERE LocationID = ?
+                    """, (o_freq, total_occurrences, o_id))
+            else:
+                cursor.execute("SELECT SUM(Frequency) FROM dbo.Location_Intelligence WHERE Tessie_Label = ?", (label,))
+                sum_row = cursor.fetchone()
+                total_occurrences = (sum_row[0] or 0) + 1
+                
+                confidence_score = float((1.0 / total_occurrences) * 100.0)
+                
+                # Insert new record
+                cursor.execute("""
+                    INSERT INTO dbo.Location_Intelligence (
+                        Tessie_Label, Address, Latitude, Longitude, Derived_Type, First_Seen, Last_Seen, Frequency, Confidence_Score
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)
+                """, (label, address, lat_rounded, lon_rounded, derived_type, timestamp_str, timestamp_str, confidence_score))
+                
+                # Update other locations with same label
+                if total_occurrences > 1:
+                    cursor.execute("""
+                        SELECT LocationID, Frequency FROM dbo.Location_Intelligence
+                        WHERE Tessie_Label = ?
+                    """, (label,))
+                    all_rows = cursor.fetchall()
+                    for a_row in all_rows:
+                        a_id, a_freq = a_row
+                        cursor.execute("""
+                            UPDATE dbo.Location_Intelligence
+                            SET Confidence_Score = CAST((? * 100.0) / ? AS DECIMAL(5,2))
+                            WHERE LocationID = ?
+                        """, (a_freq, total_occurrences, a_id))
+            
+            conn.commit()
+        except Exception as e:
+            logging.error(f"Error upserting location intelligence: {e}")
+            conn.rollback()
         finally:
             conn.close()
 
@@ -430,10 +531,10 @@ class DatabaseClient:
         - Fare > 0 (any trip with earnings)
         - Manual_Entry (manually logged by operator)
         - Uber_Matched (screenshot matched to a Tessie drive)
+        - Unmatched/orphan private TESSIE- drives (surfaced explicitly)
         
         Uber_Dropoff records are intentionally hidden until a screenshot
         is matched to them to prevent ghost duplicates when manual entries exist.
-        Jackie and Esmeralda private drives are shown regardless of fare.
         """
         query = """
         SELECT 
@@ -449,12 +550,24 @@ class DatabaseClient:
         FROM Rides.Rides 
         WHERE Timestamp_Start >= DATEADD(hour, 4, CAST(? AS DATETIME2))
           AND Timestamp_Start < DATEADD(hour, 28, CAST(? AS DATETIME2))
+          AND DeletedAt IS NULL
+          AND (IsTest IS NULL OR IsTest = 0)
           AND (
             Fare > 0
             OR Classification = 'Manual_Entry'
             OR Classification = 'Uber_Matched'
-            OR Classification = 'Jackie'
-            OR Classification = 'Esmeralda'
+            OR (
+              RideID LIKE 'TESSIE-%'
+              AND Classification NOT IN ('Uber_Dropoff', 'Uber_Matched', 'Manual_Entry')
+              AND RideID NOT IN (
+                SELECT DISTINCT Tessie_DriveID 
+                FROM Rides.Rides 
+                WHERE RideID LIKE 'INV-%' 
+                  AND Tessie_DriveID IS NOT NULL
+                  AND DeletedAt IS NULL
+                  AND (IsTest IS NULL OR IsTest = 0)
+              )
+            )
           )
         ORDER BY Timestamp_Start DESC
         """
@@ -861,7 +974,7 @@ class DatabaseClient:
         import re
         conn = self.get_connection()
         if not conn:
-            return ["jackie", "esmeralda", "daniel", "ryan", "lauren", "terrance", "lorynne", "nancy", "adrienne"]
+            return ["jackie", "jacquelyn", "jacquelyn heslep", "esmeralda", "daniel", "ryan", "lauren", "terrance", "lorynne", "nancy", "adrienne", "david", "emerson"]
         cursor = conn.cursor()
         try:
             cursor.execute("""
@@ -869,7 +982,7 @@ class DatabaseClient:
                 FROM Rides.Rides 
                 WHERE RideID LIKE 'INV-%'
             """)
-            names = {"jackie", "esmeralda", "daniel", "ryan", "lauren", "terrance", "lorynne", "nancy", "adrienne"}
+            names = {"jackie", "jacquelyn", "jacquelyn heslep", "esmeralda", "daniel", "ryan", "lauren", "terrance", "lorynne", "nancy", "adrienne", "david", "emerson"}
             for row in cursor.fetchall():
                 if row[0]:
                     parts = row[0].split('-')
@@ -881,7 +994,7 @@ class DatabaseClient:
             return list(names)
         except Exception as e:
             logging.error(f"Error getting known client names: {e}")
-            return ["jackie", "esmeralda", "daniel", "ryan", "lauren", "terrance", "lorynne", "nancy", "adrienne"]
+            return ["jackie", "jacquelyn", "jacquelyn heslep", "esmeralda", "daniel", "ryan", "lauren", "terrance", "lorynne", "nancy", "adrienne", "david", "emerson"]
         finally:
             conn.close()
 
