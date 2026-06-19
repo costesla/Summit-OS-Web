@@ -1524,6 +1524,7 @@ class CloudWatcherService:
                                 or client_name.lower() in get_tag(d)
                             )
                             and not any(w in (d["Classification"] or "").lower() or w in get_tag(d) for w in ["pickup", "en route", "charging", "charge"])
+                            and not (float(d.get("Distance_mi") or 0) < 1.0 and booking.get("Fare", 0) > 0)
                         ]
                         
                     if client_drives:
