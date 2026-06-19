@@ -488,27 +488,8 @@ def scrub_day(req: func.HttpRequest) -> func.HttpResponse:
         
         logs.append(f"SCRUB: Unlinked/flagged {len(bookings)} private booking(s) on {date_str}.")
 
-        # 4. Ensure RepairLog exists and write audit-log row (idempotent)
-        repair_log_ddl = """
-        IF NOT EXISTS (
-            SELECT 1 FROM INFORMATION_SCHEMA.TABLES
-            WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'RepairLog'
-        )
-        CREATE TABLE dbo.RepairLog (
-            RepairID        NVARCHAR(50)   NOT NULL PRIMARY KEY,
-            TargetDate      NVARCHAR(10)   NOT NULL,
-            IssueType       NVARCHAR(80)   NOT NULL,
-            RowsAffected    INT            NOT NULL DEFAULT 0,
-            BeforeSnapshot  NVARCHAR(MAX),
-            AfterSnapshot   NVARCHAR(MAX),
-            AutoFixed       BIT            NOT NULL DEFAULT 1,
-            ManualRequired  BIT            NOT NULL DEFAULT 0,
-            Notes           NVARCHAR(MAX),
-            CreatedAt       DATETIME       NOT NULL DEFAULT GETUTCDATE(),
-            CreatedBy       NVARCHAR(50)   NOT NULL DEFAULT 'SummitOS-Scrub'
-        )
-        """
-        cursor.execute(repair_log_ddl)
+        # 4. Write audit-log row (idempotent)
+        # Note: RepairLog table is pre-created in the database as Azure Function user lacks DDL permission.
         
         before_snapshot = {
             "date": date_str,
