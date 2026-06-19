@@ -780,7 +780,7 @@ class CloudWatcherService:
         cursor = conn.cursor()
         cursor.execute("""
             SELECT RideID, Timestamp_Start, Fare, Driver_Earnings, Tip, Platform_Cut,
-                   Sidecar_Artifact_JSON, TripType, Classification
+                   Sidecar_Artifact_JSON, TripType, Classification, PaymentStatus
             FROM Rides.Rides
             WHERE ((RideID LIKE 'TRIP-%' AND RideID LIKE ?) OR (RideID LIKE 'INV-%' AND CAST(Timestamp_Start AS DATE) = ?))
               AND DeletedAt IS NULL
@@ -836,6 +836,7 @@ class CloudWatcherService:
                 "distance_mi": sidecar.get("distance_mi"),
                 "filename": sidecar.get("filename"),
                 "passenger_name": passenger_name,
+                "payment_status": r[9] or "Pending",
             })
         return trips
 

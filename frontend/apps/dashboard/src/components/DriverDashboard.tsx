@@ -982,10 +982,52 @@ const TAG_STYLE: Record<string, string> = {
     private: 'bg-amber-50 text-amber-800 border-amber-300/80',
     uncategorized: 'bg-slate-50 text-slate-500 border-slate-200/80',
 };
-const tagStyle = (tag: string | null) => {
+const tagStyle = (tag: string | null | undefined) => {
     const key = (tag ?? '').toLowerCase() || 'uncategorized';
     for (const [k, v] of Object.entries(TAG_STYLE)) if (key.includes(k)) return v;
     return 'bg-slate-50 text-slate-500 border-slate-200/60';
+};
+
+const getPaymentStatusBadge = (status: string | undefined, clientName: string | null | undefined) => {
+    const s = (status || 'Pending').trim();
+    const client = (clientName || '').trim();
+    const isDeferredClient = client.toLowerCase() === 'jacquelyn heslep';
+
+    if (s === 'Paid') {
+        return (
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 border-emerald-200 text-emerald-700 font-mono">
+                Paid
+            </span>
+        );
+    }
+    if (s === 'Comped') {
+        if (isDeferredClient) {
+            return (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-teal-50 border-teal-200 text-teal-700 font-mono">
+                    Deferred
+                </span>
+            );
+        } else {
+            return (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 border-emerald-200 text-emerald-700 font-mono">
+                    Comped
+                </span>
+            );
+        }
+    }
+    if (s === 'Partial') {
+        return (
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-50 border-amber-200 text-amber-700 font-mono">
+                Partial
+            </span>
+        );
+    }
+    // Default or 'Pending'
+    return (
+        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-50 border-amber-200 text-amber-700 font-mono">
+            Pending
+        </span>
+    );
 };
 
 // ─── Tessie Drives Panel ─────────────────────────────────────────────────────
@@ -1499,9 +1541,23 @@ interface UberTrip {
     duration_min: number | null;
     distance_mi: number | null;
     filename: string | null;
+    trip_type?: string;
+    classification?: string;
+    passenger_name?: string;
+    payment_status?: string;
 }
 
-const UberTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count: number, earnings: number) => void }> = ({ selectedDate, onTripsLoaded }) => {
+const UberTripsPanel: React.FC<{
+    selectedDate: string;
+    onTripsLoaded?: (
+        count: number,
+        earnings: number,
+        uberCount: number,
+        uberEarnings: number,
+        privateCount: number,
+        privateEarnings: number
+    ) => void;
+}> = ({ selectedDate, onTripsLoaded }) => {
     const [trips, setTrips] = useState<UberTrip[]>([]);
     const [loading, setLoading] = useState(true);
     const [totalEarnings, setTotalEarnings] = useState(0);
@@ -1520,16 +1576,41 @@ const UberTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count: n
             setTrips(tripList);
             const earnings = tripList.reduce((s, t) => s + t.driver_earnings, 0);
             setTotalEarnings(earnings);
-            onTripsLoadedRef.current?.(tripList.length, earnings);
+
+            // Compute separate totals
+            const uList = tripList.filter(t => t.trip_type === 'Uber' || (t.classification && t.classification.toLowerCase().startsWith('uber')));
+            const pList = tripList.filter(t => t.trip_type === 'Private' || t.trip_id.startsWith('INV-'));
+            const uCount = uList.length;
+            const uEarnings = uList.reduce((s, t) => s + t.driver_earnings, 0);
+            const pCount = pList.length;
+            const pEarnings = pList.reduce((s, t) => s + t.driver_earnings, 0);
+
+            onTripsLoadedRef.current?.(tripList.length, earnings, uCount, uEarnings, pCount, pEarnings);
         } catch { 
             setTrips([]); 
-            onTripsLoadedRef.current?.(0, 0); 
+            onTripsLoadedRef.current?.(0, 0, 0, 0, 0, 0); 
         } finally { 
             setLoading(false); 
         }
     }, [selectedDate]);
 
     useEffect(() => { fetchTrips(); }, [fetchTrips]);
+
+    const privateTrips = useMemo(() => {
+        return trips.filter(trip => trip.trip_type === 'Private' || trip.trip_id.startsWith('INV-'));
+    }, [trips]);
+
+    const uberTrips = useMemo(() => {
+        return trips.filter(trip => trip.trip_type === 'Uber' || (trip.classification && trip.classification.toLowerCase().startsWith('uber')));
+    }, [trips]);
+
+    const privateTotal = useMemo(() => {
+        return privateTrips.reduce((s, t) => s + t.driver_earnings, 0);
+    }, [privateTrips]);
+
+    const uberTotal = useMemo(() => {
+        return uberTrips.reduce((s, t) => s + t.driver_earnings, 0);
+    }, [uberTrips]);
 
     const [loadingScreenshot, setLoadingScreenshot] = useState<string | null>(null);
     const [lightbox, setLightbox] = useState<{ imageUrl: string; webUrl: string; trip: UberTrip } | null>(null);
@@ -1559,7 +1640,7 @@ const UberTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count: n
             <div className="p-5 border-b border-violet-200/80 flex flex-wrap items-center gap-3 justify-between">
                 <div className="flex items-center gap-2">
                     <Receipt className="w-4 h-4 text-violet-600" />
-                    <h2 className="font-bold text-slate-800">Uber Trips</h2>
+                    <h2 className="font-bold text-slate-800">Trips Ledger</h2>
                     <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">{selectedDate}</span>
                     {trips.length > 0 && (
                         <span className="text-xs font-bold px-2.5 py-0.5 rounded-full border border-violet-200 bg-violet-100/80 text-violet-700 font-mono">
@@ -1594,68 +1675,158 @@ const UberTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count: n
                     </div>
                 )}
 
-                {!loading && trips.map((trip) => (
-                    <div key={trip.trip_id}
-                        onClick={() => trip.filename && openScreenshot(trip)}
-                        className={`p-4 flex flex-col md:flex-row md:items-center gap-3 transition-colors group
-                            ${trip.filename ? 'cursor-pointer hover:bg-violet-50/50' : 'hover:bg-violet-50/20'}`}>
-
-                        {/* Trip number badge */}
-                        <div className="shrink-0 flex flex-col items-center justify-center w-10 h-10 rounded-xl bg-violet-100 border border-violet-200 relative">
-                            <span className="text-[10px] font-mono text-violet-500 leading-none">Trip</span>
-                            <span className="text-sm font-black text-violet-700 leading-none">{trip.trip_number}</span>
-                            {trip.filename && (
-                                loadingScreenshot === trip.trip_id
-                                    ? <Loader2 className="absolute -top-1 -right-1 w-3 h-3 text-violet-500 animate-spin" />
-                                    : <ExternalLink className="absolute -top-1 -right-1 w-3 h-3 text-violet-400 opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-opacity" />
-                            )}
+                {!loading && trips.length > 0 && (
+                    <>
+                        {/* 1. Private Clients Section */}
+                        <div className="bg-slate-100/60 px-4 py-2 flex items-center justify-between border-b border-violet-100/50">
+                            <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Private Clients</span>
+                            <span className="text-xs font-mono font-bold text-slate-500">
+                                {privateTrips.length} {privateTrips.length === 1 ? 'trip' : 'trips'} · ${privateTotal.toFixed(2)}
+                            </span>
                         </div>
+                        {privateTrips.length === 0 ? (
+                            <p className="p-6 text-center text-xs text-slate-400 italic font-mono">// no private trips</p>
+                        ) : (
+                            privateTrips.map((trip) => (
+                                <div key={trip.trip_id}
+                                    onClick={() => trip.filename && openScreenshot(trip)}
+                                    className={`p-4 flex flex-col md:flex-row md:items-center gap-3 transition-colors group
+                                        ${trip.filename ? 'cursor-pointer hover:bg-violet-50/50' : 'hover:bg-violet-50/20'}`}>
 
-                        {/* Left: meta */}
-                        <div className="flex-1 space-y-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-200 bg-slate-100 text-slate-700 font-mono uppercase">
-                                    {trip.service_type}
-                                </span>
-                                <span className="text-[10px] text-slate-400 font-mono">{trip.time_display}</span>
-                                {trip.duration_min && (
-                                    <span className="text-[10px] text-slate-500 font-mono">{trip.duration_min.toFixed(0)} min</span>
-                                )}
-                                {trip.distance_mi && (
-                                    <span className="text-[10px] text-slate-500 font-mono">{trip.distance_mi.toFixed(2)} mi</span>
-                                )}
-                            </div>
-                            {(trip.pickup || trip.dropoff) && (
-                                <div className="flex items-start gap-1.5 text-[11px] text-slate-600">
-                                    <MapPin className="w-3 h-3 mt-0.5 text-slate-400 shrink-0" />
-                                    <span className="leading-snug truncate">{trip.pickup ?? '—'} → {trip.dropoff ?? '—'}</span>
+                                    {/* Trip number badge */}
+                                    <div className="shrink-0 flex flex-col items-center justify-center w-10 h-10 rounded-xl bg-violet-100 border border-violet-200 relative">
+                                        <span className="text-[10px] font-mono text-violet-500 leading-none">Trip</span>
+                                        <span className="text-sm font-black text-violet-700 leading-none">{trip.trip_number}</span>
+                                        {trip.filename && (
+                                            loadingScreenshot === trip.trip_id
+                                                ? <Loader2 className="absolute -top-1 -right-1 w-3 h-3 text-violet-500 animate-spin" />
+                                                : <ExternalLink className="absolute -top-1 -right-1 w-3 h-3 text-violet-400 opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-opacity" />
+                                        )}
+                                    </div>
+
+                                    {/* Left: meta */}
+                                    <div className="flex-1 space-y-1 min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border font-mono uppercase ${tagStyle(trip.passenger_name)}`}>
+                                                {trip.passenger_name || 'Private Client'}
+                                            </span>
+                                            {getPaymentStatusBadge(trip.payment_status, trip.passenger_name)}
+                                            <span className="text-[10px] text-slate-400 font-mono">{trip.time_display}</span>
+                                            {trip.duration_min && (
+                                                <span className="text-[10px] text-slate-500 font-mono">{trip.duration_min.toFixed(0)} min</span>
+                                            )}
+                                            {trip.distance_mi && (
+                                                <span className="text-[10px] text-slate-500 font-mono">{trip.distance_mi.toFixed(2)} mi</span>
+                                            )}
+                                        </div>
+                                        {(trip.pickup || trip.dropoff) && (
+                                            <div className="flex items-start gap-1.5 text-[11px] text-slate-600">
+                                                <MapPin className="w-3 h-3 mt-0.5 text-slate-400 shrink-0" />
+                                                <span className="leading-snug truncate">{trip.pickup ?? '—'} → {trip.dropoff ?? '—'}</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Right: earnings */}
+                                    <div className="flex gap-4 shrink-0 text-center">
+                                        <div>
+                                            <p className="text-[10px] text-slate-500 font-mono uppercase">Earned</p>
+                                            <p className="text-base font-black text-emerald-700 tabular-nums">${trip.driver_earnings.toFixed(2)}</p>
+                                        </div>
+                                        {trip.tip > 0 && (
+                                            <div>
+                                                <p className="text-[10px] text-slate-500 font-mono uppercase">Tip</p>
+                                                <p className="text-base font-black text-amber-600 tabular-nums">${trip.tip.toFixed(2)}</p>
+                                            </div>
+                                        )}
+                                        <div>
+                                            <p className="text-[10px] text-slate-500 font-mono uppercase">Fare</p>
+                                            <p className="text-sm font-bold text-slate-600 tabular-nums">${trip.rider_payment.toFixed(2)}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] text-slate-500 font-mono uppercase">Uber Cut</p>
+                                            <p className="text-sm font-bold text-rose-600 tabular-nums">$0.00</p>
+                                        </div>
+                                    </div>
                                 </div>
-                            )}
-                        </div>
+                            ))
+                        )}
 
-                        {/* Right: earnings */}
-                        <div className="flex gap-4 shrink-0 text-center">
-                            <div>
-                                <p className="text-[10px] text-slate-500 font-mono uppercase">Earned</p>
-                                <p className="text-base font-black text-emerald-700 tabular-nums">${trip.driver_earnings.toFixed(2)}</p>
-                            </div>
-                            {trip.tip > 0 && (
-                                <div>
-                                    <p className="text-[10px] text-slate-500 font-mono uppercase">Tip</p>
-                                    <p className="text-base font-black text-amber-600 tabular-nums">${trip.tip.toFixed(2)}</p>
-                                </div>
-                            )}
-                            <div>
-                                <p className="text-[10px] text-slate-500 font-mono uppercase">Rider</p>
-                                <p className="text-sm font-bold text-slate-600 tabular-nums">${trip.rider_payment.toFixed(2)}</p>
-                            </div>
-                            <div>
-                                <p className="text-[10px] text-slate-500 font-mono uppercase">Uber Cut</p>
-                                <p className="text-sm font-bold text-rose-600 tabular-nums">${trip.uber_cut.toFixed(2)}</p>
-                            </div>
+                        {/* 2. Uber Trips Section */}
+                        <div className="bg-slate-100/60 px-4 py-2 flex items-center justify-between border-y border-violet-100/50">
+                            <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Uber Trips</span>
+                            <span className="text-xs font-mono font-bold text-slate-500">
+                                {uberTrips.length} {uberTrips.length === 1 ? 'trip' : 'trips'} · ${uberTotal.toFixed(2)}
+                            </span>
                         </div>
-                    </div>
-                ))}
+                        {uberTrips.length === 0 ? (
+                            <p className="p-6 text-center text-xs text-slate-400 italic font-mono">// no Uber trips</p>
+                        ) : (
+                            uberTrips.map((trip) => (
+                                <div key={trip.trip_id}
+                                    onClick={() => trip.filename && openScreenshot(trip)}
+                                    className={`p-4 flex flex-col md:flex-row md:items-center gap-3 transition-colors group
+                                        ${trip.filename ? 'cursor-pointer hover:bg-violet-50/50' : 'hover:bg-violet-50/20'}`}>
+
+                                    {/* Trip number badge */}
+                                    <div className="shrink-0 flex flex-col items-center justify-center w-10 h-10 rounded-xl bg-violet-100 border border-violet-200 relative">
+                                        <span className="text-[10px] font-mono text-violet-500 leading-none">Trip</span>
+                                        <span className="text-sm font-black text-violet-700 leading-none">{trip.trip_number}</span>
+                                        {trip.filename && (
+                                            loadingScreenshot === trip.trip_id
+                                                ? <Loader2 className="absolute -top-1 -right-1 w-3 h-3 text-violet-500 animate-spin" />
+                                                : <ExternalLink className="absolute -top-1 -right-1 w-3 h-3 text-violet-400 opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-opacity" />
+                                        )}
+                                    </div>
+
+                                    {/* Left: meta */}
+                                    <div className="flex-1 space-y-1 min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-200 bg-slate-100 text-slate-700 font-mono uppercase">
+                                                {trip.service_type || 'UBERX'}
+                                            </span>
+                                            <span className="text-[10px] text-slate-400 font-mono">{trip.time_display}</span>
+                                            {trip.duration_min && (
+                                                <span className="text-[10px] text-slate-500 font-mono">{trip.duration_min.toFixed(0)} min</span>
+                                            )}
+                                            {trip.distance_mi && (
+                                                <span className="text-[10px] text-slate-500 font-mono">{trip.distance_mi.toFixed(2)} mi</span>
+                                            )}
+                                        </div>
+                                        {(trip.pickup || trip.dropoff) && (
+                                            <div className="flex items-start gap-1.5 text-[11px] text-slate-600">
+                                                <MapPin className="w-3 h-3 mt-0.5 text-slate-400 shrink-0" />
+                                                <span className="leading-snug truncate">{trip.pickup ?? '—'} → {trip.dropoff ?? '—'}</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Right: earnings */}
+                                    <div className="flex gap-4 shrink-0 text-center">
+                                        <div>
+                                            <p className="text-[10px] text-slate-500 font-mono uppercase">Earned</p>
+                                            <p className="text-base font-black text-emerald-700 tabular-nums">${trip.driver_earnings.toFixed(2)}</p>
+                                        </div>
+                                        {trip.tip > 0 && (
+                                            <div>
+                                                <p className="text-[10px] text-slate-500 font-mono uppercase">Tip</p>
+                                                <p className="text-base font-black text-amber-600 tabular-nums">${trip.tip.toFixed(2)}</p>
+                                            </div>
+                                        )}
+                                        <div>
+                                            <p className="text-[10px] text-slate-500 font-mono uppercase">Rider</p>
+                                            <p className="text-sm font-bold text-slate-600 tabular-nums">${trip.rider_payment.toFixed(2)}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] text-slate-500 font-mono uppercase">Uber Cut</p>
+                                            <p className="text-sm font-bold text-rose-600 tabular-nums">${trip.uber_cut.toFixed(2)}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </>
+                )}
             </div>
 
             {/* Screenshot Lightbox */}
@@ -2844,7 +3015,14 @@ const DriverDashboard = () => {
             return { fastfood: [], charging: [], capital_maintenance: [] };
         }
     });
-    const [uberStats, setUberStats] = useState({ count: 0, earnings: 0 });
+    const [uberStats, setUberStats] = useState({
+        count: 0,
+        earnings: 0,
+        uberCount: 0,
+        uberEarnings: 0,
+        privateCount: 0,
+        privateEarnings: 0
+    });
     const [sessionStart, setSessionStart] = useState<Date>(() => {
         if (typeof window === 'undefined') return new Date();
         const saved = localStorage.getItem('cos_session_start');
@@ -3045,9 +3223,10 @@ const DriverDashboard = () => {
     }, [selectedDate, fetchFromCloud]);
 
     const stats = useMemo(() => {
-        const privateTotal = privatePayments
+        const manualPrivateTotal = privatePayments
             .filter(p => p.date === selectedDate)
             .reduce((s, p) => s + (p.amount || 0), 0);
+        const privateTotal = manualPrivateTotal + (uberStats.privateEarnings || 0);
         const foodTotal = expenses.fastfood
             .filter(e => e.timestamp.startsWith(selectedDate))
             .reduce((s, e) => s + (e.amount || 0), 0);
@@ -3058,7 +3237,7 @@ const DriverDashboard = () => {
             .filter(e => e.timestamp.startsWith(selectedDate))
             .reduce((s, e) => s + (e.amount || 0), 0);
         const totalExpenses = foodTotal + chargingTotal;
-        const totalIncome = uberStats.earnings + privateTotal;
+        const totalIncome = (uberStats.uberEarnings || 0) + privateTotal;
         const profit = totalIncome - totalExpenses;
         const isToday = selectedDate === getTodayMST();
         
@@ -3072,8 +3251,8 @@ const DriverDashboard = () => {
                 
         const hourlyRate = activeHours > 0.5 ? profit / activeHours : 0;
         return { 
-            uberEarnings: uberStats.earnings, 
-            uberCount: uberStats.count, 
+            uberEarnings: uberStats.uberEarnings || 0, 
+            uberCount: uberStats.uberCount || 0, 
             privateTotal, food: foodTotal, 
             charging: chargingTotal, 
             capitalMaintenanceTotal,
@@ -3366,7 +3545,9 @@ const DriverDashboard = () => {
                 {/* ── Uber Trips Panel — OCR numbered trip cards (source of truth) ── */}
                 <UberTripsPanel
                     selectedDate={selectedDate}
-                    onTripsLoaded={(count, earnings) => setUberStats({ count, earnings })}
+                    onTripsLoaded={(count, earnings, uberCount, uberEarnings, privateCount, privateEarnings) =>
+                        setUberStats({ count, earnings, uberCount, uberEarnings, privateCount, privateEarnings })
+                    }
                 />
 
                 {/* ── Tessie Drives Panel (full width) ── */}
