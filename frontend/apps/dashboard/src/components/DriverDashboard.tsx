@@ -988,20 +988,45 @@ const tagStyle = (tag: string | null | undefined) => {
     return 'bg-slate-50 text-slate-500 border-slate-200/60';
 };
 
-const getPaymentStatusBadge = (status: string | undefined, clientName: string | null | undefined) => {
+const getPaymentStatusBadge = (
+    status: string | undefined,
+    clientName: string | null | undefined,
+    paidAt?: string | null,
+    tripTimestamp?: string | null
+) => {
     const s = (status || 'Pending').trim();
     const client = (clientName || '').trim();
-    const isDeferredClient = client.toLowerCase() === 'jacquelyn heslep';
+    const isJackie = client.toLowerCase() === 'jacquelyn heslep';
+
+    // Build a "settled on <date>" label if PaidAt differs from trip date
+    const settlementLabel = (() => {
+        if (!paidAt) return null;
+        const paidDate = paidAt.slice(0, 10); // YYYY-MM-DD
+        const tripDate = (tripTimestamp || '').slice(0, 10);
+        if (paidDate && paidDate !== tripDate) {
+            const d = new Date(paidDate + 'T12:00:00');
+            const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            return `settled ${label}`;
+        }
+        return null;
+    })();
 
     if (s === 'Paid') {
         return (
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 border-emerald-200 text-emerald-700 font-mono">
-                Paid
+                {settlementLabel ? `Paid (${settlementLabel})` : 'Paid'}
+            </span>
+        );
+    }
+    if (s === 'Deferred') {
+        return (
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-50 border-amber-200 text-amber-700 font-mono">
+                Deferred (overnight)
             </span>
         );
     }
     if (s === 'Comped') {
-        if (isDeferredClient) {
+        if (isJackie) {
             return (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-teal-50 border-teal-200 text-teal-700 font-mono">
                     Deferred
@@ -1022,7 +1047,7 @@ const getPaymentStatusBadge = (status: string | undefined, clientName: string | 
             </span>
         );
     }
-    // Default or 'Pending'
+    // Default: Pending
     return (
         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-50 border-amber-200 text-amber-700 font-mono">
             Pending
@@ -1545,6 +1570,8 @@ interface UberTrip {
     classification?: string;
     passenger_name?: string;
     payment_status?: string;
+    paid_at?: string | null;       // ISO timestamp of when payment was actually received (may differ from trip date)
+    payment_method?: string | null; // Cash | Card | Venmo | Zelle | Comped | etc.
 }
 
 const UberTripsPanel: React.FC<{
@@ -1710,7 +1737,7 @@ const UberTripsPanel: React.FC<{
                                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border font-mono uppercase ${tagStyle(trip.passenger_name)}`}>
                                                 {trip.passenger_name || 'Private Client'}
                                             </span>
-                                            {getPaymentStatusBadge(trip.payment_status, trip.passenger_name)}
+                                            {getPaymentStatusBadge(trip.payment_status, trip.passenger_name, trip.paid_at, trip.timestamp)}
                                             <span className="text-[10px] text-slate-400 font-mono">{trip.time_display}</span>
                                             {trip.duration_min && (
                                                 <span className="text-[10px] text-slate-500 font-mono">{trip.duration_min.toFixed(0)} min</span>
