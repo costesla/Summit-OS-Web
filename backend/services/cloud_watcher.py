@@ -269,7 +269,7 @@ class CloudWatcherService:
                             
                     classification = "Private_Trip"
                     if passenger_name and any(k in passenger_name.lower() for k in ["jacquelyn", "jackie"]):
-                        classification = "Jackie"
+                        classification = "Jacquelyn Heslep"
                     elif passenger_name and any(k in passenger_name.lower() for k in ["nancy", "hernandez"]):
                         classification = "Private_Trip"
                         
@@ -774,7 +774,7 @@ class CloudWatcherService:
     # PUBLIC: Fetch saved TRIP- records from SQL for a given date
     # ─────────────────────────────────────────────────────────────────────────
     def get_trips_for_date(self, date_str: str) -> list:
-        """Fetches saved TRIP-{YYYYMMDD}-* records from SQL (both Uber and Private)."""
+        """Fetches saved TRIP-{YYYYMMDD}-* and INV-* records from SQL (both Uber and Private)."""
         date_compact = date_str.replace("-", "")
         conn = self.db.get_connection()
         cursor = conn.cursor()
@@ -782,9 +782,11 @@ class CloudWatcherService:
             SELECT RideID, Timestamp_Start, Fare, Driver_Earnings, Tip, Platform_Cut,
                    Sidecar_Artifact_JSON, TripType, Classification
             FROM Rides.Rides
-            WHERE RideID LIKE ?
+            WHERE ((RideID LIKE 'TRIP-%' AND RideID LIKE ?) OR (RideID LIKE 'INV-%' AND CAST(Timestamp_Start AS DATE) = ?))
+              AND DeletedAt IS NULL
+              AND (IsTest = 0 OR IsTest IS NULL)
             ORDER BY Timestamp_Start ASC, RideID ASC
-        """, (f"TRIP-{date_compact}-%",))
+        """, (f"TRIP-{date_compact}-%", date_str))
         rows = cursor.fetchall()
         trips = []
         for r in rows:
@@ -804,6 +806,18 @@ class CloudWatcherService:
             # For private trips, uber_cut is meaningless (we keep full fare)
             uber_cut = float(r[5] or 0) if trip_type == "Uber" else 0.0
 
+            # Private trips keep the full fare, so driver_earnings falls back to Fare if NULL or 0.0
+            is_private = (trip_type == "Private" or r[0].startswith("INV-"))
+            driver_earnings = float(r[3] if (r[3] is not None and float(r[3]) != 0.0) else (r[2] or 0)) if is_private else float(r[3] or 0)
+
+            # Resolve passenger name with fallbacks for private bookings
+            passenger_name = (
+                sidecar.get("card_data", {}).get("passenger_name")
+                or sidecar.get("passenger_name")
+                or sidecar.get("customerName")
+                or sidecar.get("name")
+            )
+
             trips.append({
                 "trip_id": r[0],
                 "trip_number": trip_num,
@@ -812,7 +826,7 @@ class CloudWatcherService:
                 "timestamp": ts_iso,
                 "time_display": time_display,
                 "service_type": sidecar.get("service_type", "Private" if trip_type == "Private" else "UberX"),
-                "driver_earnings": float(r[3] or 0),
+                "driver_earnings": driver_earnings,
                 "rider_payment": float(r[2] or 0),
                 "tip": float(r[4] or 0),
                 "uber_cut": uber_cut,
@@ -821,7 +835,7 @@ class CloudWatcherService:
                 "duration_min": sidecar.get("duration_min"),
                 "distance_mi": sidecar.get("distance_mi"),
                 "filename": sidecar.get("filename"),
-                "passenger_name": sidecar.get("card_data", {}).get("passenger_name") or sidecar.get("passenger_name"),
+                "passenger_name": passenger_name,
             })
         return trips
 
@@ -1306,10 +1320,11 @@ class CloudWatcherService:
             # 1. Fetch all private bookings for this day: INV- records (from invoicing system)
             #    and TRIP- records with TripType='Private' (from booking confirmation email screenshots)
             cursor.execute("""
-                SELECT RideID, Timestamp_Start, Classification, Tessie_DriveID, Fare, Sidecar_Artifact_JSON
+                SELECT RideID, Timestamp_Start, Classification, Tessie_DriveID, Fare, Sidecar_Artifact_JSON, IsTest
                 FROM Rides.Rides
                 WHERE CAST(Timestamp_Start AS DATE) = ?
                   AND (RideID LIKE 'INV-%' OR (RideID LIKE 'TRIP-%' AND TripType = 'Private'))
+                  AND DeletedAt IS NULL
             """, (date_str,))
             bookings = []
             for row in cursor.fetchall():
@@ -1338,7 +1353,8 @@ class CloudWatcherService:
                     "Tessie_DriveID": row[3],
                     "Fare": float(row[4] or 0),
                     "is_bundle": is_bundle,
-                    "return_start": sidecar.get("returnStart")
+                    "return_start": sidecar.get("returnStart"),
+                    "IsTest": bool(row[6]) if row[6] is not None else False
                 })
 
             if not bookings:
@@ -1350,7 +1366,8 @@ class CloudWatcherService:
             # 2. Fetch ALL Tessie drives on this day (unmatched and client-tagged)
             cursor.execute("""
                 SELECT RideID, Timestamp_Start, Classification, Distance_mi, Duration_min,
-                       Start_SOC, End_SOC, Energy_Used_kWh, Efficiency_Wh_mi, Pickup_Location, Dropoff_Location, TripType
+                       Start_SOC, End_SOC, Energy_Used_kWh, Efficiency_Wh_mi, Pickup_Location, Dropoff_Location, TripType,
+                       Sidecar_Artifact_JSON
                 FROM Rides.Rides
                 WHERE RideID LIKE 'TESSIE-%'
                   AND CAST(Timestamp_Start AS DATE) = ?
@@ -1370,7 +1387,8 @@ class CloudWatcherService:
                     "Efficiency_Wh_mi": row[8],
                     "Pickup_Location": row[9],
                     "Dropoff_Location": row[10],
-                    "TripType": row[11]
+                    "TripType": row[11],
+                    "Sidecar_Artifact_JSON": row[12]
                 })
                 
             if not all_tessie_drives:
@@ -1382,6 +1400,9 @@ class CloudWatcherService:
                 
             # 3. Process each booking
             for booking in bookings:
+                if booking.get("IsTest"):
+                    logs.append(f"PRIVATE-SYNC: Skipping test booking {booking['RideID']}")
+                    continue
                 b_id = booking["RideID"]
                 b_dt = booking["Timestamp_Start"]
                 is_bundle = booking["is_bundle"]
@@ -1399,15 +1420,19 @@ class CloudWatcherService:
                 try:
                     known_clients = self.db.get_known_client_names()
                 except Exception:
-                    known_clients = ["jackie", "esmeralda", "daniel", "ryan", "lauren", "terrance", "lorynne", "nancy", "adrienne"]
+                    known_clients = ["jackie", "esmeralda", "daniel", "ryan", "lauren", "terrance", "lorynne", "nancy", "adrienne", "david", "emerson"]
                 for client in known_clients:
                     if client in search_str:
                         client_name = client.capitalize()
                         break
 
-                
                 if client_name:
-                    tessie_class = client_name
+                    if client_name.lower() in ["jackie", "jacquelyn", "jacquelyn heslep"]:
+                        tessie_class = "Jacquelyn Heslep"
+                    elif client_name.lower() in ["david", "david berezov"]:
+                        tessie_class = "David Berezov"
+                    else:
+                        tessie_class = client_name
                 else:
                     tessie_class = "Private_Trip"
 
@@ -1476,12 +1501,58 @@ class CloudWatcherService:
                     best_drive = None
                     best_diff_seconds = 999999
                     
-                    for drive in unmatched_drives:
-                        t_dt = drive["Timestamp_Start"]
-                        diff = abs((b_dt - t_dt).total_seconds())
-                        if diff < best_diff_seconds:
-                            best_diff_seconds = diff
-                            best_drive = drive
+                    def get_tag(drive) -> str:
+                        try:
+                            sc_str = drive.get("Sidecar_Artifact_JSON")
+                            if sc_str:
+                                sc = json.loads(sc_str)
+                                if "Sidecar_Artifact_JSON" in sc:
+                                    nested = json.loads(sc["Sidecar_Artifact_JSON"])
+                                    return (nested.get("tag") or "").lower()
+                                return (sc.get("tag") or "").lower()
+                        except:
+                            pass
+                        return ""
+
+                    # 1. Try to find drives that explicitly match the client name first (and are not pickup legs)
+                    client_drives = []
+                    if client_name:
+                        client_drives = [
+                            d for d in unmatched_drives
+                            if (
+                                client_name.lower() in (d["Classification"] or "").lower()
+                                or client_name.lower() in get_tag(d)
+                            )
+                            and not any(w in (d["Classification"] or "").lower() or w in get_tag(d) for w in ["pickup", "en route", "charging", "charge"])
+                        ]
+                        
+                    if client_drives:
+                        logs.append(f"PRIVATE-SYNC: Found {len(client_drives)} client-tagged candidate(s) for client '{client_name}'")
+                        for drive in client_drives:
+                            t_dt = drive["Timestamp_Start"]
+                            # Require date alignment (local MT date must match)
+                            if t_dt.date() != b_dt.date():
+                                continue
+                            diff = abs((b_dt - t_dt).total_seconds())
+                            if diff < best_diff_seconds:
+                                best_diff_seconds = diff
+                                best_drive = drive
+                    else:
+                        # 2. Fall back to normal proximity matching, but skip pickup legs, charging, and short staging runs (< 1.0 mi)
+                        for drive in unmatched_drives:
+                            drive_class = (drive.get("Classification") or "").lower()
+                            drive_tag = get_tag(drive)
+                            drive_dist = float(drive.get("Distance_mi") or 0)
+                            if "pickup" in drive_class or "pickup" in drive_tag or "en route" in drive_class or "en route" in drive_tag or "charging" in drive_class or "charging" in drive_tag or "charge" in drive_class or "charge" in drive_tag or (drive_dist < 1.0 and booking.get("Fare", 0) > 0):
+                                continue
+                            t_dt = drive["Timestamp_Start"]
+                            # Require date alignment (local MT date must match)
+                            if t_dt.date() != b_dt.date():
+                                continue
+                            diff = abs((b_dt - t_dt).total_seconds())
+                            if diff < best_diff_seconds:
+                                best_diff_seconds = diff
+                                best_drive = drive
                             
                     # Proximity tolerance: 3 hours
                     if best_drive and best_diff_seconds <= 10800:

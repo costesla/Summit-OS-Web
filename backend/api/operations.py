@@ -5,7 +5,7 @@ import os
 import threading
 from datetime import datetime, timedelta
 from services.graph import GraphClient
-from services.auth_guard import cors_headers as _get_cors
+from services.auth_guard import cors_headers as _get_cors, require_function_key
 from services.tessie_sync import TessieSyncService
 from services.cloud_watcher import CloudWatcherService
 from services.job_tracker import JobTracker
@@ -318,9 +318,11 @@ def scrub_day(req: func.HttpRequest) -> func.HttpResponse:
     Deletes:
       - All TRIP-{YYYYMMDD}-* records (Uber + Private receipt extractions)
 
-    Resets (back to Untagged) any TESSIE drives on that date whose Classification
-    was set by the scan pipeline:
-      - Uber_Matched, Uber_Pickup, Private_Trip, Private_Pickup
+    Resets (back to Sidecar originals) any TESSIE drives on that date.
+    
+    Unlinks (sets Tessie_DriveID = NULL and clears telemetry) any bookings on that date 
+    whose drive exists in the database. Otherwise, flags the booking's ValidationStatus 
+    as 'OrphanTelemetry' and preserves its telemetry.
 
     Preserves:
       - INV-* booking records (real customer bookings)
@@ -328,6 +330,12 @@ def scrub_day(req: func.HttpRequest) -> func.HttpResponse:
     """
     if req.method == "OPTIONS":
         return func.HttpResponse(status_code=204, headers=_cors(req))
+        
+    # require server-side admin auth
+    auth_guard_result = require_function_key(req)
+    if auth_guard_result is not None:
+        return auth_guard_result
+        
     try:
         data = req.get_json() if req.get_body() else {}
         date_str = data.get("date")
@@ -352,8 +360,14 @@ def scrub_day(req: func.HttpRequest) -> func.HttpResponse:
         from services.database import DatabaseClient
         db = DatabaseClient()
         conn = db.get_connection()
+        conn.autocommit = False
         cursor = conn.cursor()
+        
         logs = []
+        drives_before = []
+        drives_after = []
+        bookings_before = []
+        bookings_after = []
 
         # 1. Delete all TRIP- records for this date
         cursor.execute(
@@ -363,35 +377,191 @@ def scrub_day(req: func.HttpRequest) -> func.HttpResponse:
         deleted_trips = cursor.rowcount
         logs.append(f"SCRUB: Deleted {deleted_trips} TRIP-{date_compact}-* records")
 
-        # 2. Reset pipeline-applied Tessie drive classifications back to Untagged.
-        #    Only touch classifications that the scan pipeline writes — never human tags.
-        pipeline_classifications = ('Uber_Matched', 'Uber_Pickup', 'Private_Trip', 'Private_Pickup')
-        placeholders = ",".join("?" for _ in pipeline_classifications)
-        cursor.execute(f"""
-            UPDATE Rides.Rides
-            SET TripType = NULL,
-                Classification = 'Untagged',
-                LastUpdated = GETUTCDATE()
+        # 2. Reset Tessie drive classifications to Sidecar originals directly (idempotent)
+        cursor.execute("""
+            SELECT RideID, Classification, TripType, Sidecar_Artifact_JSON
+            FROM Rides.Rides
             WHERE RideID LIKE 'TESSIE-%'
               AND CAST(Timestamp_Start AS DATE) = ?
-              AND Classification IN ({placeholders})
-        """, (date_only, *pipeline_classifications))
-        reset_drives = cursor.rowcount
-        logs.append(f"SCRUB: Reset {reset_drives} Tessie drive(s) to Untagged on {date_str}")
+        """, (date_only,))
+        tessie_drives = cursor.fetchall()
+        
+        for td in tessie_drives:
+            td_id, cur_class, cur_type, sc_str = td
+            drives_before.append({"id": td_id, "class": cur_class, "type": cur_type})
+            
+            orig_class = 'Untagged'
+            orig_type = None
+            if sc_str:
+                try:
+                    sc = json.loads(sc_str)
+                    # Support outer sidecar first
+                    if "Classification" in sc:
+                        orig_class = sc.get("Classification", "Untagged")
+                        orig_type = sc.get("TripType")
+                    else:
+                        # Fallback to nested sidecar tag checking
+                        nested = sc.get("Sidecar_Artifact_JSON")
+                        if isinstance(nested, str):
+                            nested = json.loads(nested)
+                        if nested and "tag" in nested:
+                            tag = nested.get("tag")
+                            if tag is not None:
+                                from services.tessie_sync import TessieSyncService
+                                orig_class = TessieSyncService()._classify_drive(tag)
+                                orig_type = 'Uber' if orig_class == 'Uber_Dropoff' else 'Private'
+                            else:
+                                orig_class = 'Untagged'
+                                orig_type = None
+                except Exception as e:
+                    logging.warning(f"Failed parsing sidecar for {td_id}: {e}")
+            
+            cursor.execute("""
+                UPDATE Rides.Rides
+                SET Classification = ?,
+                    TripType = ?,
+                    LastUpdated = GETUTCDATE()
+                WHERE RideID = ?
+            """, (orig_class, orig_type, td_id))
+            drives_after.append({"id": td_id, "class": orig_class, "type": orig_type})
+            
+        logs.append(f"SCRUB: Reverted {len(tessie_drives)} Tessie drive(s) to original tags from sidecar.")
 
+        # 3. Clear telemetry on INV- / TRIP-Private records only if re-match is possible, else flag
+        cursor.execute("""
+            SELECT RideID, Tessie_DriveID, Distance_mi, Duration_min, Start_SOC, End_SOC, Energy_Used_kWh, Efficiency_Wh_mi, ValidationStatus
+            FROM Rides.Rides
+            WHERE (RideID LIKE 'INV-%' OR (RideID LIKE 'TRIP-%' AND TripType = 'Private'))
+              AND CAST(Timestamp_Start AS DATE) = ?
+              AND DeletedAt IS NULL
+        """, (date_only,))
+        bookings = cursor.fetchall()
+        
+        for b in bookings:
+            b_id, t_id, b_dist, b_dur, b_soc_start, b_soc_end, b_energy, b_eff, b_status = b
+            bookings_before.append({
+                "id": b_id, "tessie_id": t_id, "dist": b_dist, "dur": b_dur,
+                "soc_start": b_soc_start, "soc_end": b_soc_end, "energy": b_energy,
+                "eff": b_eff, "status": b_status
+            })
+            
+            can_rematch = False
+            if t_id:
+                # Check if corresponding TESSIE- drive still exists in DB
+                cursor.execute("SELECT COUNT(*) FROM Rides.Rides WHERE RideID = ?", (t_id,))
+                can_rematch = cursor.fetchone()[0] > 0
+                
+            if can_rematch:
+                # Clear telemetry so matcher can repopulate it
+                cursor.execute("""
+                    UPDATE Rides.Rides
+                    SET Tessie_DriveID = NULL,
+                        Distance_mi = NULL,
+                        Duration_min = NULL,
+                        Start_SOC = NULL,
+                        End_SOC = NULL,
+                        Energy_Used_kWh = NULL,
+                        Efficiency_Wh_mi = NULL,
+                        ValidationStatus = NULL,
+                        LastUpdated = GETUTCDATE()
+                    WHERE RideID = ?
+                """, (b_id,))
+                bookings_after.append({
+                    "id": b_id, "tessie_id": None, "dist": None, "dur": None,
+                    "soc_start": None, "soc_end": None, "energy": None,
+                    "eff": None, "status": None
+                })
+            else:
+                # Flag as OrphanTelemetry, do not null telemetry
+                new_status = 'OrphanTelemetry' if t_id else b_status
+                cursor.execute("""
+                    UPDATE Rides.Rides
+                    SET ValidationStatus = ?,
+                        LastUpdated = GETUTCDATE()
+                    WHERE RideID = ?
+                """, (new_status, b_id))
+                bookings_after.append({
+                    "id": b_id, "tessie_id": t_id, "dist": b_dist, "dur": b_dur,
+                    "soc_start": b_soc_start, "soc_end": b_soc_end, "energy": b_energy,
+                    "eff": b_eff, "status": new_status
+                })
+        
+        logs.append(f"SCRUB: Unlinked/flagged {len(bookings)} private booking(s) on {date_str}.")
+
+        # 4. Ensure RepairLog exists and write audit-log row (idempotent)
+        repair_log_ddl = """
+        IF NOT EXISTS (
+            SELECT 1 FROM INFORMATION_SCHEMA.TABLES
+            WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'RepairLog'
+        )
+        CREATE TABLE dbo.RepairLog (
+            RepairID        NVARCHAR(50)   NOT NULL PRIMARY KEY,
+            TargetDate      NVARCHAR(10)   NOT NULL,
+            IssueType       NVARCHAR(80)   NOT NULL,
+            RowsAffected    INT            NOT NULL DEFAULT 0,
+            BeforeSnapshot  NVARCHAR(MAX),
+            AfterSnapshot   NVARCHAR(MAX),
+            AutoFixed       BIT            NOT NULL DEFAULT 1,
+            ManualRequired  BIT            NOT NULL DEFAULT 0,
+            Notes           NVARCHAR(MAX),
+            CreatedAt       DATETIME       NOT NULL DEFAULT GETUTCDATE(),
+            CreatedBy       NVARCHAR(50)   NOT NULL DEFAULT 'SummitOS-Scrub'
+        )
+        """
+        cursor.execute(repair_log_ddl)
+        
+        before_snapshot = {
+            "date": date_str,
+            "drives": drives_before,
+            "bookings": bookings_before,
+            "deleted_trips_count": deleted_trips
+        }
+        after_snapshot = {
+            "date": date_str,
+            "drives": drives_after,
+            "bookings": bookings_after,
+            "deleted_trips_count": deleted_trips
+        }
+        
+        rows_affected = deleted_trips + len(tessie_drives) + len(bookings)
+        repair_id = f"SCRUB-{date_compact}-{int(datetime.datetime.utcnow().timestamp())}"
+        
+        cursor.execute("""
+            INSERT INTO dbo.RepairLog
+            (RepairID, TargetDate, IssueType, RowsAffected, BeforeSnapshot, AfterSnapshot, AutoFixed, ManualRequired, Notes, CreatedBy)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            repair_id, 
+            date_str, 
+            'DayScrub', 
+            rows_affected, 
+            json.dumps(before_snapshot, default=str), 
+            json.dumps(after_snapshot, default=str), 
+            1, 
+            0, 
+            f"DayScrub successfully executed for {date_str}",
+            'SummitOS-Scrub'
+        ))
+        
         conn.commit()
         cursor.close()
         conn.close()
 
-        logs.append(f"SCRUB COMPLETE: {date_str} is clean. Upload Uber screenshots to OneDrive then hit Scan Day.")
-        logging.info(f"Scrub Day {date_str}: {deleted_trips} TRIP records deleted, {reset_drives} Tessie drives reset.")
+        logs.append(f"SCRUB COMPLETE: {date_str} is clean. Audit logged under RepairID: {repair_id}")
+        logging.info(f"Scrub Day {date_str}: {deleted_trips} TRIP records deleted, {len(tessie_drives)} Tessie drives reset, audit logged under {repair_id}.")
 
         return func.HttpResponse(
-            json.dumps({"success": True, "date": date_str, "deleted_trips": deleted_trips, "reset_drives": reset_drives, "logs": logs}),
+            json.dumps({"success": True, "date": date_str, "deleted_trips": deleted_trips, "reset_drives": len(tessie_drives), "logs": logs}),
             status_code=200, headers=_cors(req), mimetype="application/json"
         )
     except Exception as e:
         logging.error(f"Scrub Day Error: {e}")
+        try:
+            conn.rollback()
+            cursor.close()
+            conn.close()
+        except:
+            pass
         return func.HttpResponse(
             json.dumps({"success": False, "error": str(e)}),
             status_code=500, headers=_cors(req), mimetype="application/json"

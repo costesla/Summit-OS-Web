@@ -15,7 +15,7 @@ import UnpaidInvoicesPanel from './UnpaidInvoices';
 const AZURE_BASE = import.meta.env.VITE_PUBLIC_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://summitos-api.azurewebsites.net/api';
 const VERSION = "1.4.5";
 
-const TAG_FILTERS = ['Uber', 'Uber_Matched', 'Uber_Pickup', 'Jackie', 'Esmeralda', 'Daniel', 'Lauren', 'Ryan', 'Terrance', 'Lorynne', 'Staging', 'Private_Trip', 'Uncategorized', 'Charging Session'] as const;
+const TAG_FILTERS = ['Uber', 'Uber_Matched', 'Uber_Pickup', 'Jackie', 'Jacquelyn Heslep', 'David', 'Emerson', 'Esmeralda', 'Daniel', 'Lauren', 'Ryan', 'Terrance', 'Lorynne', 'Staging', 'Private_Trip', 'Uncategorized', 'Charging Session'] as const;
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface PrivatePayment {
@@ -969,6 +969,9 @@ const TAG_STYLE: Record<string, string> = {
     uber_pickup: 'bg-sky-50 text-sky-700 border-sky-200/80',
     uber: 'bg-slate-100 text-slate-700 border-slate-200/80',
     jackie: 'bg-purple-50 text-purple-700 border-purple-200/80',
+    'jacquelyn heslep': 'bg-purple-50 text-purple-700 border-purple-200/80',
+    david: 'bg-blue-50 text-blue-700 border-blue-200/80',
+    emerson: 'bg-indigo-50 text-indigo-700 border-indigo-200/80',
     esmeralda: 'bg-teal-50 text-teal-700 border-teal-200/80',
     daniel: 'bg-indigo-50 text-indigo-700 border-indigo-200/80',
     lauren: 'bg-rose-50 text-rose-700 border-rose-200/80',

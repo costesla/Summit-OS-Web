@@ -55,3 +55,12 @@ def autonomous_cloud_router(mytimer: func.TimerRequest) -> None:
         logging.info(f"Cloud Routing Results: {json.dumps(results)}")
     except Exception as e:
         logging.error(f"Cloud Routing Failed: {str(e)}")
+
+    try:
+        from services.tessie_sync import TessieSyncService
+        watcher = TessieSyncService()
+        watch_results = watcher.watch_tessie_labels()
+        logging.info(f"Tessie Label Watcher Results: {json.dumps(watch_results)}")
+    except Exception as e:
+        logging.error(f"Tessie Label Watcher Failed: {str(e)}")
+

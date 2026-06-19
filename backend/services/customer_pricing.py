@@ -21,12 +21,11 @@ class CustomerPricingProfile:
             "notes": "Flat $20/trip - migrates to regular pricing March 1, 2026"
         },
         
-        # Jacquelyn - Flat $20/trip until March 1, 2026
+        # Jacquelyn - Comped / charity rate client (gifted by owner)
         "jacquelyn.heslep@playaba.net": {
-            "name": "Jacquelyn",
-            "pricing_tier": "legacy_flat_20",
-            "expires": "2026-03-01",
-            "notes": "Flat $20/trip - migrates to regular pricing March 1, 2026"
+            "name": "Jacquelyn Heslep",
+            "pricing_tier": "comped",
+            "notes": "Comped / charity rate client - standard $30/trip applies but gifted by owner, net owed is $0."
         },
     }
 
@@ -42,6 +41,10 @@ class CustomerPricingProfile:
     
     # Define pricing tiers
     PRICING_TIERS = {
+        "comped": {
+            "flat_rate": 0.00,
+            "description": "Comped / charity rate (gifted)"
+        },
         "current": {
             "base_fare": 30.00,
             "rate_per_mile": 0.0,
