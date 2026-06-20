@@ -988,7 +988,7 @@ const tagStyle = (tag: string | null | undefined) => {
     return 'bg-slate-50 text-slate-500 border-slate-200/60';
 };
 
-const getPaymentStatusBadge = (status: string | undefined, clientName: string | null | undefined) => {
+const getPaymentStatusBadge = (status: string | undefined) => {
     const s = (status || 'Pending').trim();
 
     // Real DB statuses (set by JackieBillingEngine and Terrance deferred logic)
@@ -1715,7 +1715,7 @@ const UberTripsPanel: React.FC<{
                                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border font-mono uppercase ${tagStyle(trip.passenger_name)}`}>
                                                 {trip.passenger_name || 'Private Client'}
                                             </span>
-                                            {getPaymentStatusBadge(trip.payment_status, trip.passenger_name)}
+                                            {getPaymentStatusBadge(trip.payment_status)}
                                             <span className="text-[10px] text-slate-400 font-mono">{trip.time_display}</span>
                                             {trip.duration_min && (
                                                 <span className="text-[10px] text-slate-500 font-mono">{trip.duration_min.toFixed(0)} min</span>
