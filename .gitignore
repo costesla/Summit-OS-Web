@@ -124,3 +124,8 @@ swa-cli.config.json
 # DEBUG / DIAGNOSTIC SCRIPTS (project root)
 # ========================
 backend/diag_bookings.py
+
+# Google OAuth credentials (never commit)
+credentials/client_secret*.json
+token.json
+token.pickle
