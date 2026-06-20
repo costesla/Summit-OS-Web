@@ -990,9 +990,22 @@ const tagStyle = (tag: string | null | undefined) => {
 
 const getPaymentStatusBadge = (status: string | undefined, clientName: string | null | undefined) => {
     const s = (status || 'Pending').trim();
-    const client = (clientName || '').trim();
-    const isDeferredClient = client.toLowerCase() === 'jacquelyn heslep';
 
+    // Real DB statuses (set by JackieBillingEngine and Terrance deferred logic)
+    if (s === 'Deferred') {
+        return (
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-50 border-amber-300 text-amber-700 font-mono">
+                Deferred
+            </span>
+        );
+    }
+    if (s === 'Credit') {
+        return (
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-100 border-slate-200 text-slate-500 font-mono">
+                Credit
+            </span>
+        );
+    }
     if (s === 'Paid') {
         return (
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 border-emerald-200 text-emerald-700 font-mono">
@@ -1001,19 +1014,11 @@ const getPaymentStatusBadge = (status: string | undefined, clientName: string | 
         );
     }
     if (s === 'Comped') {
-        if (isDeferredClient) {
-            return (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-teal-50 border-teal-200 text-teal-700 font-mono">
-                    Deferred
-                </span>
-            );
-        } else {
-            return (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 border-emerald-200 text-emerald-700 font-mono">
-                    Comped
-                </span>
-            );
-        }
+        return (
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 border-emerald-200 text-emerald-700 font-mono">
+                Comped
+            </span>
+        );
     }
     if (s === 'Partial') {
         return (
@@ -1022,9 +1027,9 @@ const getPaymentStatusBadge = (status: string | undefined, clientName: string | 
             </span>
         );
     }
-    // Default or 'Pending'
+    // Default — Pending
     return (
-        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-50 border-amber-200 text-amber-700 font-mono">
+        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-dashed bg-white border-amber-300 text-amber-600 font-mono">
             Pending
         </span>
     );
