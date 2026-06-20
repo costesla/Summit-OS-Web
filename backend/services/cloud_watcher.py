@@ -1309,7 +1309,14 @@ class CloudWatcherService:
         record. Each drive gets the client tag (e.g. 'Jackie') and a 'bundle' flag in sidecar.
 
         Standard logic: 1-to-1 proximity match within 3 hours.
+
+        Jackie Heslep special billing:
+        - AA-tagged drives    => $0 Credit, outside leg cap
+        - Non-AA round trip  => $60 Deferred, consumes both daily leg slots
+        - Non-AA one-way     => $30 Deferred, consumes 1 leg slot
+        - Legs 3+/day        => $0 Credit
         """
+        from services.customer_pricing import JackieBillingEngine
         logs.append(f"PRIVATE-SYNC: Starting Private Booking sync for {date_str}")
         
         try:
@@ -1363,6 +1370,10 @@ class CloudWatcherService:
                 return
 
             logs.append(f"PRIVATE-SYNC: Found {len(bookings)} private booking(s) to process (INV- and TRIP-Private).")
+
+            # Jackie daily leg counter — reset per rebuild day
+            jackie_legs_billed_today = 0
+
             
             # 2. Fetch ALL Tessie drives on this day (unmatched and client-tagged)
             cursor.execute("""
@@ -1588,7 +1599,42 @@ class CloudWatcherService:
                             b_id
                         ))
                         
-                        # Update the Tessie drive classification
+                        # ── Jackie Heslep billing enforcement ──────────────────────────────
+                        # For any Jackie booking, apply leg-based deferred billing rules
+                        # AFTER the match is confirmed so we have the Tessie drive's label.
+                        if b_id.startswith("INV-JACKIE") or (booking.get("Classification") or "").lower() in ["jacquelyn heslep", "jacquelyn_heslep"]:
+                            tessie_label = best_drive.get("Tessie_Label") or ""
+                            tessie_cls   = best_drive.get("Classification") or ""
+                            pickup_addr  = best_drive.get("Pickup_Location") or ""
+                            dropoff_addr = best_drive.get("Dropoff_Location") or ""
+
+                            billing = JackieBillingEngine.classify_invoice(
+                                tessie_label=tessie_label,
+                                classification=tessie_cls,
+                                address_pickup=pickup_addr,
+                                address_dropoff=dropoff_addr,
+                                legs_already_billed_today=jackie_legs_billed_today,
+                            )
+                            new_fare   = billing["fare"]
+                            new_status = billing["status"]
+                            legs_used  = billing["legs_consumed"]
+                            reason     = billing["reason"]
+
+                            cursor.execute("""
+                                UPDATE Rides.Rides
+                                SET Fare = ?,
+                                    Driver_Earnings = ?,
+                                    PaymentStatus = ?,
+                                    LastUpdated = GETUTCDATE()
+                                WHERE RideID = ?
+                            """, (new_fare, new_fare, new_status, b_id))
+                            jackie_legs_billed_today += legs_used
+                            logs.append(
+                                f"JACKIE-BILLING: {b_id} → ${new_fare:.2f} {new_status} "
+                                f"(reason={reason}, legs_today={jackie_legs_billed_today})"
+                            )
+                        
+
                         cursor.execute("""
                             UPDATE Rides.Rides
                             SET TripType = 'Private',
