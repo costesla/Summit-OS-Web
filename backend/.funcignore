@@ -11,8 +11,14 @@ local.settings.json
 .env.sharepoint
 .env.test
 .env.receipt-engine.template
+config/.env
+finance_mcp/.env
 *-settings.json
 *_settings.json
+credentials/
+*.pem
+*.key
+*.p12
 
 # === SOURCE CONTROL ===
 .git*
@@ -43,7 +49,8 @@ scratch/
 *.bak
 deploy*.ps1
 deploy*.zip
-backend_deploy.zip
+backend_deploy*.zip
+*_deploy.zip
 backend_fix.zip
 
 # === LOGS & TEMP ===
