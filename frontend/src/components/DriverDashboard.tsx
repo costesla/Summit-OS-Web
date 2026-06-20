@@ -429,7 +429,31 @@ const tagStyle = (tag: string | null) => {
     return 'bg-slate-50 text-slate-500 border-slate-200/60';
 };
 
+// ─── Payment Status Badge ─────────────────────────────────────────────────────
+const getPaymentStatusBadge = (status: string | undefined | null) => {
+    const s = (status || 'Pending').trim();
+    if (s === 'Deferred') return (
+        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-50 border-amber-300 text-amber-700 font-mono">Deferred</span>
+    );
+    if (s === 'Credit') return (
+        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-100 border-slate-200 text-slate-500 font-mono">Credit</span>
+    );
+    if (s === 'Paid') return (
+        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 border-emerald-200 text-emerald-700 font-mono">Paid</span>
+    );
+    if (s === 'Comped') return (
+        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 border-emerald-200 text-emerald-700 font-mono">Comped</span>
+    );
+    if (s === 'Partial') return (
+        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-50 border-amber-200 text-amber-700 font-mono">Partial</span>
+    );
+    return (
+        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-dashed bg-white border-amber-300 text-amber-600 font-mono">Pending</span>
+    );
+};
+
 // ─── Tessie Drives Panel ─────────────────────────────────────────────────────
+
 const TessieDrivesPanel = ({
     onImport,
     selectedDate,
@@ -918,6 +942,7 @@ interface UberTrip {
     duration_min: number | null;
     distance_mi: number | null;
     filename: string | null;
+    payment_status?: string | null;  // 'Paid' | 'Deferred' | 'Credit' | 'Comped' | 'Partial' | 'Pending'
 }
 
 const UberTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count: number, earnings: number) => void }> = ({ selectedDate, onTripsLoaded }) => {
@@ -1207,11 +1232,14 @@ const PrivateTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count
                             )}
                         </div>
 
-                        <div className="flex gap-4 shrink-0 text-center">
+                        <div className="flex gap-3 shrink-0 text-center items-center">
                             <div>
                                 <p className="text-[10px] text-slate-500 font-mono uppercase">Total</p>
-                                <p className="text-base font-black text-amber-700 tabular-nums">${trip.driver_earnings.toFixed(2)}</p>
+                                <p className={`text-base font-black tabular-nums ${
+                                    trip.payment_status === 'Credit' ? 'text-slate-400 line-through' : 'text-amber-700'
+                                }`}>${trip.driver_earnings.toFixed(2)}</p>
                             </div>
+                            {getPaymentStatusBadge(trip.payment_status)}
                             {trip.tip > 0 && (
                                 <div>
                                     <p className="text-[10px] text-slate-500 font-mono uppercase">Tip</p>
