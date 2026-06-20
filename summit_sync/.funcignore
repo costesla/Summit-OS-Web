@@ -1,14 +1,68 @@
-# .funcignore - files to exclude from deployment
-.git*
-.vscode
+# .funcignore - Files excluded from Azure Function deployment zip
+# SECURITY: Ensures secrets and dev-only files never ship to Azure
+# Canonical version — keep this in sync with backend/.funcignore
+
+# === SECRETS (NEVER DEPLOY) ===
 local.settings.json
-test_*.py
-__pycache__
-*.pyc
 .env
-.python_version
+.env.*
+*.env.local
+*.env.production
+*.env.development
+.env.sharepoint
+.env.test
+config/.env
+finance_mcp/.env
+*-settings.json
+*_settings.json
+credentials/
+*.pem
+*.key
+*.p12
+
+# === SOURCE CONTROL ===
+.git*
+.github/
+
+# === DEVELOPMENT TOOLS ===
+.vscode/
+.venv/
+venv32/
+venv/
+.python_packages/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# === TEST & DIAGNOSTIC FILES ===
+test_*.py
+*_test.py
+tests/
+diagnostic_*.py
+verify_*.py
+check_*.py
+scratch/
+
+# === DEPLOYMENT ARTIFACTS ===
+*.zip
+*.bak
 deploy*.ps1
 deploy*.zip
-*_backup.py
-*_simple.py
+backend_deploy*.zip
+*_deploy.zip
+
+# === LOGS & TEMP ===
+*.log
+*.ndjson
+Audit_Log.ndjson
+run_log*.txt
+debug_*.txt
+
+# === DOCS ===
+*.md
+README*
+
+# === SCRIPTS (run locally only) ===
 scripts/
