@@ -1328,7 +1328,8 @@ class CloudWatcherService:
             # 1. Fetch all private bookings for this day: INV- records (from invoicing system)
             #    and TRIP- records with TripType='Private' (from booking confirmation email screenshots)
             cursor.execute("""
-                SELECT RideID, Timestamp_Start, Classification, Tessie_DriveID, Fare, Sidecar_Artifact_JSON, IsTest
+                SELECT RideID, Timestamp_Start, Classification, Tessie_DriveID, Fare,
+                       Sidecar_Artifact_JSON, IsTest, Pickup_Location, Dropoff_Location
                 FROM Rides.Rides
                 WHERE CAST(Timestamp_Start AS DATE) = ?
                   AND (RideID LIKE 'INV-%' OR (RideID LIKE 'TRIP-%' AND TripType = 'Private'))
@@ -1362,7 +1363,9 @@ class CloudWatcherService:
                     "Fare": float(row[4] or 0),
                     "is_bundle": is_bundle,
                     "return_start": sidecar.get("returnStart"),
-                    "IsTest": bool(row[6]) if row[6] is not None else False
+                    "IsTest": bool(row[6]) if row[6] is not None else False,
+                    "Pickup_Location": row[7] or "",
+                    "Dropoff_Location": row[8] or "",
                 })
 
             if not bookings:
@@ -1605,8 +1608,13 @@ class CloudWatcherService:
                         if b_id.startswith("INV-JACKIE") or (booking.get("Classification") or "").lower() in ["jacquelyn heslep", "jacquelyn_heslep"]:
                             tessie_label = best_drive.get("Tessie_Label") or ""
                             tessie_cls   = best_drive.get("Classification") or ""
-                            pickup_addr  = best_drive.get("Pickup_Location") or ""
-                            dropoff_addr = best_drive.get("Dropoff_Location") or ""
+                            # Use the BOOKING's own pickup/dropoff for round-trip detection.
+                            # The matched Tessie drive covers only one leg of a multi-stop
+                            # journey, so its addresses would falsely classify a round trip
+                            # as one-way. The INV- record's Pickup/Dropoff represent the
+                            # full trip origin and final destination.
+                            pickup_addr  = booking.get("Pickup_Location") or best_drive.get("Pickup_Location") or ""
+                            dropoff_addr = booking.get("Dropoff_Location") or best_drive.get("Dropoff_Location") or ""
 
                             billing = JackieBillingEngine.classify_invoice(
                                 tessie_label=tessie_label,

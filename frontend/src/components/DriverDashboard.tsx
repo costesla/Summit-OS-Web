@@ -1108,7 +1108,7 @@ interface PrivateTrip extends UberTrip {
     classification?: string;
 }
 
-const PrivateTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count: number, earnings: number) => void }> = ({ selectedDate, onTripsLoaded }) => {
+const PrivateTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count: number, earnings: number, deferred: number) => void }> = ({ selectedDate, onTripsLoaded }) => {
     const [trips, setTrips] = useState<PrivateTrip[]>([]);
     const [loading, setLoading] = useState(true);
     const [totalEarnings, setTotalEarnings] = useState(0);
@@ -1147,12 +1147,21 @@ const PrivateTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count
                 (t) => t.trip_type === 'Private'
             );
             setTrips(tripList);
-            const earnings = tripList.reduce((s, t) => s + t.driver_earnings, 0);
-            setTotalEarnings(earnings);
-            onTripsLoadedRef.current?.(tripList.length, earnings);
+            // Split earnings: Collected = Paid or no status (treat as received)
+            //                 Deferred  = owed but not yet collected
+            //                 Credit    = $0, excluded from both
+            const collectedEarnings = tripList
+                .filter(t => !t.payment_status || t.payment_status === 'Paid' || t.payment_status === 'Comped')
+                .reduce((s, t) => s + t.driver_earnings, 0);
+            const deferredEarnings = tripList
+                .filter(t => t.payment_status === 'Deferred')
+                .reduce((s, t) => s + t.driver_earnings, 0);
+            const displayEarnings = collectedEarnings + deferredEarnings; // for panel header only
+            setTotalEarnings(displayEarnings);
+            onTripsLoadedRef.current?.(tripList.length, collectedEarnings, deferredEarnings);
         } catch {
             setTrips([]);
-            onTripsLoadedRef.current?.(0, 0);
+            onTripsLoadedRef.current?.(0, 0, 0);
         } finally {
             setLoading(false);
         }
@@ -2223,7 +2232,9 @@ const SummitCopilotConsole = () => {
 interface DashboardStats {
     uberEarnings: number;
     uberCount: number;
-    privateTotal: number;
+    privateTotal: number;      // collected manual private payments (localStorage)
+    privateCollected: number;  // collected INV- bookings (Paid/no-status) from DB
+    privateDeferred: number;   // owed but not yet collected
     food: number;
     charging: number;
     totalExpenses: number;
@@ -2652,7 +2663,7 @@ const DriverDashboard = () => {
             return { fastfood: [], charging: [], capital_maintenance: [] };
         }
     });
-    const [uberStats, setUberStats] = useState({ count: 0, earnings: 0 });
+    const [uberStats, setUberStats] = useState({ count: 0, earnings: 0, privateCollected: 0, privateDeferred: 0 });
     const [sessionStart, setSessionStart] = useState<Date>(() => {
         if (typeof window === 'undefined') return new Date();
         const saved = localStorage.getItem('cos_session_start');
@@ -2863,8 +2874,11 @@ const DriverDashboard = () => {
         const hourlyRate = activeHours > 0.5 ? profit / activeHours : 0;
         return { 
             uberEarnings: uberStats.earnings, 
-            uberCount: uberStats.count, 
-            privateTotal, food: foodTotal, 
+            uberCount: uberStats.count,
+            privateTotal,
+            privateCollected: uberStats.privateCollected || 0,
+            privateDeferred: uberStats.privateDeferred,
+            food: foodTotal, 
             charging: chargingTotal, 
             capitalMaintenanceTotal,
             totalExpenses, profit, hourlyRate, 
@@ -3023,12 +3037,17 @@ const DriverDashboard = () => {
                     )}
 
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-5">
-                        <StatCard label="Gross Earnings" value={`$${(stats.uberEarnings + stats.privateTotal || 0).toFixed(2)}`}
-                            sub={`Uber $${(stats.uberEarnings || 0).toFixed(2)} · Private $${(stats.privateTotal || 0).toFixed(2)}`}
-                            icon={<DollarSign className="text-purple-600 w-5 h-5" />} />
+                        <StatCard label="Collected" value={`$${((stats.uberEarnings || 0) + (stats.privateTotal || 0) + (stats.privateCollected || 0)).toFixed(2)}`}
+                            sub={`Uber $${(stats.uberEarnings || 0).toFixed(2)} · Private $${((stats.privateTotal || 0) + (stats.privateCollected || 0)).toFixed(2)}`}
+                            icon={<DollarSign className="text-emerald-600 w-5 h-5" />} highlight />
+                        {(stats.privateDeferred || 0) > 0 && (
+                            <StatCard label="Receivables" value={`$${(stats.privateDeferred || 0).toFixed(2)}`}
+                                sub="Deferred — owed, not yet collected"
+                                icon={<Receipt className="text-amber-600 w-5 h-5" />} />
+                        )}
                         <StatCard label="Uber Earnings" value={`$${(stats.uberEarnings || 0).toFixed(2)}`}
                             sub={`${stats.uberCount || 0} OCR trips`}
-                            icon={<Receipt className="text-blue-600 w-5 h-5" />} highlight />
+                            icon={<Receipt className="text-blue-600 w-5 h-5" />} />
                         <StatCard label="Private Income" value={`$${(stats.privateTotal || 0).toFixed(2)}`}
                             sub={
                                 <span>
@@ -3148,6 +3167,9 @@ const DriverDashboard = () => {
 
                     <PrivateTripsPanel
                         selectedDate={selectedDate}
+                        onTripsLoaded={(_count, collected, deferred) =>
+                            setUberStats(prev => ({ ...prev, privateCollected: collected, privateDeferred: deferred }))
+                        }
                     />
 
                     <TessieDrivesPanel 
