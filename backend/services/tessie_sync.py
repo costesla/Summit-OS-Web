@@ -10,7 +10,7 @@ from services.database import DatabaseClient
 from services.semantic_ingestion import SemanticIngestionService
 from services.telemetry_analysis import TelemetryAnalysisService
 
-from services.datetime_utils import get_timezone
+from services.datetime_utils import get_timezone, get_operational_window
 
 log = logging.getLogger(__name__)
 
@@ -33,11 +33,13 @@ class TessieSyncService:
         log.info(f"Starting Tessie Sync for {target_date}...")
         
         # 1. Fetch from Tessie
-        # Note: Tessie API uses 'since' and 'until' as Unix timestamps
-        # Shift the operational day from Midnight to 4:00 AM (rideshare standard)
-        dt_start = datetime.strptime(target_date, '%Y-%m-%d').replace(tzinfo=self.mdt) + timedelta(hours=4)
-        dt_end   = dt_start + timedelta(days=1)
-        
+        # Note: Tessie API uses 'since' and 'until' as Unix timestamps.
+        # The operational day runs from 04:00 MT on target_date to 04:00 MT the
+        # next calendar day (rideshare standard).  get_operational_window() is the
+        # single source of truth for this boundary — cloud_watcher.py uses the
+        # same helper so both subsystems are always in sync.
+        dt_start, dt_end = get_operational_window(target_date, tz=self.mdt)
+
         start_ts = int(dt_start.timestamp())
         end_ts   = int(dt_end.timestamp())
         

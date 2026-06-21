@@ -22,6 +22,7 @@ def _calendar_week_of_month(dt: datetime.datetime) -> int:
 from services.graph import GraphClient
 from services.uber_matcher import UberMatcherService
 from services.database import DatabaseClient
+from services.datetime_utils import get_operational_window
 
 log = logging.getLogger(__name__)
 
@@ -1315,26 +1316,50 @@ class CloudWatcherService:
         - Non-AA round trip  => $60 Deferred, consumes both daily leg slots
         - Non-AA one-way     => $30 Deferred, consumes 1 leg slot
         - Legs 3+/day        => $0 Credit
+
+        Date windowing: both the booking fetch and the Tessie drive fetch use the
+        4 AM operational-day boundary (get_operational_window) rather than a literal
+        calendar-date match.  A booking or Tessie drive whose Timestamp_Start falls
+        between 00:00 and 03:59 on the *following* calendar day is therefore
+        attributed to *date_str*'s operational day, consistent with the Tessie sync
+        ingest window in TessieSyncService.sync_day().
+
+        KNOWN LIMITATION: drives starting after 04:00 the next morning will still
+        be bucketed into the next operational day.  See get_operational_window() for
+        details.
         """
         from services.customer_pricing import JackieBillingEngine
         logs.append(f"PRIVATE-SYNC: Starting Private Booking sync for {date_str}")
-        
+
+        # Compute the 4 AM operational window as naive datetimes (matching the naive
+        # Timestamp_Start values stored in Rides.Rides).
+        op_window_start, op_window_end = get_operational_window(date_str)  # tz=None → naive
+
+        # Helper: is a given naive Timestamp_Start inside this operational day?
+        def in_operational_window(ts: datetime.datetime) -> bool:
+            return op_window_start <= ts < op_window_end
+
         try:
             # Dynamically get the Mountain Time timezone offset for this target date (handles Daylight Savings)
             dt_sample = datetime.datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=MDT)
             offset_hours = abs(int(dt_sample.utcoffset().total_seconds() / 3600))
             logs.append(f"PRIVATE-SYNC: Mountain Time offset for {date_str} is UTC-{offset_hours}")
+            logs.append(f"PRIVATE-SYNC: Operational window [{op_window_start.strftime('%Y-%m-%d %H:%M')} → {op_window_end.strftime('%Y-%m-%d %H:%M')}]")
             
-            # 1. Fetch all private bookings for this day: INV- records (from invoicing system)
-            #    and TRIP- records with TripType='Private' (from booking confirmation email screenshots)
+            # 1. Fetch all private bookings for this operational day: INV- records (from
+            #    invoicing system) and TRIP- records with TripType='Private' (from booking
+            #    confirmation email screenshots).
+            #    Using the 4 AM operational window instead of CAST(Timestamp_Start AS DATE)
+            #    ensures a booking at e.g. 00:15 the next calendar day (still within the
+            #    same shift) is captured here and counted against the correct Jackie cap.
             cursor.execute("""
                 SELECT RideID, Timestamp_Start, Classification, Tessie_DriveID, Fare,
                        Sidecar_Artifact_JSON, IsTest, Pickup_Location, Dropoff_Location
                 FROM Rides.Rides
-                WHERE CAST(Timestamp_Start AS DATE) = ?
+                WHERE Timestamp_Start >= ? AND Timestamp_Start < ?
                   AND (RideID LIKE 'INV-%' OR (RideID LIKE 'TRIP-%' AND TripType = 'Private'))
                   AND DeletedAt IS NULL
-            """, (date_str,))
+            """, (op_window_start, op_window_end))
             bookings = []
             for row in cursor.fetchall():
                 sidecar = {}
@@ -1378,15 +1403,17 @@ class CloudWatcherService:
             jackie_legs_billed_today = 0
 
             
-            # 2. Fetch ALL Tessie drives on this day (unmatched and client-tagged)
+            # 2. Fetch ALL Tessie drives within this operational day (unmatched and
+            #    client-tagged).  Same 4 AM window as the booking fetch so cross-midnight
+            #    Tessie drives are in the pool and can be matched to their bookings.
             cursor.execute("""
                 SELECT RideID, Timestamp_Start, Classification, Distance_mi, Duration_min,
                        Start_SOC, End_SOC, Energy_Used_kWh, Efficiency_Wh_mi, Pickup_Location, Dropoff_Location, TripType,
                        Sidecar_Artifact_JSON
                 FROM Rides.Rides
                 WHERE RideID LIKE 'TESSIE-%'
-                  AND CAST(Timestamp_Start AS DATE) = ?
-            """, (date_str,))
+                  AND Timestamp_Start >= ? AND Timestamp_Start < ?
+            """, (op_window_start, op_window_end))
             
             all_tessie_drives = []
             for row in cursor.fetchall():
@@ -1546,8 +1573,11 @@ class CloudWatcherService:
                         logs.append(f"PRIVATE-SYNC: Found {len(client_drives)} client-tagged candidate(s) for client '{client_name}'")
                         for drive in client_drives:
                             t_dt = drive["Timestamp_Start"]
-                            # Require date alignment (local MT date must match)
-                            if t_dt.date() != b_dt.date():
+                            # Require the drive to fall within this operational day's 4 AM
+                            # window.  The old calendar-date guard (t_dt.date() != b_dt.date())
+                            # would wrongly exclude cross-midnight drives (e.g. 00:15 on the
+                            # next calendar date that still belongs to this shift).
+                            if not in_operational_window(t_dt):
                                 continue
                             diff = abs((b_dt - t_dt).total_seconds())
                             if diff < best_diff_seconds:
@@ -1562,8 +1592,9 @@ class CloudWatcherService:
                             if "pickup" in drive_class or "pickup" in drive_tag or "en route" in drive_class or "en route" in drive_tag or "charging" in drive_class or "charging" in drive_tag or "charge" in drive_class or "charge" in drive_tag or (drive_dist < 1.0 and booking.get("Fare", 0) > 0):
                                 continue
                             t_dt = drive["Timestamp_Start"]
-                            # Require date alignment (local MT date must match)
-                            if t_dt.date() != b_dt.date():
+                            # Require the drive to fall within this operational day's 4 AM
+                            # window (same guard as the client_drives path above).
+                            if not in_operational_window(t_dt):
                                 continue
                             diff = abs((b_dt - t_dt).total_seconds())
                             if diff < best_diff_seconds:
