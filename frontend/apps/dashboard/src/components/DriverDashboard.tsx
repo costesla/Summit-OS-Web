@@ -1565,7 +1565,8 @@ const UberTripsPanel: React.FC<{
 }> = ({ selectedDate, onTripsLoaded }) => {
     const [trips, setTrips] = useState<UberTrip[]>([]);
     const [loading, setLoading] = useState(true);
-    const [totalEarnings, setTotalEarnings] = useState(0);
+
+
 
     const onTripsLoadedRef = useRef(onTripsLoaded);
     onTripsLoadedRef.current = onTripsLoaded;
@@ -1580,7 +1581,6 @@ const UberTripsPanel: React.FC<{
             const tripList = (data.trips ?? []) as UberTrip[];
             setTrips(tripList);
             const earnings = tripList.reduce((s, t) => s + t.driver_earnings, 0);
-            setTotalEarnings(earnings);
 
             // Compute separate totals
             const uList = tripList.filter(t => t.trip_type === 'Uber' || (t.classification && t.classification.toLowerCase().startsWith('uber')));
@@ -1647,13 +1647,18 @@ const UberTripsPanel: React.FC<{
                     <Receipt className="w-4 h-4 text-violet-600" />
                     <h2 className="font-bold text-slate-800">Trips Ledger</h2>
                     <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">{selectedDate}</span>
-                    {trips.length > 0 && (
+                </div>
+                <div className="flex items-center gap-3">
+                    {uberTrips.length > 0 && (
                         <span className="text-xs font-bold px-2.5 py-0.5 rounded-full border border-violet-200 bg-violet-100/80 text-violet-700 font-mono">
-                            {trips.length} trips · ${totalEarnings.toFixed(2)}
+                            {uberTrips.length} Uber · ${uberTotal.toFixed(2)}
                         </span>
                     )}
-                </div>
-                <div className="flex items-center gap-2">
+                    {privateTrips.length > 0 && (
+                        <span className="text-xs font-bold px-2.5 py-0.5 rounded-full border border-amber-200 bg-amber-100/80 text-amber-700 font-mono">
+                            {privateTrips.length} Private · ${privateTotal.toFixed(2)}
+                        </span>
+                    )}
                     <button onClick={fetchTrips} disabled={loading}
                         className="text-xs font-bold px-2.5 py-1 rounded-lg border border-slate-200 text-slate-600 hover:text-blue-600 hover:border-blue-300 hover:bg-slate-50 transition-all">
                         <RefreshCw className={`w-3 h-3 inline mr-1 ${loading ? 'animate-spin' : ''}`} />
@@ -1662,177 +1667,168 @@ const UberTripsPanel: React.FC<{
                 </div>
             </div>
 
-            {/* Body */}
-            <div className="divide-y divide-violet-100/50">
-                {loading && (
-                    <div className="p-10 text-center animate-pulse">
-                        <div className="h-2 w-48 bg-slate-200 rounded-full mx-auto mb-3" />
-                        <div className="h-2 w-32 bg-slate-200 rounded-full mx-auto" />
-                    </div>
-                )}
+            {/* Body — side-by-side Private Bookings (left) + Uber Trips (right) */}
+            {loading && (
+                <div className="p-10 text-center animate-pulse">
+                    <div className="h-2 w-48 bg-slate-200 rounded-full mx-auto mb-3" />
+                    <div className="h-2 w-32 bg-slate-200 rounded-full mx-auto" />
+                </div>
+            )}
 
-                {!loading && trips.length === 0 && (
-                    <div className="p-10 text-center">
-                        <Receipt className="w-6 h-6 text-slate-400 mx-auto mb-2" />
-                        <p className="text-xs text-slate-400 font-mono italic">
-                            // no trips found — click "Scan Day" in Intelligence Sync to OCR the {selectedDate} folder
-                        </p>
-                    </div>
-                )}
+            {!loading && trips.length === 0 && (
+                <div className="p-10 text-center">
+                    <Receipt className="w-6 h-6 text-slate-400 mx-auto mb-2" />
+                    <p className="text-xs text-slate-400 font-mono italic">
+                        // no trips found — click "Scan Day" in Intelligence Sync to OCR the {selectedDate} folder
+                    </p>
+                </div>
+            )}
 
-                {!loading && trips.length > 0 && (
-                    <>
-                        {/* 1. Private Clients Section */}
-                        <div className="bg-slate-100/60 px-4 py-2 flex items-center justify-between border-b border-violet-100/50">
-                            <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Private Clients</span>
-                            <span className="text-xs font-mono font-bold text-slate-500">
+            {!loading && trips.length > 0 && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-violet-100/50">
+
+                    {/* ── LEFT: Private Bookings ───────────────────────── */}
+                    <div className="flex flex-col">
+                        <div className="bg-amber-50/60 px-4 py-2.5 flex items-center justify-between border-b border-amber-100/80">
+                            <span className="text-xs font-bold text-amber-800 uppercase tracking-wider">🔒 Private Bookings</span>
+                            <span className="text-xs font-mono font-bold text-amber-600">
                                 {privateTrips.length} {privateTrips.length === 1 ? 'trip' : 'trips'} · ${privateTotal.toFixed(2)}
                             </span>
                         </div>
-                        {privateTrips.length === 0 ? (
-                            <p className="p-6 text-center text-xs text-slate-400 italic font-mono">// no private trips</p>
-                        ) : (
-                            privateTrips.map((trip) => (
-                                <div key={trip.trip_id}
-                                    onClick={() => trip.filename && openScreenshot(trip)}
-                                    className={`p-4 flex flex-col md:flex-row md:items-center gap-3 transition-colors group
-                                        ${trip.filename ? 'cursor-pointer hover:bg-violet-50/50' : 'hover:bg-violet-50/20'}`}>
+                        <div className="divide-y divide-amber-50/80 flex-1">
+                            {privateTrips.length === 0 ? (
+                                <p className="p-6 text-center text-xs text-slate-400 italic font-mono">// no private bookings</p>
+                            ) : (
+                                privateTrips.map((trip) => (
+                                    <div key={trip.trip_id}
+                                        onClick={() => trip.filename && openScreenshot(trip)}
+                                        className={`p-4 flex flex-col md:flex-row md:items-center gap-3 transition-colors group
+                                            ${trip.filename ? 'cursor-pointer hover:bg-amber-50/50' : 'hover:bg-amber-50/20'}`}>
 
-                                    {/* Trip number badge */}
-                                    <div className="shrink-0 flex flex-col items-center justify-center w-10 h-10 rounded-xl bg-violet-100 border border-violet-200 relative">
-                                        <span className="text-[10px] font-mono text-violet-500 leading-none">Trip</span>
-                                        <span className="text-sm font-black text-violet-700 leading-none">{trip.trip_number}</span>
-                                        {trip.filename && (
-                                            loadingScreenshot === trip.trip_id
-                                                ? <Loader2 className="absolute -top-1 -right-1 w-3 h-3 text-violet-500 animate-spin" />
-                                                : <ExternalLink className="absolute -top-1 -right-1 w-3 h-3 text-violet-400 opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-opacity" />
-                                        )}
-                                    </div>
-
-                                    {/* Left: meta */}
-                                    <div className="flex-1 space-y-1 min-w-0">
-                                        <div className="flex items-center gap-2 flex-wrap">
-                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border font-mono uppercase ${tagStyle(trip.passenger_name)}`}>
-                                                {trip.passenger_name || 'Private Client'}
-                                            </span>
-                                            {getPaymentStatusBadge(trip.payment_status)}
-                                            <span className="text-[10px] text-slate-400 font-mono">{trip.time_display}</span>
-                                            {trip.duration_min && (
-                                                <span className="text-[10px] text-slate-500 font-mono">{trip.duration_min.toFixed(0)} min</span>
-                                            )}
-                                            {trip.distance_mi && (
-                                                <span className="text-[10px] text-slate-500 font-mono">{trip.distance_mi.toFixed(2)} mi</span>
+                                        <div className="shrink-0 flex flex-col items-center justify-center w-10 h-10 rounded-xl bg-amber-100 border border-amber-200 relative">
+                                            <span className="text-[10px] font-mono text-amber-500 leading-none">Pvt</span>
+                                            <span className="text-sm font-black text-amber-700 leading-none">{trip.trip_number}</span>
+                                            {trip.filename && (
+                                                loadingScreenshot === trip.trip_id
+                                                    ? <Loader2 className="absolute -top-1 -right-1 w-3 h-3 text-amber-500 animate-spin" />
+                                                    : <ExternalLink className="absolute -top-1 -right-1 w-3 h-3 text-amber-400 opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-opacity" />
                                             )}
                                         </div>
-                                        {(trip.pickup || trip.dropoff) && (
-                                            <div className="flex items-start gap-1.5 text-[11px] text-slate-600">
-                                                <MapPin className="w-3 h-3 mt-0.5 text-slate-400 shrink-0" />
-                                                <span className="leading-snug truncate">{trip.pickup ?? '—'} → {trip.dropoff ?? '—'}</span>
+
+                                        <div className="flex-1 space-y-1 min-w-0">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border font-mono uppercase ${tagStyle(trip.passenger_name)}`}>
+                                                    {trip.passenger_name || 'Private Client'}
+                                                </span>
+                                                {getPaymentStatusBadge(trip.payment_status)}
+                                                <span className="text-[10px] text-slate-400 font-mono">{trip.time_display}</span>
+                                                {trip.duration_min && (
+                                                    <span className="text-[10px] text-slate-500 font-mono">{trip.duration_min.toFixed(0)} min</span>
+                                                )}
                                             </div>
-                                        )}
-                                    </div>
-
-                                    {/* Right: earnings */}
-                                    <div className="flex gap-4 shrink-0 text-center">
-                                        <div>
-                                            <p className="text-[10px] text-slate-500 font-mono uppercase">Earned</p>
-                                            <p className="text-base font-black text-emerald-700 tabular-nums">${trip.driver_earnings.toFixed(2)}</p>
+                                            {(trip.pickup || trip.dropoff) && (
+                                                <div className="flex items-start gap-1.5 text-[11px] text-slate-600">
+                                                    <MapPin className="w-3 h-3 mt-0.5 text-slate-400 shrink-0" />
+                                                    <span className="leading-snug truncate">{trip.pickup ?? '—'} → {trip.dropoff ?? '—'}</span>
+                                                </div>
+                                            )}
                                         </div>
-                                        {trip.tip > 0 && (
+
+                                        <div className="flex gap-3 shrink-0 text-center">
                                             <div>
-                                                <p className="text-[10px] text-slate-500 font-mono uppercase">Tip</p>
-                                                <p className="text-base font-black text-amber-600 tabular-nums">${trip.tip.toFixed(2)}</p>
+                                                <p className="text-[10px] text-slate-500 font-mono uppercase">Earned</p>
+                                                <p className="text-base font-black text-emerald-700 tabular-nums">${trip.driver_earnings.toFixed(2)}</p>
                                             </div>
-                                        )}
-                                        <div>
-                                            <p className="text-[10px] text-slate-500 font-mono uppercase">Fare</p>
-                                            <p className="text-sm font-bold text-slate-600 tabular-nums">${trip.rider_payment.toFixed(2)}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] text-slate-500 font-mono uppercase">Uber Cut</p>
-                                            <p className="text-sm font-bold text-rose-600 tabular-nums">$0.00</p>
+                                            {trip.tip > 0 && (
+                                                <div>
+                                                    <p className="text-[10px] text-slate-500 font-mono uppercase">Tip</p>
+                                                    <p className="text-base font-black text-amber-600 tabular-nums">${trip.tip.toFixed(2)}</p>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
-                                </div>
-                            ))
-                        )}
+                                ))
+                            )}
+                        </div>
+                    </div>
 
-                        {/* 2. Uber Trips Section */}
-                        <div className="bg-slate-100/60 px-4 py-2 flex items-center justify-between border-y border-violet-100/50">
-                            <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Uber Trips</span>
-                            <span className="text-xs font-mono font-bold text-slate-500">
+                    {/* ── RIGHT: Uber Trips ─────────────────────────────── */}
+                    <div className="flex flex-col">
+                        <div className="bg-violet-50/60 px-4 py-2.5 flex items-center justify-between border-b border-violet-100/80">
+                            <span className="text-xs font-bold text-violet-800 uppercase tracking-wider">🚗 Uber Trips</span>
+                            <span className="text-xs font-mono font-bold text-violet-600">
                                 {uberTrips.length} {uberTrips.length === 1 ? 'trip' : 'trips'} · ${uberTotal.toFixed(2)}
                             </span>
                         </div>
-                        {uberTrips.length === 0 ? (
-                            <p className="p-6 text-center text-xs text-slate-400 italic font-mono">// no Uber trips</p>
-                        ) : (
-                            uberTrips.map((trip) => (
-                                <div key={trip.trip_id}
-                                    onClick={() => trip.filename && openScreenshot(trip)}
-                                    className={`p-4 flex flex-col md:flex-row md:items-center gap-3 transition-colors group
-                                        ${trip.filename ? 'cursor-pointer hover:bg-violet-50/50' : 'hover:bg-violet-50/20'}`}>
+                        <div className="divide-y divide-violet-100/50 flex-1">
+                            {uberTrips.length === 0 ? (
+                                <p className="p-6 text-center text-xs text-slate-400 italic font-mono">// no Uber trips</p>
+                            ) : (
+                                uberTrips.map((trip) => (
+                                    <div key={trip.trip_id}
+                                        onClick={() => trip.filename && openScreenshot(trip)}
+                                        className={`p-4 flex flex-col md:flex-row md:items-center gap-3 transition-colors group
+                                            ${trip.filename ? 'cursor-pointer hover:bg-violet-50/50' : 'hover:bg-violet-50/20'}`}>
 
-                                    {/* Trip number badge */}
-                                    <div className="shrink-0 flex flex-col items-center justify-center w-10 h-10 rounded-xl bg-violet-100 border border-violet-200 relative">
-                                        <span className="text-[10px] font-mono text-violet-500 leading-none">Trip</span>
-                                        <span className="text-sm font-black text-violet-700 leading-none">{trip.trip_number}</span>
-                                        {trip.filename && (
-                                            loadingScreenshot === trip.trip_id
-                                                ? <Loader2 className="absolute -top-1 -right-1 w-3 h-3 text-violet-500 animate-spin" />
-                                                : <ExternalLink className="absolute -top-1 -right-1 w-3 h-3 text-violet-400 opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-opacity" />
-                                        )}
-                                    </div>
-
-                                    {/* Left: meta */}
-                                    <div className="flex-1 space-y-1 min-w-0">
-                                        <div className="flex items-center gap-2 flex-wrap">
-                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-200 bg-slate-100 text-slate-700 font-mono uppercase">
-                                                {trip.service_type || 'UBERX'}
-                                            </span>
-                                            <span className="text-[10px] text-slate-400 font-mono">{trip.time_display}</span>
-                                            {trip.duration_min && (
-                                                <span className="text-[10px] text-slate-500 font-mono">{trip.duration_min.toFixed(0)} min</span>
-                                            )}
-                                            {trip.distance_mi && (
-                                                <span className="text-[10px] text-slate-500 font-mono">{trip.distance_mi.toFixed(2)} mi</span>
+                                        <div className="shrink-0 flex flex-col items-center justify-center w-10 h-10 rounded-xl bg-violet-100 border border-violet-200 relative">
+                                            <span className="text-[10px] font-mono text-violet-500 leading-none">Trip</span>
+                                            <span className="text-sm font-black text-violet-700 leading-none">{trip.trip_number}</span>
+                                            {trip.filename && (
+                                                loadingScreenshot === trip.trip_id
+                                                    ? <Loader2 className="absolute -top-1 -right-1 w-3 h-3 text-violet-500 animate-spin" />
+                                                    : <ExternalLink className="absolute -top-1 -right-1 w-3 h-3 text-violet-400 opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-opacity" />
                                             )}
                                         </div>
-                                        {(trip.pickup || trip.dropoff) && (
-                                            <div className="flex items-start gap-1.5 text-[11px] text-slate-600">
-                                                <MapPin className="w-3 h-3 mt-0.5 text-slate-400 shrink-0" />
-                                                <span className="leading-snug truncate">{trip.pickup ?? '—'} → {trip.dropoff ?? '—'}</span>
+
+                                        <div className="flex-1 space-y-1 min-w-0">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-200 bg-slate-100 text-slate-700 font-mono uppercase">
+                                                    {trip.service_type || 'UBERX'}
+                                                </span>
+                                                <span className="text-[10px] text-slate-400 font-mono">{trip.time_display}</span>
+                                                {trip.duration_min && (
+                                                    <span className="text-[10px] text-slate-500 font-mono">{trip.duration_min.toFixed(0)} min</span>
+                                                )}
+                                                {trip.distance_mi && (
+                                                    <span className="text-[10px] text-slate-500 font-mono">{trip.distance_mi.toFixed(2)} mi</span>
+                                                )}
                                             </div>
-                                        )}
-                                    </div>
-
-                                    {/* Right: earnings */}
-                                    <div className="flex gap-4 shrink-0 text-center">
-                                        <div>
-                                            <p className="text-[10px] text-slate-500 font-mono uppercase">Earned</p>
-                                            <p className="text-base font-black text-emerald-700 tabular-nums">${trip.driver_earnings.toFixed(2)}</p>
+                                            {(trip.pickup || trip.dropoff) && (
+                                                <div className="flex items-start gap-1.5 text-[11px] text-slate-600">
+                                                    <MapPin className="w-3 h-3 mt-0.5 text-slate-400 shrink-0" />
+                                                    <span className="leading-snug truncate">{trip.pickup ?? '—'} → {trip.dropoff ?? '—'}</span>
+                                                </div>
+                                            )}
                                         </div>
-                                        {trip.tip > 0 && (
+
+                                        <div className="flex gap-4 shrink-0 text-center">
                                             <div>
-                                                <p className="text-[10px] text-slate-500 font-mono uppercase">Tip</p>
-                                                <p className="text-base font-black text-amber-600 tabular-nums">${trip.tip.toFixed(2)}</p>
+                                                <p className="text-[10px] text-slate-500 font-mono uppercase">Earned</p>
+                                                <p className="text-base font-black text-emerald-700 tabular-nums">${trip.driver_earnings.toFixed(2)}</p>
                                             </div>
-                                        )}
-                                        <div>
-                                            <p className="text-[10px] text-slate-500 font-mono uppercase">Rider</p>
-                                            <p className="text-sm font-bold text-slate-600 tabular-nums">${trip.rider_payment.toFixed(2)}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] text-slate-500 font-mono uppercase">Uber Cut</p>
-                                            <p className="text-sm font-bold text-rose-600 tabular-nums">${trip.uber_cut.toFixed(2)}</p>
+                                            {trip.tip > 0 && (
+                                                <div>
+                                                    <p className="text-[10px] text-slate-500 font-mono uppercase">Tip</p>
+                                                    <p className="text-base font-black text-amber-600 tabular-nums">${trip.tip.toFixed(2)}</p>
+                                                </div>
+                                            )}
+                                            <div>
+                                                <p className="text-[10px] text-slate-500 font-mono uppercase">Rider</p>
+                                                <p className="text-sm font-bold text-slate-600 tabular-nums">${trip.rider_payment.toFixed(2)}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] text-slate-500 font-mono uppercase">Uber Cut</p>
+                                                <p className="text-sm font-bold text-rose-600 tabular-nums">${trip.uber_cut.toFixed(2)}</p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))
-                        )}
-                    </>
-                )}
-            </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                </div>
+            )}
 
             {/* Screenshot Lightbox */}
             {lightbox && (
