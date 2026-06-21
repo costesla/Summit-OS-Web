@@ -85,6 +85,7 @@ class DatabaseClient:
                        Pickup_Location, Dropoff_Location, Sidecar_Artifact_JSON
                 FROM Rides.Rides
                 WHERE PaymentStatus = 'Pending'
+                  AND Timestamp_Start <= GETUTCDATE()
                 ORDER BY Timestamp_Start ASC
             """)
             trips = []
