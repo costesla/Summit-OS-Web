@@ -3160,17 +3160,44 @@ const DriverDashboard = () => {
                         </div>
                     </div>
 
-                    <UberTripsPanel
-                        selectedDate={selectedDate}
-                        onTripsLoaded={(count, earnings) => setUberStats({ count, earnings })}
-                    />
+                    {/* ── Earnings Summary Strip ───────────────────────── */}
+                    {(uberStats.earnings > 0 || uberStats.privateCollected > 0 || uberStats.privateDeferred > 0) && (
+                        <div className="grid grid-cols-2 gap-4 rounded-2xl border border-slate-200/80 bg-white/60 shadow-sm backdrop-blur-md p-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-2 h-10 rounded-full bg-violet-400 shrink-0" />
+                                <div>
+                                    <p className="text-[10px] font-mono uppercase tracking-widest text-slate-400">Uber Earnings</p>
+                                    <p className="text-2xl font-black text-violet-700 tabular-nums">${(uberStats.earnings || 0).toFixed(2)}</p>
+                                    <p className="text-[10px] text-slate-400 font-mono">{uberStats.count || 0} trip{(uberStats.count || 0) !== 1 ? 's' : ''}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="w-2 h-10 rounded-full bg-amber-400 shrink-0" />
+                                <div>
+                                    <p className="text-[10px] font-mono uppercase tracking-widest text-slate-400">Private Income</p>
+                                    <p className="text-2xl font-black text-amber-700 tabular-nums">${((uberStats.privateCollected || 0) + (uberStats.privateDeferred || 0)).toFixed(2)}</p>
+                                    {(uberStats.privateDeferred || 0) > 0 && (
+                                        <p className="text-[10px] text-amber-500 font-mono">${(uberStats.privateDeferred || 0).toFixed(2)} deferred</p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
-                    <PrivateTripsPanel
-                        selectedDate={selectedDate}
-                        onTripsLoaded={(_count, collected, deferred) =>
-                            setUberStats(prev => ({ ...prev, privateCollected: collected, privateDeferred: deferred }))
-                        }
-                    />
+                    {/* ── Uber Trips + Private Bookings side by side ───── */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <UberTripsPanel
+                            selectedDate={selectedDate}
+                            onTripsLoaded={(count, earnings) => setUberStats(prev => ({ ...prev, count, earnings }))}
+                        />
+
+                        <PrivateTripsPanel
+                            selectedDate={selectedDate}
+                            onTripsLoaded={(_count, collected, deferred) =>
+                                setUberStats(prev => ({ ...prev, privateCollected: collected, privateDeferred: deferred }))
+                            }
+                        />
+                    </div>
 
                     <TessieDrivesPanel 
                         onImport={() => {}} 

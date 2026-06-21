@@ -790,6 +790,8 @@ class CloudWatcherService:
         """, (f"TRIP-{date_compact}-%", date_str))
         rows = cursor.fetchall()
         trips = []
+        uber_count = 0
+        private_count = 0
         for r in rows:
             sidecar = {}
             try:
@@ -797,7 +799,16 @@ class CloudWatcherService:
             except:
                 pass
 
-            trip_num = len(trips) + 1
+            # Count Uber and Private trips independently so each panel shows its
+            # own clean 1-N sequence (prevents Jackie's booking from bumping Uber numbers).
+            _trip_type_raw = r[7] or "Uber"
+            _is_private = (_trip_type_raw == "Private" or r[0].startswith("INV-"))
+            if _is_private:
+                private_count += 1
+                trip_num = private_count
+            else:
+                uber_count += 1
+                trip_num = uber_count
             ts = r[1]
             ts_iso = ts.isoformat() if ts else None
             time_display = ts.strftime("%#I:%M %p" if os.name == "nt" else "%-I:%M %p") if ts else "Unknown"
