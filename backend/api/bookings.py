@@ -259,7 +259,8 @@ def unpaid_trips(req: func.HttpRequest) -> func.HttpResponse:
     if req.method == "OPTIONS":
         return func.HttpResponse(status_code=204, headers=_cors_headers())
     try:
-        trips = DatabaseClient().get_unpaid_trips()
+        date_str = req.params.get("date")  # optional YYYY-MM-DD — scopes to that day
+        trips = DatabaseClient().get_unpaid_trips(date_str=date_str)
         return func.HttpResponse(
             json.dumps({"success": True, "trips": trips}),
             status_code=200, headers=_cors_headers(), mimetype="application/json"

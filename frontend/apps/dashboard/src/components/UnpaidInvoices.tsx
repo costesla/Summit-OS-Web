@@ -28,7 +28,7 @@ const paymentHint = (name: string | null): string | null => {
     return null;
 };
 
-const UnpaidInvoicesPanel: React.FC = () => {
+const UnpaidInvoicesPanel: React.FC<{ selectedDate?: string }> = ({ selectedDate }) => {
     const [trips, setTrips] = useState<UnpaidTrip[]>([]);
     const [loading, setLoading] = useState(true);
     const [marking, setMarking] = useState<string | null>(null);
@@ -38,7 +38,8 @@ const UnpaidInvoicesPanel: React.FC = () => {
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch(`${AZURE_BASE}/unpaid-trips`);
+            const dateParam = selectedDate ? `?date=${selectedDate}` : '';
+            const res = await fetch(`${AZURE_BASE}/unpaid-trips${dateParam}`);
             const data = await res.json();
             if (data.success) {
                 setTrips(data.trips || []);
@@ -50,7 +51,7 @@ const UnpaidInvoicesPanel: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [selectedDate]);
 
     useEffect(() => { fetchUnpaid(); }, [fetchUnpaid]);
 

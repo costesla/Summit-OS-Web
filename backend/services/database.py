@@ -71,8 +71,10 @@ class DatabaseClient:
         finally:
             conn.close()
 
-    def get_unpaid_trips(self):
-        """All bookings still awaiting payment, oldest first."""
+    def get_unpaid_trips(self, date_str: str = None):
+        """All bookings still awaiting payment, oldest first.
+        If date_str (YYYY-MM-DD) is provided, only returns invoices for that date.
+        """
         conn = self.get_connection()
         if not conn:
             return []
@@ -80,15 +82,26 @@ class DatabaseClient:
             cursor = conn.cursor()
             self._ensure_payment_status_column(cursor)
             conn.commit()
-            cursor.execute("""
-                SELECT RideID, Timestamp_Start, Fare, Classification,
-                       Pickup_Location, Dropoff_Location, Sidecar_Artifact_JSON
-                FROM Rides.Rides
-                WHERE PaymentStatus = 'Pending'
-                  AND Timestamp_Start <= GETUTCDATE()
-                  AND DeletedAt IS NULL
-                ORDER BY Timestamp_Start ASC
-            """)
+            if date_str:
+                cursor.execute("""
+                    SELECT RideID, Timestamp_Start, Fare, Classification,
+                           Pickup_Location, Dropoff_Location, Sidecar_Artifact_JSON
+                    FROM Rides.Rides
+                    WHERE PaymentStatus = 'Pending'
+                      AND CAST(Timestamp_Start AS DATE) = CAST(? AS DATE)
+                      AND DeletedAt IS NULL
+                    ORDER BY Timestamp_Start ASC
+                """, (date_str,))
+            else:
+                cursor.execute("""
+                    SELECT RideID, Timestamp_Start, Fare, Classification,
+                           Pickup_Location, Dropoff_Location, Sidecar_Artifact_JSON
+                    FROM Rides.Rides
+                    WHERE PaymentStatus = 'Pending'
+                      AND Timestamp_Start <= GETUTCDATE()
+                      AND DeletedAt IS NULL
+                    ORDER BY Timestamp_Start ASC
+                """)
             trips = []
             for row in cursor.fetchall():
                 sidecar = {}

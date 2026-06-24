@@ -3465,7 +3465,7 @@ const DriverDashboard = () => {
                                 hours={manualHoursMap[selectedDate] || 0}
                                 onHoursChange={(h) => setManualHoursMap(prev => ({ ...prev, [selectedDate]: h }))}
                             />
-                            <UnpaidInvoicesPanel />
+                            <UnpaidInvoicesPanel selectedDate={selectedDate} />
                             <PrivatePaymentsPanel
                                 selectedDate={selectedDate}
                                 payments={privatePayments}
