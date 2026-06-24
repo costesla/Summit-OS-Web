@@ -573,16 +573,26 @@ class CloudWatcherService:
         _tz_aware_max = datetime.datetime.max.replace(tzinfo=MDT)
         dated_cards.sort(key=lambda c: c["trip_dt"] if c["trip_dt"] else _tz_aware_max)
 
-        # 5. Delete any existing TRIP-{YYYYMMDD}-* records so re-scan is idempotent
+        # 5. Soft-delete existing TRIP records for this date (except manually-protected ones)
+        #    so re-scans don't accumulate ever-growing RideID numbers.
+        #    We soft-delete here and MERGE below so existing RideIDs are preserved on re-scan.
         date_compact = date_str.replace("-", "")
         conn = self.db.get_connection()
         cursor = conn.cursor()
-        
+
         try:
-            cursor.execute("DELETE FROM Rides.Rides WHERE RideID LIKE ?", (f"TRIP-{date_compact}-%",))
+            cursor.execute("""
+                UPDATE Rides.Rides
+                SET DeletedAt = GETUTCDATE(),
+                    Classification = 'Duplicate_Removed',
+                    LastUpdated     = GETUTCDATE()
+                WHERE RideID LIKE ?
+                  AND DeletedAt IS NULL
+                  AND Classification NOT IN ('Manual_Entry', 'Duplicate_Removed')
+            """, (f"TRIP-{date_compact}-%",))
             deleted = cursor.rowcount
             if deleted:
-                logs.append(f"INFO: Cleared {deleted} existing TRIP records for {date_str}.")
+                logs.append(f"INFO: Soft-deleted {deleted} existing TRIP records for {date_str} (will be re-inserted as MERGE upsert).")
 
             # Reset any TESSIE- drives for this date that were previously matched (Classification='Uber_Matched')
             # back to their original Tessie classification based on the sidecar tag.
@@ -702,13 +712,57 @@ class CloudWatcherService:
                 }
 
                 cursor.execute("""
-                    INSERT INTO Rides.Rides
-                    (RideID, TripType, Timestamp_Start, Fare, Driver_Earnings, Tip, Platform_Cut,
-                     Classification, Sidecar_Artifact_JSON, Tessie_DriveID, 
-                     Distance_mi, Duration_min, Start_SOC, End_SOC, Energy_Used_kWh, Efficiency_Wh_mi,
-                     Pickup_Location, Dropoff_Location, CreatedAt, LastUpdated)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETUTCDATE(), GETUTCDATE())
+                    MERGE Rides.Rides AS target
+                    USING (SELECT ? AS RideID) AS src ON target.RideID = src.RideID
+                    WHEN MATCHED THEN
+                        UPDATE SET
+                            TripType              = ?,
+                            Timestamp_Start       = ?,
+                            Fare                  = ?,
+                            Driver_Earnings       = ?,
+                            Tip                   = ?,
+                            Platform_Cut          = ?,
+                            Classification        = ?,
+                            Sidecar_Artifact_JSON = ?,
+                            Tessie_DriveID        = ?,
+                            Distance_mi           = ?,
+                            Duration_min          = ?,
+                            Start_SOC             = ?,
+                            End_SOC               = ?,
+                            Energy_Used_kWh       = ?,
+                            Efficiency_Wh_mi      = ?,
+                            Pickup_Location       = ?,
+                            Dropoff_Location      = ?,
+                            DeletedAt             = NULL,
+                            LastUpdated           = GETUTCDATE()
+                    WHEN NOT MATCHED THEN
+                        INSERT (RideID, TripType, Timestamp_Start, Fare, Driver_Earnings, Tip, Platform_Cut,
+                                Classification, Sidecar_Artifact_JSON, Tessie_DriveID,
+                                Distance_mi, Duration_min, Start_SOC, End_SOC, Energy_Used_kWh, Efficiency_Wh_mi,
+                                Pickup_Location, Dropoff_Location, CreatedAt, LastUpdated)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETUTCDATE(), GETUTCDATE());
                 """, (
+                    # MERGE key
+                    trip_id,
+                    # UPDATE SET values
+                    trip_type,
+                    trip_dt or datetime.datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=MDT),
+                    card.get("rider_payment") or 0,
+                    card.get("driver_earnings") or 0,
+                    card.get("tip") or 0,
+                    uber_cut,
+                    classification,
+                    json.dumps(sidecar),
+                    tessie_drive_id,
+                    tessie_telemetry.get("Distance_mi"),
+                    tessie_telemetry.get("Duration_min"),
+                    tessie_telemetry.get("Start_SOC"),
+                    tessie_telemetry.get("End_SOC"),
+                    tessie_telemetry.get("Energy_Used_kWh"),
+                    tessie_telemetry.get("Efficiency_Wh_mi"),
+                    c["pickup"] or tessie_telemetry.get("Pickup_Location"),
+                    c["dropoff"] or tessie_telemetry.get("Dropoff_Location"),
+                    # INSERT values
                     trip_id,
                     trip_type,
                     trip_dt or datetime.datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=MDT),
@@ -810,7 +864,9 @@ class CloudWatcherService:
                 uber_count += 1
                 trip_num = uber_count
             ts = r[1]
-            ts_iso = ts.isoformat() if ts else None
+            # Timestamp_Start is stored as local Mountain Time in the DB (not UTC).
+            # Format directly — no timezone conversion needed.
+            ts_iso = ts.strftime("%Y-%m-%dT%H:%M:%S") if ts else None
             time_display = ts.strftime("%#I:%M %p" if os.name == "nt" else "%-I:%M %p") if ts else "Unknown"
             trip_type = r[7] or "Uber"  # default Uber for legacy records without TripType
             classification = r[8] or "Uber_Matched"

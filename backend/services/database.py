@@ -86,6 +86,7 @@ class DatabaseClient:
                 FROM Rides.Rides
                 WHERE PaymentStatus = 'Pending'
                   AND Timestamp_Start <= GETUTCDATE()
+                  AND DeletedAt IS NULL
                 ORDER BY Timestamp_Start ASC
             """)
             trips = []

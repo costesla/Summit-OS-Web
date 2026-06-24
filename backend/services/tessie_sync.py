@@ -174,7 +174,12 @@ class TessieSyncService:
         if 'pickup' in t or 'pick up' in t:
             return 'Deadhead/Positioning'
             
-        # 2. Contains "Dropoff" -> extract client name (word before "Dropoff")
+        # 2. "Uber Trip N DropOff" — exact Tessie format → Uber_Dropoff (must come before
+        #    the generic dropoff extraction so the trip number isn't parsed as a client name)
+        if re.match(r'uber\s+trip\s+\d+', t):
+            return 'Uber_Dropoff'
+
+        # 3. Contains "Dropoff" → extract client name
         if 'dropoff' in t or 'drop off' in t:
             # Match word before dropoff
             match = re.search(r'(\w+)\s+(?:dropoff|drop\s+off)', tag, re.IGNORECASE)
@@ -186,15 +191,15 @@ class TessieSyncService:
                     return "David Berezov"
                 return client_word.capitalize()
             
-        # 3. Starts with "Charging Session" -> Charging
+        # 4. Starts with "Charging Session" -> Charging
         if t.startswith('charging session') or t.startswith('charge session'):
             return 'Charging'
             
-        # 4. Starts with "Uber Trip" -> Uber_Dropoff
+        # 5. Starts with "Uber Trip" -> Uber_Dropoff
         if t.startswith('uber trip') or 'uber' in t:
             return 'Uber_Dropoff'
             
-        # 5. Matches a known client name exactly
+        # 6. Matches a known client name exactly
         try:
             known_clients = self.db.get_known_client_names()
         except Exception:

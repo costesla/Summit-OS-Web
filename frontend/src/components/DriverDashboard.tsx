@@ -2765,6 +2765,22 @@ const DriverDashboard = () => {
                         localStorage.setItem('cos_last_sync', now);
                     }
                 }
+                // Sync cash tips / private payments for this date from DB (authoritative source)
+                if (data.success && Array.isArray(data.private_payments)) {
+                    const cloudPayments: PrivatePayment[] = data.private_payments.map((p: any) => ({
+                        id: parseInt(p.PaymentID) || Date.now(),
+                        client: p.Client || 'Cash Tip',
+                        amount: parseFloat(p.Amount) || 0,
+                        note: p.Note || '',
+                        date: p.PaymentDate || date,
+                        timestamp: p.Timestamp || new Date().toISOString()
+                    }));
+                    setPrivatePayments(prev => {
+                        // Replace this date's entries with DB records; keep other dates intact
+                        const otherDates = prev.filter(p => p.date !== date);
+                        return [...cloudPayments, ...otherDates];
+                    });
+                }
             }
         } catch (err) { console.error('Failed to fetch from cloud:', err); }
         finally { setIsFetchingCloud(false); }

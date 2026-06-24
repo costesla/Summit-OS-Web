@@ -74,7 +74,8 @@ def driver_sync(req: func.HttpRequest) -> func.HttpResponse:
             
             trips = db.get_trips_by_date(date_str)
             expenses = db.get_expenses_by_date(date_str)
-            
+            private_payments = db.get_private_payments(date_str, date_str)
+
             headers = CORS_HEADERS.copy()
             headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
             headers["Pragma"] = "no-cache"
@@ -85,7 +86,8 @@ def driver_sync(req: func.HttpRequest) -> func.HttpResponse:
                     "success": True,
                     "date": date_str,
                     "trips": trips,
-                    "expenses": expenses
+                    "expenses": expenses,
+                    "private_payments": private_payments
                 }, cls=DecimalEncoder),
                 status_code=200,
                 headers=headers,
