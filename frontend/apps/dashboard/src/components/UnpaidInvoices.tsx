@@ -14,6 +14,13 @@ interface UnpaidTrip {
     paymentMethod: string | null;
 }
 
+// ─── PII Guard ──────────────────────────────────────────────────────────────
+/** Strip surname — only ever show the first word of a name on-screen. */
+const firstName = (name: string | null | undefined): string | null => {
+    if (!name) return null;
+    return name.trim().split(/\s+/)[0];
+};
+
 // Payment-channel hints for repeat clients (third-party payers etc.)
 const CLIENT_PAYMENT_HINTS: Record<string, string> = {
     terrance: 'Cash App — often paid by sister Monique',
@@ -127,7 +134,7 @@ const UnpaidInvoicesPanel: React.FC<{ selectedDate?: string }> = ({ selectedDate
                                 <div className="min-w-0">
                                     <div className="flex items-center gap-2">
                                         <span className="text-sm font-black text-slate-800">${t.fare.toFixed(2)}</span>
-                                        <span className="text-xs font-semibold text-slate-600 truncate">{t.customerName || t.rideId}</span>
+                                        <span className="text-xs font-semibold text-slate-600 truncate">{firstName(t.customerName) || t.rideId}</span>
                                         {t.paymentMethod && (
                                             <span className="text-[9px] uppercase font-bold text-slate-400 border border-slate-200 rounded px-1">{t.paymentMethod}</span>
                                         )}

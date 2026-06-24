@@ -15,6 +15,13 @@ import UnpaidInvoicesPanel from './UnpaidInvoices';
 const AZURE_BASE = import.meta.env.VITE_PUBLIC_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://summitos-api.azurewebsites.net/api';
 const VERSION = "1.4.5";
 
+// ─── PII Guard ──────────────────────────────────────────────────────────────
+/** Strip surname — only ever show the first word of a name on-screen. */
+const firstName = (name: string | null | undefined): string | null => {
+    if (!name) return null;
+    return name.trim().split(/\s+/)[0];
+};
+
 const TAG_FILTERS = ['Uber', 'Uber_Matched', 'Uber_Pickup', 'Jackie', 'Jacquelyn Heslep', 'David', 'Emerson', 'Esmeralda', 'Daniel', 'Lauren', 'Ryan', 'Terrance', 'Lorynne', 'Staging', 'Private_Trip', 'Uncategorized', 'Charging Session'] as const;
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -1718,7 +1725,7 @@ const UberTripsPanel: React.FC<{
                                         <div className="flex-1 space-y-1 min-w-0">
                                             <div className="flex items-center gap-2 flex-wrap">
                                                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border font-mono uppercase ${tagStyle(trip.passenger_name)}`}>
-                                                    {trip.passenger_name || 'Private Client'}
+                                                    {firstName(trip.passenger_name) || 'Private Client'}
                                                 </span>
                                                 {getPaymentStatusBadge(trip.payment_status)}
                                                 <span className="text-[10px] text-slate-400 font-mono">{trip.time_display}</span>
@@ -2348,7 +2355,7 @@ const PrivatePaymentsPanel: React.FC<{
                         <div key={p.id} className="flex items-center justify-between p-3 rounded-xl bg-white/70 border border-slate-200/80 hover:bg-slate-50 transition-colors shadow-sm group">
                             <div>
                                 <div className="flex items-center gap-2">
-                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-50 border border-violet-200 text-violet-700 uppercase font-mono">{p.client}</span>
+                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-50 border border-violet-200 text-violet-700 uppercase font-mono">{firstName(p.client) || p.client}</span>
                                     <span className="text-sm font-black text-slate-800">${p.amount.toFixed(2)}</span>
                                 </div>
                                 {p.note && <p className="text-[10px] text-slate-500 mt-0.5">{p.note}</p>}
