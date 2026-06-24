@@ -22,6 +22,12 @@ const firstName = (name: string | null | undefined): string | null => {
     return name.trim().split(/\s+/)[0];
 };
 
+/** Strip leading street number for PII compliance — city and state are kept. */
+const scrubAddress = (addr: string | null | undefined): string | null => {
+    if (!addr) return null;
+    return addr.replace(/^\d+\s+/, '');
+};
+
 const TAG_FILTERS = ['Uber', 'Uber_Matched', 'Uber_Pickup', 'Jackie', 'Jacquelyn Heslep', 'David', 'Emerson', 'Esmeralda', 'Daniel', 'Lauren', 'Ryan', 'Terrance', 'Lorynne', 'Staging', 'Private_Trip', 'Uncategorized', 'Charging Session'] as const;
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -1329,7 +1335,7 @@ const TessieDrivesPanel = ({
                                     <div className="flex items-start gap-1.5 text-[11px] text-slate-600">
                                         <MapPin className="w-3 h-3 mt-0.5 text-slate-400 shrink-0" />
                                         <span className="leading-snug">
-                                            {drive.start ?? '—'} → {drive.end ?? '—'}
+                                            {scrubAddress(drive.start) ?? '—'} → {scrubAddress(drive.end) ?? '—'}
                                         </span>
                                     </div>
                                 )}
@@ -1736,7 +1742,7 @@ const UberTripsPanel: React.FC<{
                                             {(trip.pickup || trip.dropoff) && (
                                                 <div className="flex items-start gap-1.5 text-[11px] text-slate-600">
                                                     <MapPin className="w-3 h-3 mt-0.5 text-slate-400 shrink-0" />
-                                                    <span className="leading-snug truncate">{trip.pickup ?? '—'} → {trip.dropoff ?? '—'}</span>
+                                                    <span className="leading-snug truncate">{scrubAddress(trip.pickup) ?? '�'} ? {scrubAddress(trip.dropoff) ?? '�'}</span>
                                                 </div>
                                             )}
                                         </div>
@@ -1803,7 +1809,7 @@ const UberTripsPanel: React.FC<{
                                             {(trip.pickup || trip.dropoff) && (
                                                 <div className="flex items-start gap-1.5 text-[11px] text-slate-600">
                                                     <MapPin className="w-3 h-3 mt-0.5 text-slate-400 shrink-0" />
-                                                    <span className="leading-snug truncate">{trip.pickup ?? '—'} → {trip.dropoff ?? '—'}</span>
+                                                    <span className="leading-snug truncate">{scrubAddress(trip.pickup) ?? '�'} ? {scrubAddress(trip.dropoff) ?? '�'}</span>
                                                 </div>
                                             )}
                                         </div>

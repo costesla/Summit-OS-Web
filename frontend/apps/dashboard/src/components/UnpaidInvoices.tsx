@@ -21,6 +21,12 @@ const firstName = (name: string | null | undefined): string | null => {
     return name.trim().split(/\s+/)[0];
 };
 
+/** Strip leading street number for PII compliance — city and state are kept. */
+const scrubAddress = (addr: string | null | undefined): string | null => {
+    if (!addr) return null;
+    return addr.replace(/^\d+\s+/, '');
+};
+
 // Payment-channel hints for repeat clients (third-party payers etc.)
 const CLIENT_PAYMENT_HINTS: Record<string, string> = {
     terrance: 'Cash App — often paid by sister Monique',
@@ -139,7 +145,7 @@ const UnpaidInvoicesPanel: React.FC<{ selectedDate?: string }> = ({ selectedDate
                                             <span className="text-[9px] uppercase font-bold text-slate-400 border border-slate-200 rounded px-1">{t.paymentMethod}</span>
                                         )}
                                     </div>
-                                    <p className="text-[10px] text-slate-500 truncate">{fmtDate(t.start)} · {t.pickup || '?'} → {t.dropoff || '?'}</p>
+                                    <p className="text-[10px] text-slate-500 truncate">{fmtDate(t.start)} · {scrubAddress(t.pickup) || '?'} → {scrubAddress(t.dropoff) || '?'}</p>
                                     {hint && <p className="text-[10px] text-violet-600 font-semibold">{hint}</p>}
                                 </div>
                                 <button onClick={() => markPaid(t.rideId)} disabled={marking === t.rideId}
