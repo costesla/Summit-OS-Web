@@ -203,6 +203,10 @@ const DriverDashboard: React.FC = () => {
     const [loadingJackie, setLoadingJackie] = useState(false);
     const [loadingPreShift, setLoadingPreShift] = useState(false);
     const [loadingTrips, setLoadingTrips] = useState(false);
+
+    // Period earnings (computed client-side — /financials/summary returns zeros)
+    const [weekActual, setWeekActual] = useState<number>(0);
+    const [monthActual, setMonthActual] = useState<number>(0);
     
     // Action States & Modals
     const [logs, setLogs] = useState<string[]>([]);
@@ -311,7 +315,7 @@ const DriverDashboard: React.FC = () => {
 
         try {
             // 6. Fetch Tessie Charges for telemetry
-            const chargesRes = await apiGet<{ sessions: TessieCharge[] }>(`/copilot/tessie/charging?days=2`);
+            const chargesRes = await apiGet<{ sessions: TessieCharge[] }>(`/copilot/tessie/charges?days=2`);
             const filteredCharges = (chargesRes.sessions || []).filter(c => c.date === selectedDate);
             setCharges(filteredCharges);
         } catch (e) {
@@ -327,6 +331,44 @@ const DriverDashboard: React.FC = () => {
         const interval = setInterval(fetchAllData, 60_000);
         return () => clearInterval(interval);
     }, [fetchAllData]);
+
+    // Compute week & month actuals from parallel day fetches
+    // (bypasses /financials/summary which returns zeros for all dates)
+    useEffect(() => {
+        let cancelled = false;
+        const compute = async () => {
+            const selected = new Date(selectedDate + 'T12:00:00');
+            const monthStart = new Date(selected.getFullYear(), selected.getMonth(), 1);
+            const weekCutoff = new Date(selected);
+            weekCutoff.setDate(selected.getDate() - 6);
+
+            const dates: string[] = [];
+            const cur = new Date(monthStart);
+            while (cur <= selected) {
+                dates.push(cur.toLocaleDateString('sv-SE', { timeZone: 'America/Denver' }));
+                cur.setDate(cur.getDate() + 1);
+            }
+
+            const results = await Promise.all(dates.map(async d => {
+                try {
+                    const res = await apiGet<{ trips: DatabaseTrip[] }>(`/driver/sync?date=${d}`);
+                    const earned = (res.trips || [])
+                        .filter((t: DatabaseTrip) => !t.id.startsWith('TESSIE-'))
+                        .reduce((s: number, t: DatabaseTrip) => s + (t.fare ?? 0) + (t.tip ?? 0), 0);
+                    return { d, earned };
+                } catch { return { d, earned: 0 }; }
+            }));
+
+            if (cancelled) return;
+            const wkCut = weekCutoff.getTime();
+            const week = results.filter(r => new Date(r.d + 'T12:00:00').getTime() >= wkCut).reduce((s, r) => s + r.earned, 0);
+            const month = results.reduce((s, r) => s + r.earned, 0);
+            setWeekActual(week);
+            setMonthActual(month);
+        };
+        compute();
+        return () => { cancelled = true; };
+    }, [selectedDate]);
 
     // Update synced footer timing text
     useEffect(() => {
@@ -715,11 +757,21 @@ const DriverDashboard: React.FC = () => {
         return items;
     }, [drives, charges]);
 
-    // Sync stats from summary
-    const grossEarnings = summary?.gross_earnings ?? 0;
-    const uberEarnings = summary?.uber_earnings ?? 0;
-    const privateIncome = summary?.private_income ?? 0;
-    const netProfit = summary?.net_profit ?? 0;
+    // Derive earnings from trips (summary endpoint returns zeros — backend bug)
+    const grossEarnings = useMemo(() =>
+        trips.filter(t => !t.id.startsWith('TESSIE-'))
+             .reduce((s, t) => s + (t.fare ?? 0) + (t.tip ?? 0), 0) || (summary?.gross_earnings ?? 0),
+        [trips, summary]
+    );
+    const uberEarnings = useMemo(() =>
+        trips.filter(t => t.type === 'Uber').reduce((s, t) => s + (t.fare ?? 0) + (t.tip ?? 0), 0) || (summary?.uber_earnings ?? 0),
+        [trips, summary]
+    );
+    const privateIncome = useMemo(() =>
+        trips.filter(t => t.type === 'Private').reduce((s, t) => s + (t.fare ?? 0) + (t.tip ?? 0), 0) || (summary?.private_income ?? 0),
+        [trips, summary]
+    );
+    const netProfit = grossEarnings - (summary?.opex_expenses ?? 0) - (summary?.capex_expenses ?? 0);
     const deferredTotal = summary?.deferred_total ?? 0;
 
     // Use all loading states to satisfy TS
@@ -773,11 +825,11 @@ const DriverDashboard: React.FC = () => {
                         <span>Cabin: {teslaLive?.inside_temp ?? 70}°F</span>
                     </div>
                     {/* Health Check Badge */}
-                    <a href="#health-alert-banner" onClick={() => { setSection('home'); setTimeout(() => document.getElementById("health-alert-banner")?.scrollIntoView({ behavior: 'smooth' }), 100); }} 
+                    <button onClick={() => setSection('tools')}
                         className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[10px] font-bold uppercase transition-all duration-300 ${healthBadgeColor}`}>
                         <div className={`w-1.5 h-1.5 rounded-full ${preShiftScore >= 70 ? 'bg-[var(--accent-cyan)]' : 'bg-[var(--accent-red)] animate-ping'}`} />
                         <span>SYS CHECK: {preShiftScore}/100</span>
-                    </a>
+                    </button>
                 </div>
             </header>
 
@@ -826,30 +878,6 @@ const DriverDashboard: React.FC = () => {
                                     <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">{selectedDate} · Operator Console</p>
                                 </div>
 
-                                {/* HealthAlertBanner */}
-                                <div id="health-alert-banner">
-                                    {preShiftScore < 70 ? (
-                                        <div className="p-5 rounded-2xl border border-[var(--accent-red)] bg-[var(--accent-red)]/5 flex items-start gap-4 relative overflow-hidden transition-all duration-300">
-                                            <div className="absolute top-0 right-0 w-48 h-48 bg-[var(--accent-red)]/5 blur-3xl rounded-full pointer-events-none animate-pulse" />
-                                            <ShieldAlert className="w-10 h-10 text-[var(--accent-red)] shrink-0 mt-0.5" />
-                                            <div>
-                                                <span className="text-3xl font-black text-[var(--accent-red)] font-mono">{preShiftScore}</span>
-                                                <h3 className="text-base font-bold text-white mt-1">Pre-shift system check failed</h3>
-                                                <p className="text-xs text-[var(--text-muted)] mt-1 font-mono">
-                                                    Consensus score below threshold. Check telemetry logs under tools panel for details.
-                                                </p>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="p-4 rounded-2xl border border-[var(--accent-cyan)]/20 bg-[var(--accent-cyan)]/5 flex items-center gap-3">
-                                            <CheckCircle className="w-5 h-5 text-[var(--accent-cyan)] shrink-0" />
-                                            <div className="flex-1 text-xs font-mono text-[var(--text-muted)]">
-                                                Pre-shift system check passed. Score <span className="font-bold text-white">{preShiftScore}/100</span>.
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-
                                 {/* StatGrid */}
                                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                                     <StatCard label="Gross Earnings" value={`$${grossEarnings.toFixed(2)}`} sub="Today's aggregate" icon={<TrendingUp className="w-4.5 h-4.5" />} color="cyan" highlight />
@@ -869,8 +897,8 @@ const DriverDashboard: React.FC = () => {
                                     </div>
                                     <div className="space-y-4">
                                         <GoalProgressRow label="Today" actual={grossEarnings} target={summary?.targets?.daily ?? 400} />
-                                        <GoalProgressRow label="This Week" actual={summary?.progress?.week?.actual ?? 0} target={summary?.targets?.weekly ?? 2000} />
-                                        <GoalProgressRow label="This Month" actual={summary?.progress?.month?.actual ?? 0} target={summary?.targets?.monthly ?? 8000} />
+                                        <GoalProgressRow label="This Week" actual={weekActual} target={summary?.targets?.weekly ?? 2000} />
+                                        <GoalProgressRow label="This Month" actual={monthActual} target={summary?.targets?.monthly ?? 8000} />
                                     </div>
                                 </div>
 
@@ -1392,6 +1420,55 @@ const DriverDashboard: React.FC = () => {
                                 <div>
                                     <h1 className="text-2xl font-black tracking-tight">Tools</h1>
                                     <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">{selectedDate} · Operations Console</p>
+                                </div>
+
+                                {/* Pre-Shift System Check */}
+                                <div className={`p-5 rounded-2xl border glass space-y-4 relative overflow-hidden ${preShiftScore < 70 ? 'border-[var(--accent-red)]/40' : 'border-[var(--accent-cyan)]/20'}`}>
+                                    {preShiftScore < 70 && <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--accent-red)]/5 blur-3xl rounded-full pointer-events-none" />}
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            {preShiftScore < 70
+                                                ? <ShieldAlert className="w-5 h-5 text-[var(--accent-red)] shrink-0" />
+                                                : <CheckCircle className="w-5 h-5 text-[var(--accent-cyan)] shrink-0" />}
+                                            <div>
+                                                <h3 className="text-sm font-bold text-white">Pre-Shift System Check</h3>
+                                                <p className="text-[10px] text-[var(--text-muted)] font-mono">{preShift?.generated_at ? new Date(preShift.generated_at).toLocaleTimeString('en-US', { timeZone: 'America/Denver', hour: 'numeric', minute: '2-digit' }) : 'Not yet run'}</p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className={`text-3xl font-black font-mono ${preShiftScore >= 70 ? 'text-[var(--accent-cyan)]' : 'text-[var(--accent-red)]'}`}>{preShiftScore}</span>
+                                            <p className="text-[10px] text-[var(--text-muted)] font-mono">/100</p>
+                                        </div>
+                                    </div>
+                                    {/* Tier breakdown */}
+                                    {preShift?.tiers && (
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {Object.entries(preShift.tiers).map(([key, tier]) => {
+                                                const label = key.replace('tier', 'T').replace('_trips', ' · Trips').replace('_earnings', ' · Earnings').replace('_expenses', ' · Expenses').replace('_timeline', ' · Timeline');
+                                                const pass = tier?.status === 'PASS';
+                                                const warn = tier?.status === 'WARN';
+                                                return (
+                                                    <div key={key} className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-[10px] font-mono font-bold
+                                                        ${pass ? 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400' : warn ? 'border-amber-500/20 bg-amber-500/5 text-amber-400' : 'border-rose-500/20 bg-rose-500/5 text-rose-400'}`}>
+                                                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${pass ? 'bg-emerald-400' : warn ? 'bg-amber-400' : 'bg-rose-400'}`} />
+                                                        {label}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                    {/* Systems status */}
+                                    {preShift?.systems && (
+                                        <div className="flex flex-wrap gap-2 pt-1 border-t border-white/5">
+                                            {Object.entries(preShift.systems).map(([sys, info]) => (
+                                                <div key={sys} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] font-mono
+                                                    ${info?.online ? 'border-emerald-500/15 bg-emerald-500/5 text-emerald-400' : 'border-rose-500/20 bg-rose-500/5 text-rose-400'}`}>
+                                                    <span className={`w-1.5 h-1.5 rounded-full ${info?.online ? 'bg-emerald-400' : 'bg-rose-400 animate-pulse'}`} />
+                                                    {sys.toUpperCase()} {info?.latency_ms != null ? `${info.latency_ms}ms` : ''}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
