@@ -5,12 +5,7 @@ export default function Navbar() {
     // Minimal Header
     return (
         <>
-            {/* ── Father's Day 2026 announcement banner — remove after 6/22 ── */}
-            <div className="w-full bg-amber-400 text-amber-950 text-center py-2 px-4 text-sm font-semibold tracking-wide z-[60] relative">
-                🎉 Happy Father&apos;s Day! Wishing all the dads a wonderful day — regular business hours resume tomorrow morning. 🚗
-            </div>
-
-            <nav className="fixed w-full z-50 top-0 start-0 border-b border-white/5 bg-black/50 backdrop-blur-md" style={{ top: "2.25rem" }}>
+            <nav className="fixed w-full z-50 top-0 start-0 border-b border-white/5 bg-black/50 backdrop-blur-md" style={{ top: "0" }}>
                 <div className="container mx-auto px-6 h-20 flex items-center justify-between">
                     <Link href="/" className="flex items-center gap-3 group">
                         <div className="relative w-10 h-10 overflow-hidden rounded-xl border border-white/10 group-hover:border-cyan-500/50 transition-all">
