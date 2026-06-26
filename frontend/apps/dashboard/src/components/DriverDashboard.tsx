@@ -84,6 +84,8 @@ interface FinancialsSummaryResponse {
     uber_earnings: number;
     private_income: number;
     expenses: number;
+    opex_expenses?: number;
+    capex_expenses?: number;
     net_profit: number;
     deferred_total: number;
     targets: {
@@ -277,7 +279,14 @@ const DriverDashboard: React.FC = () => {
 
         try {
             // 4. Fetch ledger trips and expenses (combines Uber + Private)
-            const syncRes = await apiGet<{ trips: DatabaseTrip[]; expenses?: any }>(`/driver/sync?date=${selectedDate}`);
+            const syncRes = await apiGet<{
+                trips: DatabaseTrip[];
+                expenses?: {
+                    fastfood: ExpenseItem[];
+                    charging: ExpenseItem[];
+                    capital_maintenance: ExpenseItem[];
+                };
+            }>(`/driver/sync?date=${selectedDate}`);
             setTrips(syncRes.trips || []);
             if (syncRes.expenses) {
                 setLoggedExpenses(syncRes.expenses);
@@ -405,15 +414,16 @@ const DriverDashboard: React.FC = () => {
                 setStatus('error');
                 setLogs(p => [...p, `> [ERROR] ${data.error}`]);
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             devDebugError(err);
             if (isBackgroundableError(err)) {
                 setStatus('success');
                 setLogs(p => [...p, '> [NOTICE] Pipeline sync running in background.', '> Please wait 60s and refresh.']);
                 setTimeout(fetchAllData, 60_000);
             } else {
+                const errMsg = err instanceof Error ? err.message : String(err);
                 setStatus('error');
-                setLogs(p => [...p, `> [CRITICAL] ${err.message || String(err)}`]);
+                setLogs(p => [...p, `> [CRITICAL] ${errMsg}`]);
             }
         }
     };
@@ -435,9 +445,10 @@ const DriverDashboard: React.FC = () => {
                 setStatus('error');
                 setLogs(p => [...p, `> [ERROR] ${data.error}`]);
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
+            const errMsg = err instanceof Error ? err.message : String(err);
             setStatus('error');
-            setLogs(p => [...p, `> [CRITICAL] ${err.message || String(err)}`]);
+            setLogs(p => [...p, `> [CRITICAL] ${errMsg}`]);
         }
     };
 
@@ -474,9 +485,10 @@ const DriverDashboard: React.FC = () => {
                 setStatus('error');
                 setLogs(p => [...p, `> [ERROR] ${data.error}`]);
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
+            const errMsg = err instanceof Error ? err.message : String(err);
             setStatus('error');
-            setLogs(p => [...p, `> [CRITICAL] ${err.message || String(err)}`]);
+            setLogs(p => [...p, `> [CRITICAL] ${errMsg}`]);
         }
     };
 
@@ -485,7 +497,7 @@ const DriverDashboard: React.FC = () => {
         setStatus('running');
         setLogs(p => [...p, `> Saving manually logged day's data to cloud...`]);
         try {
-            const data = await apiPost<{ success: boolean; results?: any; error?: string }>('/tools/save-day', {
+            const data = await apiPost<{ success: boolean; results?: unknown; error?: string }>('/tools/save-day', {
                 trips: trips.filter(t => t.id.startsWith("M-")),
                 expenses: { fastfood: [], charging: [], capital_maintenance: [] }
             });
@@ -497,9 +509,10 @@ const DriverDashboard: React.FC = () => {
                 setStatus('error');
                 setLogs(p => [...p, `> [ERROR] ${data.error}`]);
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
+            const errMsg = err instanceof Error ? err.message : String(err);
             setStatus('error');
-            setLogs(p => [...p, `> [CRITICAL] ${err.message || String(err)}`]);
+            setLogs(p => [...p, `> [CRITICAL] ${errMsg}`]);
         }
     };
 
@@ -842,8 +855,8 @@ const DriverDashboard: React.FC = () => {
                                     <StatCard label="Gross Earnings" value={`$${grossEarnings.toFixed(2)}`} sub="Today's aggregate" icon={<TrendingUp className="w-4.5 h-4.5" />} color="cyan" highlight />
                                     <StatCard label="Uber Earnings" value={`$${uberEarnings.toFixed(2)}`} sub="Core rideshare" icon={<Car className="w-4.5 h-4.5" />} color="cyan" />
                                     <StatCard label="Private Income" value={`$${privateIncome.toFixed(2)}`} sub="Paid invoices only" icon={<DollarSign className="w-4.5 h-4.5" />} color="cyan" />
-                                    <StatCard label="Daily OpEx" value={`$${(summary as any)?.opex_expenses?.toFixed(2) ?? '0.00'}`} sub="Charging & tolls" icon={<Zap className="w-4.5 h-4.5" />} color="red" />
-                                    <StatCard label="CapEx & Maintenance" value={`$${(summary as any)?.capex_expenses?.toFixed(2) ?? '0.00'}`} sub="Asset investments" icon={<Wrench className="w-4.5 h-4.5" />} color="amber" />
+                                    <StatCard label="Daily OpEx" value={`$${summary?.opex_expenses?.toFixed(2) ?? '0.00'}`} sub="Charging & tolls" icon={<Zap className="w-4.5 h-4.5" />} color="red" />
+                                    <StatCard label="CapEx & Maintenance" value={`$${summary?.capex_expenses?.toFixed(2) ?? '0.00'}`} sub="Asset investments" icon={<Wrench className="w-4.5 h-4.5" />} color="amber" />
                                     <StatCard label="Net Profit" value={`$${netProfit.toFixed(2)}`} sub="Gross - OpEx margin" icon={<TrendingUp className="w-4.5 h-4.5" />} color="cyan" highlight />
                                     <StatCard label="Unpaid/Deferred Total" value={`$${deferredTotal.toFixed(2)}`} sub="Outstanding balance" icon={<Receipt className="w-4.5 h-4.5" />} color="amber" />
                                 </div>
