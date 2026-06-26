@@ -12,7 +12,9 @@ local.settings.json
 .env.test
 .env.receipt-engine.template
 config/.env
+config/.env.template
 finance_mcp/.env
+finance_mcp/.env.example
 *-settings.json
 *_settings.json
 credentials/

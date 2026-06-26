@@ -51,6 +51,6 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "Local zip removed."
 } else {
     Write-Host "`nDeployment FAILED (exit code $LASTEXITCODE)" -ForegroundColor Red
-    Write-Host "The zip has NOT been deleted — inspect $zipName before retrying."
+    Write-Host "The zip has NOT been deleted - inspect $zipName before retrying."
     exit $LASTEXITCODE
 }

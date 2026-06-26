@@ -34,9 +34,16 @@ BLOCKED_PATHS = {
     'credentials/client_secret.json',
 }
 
+# Files that look like secrets but are safe templates/examples (no real creds)
+ALLOWED_SUFFIXES = {
+    '.env.template',
+    '.env.example',
+    '.env.sample',
+}
+
 # Filename patterns that indicate secrets (checked against basename)
 BLOCKED_PATTERNS = [
-    lambda f: f.startswith('.env'),
+    lambda f: f.startswith('.env') and not any(f.endswith(s) for s in ALLOWED_SUFFIXES),
     lambda f: f.endswith('-settings.json'),
     lambda f: f.endswith('_settings.json'),
     lambda f: f.endswith('.pem'),
@@ -47,8 +54,38 @@ BLOCKED_PATTERNS = [
 ]
 
 
+def load_funcignore(root_dir: str) -> set:
+    """Load .funcignore entries as a set of relative path patterns."""
+    funcignore_path = os.path.join(root_dir, '.funcignore')
+    entries = set()
+    if os.path.exists(funcignore_path):
+        with open(funcignore_path) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#'):
+                    entries.add(line.rstrip('/'))
+    return entries
+
+
+def is_covered_by_funcignore(rel_path: str, funcignore: set) -> bool:
+    """Return True if rel_path is explicitly listed in .funcignore (exact or prefix match)."""
+    fname = os.path.basename(rel_path)
+    for entry in funcignore:
+        if rel_path == entry or fname == entry:
+            return True
+        # Prefix match for directory entries (e.g. 'scripts/' covers 'scripts/foo.py')
+        if entry.endswith('/') and rel_path.startswith(entry):
+            return True
+        # Glob-style: entry without trailing slash covers directory
+        if rel_path.startswith(entry + '/'):
+            return True
+    return False
+
+
 def scan_directory(root_dir: str) -> list[str]:
-    """Walk root_dir and return list of relative paths that must not be zipped."""
+    """Walk root_dir and return list of relative paths that must not be zipped
+    AND are not already acknowledged in .funcignore."""
+    funcignore = load_funcignore(root_dir)
     violations = []
     for dirpath, dirnames, filenames in os.walk(root_dir):
         # Skip venv and __pycache__ — not secret, just noise
@@ -61,18 +98,21 @@ def scan_directory(root_dir: str) -> list[str]:
             rel_path = os.path.relpath(abs_path, root_dir).replace('\\', '/')
             basename = fname.lower()
 
+            is_blocked = False
+
             # Exact filename match
             if fname in BLOCKED_EXACT or fname.lower() in BLOCKED_EXACT:
-                violations.append(rel_path)
-                continue
+                is_blocked = True
 
             # Relative path match (e.g. config/.env)
-            if rel_path in BLOCKED_PATHS:
-                violations.append(rel_path)
-                continue
+            elif rel_path in BLOCKED_PATHS:
+                is_blocked = True
 
             # Pattern match
-            if any(check(basename) for check in BLOCKED_PATTERNS):
+            elif any(check(basename) for check in BLOCKED_PATTERNS):
+                is_blocked = True
+
+            if is_blocked and not is_covered_by_funcignore(rel_path, funcignore):
                 violations.append(rel_path)
 
     return sorted(set(violations))

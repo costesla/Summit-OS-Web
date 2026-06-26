@@ -35,7 +35,7 @@ export class ApiError extends Error {
 
 // ─── Core fetch wrapper ───────────────────────────────────────────────────────
 interface RequestOptions {
-  method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
   body?: unknown
   timeoutMs?: number
   retries?: number

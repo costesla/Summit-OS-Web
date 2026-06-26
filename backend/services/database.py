@@ -450,7 +450,7 @@ class DatabaseClient:
         cursor = conn.cursor()
         
         try:
-            # Idempotent table creation with strict check constraint
+            # Idempotent table creation with strict check constraint and ExpenseType
             cursor.execute("""
                 IF OBJECT_ID('Rides.ManualExpenses', 'U') IS NULL
                 CREATE TABLE Rides.ManualExpenses (
@@ -461,6 +461,7 @@ class DatabaseClient:
                     Timestamp DATETIME DEFAULT GETDATE(),
                     LastUpdated DATETIME DEFAULT GETDATE(),
                     IncludedInKPI BIT NOT NULL DEFAULT 1,
+                    ExpenseType NVARCHAR(10) DEFAULT 'OpEx',
                     CONSTRAINT CK_ManualExpenses_KPI_Isolation CHECK (
                         (Category IN ('Maintenance', 'General_Expense') AND IncludedInKPI = 0)
                         OR
@@ -470,22 +471,42 @@ class DatabaseClient:
             """)
             conn.commit()
 
-            query = """
-            MERGE INTO Rides.ManualExpenses AS target
-            USING (SELECT ? AS ExpenseID) AS source
-            ON (target.ExpenseID = source.ExpenseID)
-            WHEN MATCHED THEN
-                UPDATE SET Category = ?, Amount = ?, Note = ?, Timestamp = ?, IncludedInKPI = ?, LastUpdated = GETDATE()
-            WHEN NOT MATCHED THEN
-                INSERT (ExpenseID, Category, Amount, Note, Timestamp, IncludedInKPI, LastUpdated)
-                VALUES (?, ?, ?, ?, ?, ?, GETDATE());
-            """
-            
+            # Alter column check to dynamically add ExpenseType if migrating
+            try:
+                cursor.execute("""
+                    IF NOT EXISTS (
+                        SELECT * FROM sys.columns 
+                        WHERE object_id = OBJECT_ID('Rides.ManualExpenses') AND name = 'ExpenseType'
+                    )
+                    BEGIN
+                        ALTER TABLE Rides.ManualExpenses ADD ExpenseType NVARCHAR(10) DEFAULT 'OpEx';
+                    END
+                """)
+                conn.commit()
+            except Exception as alt_e:
+                logging.warning(f"Could not add ExpenseType column to ManualExpenses: {alt_e}")
+
+            # Fallback check for expense_type
             eid = str(expense_data.get('id'))
             cat = expense_data.get('category')
             amt = float(expense_data.get('amount') or 0)
             note = expense_data.get('note')
             ts = expense_data.get('timestamp') or datetime.datetime.now()
+            
+            expense_type = expense_data.get('expense_type')
+            if not expense_type:
+                expense_type = 'CapEx' if cat in ["Maintenance", "General_Expense"] else 'OpEx'
+
+            query = """
+            MERGE INTO Rides.ManualExpenses AS target
+            USING (SELECT ? AS ExpenseID) AS source
+            ON (target.ExpenseID = source.ExpenseID)
+            WHEN MATCHED THEN
+                UPDATE SET Category = ?, Amount = ?, Note = ?, Timestamp = ?, IncludedInKPI = ?, ExpenseType = ?, LastUpdated = GETDATE()
+            WHEN NOT MATCHED THEN
+                INSERT (ExpenseID, Category, Amount, Note, Timestamp, IncludedInKPI, ExpenseType, LastUpdated)
+                VALUES (?, ?, ?, ?, ?, ?, ?, GETDATE());
+            """
             
             # Strict Fail-Fast Validation
             kpi_passed = expense_data.get('included_in_kpi')
@@ -497,7 +518,7 @@ class DatabaseClient:
                 )
             kpi = expected_kpi
             
-            p = (cat, amt, note, ts, kpi)
+            p = (cat, amt, note, ts, kpi, expense_type)
             params = (eid,) + p + (eid,) + p
             
             cursor.execute(query, params)
@@ -594,7 +615,8 @@ class DatabaseClient:
         manual_query = """
         SELECT 
             ExpenseID AS id, Category AS category, Amount AS amount, Note AS note, 
-            Format(Timestamp, 'yyyy-MM-ddTHH:mm:ss') as timestamp, IncludedInKPI as included_in_kpi
+            Format(Timestamp, 'yyyy-MM-ddTHH:mm:ss') as timestamp, IncludedInKPI as included_in_kpi,
+            COALESCE(ExpenseType, CASE WHEN Category IN ('Maintenance', 'General_Expense') THEN 'CapEx' ELSE 'OpEx' END) as expense_type
         FROM Rides.ManualExpenses
         WHERE CAST(Timestamp AS DATE) = CAST(? AS DATE)
         """
@@ -1012,4 +1034,162 @@ class DatabaseClient:
             return ["jackie", "jacquelyn", "jacquelyn heslep", "esmeralda", "daniel", "ryan", "lauren", "terrance", "lorynne", "nancy", "adrienne", "david", "emerson"]
         finally:
             conn.close()
+
+    def bulk_collect_invoices(self, invoice_ids: list) -> bool:
+        """Mark invoices as Paid and set PaidAt timestamp."""
+        if not invoice_ids:
+            return False
+        conn = self.get_connection()
+        if not conn:
+            return False
+        try:
+            cursor = conn.cursor()
+            placeholders = ",".join(["?"] * len(invoice_ids))
+            query = f"""
+                UPDATE Rides.Rides
+                SET PaymentStatus = 'Paid',
+                    PaidAt = GETUTCDATE(),
+                    LastUpdated = GETUTCDATE()
+                WHERE RideID IN ({placeholders})
+            """
+            cursor.execute(query, invoice_ids)
+            conn.commit()
+            return True
+        except Exception as e:
+            logging.error(f"bulk_collect_invoices failed: {e}")
+            return False
+        finally:
+            conn.close()
+
+    def get_summary_metrics_for_range(self, start_date_str: str, end_date_str: str) -> dict:
+        """Calculate collected private income, Uber earnings, and expenses for a date range using operational windows."""
+        from services.datetime_utils import get_operational_window
+        start_window_start, _ = get_operational_window(start_date_str)
+        _, end_window_end = get_operational_window(end_date_str)
+
+        conn = self.get_connection()
+        if not conn:
+            return {
+                "uber_earnings": 0.0,
+                "private_income": 0.0,
+                "gross_earnings": 0.0,
+                "expenses": 0.0,
+                "net_profit": 0.0
+            }
+        
+        try:
+            cursor = conn.cursor()
+            # 1. Uber Earnings
+            cursor.execute("""
+                SELECT SUM(Driver_Earnings)
+                FROM Rides.Rides
+                WHERE Timestamp_Start >= ? AND Timestamp_Start < ?
+                  AND TripType = 'Uber'
+                  AND DeletedAt IS NULL
+                  AND (IsTest IS NULL OR IsTest = 0)
+            """, (start_window_start, end_window_end))
+            row = cursor.fetchone()
+            uber_sum = float(row[0] or 0.0) if row else 0.0
+
+            # 2. Paid Private Bookings
+            cursor.execute("""
+                SELECT SUM(Fare + Tip)
+                FROM Rides.Rides
+                WHERE Timestamp_Start >= ? AND Timestamp_Start < ?
+                  AND TripType = 'Private'
+                  AND PaymentStatus = 'Paid'
+                  AND DeletedAt IS NULL
+                  AND (IsTest IS NULL OR IsTest = 0)
+            """, (start_window_start, end_window_end))
+            row = cursor.fetchone()
+            private_booking_sum = float(row[0] or 0.0) if row else 0.0
+
+            # 3. Private Payments (from PrivatePayments table)
+            cursor.execute("""
+                SELECT SUM(Amount)
+                FROM Rides.PrivatePayments
+                WHERE PaymentDate >= CAST(? AS DATE) AND PaymentDate <= CAST(? AS DATE)
+                  AND DeletedAt IS NULL
+            """, (start_date_str, end_date_str))
+            row = cursor.fetchone()
+            private_payment_sum = float(row[0] or 0.0) if row else 0.0
+
+            # 4. Expenses (split into OpEx and CapEx)
+            # OpEx from ManualExpenses (ExpenseType = 'OpEx' or category fallback)
+            cursor.execute("""
+                SELECT SUM(Amount)
+                FROM Rides.ManualExpenses
+                WHERE CAST(Timestamp AS DATE) >= CAST(? AS DATE) AND CAST(Timestamp AS DATE) <= CAST(? AS DATE)
+                  AND (ExpenseType = 'OpEx' OR (ExpenseType IS NULL AND Category NOT IN ('Maintenance', 'General_Expense')))
+            """, (start_date_str, end_date_str))
+            row = cursor.fetchone()
+            manual_opex_sum = float(row[0] or 0.0) if row else 0.0
+
+            # Charging sessions are always OpEx
+            cursor.execute("""
+                SELECT SUM(Cost)
+                FROM Rides.ChargingSessions
+                WHERE CAST(Start_Time AS DATE) >= CAST(? AS DATE) AND CAST(Start_Time AS DATE) <= CAST(? AS DATE)
+            """, (start_date_str, end_date_str))
+            row = cursor.fetchone()
+            charging_sum = float(row[0] or 0.0) if row else 0.0
+
+            total_opex = manual_opex_sum + charging_sum
+
+            # CapEx from ManualExpenses (ExpenseType = 'CapEx' or category fallback)
+            cursor.execute("""
+                SELECT SUM(Amount)
+                FROM Rides.ManualExpenses
+                WHERE CAST(Timestamp AS DATE) >= CAST(? AS DATE) AND CAST(Timestamp AS DATE) <= CAST(? AS DATE)
+                  AND (ExpenseType = 'CapEx' OR (ExpenseType IS NULL AND Category IN ('Maintenance', 'General_Expense')))
+            """, (start_date_str, end_date_str))
+            row = cursor.fetchone()
+            total_capex = float(row[0] or 0.0) if row else 0.0
+
+            gross_earnings = uber_sum + private_booking_sum + private_payment_sum
+            total_expenses = total_opex + total_capex
+
+            return {
+                "uber_earnings": uber_sum,
+                "private_income": private_booking_sum + private_payment_sum,
+                "gross_earnings": gross_earnings,
+                "opex_expenses": total_opex,
+                "capex_expenses": total_capex,
+                "expenses": total_expenses,
+                "net_profit": gross_earnings - total_opex
+            }
+        except Exception as e:
+            logging.error(f"get_summary_metrics_for_range failed: {e}")
+            return {
+                "uber_earnings": 0.0,
+                "private_income": 0.0,
+                "gross_earnings": 0.0,
+                "expenses": 0.0,
+                "net_profit": 0.0
+            }
+        finally:
+            conn.close()
+
+    def get_global_deferred_total(self) -> float:
+        """Sum of all outstanding Deferred invoices across all clients."""
+        conn = self.get_connection()
+        if not conn:
+            return 0.0
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT SUM(Fare)
+                FROM Rides.Rides
+                WHERE PaymentStatus = 'Deferred'
+                  AND DeletedAt IS NULL
+                  AND (IsTest IS NULL OR IsTest = 0)
+            """)
+            row = cursor.fetchone()
+            return float(row[0] or 0.0) if row else 0.0
+        except Exception as e:
+            logging.error(f"get_global_deferred_total failed: {e}")
+            return 0.0
+        finally:
+            conn.close()
+
 
