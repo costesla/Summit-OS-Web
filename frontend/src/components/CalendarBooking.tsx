@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { formatTime, formatDate } from "@/lib/calendar";
 import { Calendar, Clock, CheckCircle, ChevronRight, Loader2 } from "lucide-react";
+import DatePickerCalendar from "./DatePickerCalendar";
 
 interface CalendarBookingProps {
     customerName: string;
@@ -122,8 +123,8 @@ export default function CalendarBooking({
         return mins >= toMinutes(dayHop.start) && mins <= toMinutes(dayHop.end);
     }
 
-    // Generate next 30 days for date selection
-    const availableDates = Array.from({ length: 30 }, (_, i) => {
+    // Generate next 90 days for date selection
+    const availableDates = Array.from({ length: 90 }, (_, i) => {
         const date = new Date();
         date.setDate(date.getDate() + i);
         return date;
@@ -351,49 +352,18 @@ export default function CalendarBooking({
                 {loadingConfig ? (
                     <div className="text-sm text-gray-500 py-4">Checking schedule...</div>
                 ) : (
-                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                        {availableDates.slice(0, 15).map((date) => {
-                            const isSelected =
-                                selectedDate?.toDateString() === date.toDateString();
-                            const blocked = isDateBlocked(date);
-
-                            return (
-                                <button
-                                    key={date.toISOString()}
-                                    disabled={blocked}
-                                    onClick={() => {
-                                        setSelectedDate(date);
-                                        setSelectedTime(null);
-                                        setReturnDate(null);
-                                        setReturnTime(null);
-                                    }}
-                                    className={`p-3 rounded-lg border transition-all text-center relative overflow-hidden ${blocked
-                                        ? "bg-red-900/10 border-red-900/20 opacity-50 cursor-not-allowed grayscale"
-                                        : isSelected
-                                            ? "bg-cyan-600 border-cyan-600 text-white shadow-lg shadow-cyan-500/20"
-                                            : "bg-white/5 border-white/10 text-gray-300 hover:bg-white/10 hover:border-white/20"
-                                        }`}
-                                >
-                                    {blocked && (
-                                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 z-10">
-                                            <span className="text-[10px] uppercase font-bold text-red-400 rotate-[-15deg] border-2 border-red-400 px-1 rounded">
-                                                OUT
-                                            </span>
-                                        </div>
-                                    )}
-                                    <div className="text-xs font-bold">
-                                        {date.toLocaleDateString("en-US", { weekday: "short" })}
-                                    </div>
-                                    <div className="text-lg font-bold">
-                                        {date.getDate()}
-                                    </div>
-                                    <div className="text-[10px] text-gray-500">
-                                        {date.toLocaleDateString("en-US", { month: "short" })}
-                                    </div>
-                                </button>
-                            );
-                        })}
-                    </div>
+                    <DatePickerCalendar
+                        selected={selectedDate}
+                        onSelect={(date) => {
+                            setSelectedDate(date);
+                            setSelectedTime(null);
+                            setReturnDate(null);
+                            setReturnTime(null);
+                        }}
+                        isBlocked={isDateBlocked}
+                        maxDays={90}
+                        accentColor="cyan"
+                    />
                 )}
             </div>
 
@@ -445,32 +415,17 @@ export default function CalendarBooking({
                         <h3 className="text-lg font-bold text-white">Select Your Return Pickup Time</h3>
                     </div>
 
-                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                        {availableDates.slice(0, 15).map((date) => {
-                            // Return can't be before the outbound day
+                    <DatePickerCalendar
+                        selected={returnDate}
+                        onSelect={(date) => { setReturnDate(date); setReturnTime(null); }}
+                        isBlocked={(date) => {
                             const beforeOutbound = selectedDate !== null
                                 && new Date(date).setHours(0, 0, 0, 0) < new Date(selectedDate).setHours(0, 0, 0, 0);
-                            const blocked = isDateBlocked(date) || beforeOutbound;
-                            const isSelected = returnDate?.toDateString() === date.toDateString();
-                            return (
-                                <button
-                                    key={`ret-${date.toISOString()}`}
-                                    disabled={blocked}
-                                    onClick={() => { setReturnDate(date); setReturnTime(null); }}
-                                    className={`p-3 rounded-lg border transition-all text-center ${blocked
-                                        ? "bg-white/[0.02] border-white/5 opacity-30 cursor-not-allowed"
-                                        : isSelected
-                                            ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20"
-                                            : "bg-white/5 border-white/10 text-gray-300 hover:bg-white/10 hover:border-white/20"
-                                        }`}
-                                >
-                                    <div className="text-xs font-bold">{date.toLocaleDateString("en-US", { weekday: "short" })}</div>
-                                    <div className="text-lg font-bold">{date.getDate()}</div>
-                                    <div className="text-[10px] text-gray-500">{date.toLocaleDateString("en-US", { month: "short" })}</div>
-                                </button>
-                            );
-                        })}
-                    </div>
+                            return isDateBlocked(date) || beforeOutbound;
+                        }}
+                        maxDays={90}
+                        accentColor="blue"
+                    />
 
                     {returnDate && (
                         loadingReturnSlots ? (
