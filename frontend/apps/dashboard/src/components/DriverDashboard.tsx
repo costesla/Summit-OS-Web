@@ -1008,7 +1008,7 @@ const DriverDashboard: React.FC = () => {
                                                 {privateBookings.length === 0 ? (
                                                     <p className="text-center text-xs text-[var(--text-muted)] italic py-6">// no private bookings logged</p>
                                                 ) : (() => {
-                                                    const privateSlots = [...privateBookings];
+                                                    const privateSlots: (DatabaseTrip | null)[] = [...privateBookings];
                                                     while (privateSlots.length < 3) {
                                                         privateSlots.push(null);
                                                     }
@@ -1051,7 +1051,7 @@ const DriverDashboard: React.FC = () => {
                                                 {uberTrips.length === 0 ? (
                                                     <p className="text-center text-xs text-[var(--text-muted)] italic py-6">// no Uber trips logged</p>
                                                 ) : (() => {
-                                                    const uberSlots = [...uberTrips];
+                                                    const uberSlots: (DatabaseTrip | null)[] = [...uberTrips];
                                                     while (uberSlots.length < 3) {
                                                         uberSlots.push(null);
                                                     }
