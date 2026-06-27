@@ -51,6 +51,40 @@ const getPaymentStatusBadge = (status: string) => {
     }
 };
 
+// Helper: get client DisplayName from RideID or classification
+const getClientDisplayName = (t: DatabaseTrip) => {
+    const id = t.id || "";
+    if (id.startsWith("INV-")) {
+        const parts = id.split("-");
+        if (parts.length >= 2) {
+            const rawName = parts[1].toLowerCase();
+            if (rawName === "jackie" || rawName === "jacquelyn") return "Jackie";
+            return parts[1].charAt(0).toUpperCase() + parts[1].slice(1).toLowerCase();
+        }
+    }
+    const classification = t.classification || "";
+    if (classification && classification !== "Private_Booking" && classification !== "Manual_Entry") {
+        return classification;
+    }
+    return "Private Client";
+};
+
+// Helper: convert UTC ISO date string to MST/MDT local time HH:MM format
+const formatToLocalTime = (utcString: string | null | undefined): string => {
+    if (!utcString) return "";
+    try {
+        const date = new Date(utcString.endsWith("Z") ? utcString : utcString + "Z");
+        return date.toLocaleTimeString('en-US', {
+            timeZone: 'America/Denver',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        });
+    } catch {
+        return utcString.slice(11, 16);
+    }
+};
+
 // Types & Interfaces
 type Section = 'home' | 'trips' | 'financials' | 'charging' | 'tools';
 
@@ -216,9 +250,7 @@ const DriverDashboard: React.FC = () => {
     const [loadingPreShift, setLoadingPreShift] = useState(false);
     const [loadingTrips, setLoadingTrips] = useState(false);
 
-    // Period earnings (computed client-side — /financials/summary returns zeros)
-    const [weekActual, setWeekActual] = useState<number>(0);
-    const [monthActual, setMonthActual] = useState<number>(0);
+
     
     // Action States & Modals
     const [logs, setLogs] = useState<string[]>([]);
@@ -344,43 +376,7 @@ const DriverDashboard: React.FC = () => {
         return () => clearInterval(interval);
     }, [fetchAllData]);
 
-    // Compute week & month actuals from parallel day fetches
-    // (bypasses /financials/summary which returns zeros for all dates)
-    useEffect(() => {
-        let cancelled = false;
-        const compute = async () => {
-            const selected = new Date(selectedDate + 'T12:00:00');
-            const monthStart = new Date(selected.getFullYear(), selected.getMonth(), 1);
-            const weekCutoff = new Date(selected);
-            weekCutoff.setDate(selected.getDate() - 6);
 
-            const dates: string[] = [];
-            const cur = new Date(monthStart);
-            while (cur <= selected) {
-                dates.push(cur.toLocaleDateString('sv-SE', { timeZone: 'America/Denver' }));
-                cur.setDate(cur.getDate() + 1);
-            }
-
-            const results = await Promise.all(dates.map(async d => {
-                try {
-                    const res = await apiGet<{ trips: DatabaseTrip[] }>(`/driver/sync?date=${d}`);
-                    const earned = (res.trips || [])
-                        .filter((t: DatabaseTrip) => !t.id.startsWith('TESSIE-'))
-                        .reduce((s: number, t: DatabaseTrip) => s + (t.fare ?? 0) + (t.tip ?? 0), 0);
-                    return { d, earned };
-                } catch { return { d, earned: 0 }; }
-            }));
-
-            if (cancelled) return;
-            const wkCut = weekCutoff.getTime();
-            const week = results.filter(r => new Date(r.d + 'T12:00:00').getTime() >= wkCut).reduce((s, r) => s + r.earned, 0);
-            const month = results.reduce((s, r) => s + r.earned, 0);
-            setWeekActual(week);
-            setMonthActual(month);
-        };
-        compute();
-        return () => { cancelled = true; };
-    }, [selectedDate]);
 
     // Update synced footer timing text
     useEffect(() => {
@@ -733,15 +729,32 @@ const DriverDashboard: React.FC = () => {
         
         // Add Drives
         drives.forEach(d => {
-            const timeStr = d.time_mst || (d.start ? d.start.slice(11, 16) : "00:00");
-            const efficiency = d.efficiency_wh_mi ? `${d.efficiency_wh_mi} Wh/mi` : "N/A Wh/mi";
-            const kwh = d.energy_used_kwh ? `${d.energy_used_kwh.toFixed(1)} kWh` : "";
-            const socStr = d.starting_battery !== null && d.ending_battery !== null ? `-${d.starting_battery - d.ending_battery}% SOC` : "";
+            const timeStr = d.time_mst || "00:00";
             
+            // Calculate energy used
+            let kwhVal = d.energy_used_kwh;
+            if (!kwhVal && d.starting_battery !== null && d.ending_battery !== null) {
+                kwhVal = Math.max(0, ((d.starting_battery - d.ending_battery) / 100) * 75);
+            }
+            const kwh = kwhVal ? `${kwhVal.toFixed(1)} kWh` : "N/A kWh";
+
+            // Calculate efficiency
+            let effVal = d.efficiency_wh_mi;
+            if (effVal === null && kwhVal && d.distance_miles > 0) {
+                effVal = Math.round((kwhVal * 1000) / d.distance_miles);
+            }
+            const efficiency = effVal ? `${effVal} Wh/mi` : "N/A Wh/mi";
+
+            const socStr = d.starting_battery !== null && d.ending_battery !== null ? `${d.starting_battery}% → ${d.ending_battery}%` : "";
+            
+            // Clean location addresses
+            const startLoc = d.tag || scrubAddress(formatLocation(d.start)) || "Unknown Start";
+            const endLoc = scrubAddress(formatLocation(d.end)) || "Unknown End";
+
             items.push({
                 time: timeStr,
                 type: 'Trip',
-                details: `${d.tag ? `[${d.tag}] ` : ""}${scrubAddress(d.start)} to ${scrubAddress(d.end)}`,
+                details: `${startLoc} to ${endLoc}`,
                 socChange: socStr,
                 stats: `${d.distance_miles.toFixed(1)} mi · ${d.duration_minutes}m · ${kwh} · ${efficiency}`
             });
@@ -749,10 +762,10 @@ const DriverDashboard: React.FC = () => {
 
         // Add Charges
         charges.forEach(c => {
-            const timeStr = c.time_mst || (c.date ? "00:00" : "");
-            const duration = c.duration_minutes ? `${c.duration_minutes}m` : "";
+            const timeStr = c.time_mst || "00:00";
+            const duration = c.duration_minutes ? `${c.duration_minutes}m` : "N/A";
             const added = c.energy_added_kwh ? `+${c.energy_added_kwh.toFixed(1)} kWh` : "";
-            const socStr = c.starting_soc !== null && c.ending_soc !== null ? `+${c.ending_soc - c.starting_soc}% SOC` : "";
+            const socStr = c.starting_soc !== null && c.ending_soc !== null ? `${c.starting_soc}% → ${c.ending_soc}%` : "";
             const cost = c.running_cost_estimate ? `$${c.running_cost_estimate.toFixed(2)}` : "";
 
             items.push({
@@ -769,21 +782,31 @@ const DriverDashboard: React.FC = () => {
         return items;
     }, [drives, charges]);
 
-    // Derive earnings from trips (summary endpoint returns zeros — backend bug)
-    const grossEarnings = useMemo(() =>
-        trips.filter(t => !t.id.startsWith('TESSIE-'))
-             .reduce((s, t) => s + (t.fare ?? 0) + (t.tip ?? 0), 0) || (summary?.gross_earnings ?? 0),
-        [trips, summary]
-    );
-    const uberEarnings = useMemo(() =>
-        trips.filter(t => t.type === 'Uber').reduce((s, t) => s + (t.fare ?? 0) + (t.tip ?? 0), 0) || (summary?.uber_earnings ?? 0),
-        [trips, summary]
-    );
-    const privateIncome = useMemo(() =>
-        trips.filter(t => t.type === 'Private').reduce((s, t) => s + (t.fare ?? 0) + (t.tip ?? 0), 0) || (summary?.private_income ?? 0),
-        [trips, summary]
-    );
-    const netProfit = grossEarnings - (summary?.opex_expenses ?? 0) - (summary?.capex_expenses ?? 0);
+    // Filter and format private bookings for Ledger
+    const privateBookings = useMemo(() => {
+        return trips.filter(t => 
+            t.type === 'Private' && 
+            !t.id.startsWith('TESSIE-') &&
+            t.classification !== 'Deadhead/Positioning' && 
+            t.classification !== 'Positioning' && 
+            t.classification !== 'Deadhead' && 
+            t.classification !== 'Untagged' &&
+            t.classification !== 'POI' &&
+            t.classification !== 'Charging'
+        );
+    }, [trips]);
+
+    // Sort and format Uber trips for Ledger
+    const uberTrips = useMemo(() => {
+        return trips.filter(t => t.type === 'Uber' && !t.id.startsWith('TESSIE-'))
+                    .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+    }, [trips]);
+
+    // Read live SQL summary metrics directly
+    const grossEarnings = summary?.gross_earnings ?? 0;
+    const uberEarnings = summary?.uber_earnings ?? 0;
+    const privateIncome = summary?.private_income ?? 0;
+    const netProfit = grossEarnings - (summary?.opex_expenses ?? 0);
     const deferredTotal = summary?.deferred_total ?? 0;
 
     // Use all loading states to satisfy TS
@@ -821,6 +844,11 @@ const DriverDashboard: React.FC = () => {
                 
                 {/* Status elements */}
                 <div className="flex items-center gap-3 text-xs font-mono">
+                    {/* Live SQL Badge */}
+                    <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-black uppercase tracking-wider shrink-0 flex items-center gap-1 select-none">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        LIVE
+                    </span>
                     {/* Global Date Picker */}
                     <input
                         type="date"
@@ -890,6 +918,27 @@ const DriverDashboard: React.FC = () => {
                                     <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">{selectedDate} · Operator Console</p>
                                 </div>
 
+                                {/* HealthAlertBanner */}
+                                {preShift && (
+                                    <div className={`p-4 rounded-2xl border ${preShiftScore < 70 ? 'border-[var(--accent-red)]/30 bg-[var(--accent-red)]/5 text-[var(--accent-red)]' : 'border-[var(--accent-cyan)]/25 bg-[var(--accent-cyan)]/5 text-[var(--accent-cyan)]'} flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3`}>
+                                        <div className="flex items-center gap-3">
+                                            {preShiftScore < 70
+                                                ? <ShieldAlert className="w-5 h-5 text-[var(--accent-red)] shrink-0" />
+                                                : <CheckCircle className="w-5 h-5 text-[var(--accent-cyan)] shrink-0" />}
+                                            <div>
+                                                <h4 className="text-xs font-bold uppercase tracking-wider font-mono">SYS CHECK Status: {preShiftScore < 70 ? "Attention Required" : "All Systems Nominal"}</h4>
+                                                <p className="text-[10px] text-[var(--text-muted)] mt-0.5 font-mono">
+                                                    Current Score: {preShiftScore}/100 · {preShiftScore < 70 ? `${Object.values(preShift.tiers || {}).filter(t => t?.status !== 'PASS').length} warning(s) found` : "No issues detected"}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button onClick={() => setSection('tools')}
+                                            className="px-3 py-1 bg-white/5 border border-white/10 hover:bg-white/10 rounded-lg text-[10px] font-bold uppercase font-mono tracking-wider text-white transition-all w-fit">
+                                            Inspect check
+                                        </button>
+                                    </div>
+                                )}
+
                                 {/* StatGrid */}
                                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                                     <StatCard label="Gross Earnings" value={`$${grossEarnings.toFixed(2)}`} sub="Today's aggregate" icon={<TrendingUp className="w-4.5 h-4.5" />} color="cyan" highlight />
@@ -908,9 +957,9 @@ const DriverDashboard: React.FC = () => {
                                         <p className="text-[10px] text-[var(--text-muted)]">Real-time tracking vs targets</p>
                                     </div>
                                     <div className="space-y-4">
-                                        <GoalProgressRow label="Today" actual={grossEarnings} target={summary?.targets?.daily ?? DAILY_TARGET} />
-                                        <GoalProgressRow label="This Week" actual={weekActual} target={summary?.targets?.weekly ?? WEEKLY_TARGET} />
-                                        <GoalProgressRow label="This Month" actual={monthActual} target={summary?.targets?.monthly ?? MONTHLY_TARGET} />
+                                        <GoalProgressRow label="Today" actual={summary?.progress?.today?.actual ?? grossEarnings} target={summary?.targets?.daily ?? DAILY_TARGET} />
+                                        <GoalProgressRow label="This Week" actual={summary?.progress?.week?.actual ?? 0} target={summary?.targets?.weekly ?? WEEKLY_TARGET} />
+                                        <GoalProgressRow label="This Month" actual={summary?.progress?.month?.actual ?? 0} target={summary?.targets?.monthly ?? MONTHLY_TARGET} />
                                     </div>
                                 </div>
 
@@ -956,15 +1005,27 @@ const DriverDashboard: React.FC = () => {
                                         <div className="p-5 rounded-2xl glass space-y-4">
                                             <h3 className="text-sm font-bold uppercase tracking-wider text-white font-mono border-b border-white/5 pb-2">Private Bookings</h3>
                                             <div className="space-y-3 max-h-[480px] overflow-y-auto">
-                                                {trips.filter(t => t.type === 'Private').length === 0 ? (
+                                                {privateBookings.length === 0 ? (
                                                     <p className="text-center text-xs text-[var(--text-muted)] italic py-6">// no private bookings logged</p>
-                                                ) : (
-                                                    trips.filter(t => t.type === 'Private').map(t => {
-                                                        const isJackieAA = (t.classification || "").toLowerCase().includes("jacquelyn") && (t.tessie_label || "").toLowerCase() === 'aa';
+                                                ) : (() => {
+                                                    const privateSlots = [...privateBookings];
+                                                    while (privateSlots.length < 3) {
+                                                        privateSlots.push(null);
+                                                    }
+                                                    return privateSlots.map((t, idx) => {
+                                                        if (!t) {
+                                                            return (
+                                                                <div key={`private-empty-${idx}`} className="p-3.5 rounded-xl border border-dashed border-white/10 flex items-center justify-center h-[90px] select-none">
+                                                                    <span className="text-[10px] text-[var(--text-muted)] italic">// empty slot</span>
+                                                                </div>
+                                                            );
+                                                        }
+                                                        const isJackieAA = (t.classification || "").toLowerCase().includes("jacquelyn") || (t.tessie_label || "").toLowerCase() === 'aa';
+                                                        const clientName = getClientDisplayName(t);
                                                         return (
-                                                            <div key={t.id} className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-1.5">
+                                                            <div key={t.id} className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-1.5 hover:bg-white/[0.03] transition-colors">
                                                                 <div className="flex items-center justify-between">
-                                                                    <span className="text-xs font-bold text-white">{isJackieAA ? "Jackie AA Trip" : (t.classification || "Private client")}</span>
+                                                                    <span className="text-xs font-bold text-white">{isJackieAA ? "Jackie AA Trip" : clientName}</span>
                                                                     {isJackieAA ? (
                                                                         <span className="px-2 py-0.5 rounded-full bg-[var(--accent-purple)]/10 text-[var(--accent-purple)] text-[9px] font-bold uppercase border border-[var(--accent-purple)]/20">AA · Comped</span>
                                                                     ) : (
@@ -973,13 +1034,13 @@ const DriverDashboard: React.FC = () => {
                                                                 </div>
                                                                 <p className="text-[10px] text-[var(--text-muted)] font-mono truncate">{scrubAddress(t.pickup_location)} to {scrubAddress(t.dropoff_location)}</p>
                                                                 <div className="flex items-center justify-between pt-1 font-mono">
-                                                                    <span className="text-[10px] text-[#606060]">{t.timestamp.slice(11, 16)}</span>
+                                                                    <span className="text-[10px] text-[#606060]">{formatToLocalTime(t.timestamp)}</span>
                                                                     <span className="text-sm font-black text-[var(--accent-cyan)]">{isJackieAA ? "$0.00" : `$${t.fare.toFixed(2)}`}</span>
                                                                 </div>
                                                             </div>
                                                         );
-                                                    })
-                                                )}
+                                                    });
+                                                })()}
                                             </div>
                                         </div>
 
@@ -987,23 +1048,40 @@ const DriverDashboard: React.FC = () => {
                                         <div className="p-5 rounded-2xl glass space-y-4">
                                             <h3 className="text-sm font-bold uppercase tracking-wider text-white font-mono border-b border-white/5 pb-2">Uber Trips</h3>
                                             <div className="space-y-3 max-h-[480px] overflow-y-auto">
-                                                {trips.filter(t => t.type === 'Uber').length === 0 ? (
+                                                {uberTrips.length === 0 ? (
                                                     <p className="text-center text-xs text-[var(--text-muted)] italic py-6">// no Uber trips logged</p>
-                                                ) : (
-                                                    trips.filter(t => t.type === 'Uber').map(t => (
-                                                        <div key={t.id} className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-1.5">
-                                                            <div className="flex items-center justify-between">
-                                                                <span className="text-xs font-bold text-white">Uber Core Trip</span>
-                                                                <span className="text-[10px] font-bold text-emerald-400 font-mono">Matched</span>
+                                                ) : (() => {
+                                                    const uberSlots = [...uberTrips];
+                                                    while (uberSlots.length < 3) {
+                                                        uberSlots.push(null);
+                                                    }
+                                                    return uberSlots.map((t, idx) => {
+                                                        if (!t) {
+                                                            return (
+                                                                <div key={`uber-empty-${idx}`} className="p-3.5 rounded-xl border border-dashed border-white/10 flex items-center justify-center h-[90px] select-none">
+                                                                    <span className="text-[10px] text-[var(--text-muted)] italic">// empty slot</span>
+                                                                </div>
+                                                            );
+                                                        }
+                                                        return (
+                                                            <div key={t.id} className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-1.5 hover:bg-white/[0.03] transition-colors">
+                                                                <div className="flex items-center justify-between">
+                                                                    <span className="text-xs font-bold text-white font-sans">Uber {idx + 1}</span>
+                                                                    {t.tessie_drive_id ? (
+                                                                        <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[8px] font-bold uppercase font-mono">Matched</span>
+                                                                    ) : (
+                                                                        <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[8px] font-bold uppercase font-mono">Unmatched</span>
+                                                                    )}
+                                                                </div>
+                                                                <p className="text-[10px] text-[var(--text-muted)] font-mono truncate">Distance: {t.distance_miles.toFixed(1)} mi</p>
+                                                                <div className="flex items-center justify-between pt-1 font-mono">
+                                                                    <span className="text-[10px] text-[#606060]">{formatToLocalTime(t.timestamp)}</span>
+                                                                    <span className="text-sm font-black text-white">${t.fare.toFixed(2)}</span>
+                                                                </div>
                                                             </div>
-                                                            <p className="text-[10px] text-[var(--text-muted)] font-mono">Distance: {t.distance_miles.toFixed(1)} mi</p>
-                                                            <div className="flex items-center justify-between pt-1 font-mono">
-                                                                <span className="text-[10px] text-[#606060]">{t.timestamp.slice(11, 16)}</span>
-                                                                <span className="text-sm font-black text-white">${t.fare.toFixed(2)}</span>
-                                                            </div>
-                                                        </div>
-                                                    ))
-                                                )}
+                                                        );
+                                                    });
+                                                })()}
                                             </div>
                                         </div>
                                     </div>
@@ -1354,19 +1432,23 @@ const DriverDashboard: React.FC = () => {
                                             {unpaidOtherInvoices.length === 0 ? (
                                                 <p className="text-center text-xs text-[var(--text-muted)] italic py-6">// No other unpaid invoices outstanding</p>
                                             ) : (
-                                                unpaidOtherInvoices.map((inv, i) => (
-                                                    <div key={i} className="py-3 flex items-center justify-between gap-4 font-mono text-xs">
-                                                        <div className="space-y-0.5">
-                                                            <span className="font-bold text-white">{inv.classification || "Private Client"}</span>
-                                                            <p className="text-[10px] text-[var(--text-muted)] truncate max-w-[280px]">{scrubAddress(inv.pickup_location)} to {scrubAddress(inv.dropoff_location)}</p>
+                                                unpaidOtherInvoices.map((inv, i) => {
+                                                    const clientName = getClientDisplayName(inv);
+                                                    const routeStr = `${scrubAddress(formatLocation(inv.pickup_location))} to ${scrubAddress(formatLocation(inv.dropoff_location))}`;
+                                                    return (
+                                                        <div key={i} className="py-3 flex items-center justify-between gap-4 font-mono text-xs hover:bg-white/[0.01] transition-colors rounded-lg px-2">
+                                                            <div className="space-y-0.5 min-w-0 flex-1">
+                                                                <span className="font-bold text-white font-sans">{clientName}</span>
+                                                                <p className="text-[10px] text-[var(--text-muted)] truncate max-w-[320px]">{routeStr}</p>
+                                                            </div>
+                                                            <div className="flex items-center gap-3 shrink-0">
+                                                                <span className="text-[9px] text-[#606060]">{inv.timestamp.slice(0, 10)}</span>
+                                                                <span className="font-black text-amber-400 font-mono">${inv.fare.toFixed(2)}</span>
+                                                                <span className="px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-400 text-[8px] font-bold border border-amber-500/20 uppercase font-mono">Deferred</span>
+                                                            </div>
                                                         </div>
-                                                        <div className="flex items-center gap-3">
-                                                            <span className="text-[9px] text-[#606060]">{inv.timestamp.slice(0, 10)}</span>
-                                                            <span className="font-black text-amber-400">${inv.fare.toFixed(2)}</span>
-                                                            <span className="px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-400 text-[8px] font-bold border border-amber-500/20 uppercase font-mono">Deferred</span>
-                                                        </div>
-                                                    </div>
-                                                ))
+                                                    );
+                                                })
                                             )}
                                         </div>
                                     )}

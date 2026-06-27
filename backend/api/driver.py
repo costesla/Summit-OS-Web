@@ -433,10 +433,10 @@ def financials_summary(req: func.HttpRequest) -> func.HttpResponse:
         # Global outstanding deferred balance
         deferred_total = db.get_global_deferred_total()
 
-        # Targets from environment variables
-        target_daily = float(os.environ.get("REVENUE_TARGET_DAILY", 400.0))
-        target_weekly = float(os.environ.get("REVENUE_TARGET_WEEKLY", 2000.0))
-        target_monthly = float(os.environ.get("REVENUE_TARGET_MONTHLY", 8000.0))
+        # Targets derived from REVENUE_TARGET_MONTHLY environment variable
+        target_monthly = float(os.environ.get("REVENUE_TARGET_MONTHLY", 6500.0))
+        target_weekly = round(target_monthly / 4.0)
+        target_daily = round(target_weekly / 7.0)
 
         payload = {
             "success": True,

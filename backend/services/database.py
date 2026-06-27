@@ -1081,7 +1081,7 @@ class DatabaseClient:
             cursor = conn.cursor()
             # 1. Uber Earnings
             cursor.execute("""
-                SELECT SUM(Driver_Earnings)
+                SELECT SUM(Driver_Earnings + COALESCE(Tip, 0))
                 FROM Rides.Rides
                 WHERE Timestamp_Start >= ? AND Timestamp_Start < ?
                   AND TripType = 'Uber'
