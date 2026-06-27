@@ -151,6 +151,10 @@ class TessieClient:
                 diff_minutes = abs((drive_end_ts - trip_end_timestamp) / 60)
                 
                 if diff_minutes < allowed_gap_minutes:
+                    # Ingestion Guardrail: Skip Uber-tagged drives when matching Private trips
+                    if is_private and 'uber' in (drive.get('tag') or '').lower():
+                        logging.info(f"Skipping Uber-tagged drive {drive.get('id')} for Private trip match.")
+                        continue
                     logging.info(f"Drive Match Found! Diff: {diff_minutes:.2f} min (Window: {allowed_gap_minutes})")
                     
                     # ENHANCEMENT: Auto-resolve address if missing

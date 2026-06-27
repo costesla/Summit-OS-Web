@@ -1634,6 +1634,8 @@ class CloudWatcherService:
                             )
                             and not any(w in (d["Classification"] or "").lower() or w in get_tag(d) for w in ["pickup", "en route", "charging", "charge"])
                             and not (float(d.get("Distance_mi") or 0) < 1.0 and booking.get("Fare", 0) > 0)
+                            and d.get("TripType") != "Uber"
+                            and (d["Classification"] or "").lower() != "uber_matched"
                         ]
                         
                     if client_drives:
@@ -1651,11 +1653,19 @@ class CloudWatcherService:
                                 best_diff_seconds = diff
                                 best_drive = drive
                     else:
-                        # 2. Fall back to normal proximity matching, but skip pickup legs, charging, and short staging runs (< 1.0 mi)
+                        # 2. Fall back to normal proximity matching, but skip pickup legs, charging, short staging runs (< 1.0 mi), and Uber drives
                         for drive in unmatched_drives:
                             drive_class = (drive.get("Classification") or "").lower()
                             drive_tag = get_tag(drive)
                             drive_dist = float(drive.get("Distance_mi") or 0)
+                            
+                            # Ingestion Guardrail: Skip Uber-specific drives to prevent misattribution to Private bookings
+                            if (drive.get("TripType") == "Uber" 
+                                or "uber" in drive_class 
+                                or "uber" in drive_tag 
+                                or drive_class == "uber_matched"):
+                                continue
+                                
                             if "pickup" in drive_class or "pickup" in drive_tag or "en route" in drive_class or "en route" in drive_tag or "charging" in drive_class or "charging" in drive_tag or "charge" in drive_class or "charge" in drive_tag or (drive_dist < 1.0 and booking.get("Fare", 0) > 0):
                                 continue
                             t_dt = drive["Timestamp_Start"]
