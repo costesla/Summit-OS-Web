@@ -25,6 +25,18 @@ const scrubAddress = (addr: string | null | undefined): string | null => {
     return addr.replace(/^\d+\s+/, '');
 };
 
+// Helper: strip state/zip/country — "Street, City, State ZIP, Country" → "Street, City"
+const formatLocation = (raw: string | null | undefined): string => {
+    if (!raw) return 'Unknown';
+    const parts = raw.split(',').map(p => p.trim()).filter(Boolean);
+    return parts.slice(0, 2).join(', ');
+};
+
+// Revenue targets — derived from env var, never hardcoded separately
+const MONTHLY_TARGET = parseInt(import.meta.env.VITE_REVENUE_TARGET_MONTHLY ?? '6500') || 6500;
+const WEEKLY_TARGET  = Math.round(MONTHLY_TARGET / 4);
+const DAILY_TARGET   = Math.round(WEEKLY_TARGET / 7);
+
 // Helper: get payment status badge JSX
 const getPaymentStatusBadge = (status: string) => {
     switch (status.toLowerCase()) {
@@ -746,7 +758,7 @@ const DriverDashboard: React.FC = () => {
             items.push({
                 time: timeStr,
                 type: 'Charge',
-                details: `Charging Session at ${c.location || "Supercharger"}`,
+                details: `Charging Session at ${formatLocation(c.location) || "Supercharger"}`,
                 socChange: socStr,
                 stats: `${added} · ${duration} · ${cost}`
             });
@@ -896,9 +908,9 @@ const DriverDashboard: React.FC = () => {
                                         <p className="text-[10px] text-[var(--text-muted)]">Real-time tracking vs targets</p>
                                     </div>
                                     <div className="space-y-4">
-                                        <GoalProgressRow label="Today" actual={grossEarnings} target={summary?.targets?.daily ?? 400} />
-                                        <GoalProgressRow label="This Week" actual={weekActual} target={summary?.targets?.weekly ?? 2000} />
-                                        <GoalProgressRow label="This Month" actual={monthActual} target={summary?.targets?.monthly ?? 8000} />
+                                        <GoalProgressRow label="Today" actual={grossEarnings} target={summary?.targets?.daily ?? DAILY_TARGET} />
+                                        <GoalProgressRow label="This Week" actual={weekActual} target={summary?.targets?.weekly ?? WEEKLY_TARGET} />
+                                        <GoalProgressRow label="This Month" actual={monthActual} target={summary?.targets?.monthly ?? MONTHLY_TARGET} />
                                     </div>
                                 </div>
 
@@ -1382,8 +1394,8 @@ const DriverDashboard: React.FC = () => {
                                             charges.map((c, i) => (
                                                 <div key={i} className="p-3.5 rounded-xl bg-white/[0.01] border border-white/5 flex items-center justify-between gap-4 font-mono text-xs">
                                                     <div>
-                                                        <span className="font-bold text-[var(--accent-cyan)]">{c.location || "Supercharger"}</span>
-                                                        <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Start: {c.time_mst || "00:00"} · Duration: {c.duration_minutes || "N/A"}m</p>
+                                                        <span className="font-bold text-[var(--accent-cyan)]">{formatLocation(c.location) || "Supercharger"}</span>
+                                                        <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Start: {c.time_mst || "00:00"} · Duration: {c.duration_minutes != null ? `${c.duration_minutes}m` : 'N/A'}</p>
                                                     </div>
                                                     <div className="text-right">
                                                         <span className="font-bold text-white">+{c.energy_added_kwh.toFixed(1)} kWh</span>
