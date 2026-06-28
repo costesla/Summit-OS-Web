@@ -627,7 +627,8 @@ const DriverDashboard: React.FC = () => {
                     timestamp,
                     classification: "Cash Tip",
                     pickup_location: "Cash Gratuity",
-                    dropoff_location: "Cash Gratuity"
+                    dropoff_location: "Cash Gratuity",
+                    payment_status: "Paid"
                 }]
             });
             setCashTipAmount('');
@@ -658,7 +659,8 @@ const DriverDashboard: React.FC = () => {
                     timestamp,
                     classification: privatePaymentClient || "Private",
                     pickup_location: privatePaymentNote || "Private Booking",
-                    dropoff_location: privatePaymentNote || "Private Booking"
+                    dropoff_location: privatePaymentNote || "Private Booking",
+                    payment_status: "Paid"
                 }]
             });
             setPrivatePaymentClient('');

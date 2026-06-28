@@ -144,7 +144,8 @@ def driver_sync(req: func.HttpRequest) -> func.HttpResponse:
                 "uber_cut": fees + insurance + otherFees,
                 "distance_miles": dist,
                 "tessie_drive_id": tdid,
-                "Classification": "Manual_Entry"
+                "Classification": "Manual_Entry",
+                "payment_status": trip.get("payment_status") or trip.get("PaymentStatus")
             }
             # Register artifact first so source_pointer is a stable GUID URI
             try:

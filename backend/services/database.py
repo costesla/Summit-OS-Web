@@ -165,16 +165,18 @@ class DatabaseClient:
                 Driver_Earnings = CASE WHEN ? > 0 THEN ? ELSE target.Driver_Earnings END,
                 Platform_Cut = CASE WHEN ? <> 0 THEN ? ELSE target.Platform_Cut END,
                 Start_SOC = ?, End_SOC = ?, Energy_Used_kWh = ?, Efficiency_Wh_mi = ?,
-                Source_URL = ?, Classification = ?, Tessie_Label = COALESCE(target.Tessie_Label, ?), Sidecar_Artifact_JSON = ?, LastUpdated = GETDATE()
+                Source_URL = ?, Classification = ?, Tessie_Label = COALESCE(target.Tessie_Label, ?), Sidecar_Artifact_JSON = ?,
+                PaymentStatus = COALESCE(?, target.PaymentStatus), LastUpdated = GETDATE()
         WHEN NOT MATCHED THEN
             INSERT (
                 RideID, TripType, Timestamp_Start, Pickup_Location, Dropoff_Location,
                 Distance_mi, Duration_min, Tessie_DriveID, Tessie_Distance,
                 Fare, Tip, Driver_Earnings, Platform_Cut,
                 Start_SOC, End_SOC, Energy_Used_kWh, Efficiency_Wh_mi,
-                Source_URL, Classification, Tessie_Label, Sidecar_Artifact_JSON, CreatedAt
+                Source_URL, Classification, Tessie_Label, Sidecar_Artifact_JSON,
+                PaymentStatus, CreatedAt
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE());
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE());
         """
         
         t_start = trip_data.get('timestamp_epoch') or trip_data.get('started_at')
@@ -260,6 +262,7 @@ class DatabaseClient:
             incoming_triptype = 'Private'
 
         tessie_label = trip_data.get('Tessie_Label') or trip_data.get('tessie_label') or trip_data.get('tag')
+        payment_status = trip_data.get('payment_status') or trip_data.get('PaymentStatus')
 
         params = (
             ride_id,
@@ -283,6 +286,7 @@ class DatabaseClient:
             incoming_classification,
             tessie_label,
             json.dumps(trip_data) if trip_data else None,
+            payment_status,
             # For INSERT:
             ride_id,
             incoming_triptype,
@@ -304,7 +308,8 @@ class DatabaseClient:
             source_url,
             incoming_classification,
             tessie_label,
-            json.dumps(trip_data) if trip_data else None
+            json.dumps(trip_data) if trip_data else None,
+            payment_status
         )
 
         try:
