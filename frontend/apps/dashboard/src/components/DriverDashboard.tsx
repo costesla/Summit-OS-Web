@@ -2,10 +2,12 @@ import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import {
     LayoutDashboard, Route, Receipt, Zap, Wrench, TrendingUp,
     DollarSign, Car, ShieldAlert, CheckCircle, ExternalLink,
-    ChevronDown, ChevronUp, Plus, Loader2, MapPin, Gauge, Battery
+    ChevronDown, ChevronUp, Plus, Loader2, MapPin, Gauge, Battery, Link2
 } from 'lucide-react';
 import { isBackgroundableError, devDebugError, getAsyncExecutionLogs, pollJobStatus } from '../../../../src/lib/intelligenceUtils';
-import { apiGet, apiPost, apiRequest } from '../lib/apiClient';
+import { apiGet, apiPost } from '../lib/apiClient';
+import PaymentTrackerPanel from './payments/PaymentTrackerPanel';
+import TellerConnectButton from './TellerConnectButton';
 
 const AZURE_BASE = import.meta.env.VITE_PUBLIC_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://summitos-api.azurewebsites.net/api';
 const VERSION = "2.0.0";
@@ -146,22 +148,6 @@ interface FinancialsSummaryResponse {
     };
 }
 
-interface JackieDayRow {
-    date: string;
-    legs: number;
-    billed_legs: number;
-    credited_legs: number;
-    billed_amount: number;
-    invoice_ids: string[];
-    age_days: number;
-    note: string;
-}
-
-interface JackieDeferredResponse {
-    success: boolean;
-    days: JackieDayRow[];
-}
-
 interface DatabaseTrip {
     id: string;
     type: 'Uber' | 'Private';
@@ -233,7 +219,6 @@ const DriverDashboard: React.FC = () => {
     const [teslaLive, setTeslaLive] = useState<TeslaStatus | null>(null);
     const [preShift, setPreShift] = useState<PreShiftCheckResponse | null>(null);
     const [summary, setSummary] = useState<FinancialsSummaryResponse | null>(null);
-    const [jackieData, setJackieData] = useState<JackieDeferredResponse | null>(null);
     const [trips, setTrips] = useState<DatabaseTrip[]>([]);
     const [drives, setDrives] = useState<TessieDrive[]>([]);
     const [charges, setCharges] = useState<TessieCharge[]>([]);
@@ -246,7 +231,6 @@ const DriverDashboard: React.FC = () => {
     
     // Loading States
     const [loadingSummary, setLoadingSummary] = useState(false);
-    const [loadingJackie, setLoadingJackie] = useState(false);
     const [loadingPreShift, setLoadingPreShift] = useState(false);
     const [loadingTrips, setLoadingTrips] = useState(false);
 
@@ -256,8 +240,6 @@ const DriverDashboard: React.FC = () => {
     const [logs, setLogs] = useState<string[]>([]);
     const [status, setStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle');
     const [scrubConfirmOpen, setScrubConfirmOpen] = useState(false);
-    const [collectConfirmOpen, setCollectConfirmOpen] = useState(false);
-    const [selectedJackieDay, setSelectedJackieDay] = useState<JackieDayRow | null>(null);
     const [isMobileQuickLogOpen, setIsMobileQuickLogOpen] = useState(false);
     const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date());
     const [syncIntervalText, setSyncIntervalText] = useState("Just now");
@@ -279,19 +261,16 @@ const DriverDashboard: React.FC = () => {
     const [isLoggingExpense, setIsLoggingExpense] = useState(false);
 
     // Collapsible Panels
-    const [jackieCollapsed, setJackieCollapsed] = useState(false);
     const [expensesCollapsed, setExpensesCollapsed] = useState(true);
     const [unpaidCollapsed, setUnpaidCollapsed] = useState(true);
+    const [paymentTrackerCollapsed, setPaymentTrackerCollapsed] = useState(false);
+    const [paymentAnomalyCount, setPaymentAnomalyCount] = useState(0);
 
     const activePollRef = useRef<(() => void) | null>(null);
-
-    // Dynamic Monique handle from environment or fallback
-    const MONIQUE_CASHAPP_HANDLE = import.meta.env.VITE_CASHAPP_MONIQUE_HANDLE || "MoniqueTeehan";
 
     // ─── Fetch Helper: All Data ───────────────────────────────────────────────────
     const fetchAllData = useCallback(async () => {
         setLoadingSummary(true);
-        setLoadingJackie(true);
         setLoadingPreShift(true);
         setLoadingTrips(true);
 
@@ -306,17 +285,7 @@ const DriverDashboard: React.FC = () => {
         }
 
         try {
-            // 2. Fetch Jackie Deferred Invoices
-            const jackieRes = await apiGet<JackieDeferredResponse>('/jackie/deferred');
-            setJackieData(jackieRes);
-        } catch (e) {
-            console.error("Jackie fetch error:", e);
-        } finally {
-            setLoadingJackie(false);
-        }
-
-        try {
-            // 3. Fetch Pre-Shift Check Status
+            // 2. Fetch Pre-Shift Check Status
             const preShiftRes = await apiGet<PreShiftCheckResponse>(`/pre-shift-check?date=${selectedDate}`);
             setPreShift(preShiftRes);
         } catch (e) {
@@ -326,7 +295,7 @@ const DriverDashboard: React.FC = () => {
         }
 
         try {
-            // 4. Fetch ledger trips and expenses (combines Uber + Private)
+            // 3. Fetch ledger trips and expenses (combines Uber + Private)
             const syncRes = await apiGet<{
                 trips: DatabaseTrip[];
                 expenses?: {
@@ -348,7 +317,7 @@ const DriverDashboard: React.FC = () => {
         }
 
         try {
-            // 5. Fetch Tessie Drives for telemetry
+            // 4. Fetch Tessie Drives for telemetry
             const drivesRes = await apiGet<{ drives: TessieDrive[] }>(`/copilot/tessie/drives?days=2`);
             // Filter to selected date
             const filteredDrives = (drivesRes.drives || []).filter(d => d.date === selectedDate);
@@ -358,7 +327,7 @@ const DriverDashboard: React.FC = () => {
         }
 
         try {
-            // 6. Fetch Tessie Charges for telemetry
+            // 5. Fetch Tessie Charges for telemetry
             const chargesRes = await apiGet<{ sessions: TessieCharge[] }>(`/copilot/tessie/charges?days=2`);
             const filteredCharges = (chargesRes.sessions || []).filter(c => c.date === selectedDate);
             setCharges(filteredCharges);
@@ -566,49 +535,6 @@ const DriverDashboard: React.FC = () => {
         }
     };
 
-    // ─── Actions: Jackie Invoices Collection ─────────────────────────────────────────
-    const handleCollectJackieRow = async (dayRow: JackieDayRow) => {
-        setSelectedJackieDay(dayRow);
-        setCollectConfirmOpen(true);
-    };
-
-    const handleConfirmCollection = async () => {
-        if (!selectedJackieDay) return;
-        setCollectConfirmOpen(false);
-        setLoadingJackie(true);
-        try {
-            const res = await apiRequest<{ success: boolean; collected: number }>('/invoices/bulk-collect', {
-                method: 'PATCH',
-                body: { invoice_ids: selectedJackieDay.invoice_ids }
-            });
-            if (res.success) {
-                fetchAllData();
-            }
-        } catch (e) {
-            console.error("Bulk collect failed:", e);
-        } finally {
-            setLoadingJackie(false);
-            setSelectedJackieDay(null);
-        }
-    };
-
-    const handleCollectAllJackie = async () => {
-        if (!jackieData || !jackieData.days.length) return;
-        const allIds = jackieData.days.flatMap(d => d.invoice_ids);
-        const totalAmt = jackieData.days.reduce((s, d) => s + d.billed_amount, 0);
-        setSelectedJackieDay({
-            date: "All Outstanding Days",
-            legs: 0,
-            billed_legs: 0,
-            credited_legs: 0,
-            billed_amount: totalAmt,
-            invoice_ids: allIds,
-            age_days: 0,
-            note: "All outstanding invoices combined"
-        });
-        setCollectConfirmOpen(true);
-    };
-
     // ─── Actions: Logging tips / private income from QuickLog ────────────────────────
     const handleLogCashTip = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -715,14 +641,8 @@ const DriverDashboard: React.FC = () => {
     const preShiftScore = preShift?.overall_confidence ?? 100;
     const healthBadgeColor = preShiftScore >= 70 ? 'border-[var(--accent-cyan)] text-[var(--accent-cyan)] bg-[var(--accent-cyan)]/5' : 'border-[var(--accent-red)] text-[var(--accent-red)] bg-[var(--accent-red)]/5 animate-pulse';
 
-    const jackieOutstandingBalance = useMemo(() => {
-        if (!jackieData || !jackieData.days) return 0;
-        return jackieData.days.reduce((s, d) => s + d.billed_amount, 0);
-    }, [jackieData]);
-
     const unpaidOtherInvoices = useMemo(() => {
-        // Unpaid Invoices panel: clients other than Jackie
-        return trips.filter(t => t.type === 'Private' && t.fare > 0 && !(t.id.startsWith("INV-JACKIE-") || (t.classification || "").toLowerCase().includes("jacquelyn")));
+        return trips.filter(t => t.type === 'Private' && t.fare > 0);
     }, [trips]);
 
     // Telemetry Timeline events combination
@@ -812,12 +732,12 @@ const DriverDashboard: React.FC = () => {
     const deferredTotal = summary?.deferred_total ?? 0;
 
     // Use all loading states to satisfy TS
-    const isAnyLoading = loadingSummary || loadingJackie || loadingPreShift || loadingTrips;
+    const isAnyLoading = loadingSummary || loadingPreShift || loadingTrips;
 
     const navItems = [
         { id: 'home', label: 'Home', icon: <LayoutDashboard className="w-4 h-4" /> },
         { id: 'trips', label: 'Trips', icon: <Route className="w-4 h-4" />, badge: trips.length ? `${trips.length}` : undefined },
-        { id: 'financials', label: 'Financials', icon: <Receipt className="w-4 h-4" />, badge: unpaidOtherInvoices.length ? `${unpaidOtherInvoices.length} unpaid` : undefined, jackieBadge: jackieOutstandingBalance > 0 ? `$${jackieOutstandingBalance}` : undefined },
+        { id: 'financials', label: 'Financials', icon: <Receipt className="w-4 h-4" />, badge: unpaidOtherInvoices.length ? `${unpaidOtherInvoices.length} unpaid` : undefined },
         { id: 'charging', label: 'Charging', icon: <Zap className="w-4 h-4" />, badge: charges.length ? `${charges.length}` : undefined },
         { id: 'tools', label: 'Tools', icon: <Wrench className="w-4 h-4" /> }
     ];
@@ -890,10 +810,7 @@ const DriverDashboard: React.FC = () => {
                                     : 'text-[var(--text-muted)] hover:text-white hover:bg-white/5 border-transparent'}`}>
                                 <span className={`shrink-0 ${section === n.id ? 'text-[var(--accent-cyan)]' : 'text-[var(--text-muted)]'}`}>{n.icon}</span>
                                 <span className="flex-1">{n.label}</span>
-                                {n.jackieBadge && (
-                                    <span className="px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[9px] font-mono font-bold">{n.jackieBadge}</span>
-                                )}
-                                {n.badge && !n.jackieBadge && (
+                                {n.badge && (
                                     <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono font-bold ${n.badge.includes('unpaid') ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-white/5 text-[var(--text-muted)] border border-white/5'}`}>{n.badge}</span>
                                 )}
                             </button>
@@ -1022,22 +939,17 @@ const DriverDashboard: React.FC = () => {
                                                                 </div>
                                                             );
                                                         }
-                                                        const isJackieAA = (t.classification || "").toLowerCase().includes("jacquelyn") || (t.tessie_label || "").toLowerCase() === 'aa';
                                                         const clientName = getClientDisplayName(t);
                                                         return (
                                                             <div key={t.id} className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-1.5 hover:bg-white/[0.03] transition-colors">
                                                                 <div className="flex items-center justify-between">
-                                                                    <span className="text-xs font-bold text-white">{isJackieAA ? "Jackie AA Trip" : clientName}</span>
-                                                                    {isJackieAA ? (
-                                                                        <span className="px-2 py-0.5 rounded-full bg-[var(--accent-purple)]/10 text-[var(--accent-purple)] text-[9px] font-bold uppercase border border-[var(--accent-purple)]/20">AA · Comped</span>
-                                                                    ) : (
-                                                                        getPaymentStatusBadge(t.id.startsWith("INV-JACKIE") ? "Deferred" : "Paid")
-                                                                    )}
+                                                                    <span className="text-xs font-bold text-white">{clientName}</span>
+                                                                    {getPaymentStatusBadge("Paid")}
                                                                 </div>
                                                                 <p className="text-[10px] text-[var(--text-muted)] font-mono truncate">{scrubAddress(t.pickup_location)} to {scrubAddress(t.dropoff_location)}</p>
                                                                 <div className="flex items-center justify-between pt-1 font-mono">
                                                                     <span className="text-[10px] text-[#606060]">{formatToLocalTime(t.timestamp)}</span>
-                                                                    <span className="text-sm font-black text-[var(--accent-cyan)]">{isJackieAA ? "$0.00" : `$${t.fare.toFixed(2)}`}</span>
+                                                                    <span className="text-sm font-black text-[var(--accent-cyan)]">${t.fare.toFixed(2)}</span>
                                                                 </div>
                                                             </div>
                                                         );
@@ -1126,120 +1038,6 @@ const DriverDashboard: React.FC = () => {
                                 <div>
                                     <h1 className="text-2xl font-black tracking-tight">Financials</h1>
                                     <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">{selectedDate} · Balance Sheet</p>
-                                </div>
-
-                                {/* Panel 1: Jackie Deferred Tracker (Pinned open, collapsible) */}
-                                <div className="rounded-2xl border border-amber-500/20 bg-[var(--bg-surface)] overflow-hidden shadow-xl">
-                                    <div className="p-4 flex items-center justify-between border-b border-white/5 cursor-pointer bg-white/[0.01]" onClick={() => setJackieCollapsed(!jackieCollapsed)}>
-                                        <div className="flex items-center gap-3">
-                                            {/* JH avatar */}
-                                            <div className="w-8 h-8 rounded-full bg-[var(--accent-cyan)]/15 border border-[var(--accent-cyan)]/30 flex items-center justify-center font-black text-[var(--accent-cyan)] text-xs">JH</div>
-                                            <div>
-                                                <h3 className="text-sm font-bold text-white">Jackie Deferred Tracker</h3>
-                                                <div className="flex flex-wrap gap-1.5 mt-1 text-[8px] font-bold font-mono">
-                                                    <span className="px-1.5 py-0.2 rounded-full bg-[var(--accent-purple)]/10 text-[var(--accent-purple)] border border-[var(--accent-purple)]/20">AA trips: comped</span>
-                                                    <span className="px-1.5 py-0.2 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">Deferred billing</span>
-                                                    <span className="px-1.5 py-0.2 rounded-full bg-white/5 text-[var(--text-muted)] border border-white/5">$30/leg · $60/day cap</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-4">
-                                            {/* Outstanding Balance */}
-                                            <span className="text-xl font-black text-amber-400 font-mono">${jackieOutstandingBalance.toFixed(2)}</span>
-                                            {jackieCollapsed ? <ChevronDown className="w-4 h-4 text-[var(--text-muted)]" /> : <ChevronUp className="w-4 h-4 text-[var(--text-muted)]" />}
-                                        </div>
-                                    </div>
-
-                                    {!jackieCollapsed && (
-                                        <div className="p-5 space-y-4">
-                                            {/* Monique payment bar */}
-                                            <div className="p-3.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                                                <div>
-                                                    <span className="text-xs font-bold text-white">Payment via Monique (Cash App)</span>
-                                                    <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Handle: ${MONIQUE_CASHAPP_HANDLE}</p>
-                                                </div>
-                                                <a href={`https://cash.app/$${MONIQUE_CASHAPP_HANDLE}/${jackieOutstandingBalance}`} target="_blank" rel="noopener noreferrer"
-                                                    className={`px-4 py-2 rounded-xl text-xs font-bold text-center transition-all ${jackieOutstandingBalance > 0 ? 'bg-[var(--accent-cyan)] text-[#0a1628] hover:scale-[1.02]' : 'bg-white/5 text-[var(--text-muted)] cursor-not-allowed pointer-events-none'}`}>
-                                                    Request ${jackieOutstandingBalance.toFixed(2)}
-                                                </a>
-                                            </div>
-
-                                            {/* Legend bar */}
-                                            <div className="flex flex-wrap items-center justify-between gap-3 text-[10px] font-mono text-[var(--text-muted)] border-b border-white/5 pb-3">
-                                                <div className="flex items-center gap-3">
-                                                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[var(--accent-cyan)]" /> Billable leg</span>
-                                                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[var(--accent-purple)]" /> Credited overage</span>
-                                                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full border border-dashed border-white/30" /> No trip</span>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <span>Aging:</span>
-                                                    <span className="text-[var(--accent-cyan)]">cyan 1-2d</span>
-                                                    <span className="text-amber-400">· amber 3-6d</span>
-                                                    <span className="text-[var(--accent-red)]">· red 7d+</span>
-                                                </div>
-                                            </div>
-
-                                            {/* Per-day rows list */}
-                                            <div className="space-y-2">
-                                                {loadingJackie ? (
-                                                    <div className="text-center py-6"><Loader2 className="w-5 h-5 animate-spin mx-auto text-[var(--accent-cyan)]" /></div>
-                                                ) : !jackieData || !jackieData.days.length ? (
-                                                    <p className="text-center text-xs text-[var(--text-muted)] italic py-6">// All Jackie invoices fully collected</p>
-                                                ) : (
-                                                    jackieData.days.map((d, i) => {
-                                                        const agingColor = d.age_days >= 7 ? 'text-[var(--accent-red)] border-[var(--accent-red)]/20 bg-[var(--accent-red)]/5' : d.age_days >= 3 ? 'text-amber-400 border-amber-500/20 bg-amber-500/5' : 'text-[var(--accent-cyan)] border-[var(--accent-cyan)]/20 bg-[var(--accent-cyan)]/5';
-                                                        
-                                                        // Dots list
-                                                        const dots = [];
-                                                        // Max 2 billable slots
-                                                        const billed_drawn = Math.min(d.billed_legs, 2);
-                                                        const total_drawn = Math.min(d.legs, 2);
-                                                        
-                                                        for (let j = 0; j < billed_drawn; j++) {
-                                                            dots.push(<span key={`b-${j}`} className="w-2.5 h-2.5 rounded-full bg-[var(--accent-cyan)]" />);
-                                                        }
-                                                        for (let j = 0; j < total_drawn - billed_drawn; j++) {
-                                                            dots.push(<span key={`c-${j}`} className="w-2.5 h-2.5 rounded-full bg-[var(--accent-purple)]" />);
-                                                        }
-                                                        for (let j = 0; j < 2 - total_drawn; j++) {
-                                                            dots.push(<span key={`e-${j}`} className="w-2.5 h-2.5 rounded-full border border-dashed border-white/20" />);
-                                                        }
-
-                                                        return (
-                                                            <div key={i} className="p-3 rounded-xl bg-white/[0.01] border border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-3 hover:bg-white/[0.02] transition-colors">
-                                                                <div className="flex items-center gap-4">
-                                                                    <span className="text-xs font-bold font-mono text-white shrink-0">{d.date}</span>
-                                                                    {/* Leg dots */}
-                                                                    <div className="flex items-center gap-1.5 shrink-0">{dots}</div>
-                                                                </div>
-                                                                <div className="flex items-center gap-3 justify-between md:justify-end flex-1 min-w-0">
-                                                                    <span className="text-[10px] text-[var(--text-muted)] truncate pr-4">{d.note}</span>
-                                                                    <div className="flex items-center gap-2 shrink-0">
-                                                                        {d.legs > 2 && (
-                                                                            <span className="px-2 py-0.2 rounded bg-[var(--accent-purple)]/10 text-[var(--accent-purple)] text-[9px] font-bold border border-[var(--accent-purple)]/20">{d.legs - 2} credited</span>
-                                                                        )}
-                                                                        <span className={`px-2 py-0.2 rounded text-[9px] font-bold border font-mono ${agingColor}`}>{d.age_days}d age</span>
-                                                                        <span className="text-sm font-black text-amber-400 font-mono w-12 text-right">${d.billed_amount.toFixed(0)}</span>
-                                                                        <button onClick={() => handleCollectJackieRow(d)}
-                                                                            className="px-2.5 py-1 bg-white/5 border border-white/10 hover:border-emerald-500/20 hover:bg-emerald-500/10 hover:text-emerald-400 rounded-lg text-[10px] font-bold transition-all">Collect</button>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })
-                                                )}
-                                            </div>
-
-                                            {/* Panel 1 Footer */}
-                                            {jackieData && jackieData.days.length > 0 && (
-                                                <div className="pt-3 border-t border-white/5 flex items-center justify-between gap-4">
-                                                    <span className="text-[9px] font-mono text-[#606060]">AA-tagged trips never appear here — always comped and non-billable</span>
-                                                    <button onClick={handleCollectAllJackie}
-                                                        className="px-4 py-2 bg-amber-500 text-[#0a1628] hover:bg-amber-400 rounded-xl text-xs font-bold transition-all shadow-md">Collect All</button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
                                 </div>
 
                                 {/* Panel 2: Expenses & Capital Ledger (Collapsible) */}
@@ -1455,6 +1253,27 @@ const DriverDashboard: React.FC = () => {
                                         </div>
                                     )}
                                 </div>
+
+                                {/* Panel 4: Payment Tracker (Collapsible) */}
+                                <div className="rounded-2xl border border-white/5 bg-[var(--bg-surface)] overflow-hidden shadow-lg">
+                                    <div className="p-4 flex items-center justify-between border-b border-white/5 cursor-pointer bg-white/[0.01]" onClick={() => setPaymentTrackerCollapsed(!paymentTrackerCollapsed)}>
+                                        <div className="flex items-center gap-2">
+                                            <DollarSign className="w-4 h-4 text-[var(--accent-cyan)]" />
+                                            <h3 className="text-sm font-bold text-white">Payment Tracker</h3>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            {paymentAnomalyCount > 0 && (
+                                                <span className="px-2 py-0.5 rounded-full bg-[var(--accent-red)]/10 text-[var(--accent-red)] border border-[var(--accent-red)]/20 text-[10px] font-mono font-bold">{paymentAnomalyCount} flagged</span>
+                                            )}
+                                            {paymentTrackerCollapsed ? <ChevronDown className="w-4 h-4 text-[var(--text-muted)]" /> : <ChevronUp className="w-4 h-4 text-[var(--text-muted)]" />}
+                                        </div>
+                                    </div>
+                                    {!paymentTrackerCollapsed && (
+                                        <div className="p-4">
+                                            <PaymentTrackerPanel selectedDate={selectedDate} onAnomalyCountChange={setPaymentAnomalyCount} />
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         )}
 
@@ -1581,6 +1400,22 @@ const DriverDashboard: React.FC = () => {
                                     <ToolCard title="Save Day to Cloud" desc="Saves all manually logged local trips and cash tips to Azure SQL database." action={runSaveDay} />
                                 </div>
 
+                                {/* Bank Connection (Teller sign-in) */}
+                                <div className="p-5 rounded-2xl glass border border-white/8 space-y-4">
+                                    <div className="flex items-center gap-3">
+                                        <Link2 className="w-5 h-5 text-[var(--accent-cyan)] shrink-0" />
+                                        <div>
+                                            <h4 className="text-sm font-bold text-white">Bank Connection</h4>
+                                            <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Link Chase accounts via Teller — powers the Payment Tracker's automatic sync.</p>
+                                        </div>
+                                    </div>
+                                    {import.meta.env.VITE_TELLER_APPLICATION_ID ? (
+                                        <TellerConnectButton applicationId={import.meta.env.VITE_TELLER_APPLICATION_ID} environment="production" />
+                                    ) : (
+                                        <p className="text-[10px] text-amber-400 font-mono">Set VITE_TELLER_APPLICATION_ID in the environment to enable bank linking.</p>
+                                    )}
+                                </div>
+
                                 {/* Uber Activity Heatmap */}
                                 <a href="/uber-heatmap.html" target="_blank" rel="noopener noreferrer"
                                     className="p-5 rounded-2xl glass border border-white/8 hover:border-[var(--accent-cyan)]/30 hover:bg-white/[0.02] flex items-center justify-between transition-all duration-200 group">
@@ -1635,9 +1470,6 @@ const DriverDashboard: React.FC = () => {
                         className={`flex flex-col items-center gap-1 px-3 py-1 min-w-[48px] transition-all relative ${section === n.id ? 'text-[var(--accent-cyan)]' : 'text-[var(--text-muted)]'}`}>
                         <span className="w-4 h-4">{n.icon}</span>
                         <span className="text-[9px] font-bold">{n.label}</span>
-                        {n.jackieBadge && (
-                            <span className="absolute top-1 right-2 w-2 h-2 rounded-full bg-amber-500 border border-[var(--bg-surface)]" />
-                        )}
                         {section === n.id && <span className="w-1 h-1 rounded-full bg-[var(--accent-cyan)]" />}
                     </button>
                 ))}
@@ -1667,31 +1499,6 @@ const DriverDashboard: React.FC = () => {
                                 className="w-full py-3 rounded-xl border border-[var(--accent-cyan)]/20 bg-[var(--accent-cyan)]/10 text-[var(--accent-cyan)] text-xs font-bold">+ Log Expense</button>
                             <button onClick={() => { setSection('financials'); setIsMobileQuickLogOpen(false); setTimeout(() => { document.getElementById("log-expense-form")?.scrollIntoView({ behavior: 'smooth' }); setExpenseCategory('Charging'); }, 100); }} 
                                 className="w-full py-3 rounded-xl border border-rose-500/20 bg-rose-500/10 text-rose-400 text-xs font-bold">Scan Receipt</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* ─── Modals: Collect Confirmation ────────────────────────────────────── */}
-            {collectConfirmOpen && selectedJackieDay && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
-                    <div className="w-full max-w-sm rounded-2xl border border-white/8 p-6 space-y-4 bg-[var(--bg-surface)] shadow-2xl">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20"><Receipt className="w-5 h-5 text-amber-400" /></div>
-                            <div>
-                                <h2 className="text-base font-bold text-white">Collect Outstanding Invoices</h2>
-                                <p className="text-xs text-[var(--text-muted)] mt-0.5">{selectedJackieDay.date}</p>
-                            </div>
-                        </div>
-                        <p className="text-xs text-[var(--text-muted)] font-mono leading-relaxed">
-                            Has Monique sent the Cash App payment of <span className="font-bold text-white">${selectedJackieDay.billed_amount.toFixed(2)}</span>? 
-                            This will mark {selectedJackieDay.invoice_ids.length} invoice(s) as Paid.
-                        </p>
-                        <div className="flex gap-2.5 pt-2">
-                            <button onClick={() => { setCollectConfirmOpen(false); setSelectedJackieDay(null); }} 
-                                className="flex-1 py-2.5 rounded-xl text-xs font-bold border border-white/10 bg-white/5 text-[var(--text-muted)] hover:bg-white/10 transition-all">Cancel</button>
-                            <button onClick={handleConfirmCollection} 
-                                className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-amber-500 text-[#0a1628] hover:bg-amber-400 transition-all">Yes, Confirm Paid</button>
                         </div>
                     </div>
                 </div>

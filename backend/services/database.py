@@ -3,6 +3,7 @@ import logging
 import pyodbc
 import datetime
 import json
+import uuid
 
 class DatabaseClient:
     def __init__(self):
@@ -1194,6 +1195,463 @@ class DatabaseClient:
         except Exception as e:
             logging.error(f"get_global_deferred_total failed: {e}")
             return 0.0
+        finally:
+            conn.close()
+
+    # ═════════════════════════════════════════════════════════════════════
+    # Payment Tracker — Finance schema
+    # (Finance.Payments / Finance.RecurringObligations / Finance.LuisBalanceLog)
+    # ═════════════════════════════════════════════════════════════════════
+
+    def _ensure_finance_tables(self, cursor):
+        """Idempotently creates the Finance schema and its tables. Caller commits."""
+        cursor.execute(
+            "IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'Finance') "
+            "EXEC('CREATE SCHEMA Finance')"
+        )
+        cursor.execute("""
+            IF OBJECT_ID('Finance.Payments', 'U') IS NULL
+            CREATE TABLE Finance.Payments (
+                PaymentID           UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+                Date                DATE NOT NULL,
+                Account             VARCHAR(10) NOT NULL,
+                Direction           VARCHAR(10) NOT NULL,
+                Counterparty        VARCHAR(255),
+                Amount              DECIMAL(10,2) NOT NULL,
+                Category            VARCHAR(100),
+                SubCategory         VARCHAR(100),
+                RecurringFlag       BIT DEFAULT 0,
+                MatchedRecordID     UNIQUEIDENTIFIER NULL,
+                AnomalyFlag         BIT DEFAULT 0,
+                AnomalyReason       VARCHAR(255) NULL,
+                TellerTransactionID VARCHAR(100) NULL,
+                Notes               VARCHAR(500) NULL,
+                CreatedAt           DATETIME DEFAULT GETDATE()
+            )
+        """)
+        cursor.execute("""
+            IF NOT EXISTS (
+                SELECT * FROM sys.indexes
+                WHERE name = 'UX_Payments_TellerTransactionID' AND object_id = OBJECT_ID('Finance.Payments')
+            )
+            CREATE UNIQUE INDEX UX_Payments_TellerTransactionID
+            ON Finance.Payments (TellerTransactionID)
+            WHERE TellerTransactionID IS NOT NULL
+        """)
+        cursor.execute("""
+            IF OBJECT_ID('Finance.RecurringObligations', 'U') IS NULL
+            CREATE TABLE Finance.RecurringObligations (
+                ObligationID    UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+                Name            VARCHAR(255) NOT NULL,
+                Account         VARCHAR(10) NOT NULL,
+                ExpectedDay     INT,
+                ExpectedAmount  DECIMAL(10,2),
+                TolerancePct    DECIMAL(5,2) DEFAULT 5.00,
+                Category        VARCHAR(100),
+                ActiveFlag      BIT DEFAULT 1
+            )
+        """)
+        cursor.execute("""
+            IF OBJECT_ID('Finance.LuisBalanceLog', 'U') IS NULL
+            CREATE TABLE Finance.LuisBalanceLog (
+                LogID           UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+                Date            DATE NOT NULL,
+                AmountSent      DECIMAL(10,2) NOT NULL,
+                ExpectedAmount  DECIMAL(10,2) DEFAULT 190.00,
+                Tier            VARCHAR(20) NOT NULL,
+                DeferredAmount  DECIMAL(10,2) DEFAULT 0.00,
+                RunningBalance  DECIMAL(10,2) NOT NULL,
+                Notes           VARCHAR(500) NULL,
+                CreatedAt       DATETIME DEFAULT GETDATE()
+            )
+        """)
+        cursor.execute("""
+            IF NOT EXISTS (
+                SELECT * FROM sys.indexes
+                WHERE name = 'UX_LuisBalanceLog_Date' AND object_id = OBJECT_ID('Finance.LuisBalanceLog')
+            )
+            CREATE UNIQUE INDEX UX_LuisBalanceLog_Date ON Finance.LuisBalanceLog (Date)
+        """)
+
+    def ensure_finance_tables(self):
+        """Public, standalone entry point (used by setup/seed scripts)."""
+        conn = self.get_connection()
+        if not conn:
+            return
+        try:
+            cursor = conn.cursor()
+            self._ensure_finance_tables(cursor)
+            conn.commit()
+        except Exception as e:
+            logging.error(f"ensure_finance_tables failed: {e}")
+        finally:
+            conn.close()
+
+    def save_payment(self, payment: dict):
+        """Insert a Finance.Payments row. If TellerTransactionID is present and
+        already recorded, returns the existing PaymentID instead of duplicating
+        (dedup across the local Teller-MCP sync and the cloud on-demand sync)."""
+        conn = self.get_connection()
+        if not conn:
+            return None
+        try:
+            cursor = conn.cursor()
+            self._ensure_finance_tables(cursor)
+            conn.commit()
+
+            teller_id = payment.get("teller_transaction_id")
+            if teller_id:
+                cursor.execute(
+                    "SELECT PaymentID FROM Finance.Payments WHERE TellerTransactionID = ?",
+                    (teller_id,),
+                )
+                existing = cursor.fetchone()
+                if existing:
+                    return str(existing[0])
+
+            payment_id = str(uuid.uuid4())
+            cursor.execute("""
+                INSERT INTO Finance.Payments
+                    (PaymentID, Date, Account, Direction, Counterparty, Amount, Category,
+                     SubCategory, RecurringFlag, MatchedRecordID, AnomalyFlag, AnomalyReason,
+                     TellerTransactionID, Notes)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                payment_id,
+                payment["date"],
+                payment["account"],
+                payment["direction"],
+                payment.get("counterparty"),
+                payment["amount"],
+                payment.get("category"),
+                payment.get("subcategory"),
+                int(bool(payment.get("recurring_flag"))),
+                payment.get("matched_record_id"),
+                int(bool(payment.get("anomaly_flag"))),
+                payment.get("anomaly_reason"),
+                teller_id,
+                payment.get("notes"),
+            ))
+            conn.commit()
+            return payment_id
+        except Exception as e:
+            logging.error(f"save_payment failed: {e}")
+            return None
+        finally:
+            conn.close()
+
+    def get_payments(self, account=None, category=None, date_from=None, date_to=None,
+                      anomaly_only=False, limit=500) -> list:
+        conn = self.get_connection()
+        if not conn:
+            return []
+        try:
+            cursor = conn.cursor()
+            self._ensure_finance_tables(cursor)
+            conn.commit()
+
+            conditions = []
+            params = []
+            if account:
+                conditions.append("Account = ?")
+                params.append(account)
+            if category:
+                conditions.append("Category = ?")
+                params.append(category)
+            if date_from:
+                conditions.append("Date >= ?")
+                params.append(date_from)
+            if date_to:
+                conditions.append("Date <= ?")
+                params.append(date_to)
+            if anomaly_only:
+                conditions.append("AnomalyFlag = 1")
+            where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
+
+            cursor.execute(f"""
+                SELECT TOP (?) PaymentID, Date, Account, Direction, Counterparty, Amount,
+                       Category, SubCategory, RecurringFlag, AnomalyFlag, AnomalyReason, Notes
+                FROM Finance.Payments
+                {where}
+                ORDER BY Date DESC, CreatedAt DESC
+            """, (limit, *params))
+
+            cols = ["payment_id", "date", "account", "direction", "counterparty", "amount",
+                    "category", "subcategory", "recurring_flag", "anomaly_flag", "anomaly_reason", "notes"]
+            results = []
+            for row in cursor.fetchall():
+                d = dict(zip(cols, row))
+                d["date"] = d["date"].isoformat() if hasattr(d["date"], "isoformat") else str(d["date"])
+                d["amount"] = float(d["amount"])
+                d["recurring_flag"] = bool(d["recurring_flag"])
+                d["anomaly_flag"] = bool(d["anomaly_flag"])
+                results.append(d)
+            return results
+        except Exception as e:
+            logging.error(f"get_payments failed: {e}")
+            return []
+        finally:
+            conn.close()
+
+    def get_open_anomalies(self) -> list:
+        return self.get_payments(anomaly_only=True, limit=200)
+
+    def resolve_anomaly(self, payment_id: str, resolution_note: str = None) -> bool:
+        conn = self.get_connection()
+        if not conn:
+            return False
+        try:
+            cursor = conn.cursor()
+            self._ensure_finance_tables(cursor)
+            conn.commit()
+            note_suffix = f" | Resolved: {resolution_note}" if resolution_note else " | Resolved"
+            cursor.execute("""
+                UPDATE Finance.Payments
+                SET AnomalyFlag = 0, Notes = COALESCE(Notes, '') + ?
+                WHERE PaymentID = ?
+            """, (note_suffix, payment_id))
+            updated = cursor.rowcount
+            conn.commit()
+            return updated > 0
+        except Exception as e:
+            logging.error(f"resolve_anomaly failed: {e}")
+            return False
+        finally:
+            conn.close()
+
+    def get_luis_running_balance(self) -> float:
+        conn = self.get_connection()
+        if not conn:
+            return 0.0
+        try:
+            cursor = conn.cursor()
+            self._ensure_finance_tables(cursor)
+            conn.commit()
+            cursor.execute("SELECT TOP 1 RunningBalance FROM Finance.LuisBalanceLog ORDER BY Date DESC")
+            row = cursor.fetchone()
+            return float(row[0]) if row else 0.0
+        except Exception as e:
+            logging.error(f"get_luis_running_balance failed: {e}")
+            return 0.0
+        finally:
+            conn.close()
+
+    def save_luis_log(self, date, amount_sent, tier, deferred_amount, running_balance, notes=None):
+        """Upserts the LuisBalanceLog row for `date` (one row per day)."""
+        conn = self.get_connection()
+        if not conn:
+            return
+        try:
+            cursor = conn.cursor()
+            self._ensure_finance_tables(cursor)
+            conn.commit()
+            cursor.execute("""
+                MERGE INTO Finance.LuisBalanceLog AS target
+                USING (SELECT CAST(? AS DATE) AS Date) AS source
+                ON (target.Date = source.Date)
+                WHEN MATCHED THEN
+                    UPDATE SET AmountSent = ?, Tier = ?, DeferredAmount = ?, RunningBalance = ?, Notes = ?
+                WHEN NOT MATCHED THEN
+                    INSERT (Date, AmountSent, Tier, DeferredAmount, RunningBalance, Notes)
+                    VALUES (?, ?, ?, ?, ?, ?);
+            """, (
+                date, amount_sent, tier, deferred_amount, running_balance, notes,
+                date, amount_sent, tier, deferred_amount, running_balance, notes,
+            ))
+            conn.commit()
+        except Exception as e:
+            logging.error(f"save_luis_log failed: {e}")
+        finally:
+            conn.close()
+
+    def get_luis_balance_history(self, limit_days: int = 90) -> dict:
+        conn = self.get_connection()
+        if not conn:
+            return {"current_balance": 0.0, "today": None, "history": []}
+        try:
+            cursor = conn.cursor()
+            self._ensure_finance_tables(cursor)
+            conn.commit()
+            cursor.execute("""
+                SELECT TOP (?) Date, AmountSent, ExpectedAmount, Tier, DeferredAmount, RunningBalance, Notes
+                FROM Finance.LuisBalanceLog
+                ORDER BY Date DESC
+            """, (limit_days,))
+            history = []
+            for r in cursor.fetchall():
+                history.append({
+                    "date": r[0].isoformat() if hasattr(r[0], "isoformat") else str(r[0]),
+                    "amount_sent": float(r[1]),
+                    "expected_amount": float(r[2]),
+                    "tier": r[3],
+                    "deferred_amount": float(r[4]),
+                    "running_balance": float(r[5]),
+                    "notes": r[6],
+                })
+            current_balance = history[0]["running_balance"] if history else 0.0
+            today_str = datetime.date.today().isoformat()
+            today_entry = history[0] if history and history[0]["date"] == today_str else None
+            return {"current_balance": current_balance, "today": today_entry, "history": history}
+        except Exception as e:
+            logging.error(f"get_luis_balance_history failed: {e}")
+            return {"current_balance": 0.0, "today": None, "history": []}
+        finally:
+            conn.close()
+
+    def get_recurring_obligations(self, account: str = None) -> list:
+        conn = self.get_connection()
+        if not conn:
+            return []
+        try:
+            cursor = conn.cursor()
+            self._ensure_finance_tables(cursor)
+            conn.commit()
+            query = """
+                SELECT ObligationID, Name, Account, ExpectedDay, ExpectedAmount, TolerancePct, Category
+                FROM Finance.RecurringObligations
+                WHERE ActiveFlag = 1
+            """
+            params = []
+            if account:
+                query += " AND Account = ?"
+                params.append(account)
+            query += " ORDER BY ExpectedDay ASC"
+            cursor.execute(query, params)
+            cols = ["obligation_id", "name", "account", "expected_day", "expected_amount", "tolerance_pct", "category"]
+            return [dict(zip(cols, row)) for row in cursor.fetchall()]
+        except Exception as e:
+            logging.error(f"get_recurring_obligations failed: {e}")
+            return []
+        finally:
+            conn.close()
+
+    def get_bill_calendar(self, month: str) -> list:
+        """month = 'YYYY-MM'. Matches each active RecurringObligation against
+        Finance.Payments for that month (by category/name + closest amount+date)."""
+        obligations = self.get_recurring_obligations()
+        if not obligations:
+            return []
+
+        conn = self.get_connection()
+        if not conn:
+            return []
+        try:
+            cursor = conn.cursor()
+            year, mon = (int(x) for x in month.split("-"))
+            month_start = datetime.date(year, mon, 1)
+            next_month = datetime.date(year + (1 if mon == 12 else 0), 1 if mon == 12 else mon + 1, 1)
+
+            cursor.execute("""
+                SELECT Date, Account, Counterparty, Amount, Category
+                FROM Finance.Payments
+                WHERE Direction = 'outbound' AND Date >= ? AND Date < ?
+            """, (month_start, next_month))
+            payments = [{
+                "date": r[0] if not hasattr(r[0], "date") else r[0],
+                "account": r[1], "counterparty": r[2] or "", "amount": float(r[3]), "category": r[4] or "",
+            } for r in cursor.fetchall()]
+
+            today = datetime.date.today()
+            results = []
+            for ob in obligations:
+                day = min(max(int(ob["expected_day"] or 1), 1), 28)
+                expected_date = datetime.date(year, mon, day)
+                expected_amount = float(ob["expected_amount"] or 0)
+
+                candidates = [
+                    p for p in payments
+                    if p["account"] == ob["account"]
+                    and (p["category"].lower() == (ob["category"] or "").lower()
+                         or ob["name"].lower() in p["counterparty"].lower())
+                ]
+                match = min(
+                    candidates,
+                    key=lambda p: abs((p["date"] - expected_date).days) + abs(p["amount"] - expected_amount),
+                    default=None,
+                )
+
+                if match:
+                    tolerance = expected_amount * float(ob["tolerance_pct"] or 0) / 100.0
+                    status = "paid_variant" if abs(match["amount"] - expected_amount) > tolerance else "paid_on_time"
+                elif expected_date < today:
+                    status = "overdue"
+                else:
+                    status = "upcoming"
+
+                results.append({
+                    "obligation_id": ob["obligation_id"],
+                    "name": ob["name"],
+                    "account": ob["account"],
+                    "expected_day": ob["expected_day"],
+                    "expected_amount": expected_amount,
+                    "expected_date": expected_date.isoformat(),
+                    "status": status,
+                    "matched_amount": match["amount"] if match else None,
+                    "matched_date": match["date"].isoformat() if match else None,
+                })
+            return results
+        except Exception as e:
+            logging.error(f"get_bill_calendar failed: {e}")
+            return []
+        finally:
+            conn.close()
+
+    def seed_recurring_obligations(self) -> int:
+        """One-time idempotent seed of the known monthly fixed obligations
+        (business account ...9776 and personal account ...2085)."""
+        obligations = [
+            ("Tesla Subscription", "9776", 6, 107.49, "Vehicle Services"),
+            ("Quick Quack", "9776", 26, 34.99, "Car Wash"),
+            ("Google One", "9776", 1, 99.99, "Cloud Storage"),
+            ("Google One", "9776", 30, 99.99, "Cloud Storage"),
+            ("Quantum Fiber", "9776", 11, 75.00, "Internet"),
+            ("T-Mobile", "9776", 9, 259.70, "Telecommunications"),
+            ("Microsoft", "9776", 9, 57.58, "SaaS"),
+            ("Microsoft", "9776", 18, 27.21, "SaaS"),
+            ("Microsoft", "9776", 22, 32.47, "SaaS"),
+            ("Claude.ai", "9776", 1, 20.61, "SaaS"),
+            ("Tessie", "9776", 29, 19.99, "Vehicle Services"),
+            ("WeatherWise", "9776", 29, 15.99, "SaaS"),
+            ("Chase MSF", "9776", 30, 15.00, "Bank Fee"),
+            ("Netflix", "2085", 22, 34.98, "Streaming"),
+            ("Peacock", "2085", 28, 11.89, "Streaming"),
+            ("HBO Max", "2085", 6, 35.70, "Streaming"),
+            ("Disney+/Hulu/Max Bundle", "2085", 3, 29.99, "Streaming"),
+            ("Fubo", "2085", 19, 120.08, "Streaming"),
+            ("Walmart+", "2085", 22, 14.01, "Retail"),
+            ("Amazon Prime", "2085", 29, 16.22, "Retail"),
+            ("GoDaddy", "2085", 28, 23.19, "Domain"),
+            ("Audible", "2085", 2, 15.76, "Media"),
+            ("Patreon", "2085", 1, 2.00, "Media"),
+            ("Washington Post", "2085", 20, 12.00, "Media"),
+            ("Google One", "2085", 11, 24.99, "Cloud Storage"),
+            ("Google One", "2085", 17, 24.99, "Cloud Storage"),
+            ("WeatherWise", "2085", 28, 15.99, "SaaS"),
+            ("Prime Video Channels", "2085", 15, 9.73, "Streaming"),
+        ]
+        conn = self.get_connection()
+        if not conn:
+            return 0
+        inserted = 0
+        try:
+            cursor = conn.cursor()
+            self._ensure_finance_tables(cursor)
+            conn.commit()
+            for name, account, day, amount, category in obligations:
+                cursor.execute("""
+                    IF NOT EXISTS (
+                        SELECT 1 FROM Finance.RecurringObligations
+                        WHERE Name = ? AND Account = ? AND ExpectedDay = ?
+                    )
+                    INSERT INTO Finance.RecurringObligations (Name, Account, ExpectedDay, ExpectedAmount, Category)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (name, account, day, name, account, day, amount, category))
+                inserted += cursor.rowcount
+            conn.commit()
+            return inserted
+        except Exception as e:
+            logging.error(f"seed_recurring_obligations failed: {e}")
+            return inserted
         finally:
             conn.close()
 
