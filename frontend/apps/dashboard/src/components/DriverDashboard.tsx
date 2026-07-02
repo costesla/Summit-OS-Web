@@ -1410,7 +1410,7 @@ const DriverDashboard: React.FC = () => {
                                         </div>
                                     </div>
                                     {import.meta.env.VITE_TELLER_APPLICATION_ID ? (
-                                        <TellerConnectButton applicationId={import.meta.env.VITE_TELLER_APPLICATION_ID} environment="production" />
+                                        <TellerConnectButton applicationId={import.meta.env.VITE_TELLER_APPLICATION_ID} environment="development" />
                                     ) : (
                                         <p className="text-[10px] text-amber-400 font-mono">Set VITE_TELLER_APPLICATION_ID in the environment to enable bank linking.</p>
                                     )}
