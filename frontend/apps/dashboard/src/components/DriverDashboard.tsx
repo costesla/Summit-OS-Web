@@ -7,7 +7,6 @@ import {
 import { isBackgroundableError, devDebugError, getAsyncExecutionLogs, pollJobStatus } from '../../../../src/lib/intelligenceUtils';
 import { apiGet, apiPost } from '../lib/apiClient';
 import PaymentTrackerPanel from './payments/PaymentTrackerPanel';
-import TellerConnectButton from './TellerConnectButton';
 
 const AZURE_BASE = import.meta.env.VITE_PUBLIC_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://summitos-api.azurewebsites.net/api';
 const VERSION = "2.0.0";
@@ -1401,19 +1400,21 @@ const DriverDashboard: React.FC = () => {
                                 </div>
 
                                 {/* Bank Connection (Teller sign-in) */}
-                                <div className="p-5 rounded-2xl glass border border-white/8 space-y-4">
+                                <div className="p-5 rounded-2xl glass border border-white/8 space-y-3">
                                     <div className="flex items-center gap-3">
                                         <Link2 className="w-5 h-5 text-[var(--accent-cyan)] shrink-0" />
                                         <div>
                                             <h4 className="text-sm font-bold text-white">Bank Connection</h4>
-                                            <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Link Chase accounts via Teller — powers the Payment Tracker's automatic sync.</p>
+                                            <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Link or refresh Chase accounts via Teller — powers the Payment Tracker's automatic sync.</p>
                                         </div>
                                     </div>
-                                    {import.meta.env.VITE_TELLER_APPLICATION_ID ? (
-                                        <TellerConnectButton applicationId={import.meta.env.VITE_TELLER_APPLICATION_ID} environment="development" />
-                                    ) : (
-                                        <p className="text-[10px] text-amber-400 font-mono">Set VITE_TELLER_APPLICATION_ID in the environment to enable bank linking.</p>
-                                    )}
+                                    <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5">
+                                        <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">
+                                            Bank linking runs locally, not from this browser — writing a bank token requires local Azure credentials this page intentionally can't hold.
+                                            Run this on your machine to link or refresh an account:
+                                        </p>
+                                        <code className="block mt-2 px-3 py-2 rounded-lg bg-black/40 text-[10px] text-[var(--accent-cyan)] font-mono">python backend/finance_mcp/enroll_now.py</code>
+                                    </div>
                                 </div>
 
                                 {/* Uber Activity Heatmap */}
