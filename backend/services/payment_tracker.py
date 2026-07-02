@@ -62,7 +62,6 @@ class PaymentTrackerService:
         transfer_ids = find_transfer_pairs(normalized)
 
         saved = 0
-        luis_total = 0.0
         emerson_paid = False
 
         for tx in normalized:
@@ -78,9 +77,6 @@ class PaymentTrackerService:
                 }
             else:
                 classification = categorize_payee(counterparty, amount, account)
-
-            if classification["category"] == "Vehicle Financing":
-                luis_total += abs(amount)
 
             if EMERSON_KEYWORD in counterparty.lower() and classification["category"] == "Private Client Revenue":
                 emerson_paid = True
@@ -104,7 +100,7 @@ class PaymentTrackerService:
             except Exception as e:
                 logging.error(f"sync_day: failed to save transaction {tx.get('id')}: {e}")
 
-        self._update_luis_balance(date_str, luis_total)
+        self._recompute_luis_chain(date_str)
         self._check_emerson(date_str, emerson_paid)
         self._check_recurring_obligations(date_str)
 
@@ -159,42 +155,96 @@ class PaymentTrackerService:
         result["errors"] = errors
         return result
 
-    def _update_luis_balance(self, date_str: str, amount_sent: float):
-        history = self.db.get_luis_balance_history(limit_days=14)
-        prior_balance = history["current_balance"]
-        prior_tiers = [h["tier"] for h in history["history"] if h["date"] < date_str]
+    def _recompute_luis_chain(self, start_date: str):
+        """Recomputes Tier/DeferredAmount/RunningBalance for every day from
+        start_date through today (inclusive), in chronological order — each
+        day's running balance depends on the one before it, so any change
+        to a single day (a fresh sync, or reassigning a late payment to a
+        different day) must cascade forward through every day after it.
 
-        result = classify_luis_payment(amount_sent, prior_balance, date_str)
+        Reads each day's real amount sent from Finance.Payments rather than
+        an in-memory total, so it reflects whatever's actually on record —
+        including edits made after the original sync.
+        """
+        prior_balance = self.db.get_luis_balance_before(start_date)
+        current = datetime.date.fromisoformat(start_date)
+        end = max(current, datetime.date.today())
 
-        if result["tier"] == "Missed":
-            escalation = check_consecutive_missed(prior_tiers)
-            if escalation:
-                result["anomaly_reason"] = escalation
+        while current <= end:
+            date_str = current.isoformat()
+            amount_sent = self.db.get_luis_amount_sent_on(date_str)
 
-        self.db.save_luis_log(
-            date=date_str,
-            amount_sent=amount_sent,
-            tier=result["tier"],
-            deferred_amount=result["deferred_amount"],
-            running_balance=result["new_balance"],
-            notes=result["anomaly_reason"],
+            result = classify_luis_payment(amount_sent, prior_balance, date_str)
+
+            if result["tier"] == "Missed":
+                history = self.db.get_luis_balance_history(limit_days=14)
+                prior_tiers = [h["tier"] for h in history["history"] if h["date"] < date_str]
+                escalation = check_consecutive_missed(prior_tiers)
+                if escalation:
+                    result["anomaly_reason"] = escalation
+
+            self.db.save_luis_log(
+                date=date_str,
+                amount_sent=amount_sent,
+                tier=result["tier"],
+                deferred_amount=result["deferred_amount"],
+                running_balance=result["new_balance"],
+                notes=result["anomaly_reason"],
+            )
+
+            self.db.clear_luis_summary_flag(date_str)
+            if result["anomaly_flag"] or result["anomaly_reason"]:
+                self.db.save_payment({
+                    "date": date_str,
+                    "account": BUSINESS_ACCOUNT,
+                    "direction": "outbound",
+                    "counterparty": "Luis Canales (daily summary)",
+                    "amount": amount_sent,
+                    "category": "Vehicle Financing",
+                    "subcategory": result["tier"],
+                    "recurring_flag": False,
+                    "anomaly_flag": True,
+                    "anomaly_reason": result["anomaly_reason"] or f"Luis tier: {result['tier']}",
+                    "teller_transaction_id": f"luis-summary-{date_str}",
+                    "notes": None,
+                })
+
+            prior_balance = result["new_balance"]
+            current += datetime.timedelta(days=1)
+
+    def reassign_luis_payment(self, payment_id: str, target_date: str) -> dict:
+        """Moves a Luis Canales payment from the date Teller posted it to
+        the date it actually covers — e.g. a $130 Zelle sent on 7/2 that's
+        really the rough-day payment for 7/1 — then recomputes the balance
+        chain from the earlier of the two dates forward so the running
+        total stays correct on every day after it.
+        """
+        payment = self.db.get_payment_by_id(payment_id)
+        if not payment:
+            return {"success": False, "error": "Payment not found"}
+        if payment["category"] != "Vehicle Financing":
+            return {"success": False, "error": "Not a Luis Canales payment"}
+        if (payment.get("teller_transaction_id") or "").startswith("luis-summary-"):
+            return {"success": False, "error": "Cannot reassign a summary/flag row — reassign the real transaction instead"}
+
+        original_date = payment["date"]
+        if original_date == target_date:
+            return {"success": False, "error": "Already assigned to that date"}
+        try:
+            datetime.date.fromisoformat(target_date)
+        except ValueError:
+            return {"success": False, "error": "Invalid target date"}
+
+        updated = self.db.update_payment_date(
+            payment_id, target_date,
+            note=f"Reassigned from {original_date} — late payment for {target_date}",
         )
+        if not updated:
+            return {"success": False, "error": "Failed to update payment date"}
 
-        if result["anomaly_flag"] or result["anomaly_reason"]:
-            self.db.save_payment({
-                "date": date_str,
-                "account": BUSINESS_ACCOUNT,
-                "direction": "outbound",
-                "counterparty": "Luis Canales (daily summary)",
-                "amount": amount_sent,
-                "category": "Vehicle Financing",
-                "subcategory": result["tier"],
-                "recurring_flag": False,
-                "anomaly_flag": True,
-                "anomaly_reason": result["anomaly_reason"] or f"Luis tier: {result['tier']}",
-                "teller_transaction_id": f"luis-summary-{date_str}",
-                "notes": None,
-            })
+        self._recompute_luis_chain(min(original_date, target_date))
+
+        return {"success": True, "original_date": original_date, "target_date": target_date}
 
     def _check_emerson(self, date_str: str, had_payment: bool):
         reason = should_flag_missing_emerson(date_str, had_payment)

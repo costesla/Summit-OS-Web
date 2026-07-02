@@ -17,7 +17,10 @@ LUIS_FULL_AMOUNT = 190.00
 LUIS_ROUGH_AMOUNT = 130.00
 LUIS_ROUGH_DEFERRED = 60.00
 
-FORMER_CLIENTS = ("esmeralda", "jacquelyn hesl", "terrance")
+FORMER_CLIENTS = ("esmeralda", "terrance")
+# Jacquelyn Heslep was flagged as a former client while she was on a deferred
+# billing arrangement; that arrangement ended and she's a normal paying
+# client now, same as anyone else — no longer excluded from revenue.
 
 EMERSON_KEYWORD = "emerson"
 EMERSON_OFF_WEEKDAYS = {2, 3}  # Monday=0 ... Wednesday=2, Thursday=3
@@ -37,13 +40,17 @@ PAYEE_RULES: list[tuple[str, str, str | None, str | None]] = [
     ("uber san francisco", "Uber Revenue", "Card Deposit", "inbound"),
     ("rasier", "Uber Revenue", "ACH Deposit", "inbound"),
     ("raiser", "Uber Revenue", "ACH Deposit", "inbound"),
+    ("uber san francis", "Uber Revenue", "Card Deposit", "inbound"),
     ("stripe", "Booking Revenue", "costesla.com", "inbound"),
-    ("zelle from emerson", "Private Client Revenue", "Emerson Jean Baptiste", "inbound"),
-    ("zelle from madelyn", "Private Client Revenue", "Berezov Family", "inbound"),
-    ("zelle from danny kennedy", "Tip/Fare", None, "inbound"),
+    # Zelle-based rules match on the person's name only, not "Zelle From/To X"
+    # verbatim — Teller's real description format is "Zelle payment from/to X",
+    # and can truncate long names, so an exact phrase match silently misses them.
+    ("emerson", "Private Client Revenue", "Emerson Jean Baptiste", "inbound"),
+    ("madelyn", "Private Client Revenue", "Berezov Family", "inbound"),
+    ("danny kennedy", "Tip/Fare", None, "inbound"),
 
     # Fixed obligations — outbound
-    ("zelle to luis canales", "Vehicle Financing", "Luis Canales", "outbound"),
+    ("luis canales", "Vehicle Financing", "Luis Canales", "outbound"),
     ("tesla supercharger", "EV Charging", None, "outbound"),
     ("tesla subscription", "Vehicle Services", "Tesla Subscription", "outbound"),
     ("quantum fiber", "Internet", None, "outbound"),
@@ -51,12 +58,14 @@ PAYEE_RULES: list[tuple[str, str, str | None, str | None]] = [
     ("tmobile", "Telecommunications", None, "outbound"),
     ("microsoft", "SaaS", "Microsoft", "outbound"),
     ("claude.ai", "SaaS", "Claude.ai", "outbound"),
+    ("anthropic", "SaaS", "Claude.ai", "outbound"),
     ("tessie", "Vehicle Services", "Tessie", "outbound"),
     ("weatherwise", "SaaS", "WeatherWise", "outbound"),
     ("quick quack", "Car Wash", None, "outbound"),
     ("quickquack", "Car Wash", None, "outbound"),
     ("google one", "Cloud Storage", None, "outbound"),
     ("chase msf", "Bank Fee", "Chase MSF", "outbound"),
+    ("monthly service fee", "Bank Fee", "Chase MSF", "outbound"),
 
     # Personal — outbound (flagged for exclusion from business metrics)
     ("netflix", "Streaming", None, "outbound"),

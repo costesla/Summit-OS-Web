@@ -1,6 +1,70 @@
 import { useEffect, useState, useCallback } from 'react'
-import { Download } from 'lucide-react'
-import { fetchTransactions, transactionsExportUrl, type Transaction, type TransactionFilters } from './api'
+import { Download, CalendarClock, Loader2 } from 'lucide-react'
+import { fetchTransactions, transactionsExportUrl, reassignLuisPayment, type Transaction, type TransactionFilters } from './api'
+
+const LUIS_SUMMARY_COUNTERPARTY = 'Luis Canales (daily summary)'
+
+function ReassignAction({ transaction, onReassigned }: { transaction: Transaction; onReassigned: () => void }) {
+  const [open, setOpen] = useState(false)
+  const [targetDate, setTargetDate] = useState(transaction.date)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const submit = async () => {
+    setBusy(true)
+    setError(null)
+    try {
+      const res = await reassignLuisPayment(transaction.payment_id, targetDate)
+      if (!res.success) {
+        setError(res.error || 'Reassign failed')
+        return
+      }
+      setOpen(false)
+      onReassigned()
+    } catch {
+      setError('Reassign failed')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-[var(--accent-cyan)] hover:underline"
+        title="This payment was posted on a different day than it actually covers (e.g. a late payment)"
+      >
+        <CalendarClock className="w-3 h-3" /> Reassign
+      </button>
+    )
+  }
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <input
+        type="date"
+        value={targetDate}
+        onChange={(e) => setTargetDate(e.target.value)}
+        className="bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-[10px] text-white"
+      />
+      <button
+        onClick={submit}
+        disabled={busy}
+        className="px-2 py-0.5 rounded bg-[var(--accent-cyan)]/10 border border-[var(--accent-cyan)]/20 text-[var(--accent-cyan)] text-[9px] font-bold uppercase"
+      >
+        {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Save'}
+      </button>
+      <button
+        onClick={() => { setOpen(false); setError(null) }}
+        className="text-[9px] text-[var(--text-muted)] hover:text-white"
+      >
+        Cancel
+      </button>
+      {error && <span className="text-[9px] text-[var(--accent-red)]">{error}</span>}
+    </div>
+  )
+}
 
 function TransactionTable() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -73,14 +137,15 @@ function TransactionTable() {
               <th className="text-right py-2 pr-3">Amount</th>
               <th className="text-left py-2 pr-3">Direction</th>
               <th className="text-left py-2 pr-3">Category</th>
-              <th className="text-left py-2">Anomaly</th>
+              <th className="text-left py-2 pr-3">Anomaly</th>
+              <th className="text-left py-2">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={7} className="py-5 text-center text-[var(--text-muted)]">Loading...</td></tr>
+              <tr><td colSpan={8} className="py-5 text-center text-[var(--text-muted)]">Loading...</td></tr>
             ) : transactions.length === 0 ? (
-              <tr><td colSpan={7} className="py-5 text-center text-[#555] italic">No transactions match these filters.</td></tr>
+              <tr><td colSpan={8} className="py-5 text-center text-[#555] italic">No transactions match these filters.</td></tr>
             ) : (
               transactions.map((t) => (
                 <tr key={t.payment_id} className="border-b border-white/5 hover:bg-white/5">
@@ -92,7 +157,12 @@ function TransactionTable() {
                   </td>
                   <td className="py-1.5 pr-3 text-[var(--text-muted)] capitalize">{t.direction}</td>
                   <td className="py-1.5 pr-3 text-[var(--text-muted)]">{t.category}</td>
-                  <td className="py-1.5">{t.anomaly_flag && <span className="text-[var(--accent-red)] font-bold">⚠</span>}</td>
+                  <td className="py-1.5 pr-3">{t.anomaly_flag && <span className="text-[var(--accent-red)] font-bold">⚠</span>}</td>
+                  <td className="py-1.5">
+                    {t.category === 'Vehicle Financing' && t.counterparty !== LUIS_SUMMARY_COUNTERPARTY && (
+                      <ReassignAction transaction={t} onReassigned={load} />
+                    )}
+                  </td>
                 </tr>
               ))
             )}

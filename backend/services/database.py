@@ -1655,4 +1655,151 @@ class DatabaseClient:
         finally:
             conn.close()
 
+    # ── Luis payment reassignment (late payments posted on a different day) ──
+
+    def get_payment_by_id(self, payment_id: str) -> dict:
+        conn = self.get_connection()
+        if not conn:
+            return None
+        try:
+            cursor = conn.cursor()
+            self._ensure_finance_tables(cursor)
+            conn.commit()
+            cursor.execute("""
+                SELECT PaymentID, Date, Account, Direction, Counterparty, Amount,
+                       Category, SubCategory, TellerTransactionID
+                FROM Finance.Payments WHERE PaymentID = ?
+            """, (payment_id,))
+            row = cursor.fetchone()
+            if not row:
+                return None
+            return {
+                "payment_id": str(row[0]),
+                "date": row[1].isoformat() if hasattr(row[1], "isoformat") else str(row[1]),
+                "account": row[2],
+                "direction": row[3],
+                "counterparty": row[4],
+                "amount": float(row[5]),
+                "category": row[6],
+                "subcategory": row[7],
+                "teller_transaction_id": row[8],
+            }
+        except Exception as e:
+            logging.error(f"get_payment_by_id failed: {e}")
+            return None
+        finally:
+            conn.close()
+
+    def update_payment_date(self, payment_id: str, new_date: str, note: str = None) -> bool:
+        conn = self.get_connection()
+        if not conn:
+            return False
+        try:
+            cursor = conn.cursor()
+            self._ensure_finance_tables(cursor)
+            conn.commit()
+            cursor.execute("""
+                UPDATE Finance.Payments
+                SET Date = ?, Notes = COALESCE(Notes + ' | ', '') + ?
+                WHERE PaymentID = ?
+            """, (new_date, note or f"Reassigned to {new_date}", payment_id))
+            updated = cursor.rowcount
+            conn.commit()
+            return updated > 0
+        except Exception as e:
+            logging.error(f"update_payment_date failed: {e}")
+            return False
+        finally:
+            conn.close()
+
+    def get_luis_balance_before(self, date_str: str) -> float:
+        """Running balance as of the day strictly before date_str (0 if no prior history)."""
+        conn = self.get_connection()
+        if not conn:
+            return 0.0
+        try:
+            cursor = conn.cursor()
+            self._ensure_finance_tables(cursor)
+            conn.commit()
+            cursor.execute("""
+                SELECT TOP 1 RunningBalance FROM Finance.LuisBalanceLog
+                WHERE Date < ? ORDER BY Date DESC
+            """, (date_str,))
+            row = cursor.fetchone()
+            return float(row[0]) if row else 0.0
+        except Exception as e:
+            logging.error(f"get_luis_balance_before failed: {e}")
+            return 0.0
+        finally:
+            conn.close()
+
+    def get_luis_amount_sent_on(self, date_str: str) -> float:
+        """Real Zelle-to-Luis amount sent on date_str — excludes the
+        synthetic 'luis-summary-*' flag rows, which represent a tier
+        classification, not actual money sent."""
+        conn = self.get_connection()
+        if not conn:
+            return 0.0
+        try:
+            cursor = conn.cursor()
+            self._ensure_finance_tables(cursor)
+            conn.commit()
+            cursor.execute("""
+                SELECT COALESCE(SUM(Amount), 0) FROM Finance.Payments
+                WHERE Category = 'Vehicle Financing' AND Date = ?
+                  AND (TellerTransactionID IS NULL OR TellerTransactionID NOT LIKE 'luis-summary-%')
+            """, (date_str,))
+            row = cursor.fetchone()
+            return float(row[0] or 0.0)
+        except Exception as e:
+            logging.error(f"get_luis_amount_sent_on failed: {e}")
+            return 0.0
+        finally:
+            conn.close()
+
+    def clear_luis_summary_flag(self, date_str: str) -> None:
+        """Removes the synthetic 'luis-summary-{date}' anomaly-flag row, if
+        present, so a stale flag doesn't linger after a day's tier changes
+        to something that no longer warrants one."""
+        conn = self.get_connection()
+        if not conn:
+            return
+        try:
+            cursor = conn.cursor()
+            self._ensure_finance_tables(cursor)
+            conn.commit()
+            cursor.execute(
+                "DELETE FROM Finance.Payments WHERE TellerTransactionID = ?",
+                (f"luis-summary-{date_str}",),
+            )
+            conn.commit()
+        except Exception as e:
+            logging.error(f"clear_luis_summary_flag failed: {e}")
+        finally:
+            conn.close()
+
+    def get_all_luis_log_dates_from(self, start_date: str) -> list:
+        """All LuisBalanceLog dates from start_date through the latest
+        entry, used to know how far forward a balance-chain recompute needs
+        to walk (in case there's a gap between the reassignment target and
+        the most recent synced day)."""
+        conn = self.get_connection()
+        if not conn:
+            return []
+        try:
+            cursor = conn.cursor()
+            self._ensure_finance_tables(cursor)
+            conn.commit()
+            cursor.execute("""
+                SELECT MAX(Date) FROM Finance.LuisBalanceLog WHERE Date >= ?
+            """, (start_date,))
+            row = cursor.fetchone()
+            latest = row[0] if row else None
+            return [latest.isoformat() if hasattr(latest, "isoformat") else latest] if latest else []
+        except Exception as e:
+            logging.error(f"get_all_luis_log_dates_from failed: {e}")
+            return []
+        finally:
+            conn.close()
+
 

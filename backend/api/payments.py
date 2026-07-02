@@ -268,3 +268,33 @@ def payments_anomaly_resolve(req: func.HttpRequest) -> func.HttpResponse:
     except Exception as e:
         logging.error(f"payments_anomaly_resolve error: {e}")
         return _json_response({"error": "Internal server error"}, req, 500)
+
+
+# ── POST /financials/payments/luis/reassign ───────────────────────────────────
+# Moves a Luis Canales payment to the date it actually covers (e.g. a late
+# payment posted the day after a rough day) and recomputes the running
+# balance chain from that point forward.
+
+@bp.route(route="financials/payments/luis/reassign", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+def payments_luis_reassign(req: func.HttpRequest) -> func.HttpResponse:
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=_cors(req))
+    guard = require_function_key(req)
+    if guard:
+        return guard
+
+    try:
+        body = req.get_json()
+        payment_id = body.get("payment_id")
+        target_date = body.get("target_date")
+        if not payment_id or not target_date:
+            return _json_response({"error": "Missing payment_id or target_date"}, req, 400)
+
+        tracker = PaymentTrackerService()
+        result = tracker.reassign_luis_payment(payment_id, target_date)
+        if not result.get("success"):
+            return _json_response(result, req, 400)
+        return _json_response(result, req)
+    except Exception as e:
+        logging.error(f"payments_luis_reassign error: {e}")
+        return _json_response({"error": "Internal server error"}, req, 500)

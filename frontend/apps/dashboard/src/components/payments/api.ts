@@ -99,5 +99,11 @@ export const resolveAnomaly = (paymentId: string, resolutionNote?: string) =>
     resolution_note: resolutionNote,
   })
 
+export const reassignLuisPayment = (paymentId: string, targetDate: string) =>
+  apiPost<{ success: boolean; error?: string; original_date?: string; target_date?: string }>(
+    `/financials/payments/luis/reassign`,
+    { payment_id: paymentId, target_date: targetDate },
+  )
+
 export const transactionsExportUrl = (params: TransactionFilters) =>
   `${BASE_URL}/financials/payments/transactions/export?${toSearchParams(params).toString()}`
