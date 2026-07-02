@@ -1243,7 +1243,7 @@ const DriverDashboard: React.FC = () => {
                                                             <div className="flex items-center gap-3 shrink-0">
                                                                 <span className="text-[9px] text-[#606060]">{inv.timestamp.slice(0, 10)}</span>
                                                                 <span className="font-black text-amber-400 font-mono">${inv.fare.toFixed(2)}</span>
-                                                                <span className="px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-400 text-[8px] font-bold border border-amber-500/20 uppercase font-mono">Deferred</span>
+                                                                <span className="px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-400 text-[8px] font-bold border border-amber-500/20 uppercase font-mono">Unpaid</span>
                                                             </div>
                                                         </div>
                                                     );
