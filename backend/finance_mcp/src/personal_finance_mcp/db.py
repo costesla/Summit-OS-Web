@@ -454,9 +454,19 @@ class Database:
         self.conn.commit()
 
     def get_last_sync_date(self, source: str) -> str | None:
+        """Most recent completed sync, success OR partial.
+
+        A single account hitting a rate limit shouldn't poison every future
+        sync into re-fetching the entire history: excluding 'partial' meant
+        one persistently-rate-limited account (which never produces a clean
+        'success') pinned this to its last full success indefinitely, so
+        every subsequent run re-paginated from that stale date, burned
+        through the rate budget on old transactions, and reproduced the same
+        partial failure — a self-reinforcing loop.
+        """
         row = self.conn.execute(
             """SELECT completed_at FROM sync_log
-            WHERE source = ? AND status = 'success'
+            WHERE source = ? AND status IN ('success', 'partial')
             ORDER BY completed_at DESC LIMIT 1""",
             (source,),
         ).fetchone()

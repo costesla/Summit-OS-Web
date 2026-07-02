@@ -259,3 +259,14 @@ class TestSyncLog:
         sync_id = db.start_sync_log("teller")
         db.complete_sync_log(sync_id, accounts_synced=1, transactions_synced=10)
         assert db.get_last_sync_date("teller") is not None
+
+    def test_last_sync_date_counts_partial(self, tmp_db):
+        """A partial sync (e.g. one account rate-limited) must still advance
+        the incremental sync cursor — otherwise a persistently-failing
+        account pins every future sync to the last full success, forcing a
+        full historical re-fetch (and likely re-triggering the same rate
+        limit) every single run."""
+        db = Database(tmp_db)
+        sync_id = db.start_sync_log("teller")
+        db.complete_sync_log(sync_id, accounts_synced=1, transactions_synced=5, status="partial", error="rate limited")
+        assert db.get_last_sync_date("teller") is not None
