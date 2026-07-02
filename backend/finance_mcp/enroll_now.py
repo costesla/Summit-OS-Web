@@ -1,4 +1,5 @@
 import asyncio
+import shutil
 import subprocess
 import sys
 import os
@@ -25,11 +26,19 @@ RESOURCE_GROUP = "rg-summitos-prod"
 
 
 def push_token_to_function_app(access_token: str) -> bool:
+    # On Windows, `az` is an az.CMD shim — subprocess.run needs the resolved
+    # path (shutil.which) rather than the bare command name, or it raises
+    # FileNotFoundError even when `az` works fine from an interactive shell.
+    az_path = shutil.which("az")
+    if not az_path:
+        print("az CLI not found on PATH — skipping cloud push. Run `az login` and install the Azure CLI to enable this step.")
+        return False
+
     print(f"Pushing token to {FUNCTION_APP_NAME} Function App settings via az CLI...")
     try:
         result = subprocess.run(
             [
-                "az", "functionapp", "config", "appsettings", "set",
+                az_path, "functionapp", "config", "appsettings", "set",
                 "--name", FUNCTION_APP_NAME,
                 "--resource-group", RESOURCE_GROUP,
                 "--settings", f"TELLER_TOKEN={access_token}",
