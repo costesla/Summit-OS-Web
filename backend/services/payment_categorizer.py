@@ -12,7 +12,9 @@ import datetime
 BUSINESS_ACCOUNT = "9776"
 PERSONAL_ACCOUNT = "2085"
 
-LUIS_START_DATE = datetime.date(2026, 4, 20)
+# The arrangement itself began 2026-04-20, but Peter chose to start tier/
+# balance tracking fresh from July 2026 — earlier months are settled history.
+LUIS_START_DATE = datetime.date(2026, 7, 1)
 LUIS_FULL_AMOUNT = 190.00
 LUIS_ROUGH_AMOUNT = 130.00
 LUIS_ROUGH_DEFERRED = 60.00
