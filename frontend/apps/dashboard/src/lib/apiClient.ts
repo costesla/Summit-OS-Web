@@ -8,7 +8,7 @@
  *
  * Implementation lives in api/client.ts + api/endpoints.ts + telemetry.ts
  */
-export { apiGet, apiPost, apiRequest, BASE_URL, ApiError } from './api/client'
+export { apiGet, apiPost, apiRequest, BASE_URL, API_FUNCTION_KEY, ApiError } from './api/client'
 export { api, getDailySummary, fetchDriverSync } from './api/endpoints'
 export type { TeslaStatus, UberTripsResponse, SyncResponse, TessieDrivesResponse } from './api/endpoints'
 export { logEvent, logError, logTiming, telemetry, EVENTS } from './telemetry'

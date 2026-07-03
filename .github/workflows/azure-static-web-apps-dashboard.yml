@@ -62,6 +62,7 @@ jobs:
         run: npm run build
         env:
           VITE_TELLER_APPLICATION_ID: ${{ vars.VITE_TELLER_APPLICATION_ID }}
+          VITE_API_FUNCTION_KEY: ${{ secrets.VITE_API_FUNCTION_KEY }}
 
       - name: Deploy to Azure Static Web Apps
         id: builddeploy

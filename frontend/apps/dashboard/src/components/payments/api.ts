@@ -1,4 +1,4 @@
-import { apiGet, apiPost, BASE_URL } from '../../lib/apiClient'
+import { apiGet, apiPost, BASE_URL, API_FUNCTION_KEY } from '../../lib/apiClient'
 
 export interface ScorecardMetric {
   actual: number
@@ -105,5 +105,10 @@ export const reassignLuisPayment = (paymentId: string, targetDate: string) =>
     { payment_id: paymentId, target_date: targetDate },
   )
 
-export const transactionsExportUrl = (params: TransactionFilters) =>
-  `${BASE_URL}/financials/payments/transactions/export?${toSearchParams(params).toString()}`
+export const transactionsExportUrl = (params: TransactionFilters) => {
+  const search = toSearchParams(params)
+  // A plain <a href> download can't send headers, so the function key goes
+  // in the `code` query param, which require_function_key also accepts.
+  if (API_FUNCTION_KEY) search.set('code', API_FUNCTION_KEY)
+  return `${BASE_URL}/financials/payments/transactions/export?${search.toString()}`
+}

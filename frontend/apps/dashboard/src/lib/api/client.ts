@@ -20,6 +20,12 @@ export const BASE_URL =
 const DEFAULT_TIMEOUT_MS = 15_000
 const DEFAULT_RETRIES = 1
 
+// Azure Function host key, injected at build time (VITE_API_FUNCTION_KEY
+// GitHub Actions secret). The backend's require_function_key guard rejects
+// requests without it. Sent on every call — routes that don't enforce it
+// simply ignore the header.
+export const API_FUNCTION_KEY: string | undefined = import.meta.env.VITE_API_FUNCTION_KEY || undefined
+
 // ─── Error type ───────────────────────────────────────────────────────────────
 export class ApiError extends Error {
   readonly status: number
@@ -64,9 +70,13 @@ export async function apiRequest<T>(
   let lastError: unknown
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
+      const headers: Record<string, string> = {}
+      if (body) headers['Content-Type'] = 'application/json'
+      if (API_FUNCTION_KEY) headers['x-functions-key'] = API_FUNCTION_KEY
+
       const resp = await fetch(url.toString(), {
         method,
-        headers: body ? { 'Content-Type': 'application/json' } : undefined,
+        headers: Object.keys(headers).length ? headers : undefined,
         body: body ? JSON.stringify(body) : undefined,
         signal: AbortSignal.timeout(timeoutMs),
         cache: 'no-store',
