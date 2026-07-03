@@ -1678,8 +1678,10 @@ class DatabaseClient:
         obligations = [
             ("Tesla Subscription", "9776", 6, 107.49, "Vehicle Services"),
             ("Quick Quack", "9776", 26, 34.99, "Car Wash"),
+            # Google One (business) bills once monthly on the 1st — the
+            # original spec listed "1st and 30th", but that was the same
+            # charge oscillating around the month boundary in statements.
             ("Google One", "9776", 1, 99.99, "Cloud Storage"),
-            ("Google One", "9776", 30, 99.99, "Cloud Storage"),
             ("Quantum Fiber", "9776", 11, 75.00, "Internet"),
             ("T-Mobile", "9776", 9, 259.70, "Telecommunications"),
             ("Microsoft", "9776", 9, 57.58, "SaaS"),
