@@ -1599,11 +1599,16 @@ class DatabaseClient:
             month_start = datetime.date(year, mon, 1)
             next_month = datetime.date(year + (1 if mon == 12 else 0), 1 if mon == 12 else mon + 1, 1)
 
+            # Fetch 5 days past each month boundary: a bill due on the 1st
+            # routinely posts in the last days of the prior month (Anthropic
+            # posted 6/30 against a July-1 expectation), and a bill due on
+            # the 30th can post in the first days of the next. A strict
+            # month window false-flagged those as "not found" every month.
             cursor.execute("""
                 SELECT Date, Account, Counterparty, Amount, Category
                 FROM Finance.Payments
                 WHERE Direction = 'outbound' AND Date >= ? AND Date < ?
-            """, (month_start, next_month))
+            """, (month_start - datetime.timedelta(days=5), next_month + datetime.timedelta(days=5)))
             payments = [{
                 "date": r[0] if not hasattr(r[0], "date") else r[0],
                 "account": r[1], "counterparty": r[2] or "", "amount": float(r[3]), "category": r[4] or "",
@@ -1616,9 +1621,13 @@ class DatabaseClient:
                 expected_date = datetime.date(year, mon, day)
                 expected_amount = float(ob["expected_amount"] or 0)
 
+                # Only payments within a week of the expected date qualify —
+                # without the cap, any same-category payment anywhere in the
+                # (now widened) window could satisfy an unrelated obligation.
                 candidates = [
                     p for p in payments
                     if p["account"] == ob["account"]
+                    and abs((p["date"] - expected_date).days) <= 7
                     and (p["category"].lower() == (ob["category"] or "").lower()
                          or ob["name"].lower() in p["counterparty"].lower())
                 ]
