@@ -1854,28 +1854,5 @@ class DatabaseClient:
         finally:
             conn.close()
 
-    def get_all_luis_log_dates_from(self, start_date: str) -> list:
-        """All LuisBalanceLog dates from start_date through the latest
-        entry, used to know how far forward a balance-chain recompute needs
-        to walk (in case there's a gap between the reassignment target and
-        the most recent synced day)."""
-        conn = self.get_connection()
-        if not conn:
-            return []
-        try:
-            cursor = conn.cursor()
-            self._ensure_finance_tables(cursor)
-            conn.commit()
-            cursor.execute("""
-                SELECT MAX(Date) FROM Finance.LuisBalanceLog WHERE Date >= ?
-            """, (start_date,))
-            row = cursor.fetchone()
-            latest = row[0] if row else None
-            return [latest.isoformat() if hasattr(latest, "isoformat") else latest] if latest else []
-        except Exception as e:
-            logging.error(f"get_all_luis_log_dates_from failed: {e}")
-            return []
-        finally:
-            conn.close()
 
 
