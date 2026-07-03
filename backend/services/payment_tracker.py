@@ -332,9 +332,9 @@ class PaymentTrackerService:
         supercharging = sum(p["amount"] for p in payments if p["category"] == "EV Charging")
         food_dining = sum(p["amount"] for p in payments if p["category"] == "Food & Dining")
 
-        luis_history = self.db.get_luis_balance_history(limit_days=1)
-        today_entry = luis_history["today"]
-        luis_tier = today_entry["tier"] if today_entry and today_entry["date"] == date_str else "Pending"
+        log_entry = self.db.get_luis_log_for_date(date_str)
+        luis_tier = log_entry["tier"] if log_entry else "Pending"
+        luis_balance = self.db.get_luis_balance_history(limit_days=1)["current_balance"]
 
         return {
             "date": date_str,
@@ -342,5 +342,5 @@ class PaymentTrackerService:
             "supercharging": {"actual": round(supercharging, 2), "target": DAILY_TARGETS["supercharging"]},
             "food_dining": {"actual": round(food_dining, 2), "target": DAILY_TARGETS["food_dining"]},
             "luis_tier": luis_tier,
-            "luis_balance": luis_history["current_balance"],
+            "luis_balance": luis_balance,
         }

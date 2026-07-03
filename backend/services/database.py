@@ -1289,8 +1289,17 @@ class DatabaseClient:
 
     def save_payment(self, payment: dict):
         """Insert a Finance.Payments row. If TellerTransactionID is present and
-        already recorded, returns the existing PaymentID instead of duplicating
-        (dedup across the local Teller-MCP sync and the cloud on-demand sync)."""
+        already recorded, refreshes the existing row's classification fields
+        instead of duplicating (dedup across the local Teller-MCP sync and the
+        cloud on-demand sync).
+
+        The refresh deliberately touches ONLY Category/SubCategory/Direction/
+        RecurringFlag — never Date (a reassigned late payment must survive
+        re-syncs), Notes (holds the reassignment audit trail), or the anomaly
+        fields (a flag the operator resolved must stay resolved). Without this
+        refresh, rows saved before a categorizer fix stayed miscategorized
+        forever: the 7/2 Uber deposits sat as Uncategorized and read as $0
+        gross earnings even after the pattern fix shipped."""
         conn = self.get_connection()
         if not conn:
             return None
@@ -1302,11 +1311,26 @@ class DatabaseClient:
             teller_id = payment.get("teller_transaction_id")
             if teller_id:
                 cursor.execute(
-                    "SELECT PaymentID FROM Finance.Payments WHERE TellerTransactionID = ?",
+                    "SELECT PaymentID, Category, SubCategory, Direction, RecurringFlag "
+                    "FROM Finance.Payments WHERE TellerTransactionID = ?",
                     (teller_id,),
                 )
                 existing = cursor.fetchone()
                 if existing:
+                    new_vals = (
+                        payment.get("category"),
+                        payment.get("subcategory"),
+                        payment["direction"],
+                        int(bool(payment.get("recurring_flag"))),
+                    )
+                    old_vals = (existing[1], existing[2], existing[3], int(existing[4] or 0))
+                    if new_vals != old_vals:
+                        cursor.execute("""
+                            UPDATE Finance.Payments
+                            SET Category = ?, SubCategory = ?, Direction = ?, RecurringFlag = ?
+                            WHERE PaymentID = ?
+                        """, (*new_vals, existing[0]))
+                        conn.commit()
                     return str(existing[0])
 
             payment_id = str(uuid.uuid4())
@@ -1461,6 +1485,40 @@ class DatabaseClient:
             conn.commit()
         except Exception as e:
             logging.error(f"save_luis_log failed: {e}")
+        finally:
+            conn.close()
+
+    def get_luis_log_for_date(self, date_str: str) -> dict:
+        """LuisBalanceLog entry for a specific date, or None. Used by the
+        scorecard so the tier shown always belongs to the requested date —
+        comparing against the server's UTC "today" made the current Mountain
+        Time day read as Pending every evening (00:00–06:00 UTC)."""
+        conn = self.get_connection()
+        if not conn:
+            return None
+        try:
+            cursor = conn.cursor()
+            self._ensure_finance_tables(cursor)
+            conn.commit()
+            cursor.execute("""
+                SELECT Date, AmountSent, ExpectedAmount, Tier, DeferredAmount, RunningBalance, Notes
+                FROM Finance.LuisBalanceLog WHERE Date = ?
+            """, (date_str,))
+            r = cursor.fetchone()
+            if not r:
+                return None
+            return {
+                "date": r[0].isoformat() if hasattr(r[0], "isoformat") else str(r[0]),
+                "amount_sent": float(r[1]),
+                "expected_amount": float(r[2]),
+                "tier": r[3],
+                "deferred_amount": float(r[4]),
+                "running_balance": float(r[5]),
+                "notes": r[6],
+            }
+        except Exception as e:
+            logging.error(f"get_luis_log_for_date failed: {e}")
+            return None
         finally:
             conn.close()
 
