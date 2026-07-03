@@ -1604,10 +1604,19 @@ class DatabaseClient:
             # posted 6/30 against a July-1 expectation), and a bill due on
             # the 30th can post in the first days of the next. A strict
             # month window false-flagged those as "not found" every month.
+            # Synthetic flag/summary rows are excluded — an "overdue"
+            # placeholder carries the expected amount and date, so letting it
+            # match would make a genuinely unpaid bill look paid on the next
+            # check.
             cursor.execute("""
                 SELECT Date, Account, Counterparty, Amount, Category
                 FROM Finance.Payments
                 WHERE Direction = 'outbound' AND Date >= ? AND Date < ?
+                  AND (TellerTransactionID IS NULL OR (
+                       TellerTransactionID NOT LIKE 'obligation-%'
+                       AND TellerTransactionID NOT LIKE 'luis-summary-%'
+                       AND TellerTransactionID NOT LIKE 'emerson-missing-%'
+                       AND TellerTransactionID NOT LIKE 'chase-msf-check-%'))
             """, (month_start - datetime.timedelta(days=5), next_month + datetime.timedelta(days=5)))
             payments = [{
                 "date": r[0] if not hasattr(r[0], "date") else r[0],
