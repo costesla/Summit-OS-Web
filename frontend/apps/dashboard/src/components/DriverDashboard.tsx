@@ -264,6 +264,8 @@ const DriverDashboard: React.FC = () => {
     const [unpaidCollapsed, setUnpaidCollapsed] = useState(true);
     const [paymentTrackerCollapsed, setPaymentTrackerCollapsed] = useState(false);
     const [paymentAnomalyCount, setPaymentAnomalyCount] = useState(0);
+    const [weekActual, setWeekActual] = useState(0);
+    const [monthActual, setMonthActual] = useState(0);
 
     const activePollRef = useRef<(() => void) | null>(null);
 
@@ -358,6 +360,42 @@ const DriverDashboard: React.FC = () => {
         }, 10_000);
         return () => clearInterval(interval);
     }, [lastSyncTime]);
+
+    // Client-side period earnings — bypasses broken /financials/summary endpoint
+    useEffect(() => {
+        let cancelled = false;
+        const compute = async () => {
+            const selected = new Date(selectedDate + 'T12:00:00');
+            const monthStart = new Date(selected.getFullYear(), selected.getMonth(), 1);
+            const weekCutoff = new Date(selected);
+            weekCutoff.setDate(selected.getDate() - 6);
+            const dates: string[] = [];
+            const cur = new Date(monthStart);
+            while (cur <= selected) {
+                dates.push(cur.toLocaleDateString('sv-SE', { timeZone: 'America/Denver' }));
+                cur.setDate(cur.getDate() + 1);
+            }
+            const results = await Promise.all(dates.map(async d => {
+                try {
+                    const res = await apiGet<{ trips: DatabaseTrip[] }>(`/driver/sync?date=${d}`);
+                    const earned = (res.trips || [])
+                        .filter((t: DatabaseTrip) => !t.id.startsWith('TESSIE-'))
+                        .reduce((s: number, t: DatabaseTrip) => s + (t.fare ?? 0) + (t.tip ?? 0), 0);
+                    return { d, earned };
+                } catch { return { d, earned: 0 }; }
+            }));
+            if (cancelled) return;
+            const wkCut = weekCutoff.getTime();
+            const week = results
+                .filter(r => new Date(r.d + 'T12:00:00').getTime() >= wkCut)
+                .reduce((s, r) => s + r.earned, 0);
+            const month = results.reduce((s, r) => s + r.earned, 0);
+            setWeekActual(week);
+            setMonthActual(month);
+        };
+        compute();
+        return () => { cancelled = true; };
+    }, [selectedDate]);
 
     // Fetch live vehicle status (battery, temp, asleep/charging status)
     useEffect(() => {
@@ -723,10 +761,22 @@ const DriverDashboard: React.FC = () => {
                     .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
     }, [trips]);
 
-    // Read live SQL summary metrics directly
-    const grossEarnings = summary?.gross_earnings ?? 0;
-    const uberEarnings = summary?.uber_earnings ?? 0;
-    const privateIncome = summary?.private_income ?? 0;
+    // Client-side earnings — /financials/summary returns $0 (backend bug)
+    const grossEarnings = useMemo(() =>
+        trips.filter(t => !t.id.startsWith('TESSIE-'))
+             .reduce((s, t) => s + (t.fare ?? 0) + (t.tip ?? 0), 0),
+        [trips]
+    );
+    const uberEarnings = useMemo(() =>
+        trips.filter(t => t.type === 'Uber' && !t.id.startsWith('TESSIE-'))
+             .reduce((s, t) => s + (t.fare ?? 0) + (t.tip ?? 0), 0),
+        [trips]
+    );
+    const privateIncome = useMemo(() =>
+        trips.filter(t => t.type === 'Private' && !t.id.startsWith('TESSIE-'))
+             .reduce((s, t) => s + (t.fare ?? 0) + (t.tip ?? 0), 0),
+        [trips]
+    );
     const netProfit = grossEarnings - (summary?.opex_expenses ?? 0);
     const deferredTotal = summary?.deferred_total ?? 0;
 
@@ -876,8 +926,8 @@ const DriverDashboard: React.FC = () => {
                                     </div>
                                     <div className="space-y-4">
                                         <GoalProgressRow label="Today" actual={summary?.progress?.today?.actual ?? grossEarnings} target={summary?.targets?.daily ?? DAILY_TARGET} />
-                                        <GoalProgressRow label="This Week" actual={summary?.progress?.week?.actual ?? 0} target={summary?.targets?.weekly ?? WEEKLY_TARGET} />
-                                        <GoalProgressRow label="This Month" actual={summary?.progress?.month?.actual ?? 0} target={summary?.targets?.monthly ?? MONTHLY_TARGET} />
+                                        <GoalProgressRow label="This Week" actual={summary?.progress?.week?.actual ?? weekActual} target={summary?.targets?.weekly ?? WEEKLY_TARGET} />
+                                        <GoalProgressRow label="This Month" actual={summary?.progress?.month?.actual ?? monthActual} target={summary?.targets?.monthly ?? MONTHLY_TARGET} />
                                     </div>
                                 </div>
 
