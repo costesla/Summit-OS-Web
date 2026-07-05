@@ -1,5 +1,5 @@
 import DailyScorecard from './DailyScorecard'
-import LuisBalanceWidget from './LuisBalanceWidget'
+import LuisSimpleCard from './LuisSimpleCard'
 import BillCalendar from './BillCalendar'
 import AnomalyPanel from './AnomalyPanel'
 import TransactionTable from './TransactionTable'
@@ -14,7 +14,7 @@ function PaymentTrackerPanel({ selectedDate, onAnomalyCountChange }: PaymentTrac
     <div className="space-y-4">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <DailyScorecard selectedDate={selectedDate} />
-        <LuisBalanceWidget />
+        <LuisSimpleCard />
       </div>
       <BillCalendar />
       <AnomalyPanel onCountChange={onAnomalyCountChange} />

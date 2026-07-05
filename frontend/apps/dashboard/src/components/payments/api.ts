@@ -81,6 +81,19 @@ export const fetchScorecard = (date: string) =>
 export const fetchLuisBalance = () =>
   apiGet<LuisBalance>(`/financials/payments/luis/balance`)
 
+export interface LuisSimpleSummary {
+  month: string
+  days_tracked: number
+  good_count: number
+  bad_count: number
+  late_count: number
+  balance_owed: number
+  today_status: string
+}
+
+export const fetchLuisSummary = (month?: string) =>
+  apiGet<LuisSimpleSummary>(`/financials/luis${month ? `?month=${month}` : ''}`)
+
 export const fetchBillCalendar = (month: string) =>
   apiGet<{ month: string; obligations: BillEntry[] }>(`/financials/payments/bills/calendar?month=${month}`)
 

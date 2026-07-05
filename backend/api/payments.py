@@ -144,6 +144,28 @@ def payments_transactions_export(req: func.HttpRequest) -> func.HttpResponse:
         return _json_response({"error": "Internal server error"}, req, 500)
 
 
+# ── GET /financials/luis ──────────────────────────────────────────────────────
+# Read-only summary card for the Financials module: month-scoped Good/Bad day
+# counts and balance owed. Separate from /financials/payments/luis/balance
+# (the older tiered running-balance system) — this one resets every month.
+
+@bp.route(route="financials/luis", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+def financials_luis_summary(req: func.HttpRequest) -> func.HttpResponse:
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=_cors(req))
+    guard = require_function_key(req)
+    if guard:
+        return guard
+
+    try:
+        db = DatabaseClient()
+        month = req.params.get("month") or datetime.date.today().strftime("%Y-%m")
+        return _json_response(db.get_luis_month_summary(month), req)
+    except Exception as e:
+        logging.error(f"financials_luis_summary error: {e}")
+        return _json_response({"error": "Internal server error"}, req, 500)
+
+
 # ── GET /financials/payments/anomalies ────────────────────────────────────────
 
 @bp.route(route="financials/payments/anomalies", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)

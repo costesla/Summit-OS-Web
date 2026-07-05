@@ -1394,6 +1394,29 @@ class DatabaseClient:
                 LastSuccessUtc  DATETIME2 NOT NULL
             )
         """)
+        # Simple month-scoped Luis Canales card (Financials module) — separate
+        # from LuisBalanceLog's tiered/cross-day running-balance system above.
+        # One row per service day; Good/Bad and late are derived columns so
+        # callers never have to keep them in sync by hand.
+        cursor.execute("""
+            IF OBJECT_ID('Finance.LuisPayments', 'U') IS NULL
+            CREATE TABLE Finance.LuisPayments (
+                LuisPaymentID       UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+                ServiceDate         DATE NOT NULL,
+                AmountPaid          DECIMAL(10,2) NOT NULL,
+                PaymentReceivedDate DATE NOT NULL,
+                LateFlag            AS (CASE WHEN PaymentReceivedDate > ServiceDate THEN 1 ELSE 0 END) PERSISTED,
+                DayType             AS (CASE WHEN AmountPaid >= 190 THEN 'Good' ELSE 'Bad' END) PERSISTED,
+                CreatedAt           DATETIME DEFAULT GETDATE()
+            )
+        """)
+        cursor.execute("""
+            IF NOT EXISTS (
+                SELECT * FROM sys.indexes
+                WHERE name = 'UX_LuisPayments_ServiceDate' AND object_id = OBJECT_ID('Finance.LuisPayments')
+            )
+            CREATE UNIQUE INDEX UX_LuisPayments_ServiceDate ON Finance.LuisPayments (ServiceDate)
+        """)
 
     def ensure_finance_tables(self):
         """Public, standalone entry point (used by setup/seed scripts)."""
@@ -1900,6 +1923,89 @@ class DatabaseClient:
         finally:
             conn.close()
 
+    def upsert_luis_simple_payment(self, service_date: str, amount_paid: float, payment_received_date: str = None):
+        """Upserts the Financials-module Luis Canales card's per-day row
+        (one row per ServiceDate). This is separate from LuisBalanceLog —
+        no running balance carried here; balance_owed is computed fresh
+        per month by get_luis_month_summary()."""
+        conn = self.get_connection()
+        if not conn:
+            return
+        try:
+            cursor = conn.cursor()
+            self._ensure_finance_tables(cursor)
+            conn.commit()
+            received = payment_received_date or service_date
+            cursor.execute("""
+                MERGE INTO Finance.LuisPayments AS target
+                USING (SELECT CAST(? AS DATE) AS ServiceDate) AS source
+                ON (target.ServiceDate = source.ServiceDate)
+                WHEN MATCHED THEN
+                    UPDATE SET AmountPaid = ?, PaymentReceivedDate = ?
+                WHEN NOT MATCHED THEN
+                    INSERT (ServiceDate, AmountPaid, PaymentReceivedDate)
+                    VALUES (?, ?, ?);
+            """, (
+                service_date, amount_paid, received,
+                service_date, amount_paid, received,
+            ))
+            conn.commit()
+        except Exception as e:
+            logging.error(f"upsert_luis_simple_payment failed: {e}")
+        finally:
+            conn.close()
+
+    def get_luis_month_summary(self, year_month: str = None) -> dict:
+        """Month-scoped summary for the Financials > Luis Canales card:
+        days_tracked/good/bad counts and balance_owed = SUM(190 - AmountPaid)
+        for that month only — intentionally resets each month, no carry-
+        forward across months."""
+        year_month = year_month or datetime.date.today().strftime("%Y-%m")
+        year, mon = (int(x) for x in year_month.split("-"))
+        month_start = datetime.date(year, mon, 1)
+        next_month = datetime.date(year + (1 if mon == 12 else 0), 1 if mon == 12 else mon + 1, 1)
+
+        empty = {"month": year_month, "days_tracked": 0, "good_count": 0, "bad_count": 0, "late_count": 0, "balance_owed": 0.0, "today_status": "Pending"}
+        conn = self.get_connection()
+        if not conn:
+            return empty
+        try:
+            cursor = conn.cursor()
+            self._ensure_finance_tables(cursor)
+            conn.commit()
+            cursor.execute("""
+                SELECT COUNT(*),
+                       SUM(CASE WHEN DayType = 'Good' THEN 1 ELSE 0 END),
+                       SUM(CASE WHEN DayType = 'Bad' THEN 1 ELSE 0 END),
+                       SUM(CAST(LateFlag AS INT)),
+                       SUM(190 - AmountPaid)
+                FROM Finance.LuisPayments
+                WHERE ServiceDate >= ? AND ServiceDate < ?
+            """, (month_start, next_month))
+            row = cursor.fetchone()
+
+            today_str = datetime.date.today().isoformat()
+            cursor.execute("SELECT DayType, LateFlag FROM Finance.LuisPayments WHERE ServiceDate = ?", (today_str,))
+            today_row = cursor.fetchone()
+            today_status = "Pending"
+            if today_row:
+                today_status = today_row[0] + (" (late)" if today_row[1] else "")
+
+            return {
+                "month": year_month,
+                "days_tracked": int(row[0] or 0),
+                "good_count": int(row[1] or 0),
+                "bad_count": int(row[2] or 0),
+                "late_count": int(row[3] or 0),
+                "balance_owed": round(float(row[4] or 0.0), 2),
+                "today_status": today_status,
+            }
+        except Exception as e:
+            logging.error(f"get_luis_month_summary failed: {e}")
+            return empty
+        finally:
+            conn.close()
+
     def get_recurring_obligations(self, account: str = None) -> list:
         conn = self.get_connection()
         if not conn:
@@ -2176,6 +2282,45 @@ class DatabaseClient:
         except Exception as e:
             logging.error(f"get_luis_amount_sent_on failed: {e}")
             return 0.0
+        finally:
+            conn.close()
+
+    def get_luis_received_date_on(self, date_str: str) -> str:
+        """Actual date the money for service day date_str arrived, or None if
+        no real payment exists for that day.
+
+        A payment that was never reassigned posted on the day it covers, so
+        its received date IS date_str. A reassigned payment's Date column now
+        holds the service day it covers; its original Teller posting date
+        lives in the Notes audit trail ('Reassigned from YYYY-MM-DD — ...').
+        The first 'Reassigned from' entry is the original posting date even
+        after multiple reassignments, since each reassignment appends.
+        When several payments cover one day, the day isn't fully paid until
+        the last one lands, so the latest received date wins."""
+        import re
+        conn = self.get_connection()
+        if not conn:
+            return None
+        try:
+            cursor = conn.cursor()
+            self._ensure_finance_tables(cursor)
+            conn.commit()
+            cursor.execute("""
+                SELECT Date, Notes FROM Finance.Payments
+                WHERE Category = 'Vehicle Financing' AND Date = ? AND Amount > 0
+                  AND (TellerTransactionID IS NULL OR TellerTransactionID NOT LIKE 'luis-summary-%')
+            """, (date_str,))
+            received_dates = []
+            for row in cursor.fetchall():
+                match = re.search(r"Reassigned from (\d{4}-\d{2}-\d{2})", row[1] or "")
+                if match:
+                    received_dates.append(match.group(1))
+                else:
+                    received_dates.append(row[0].isoformat() if hasattr(row[0], "isoformat") else str(row[0]))
+            return max(received_dates) if received_dates else None
+        except Exception as e:
+            logging.error(f"get_luis_received_date_on failed: {e}")
+            return None
         finally:
             conn.close()
 

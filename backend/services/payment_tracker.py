@@ -19,6 +19,7 @@ from .payment_categorizer import (
     BUSINESS_ACCOUNT,
     PERSONAL_ACCOUNT,
     EMERSON_KEYWORD,
+    LUIS_START_DATE,
     categorize_payee,
     classify_luis_payment,
     check_consecutive_missed,
@@ -199,6 +200,15 @@ class PaymentTrackerService:
                 running_balance=result["new_balance"],
                 notes=result["anomaly_reason"],
             )
+
+            # Financials > Luis Canales card: simple month-scoped Good/Bad
+            # tally, separate from the tiered LuisBalanceLog above. Same
+            # July-2026-onward cutoff as the tiered system. Received date
+            # comes from the reassignment audit trail, so a payment posted
+            # a day late and reassigned back keeps its LateFlag.
+            if current >= LUIS_START_DATE:
+                received = self.db.get_luis_received_date_on(date_str) if amount_sent > 0 else None
+                self.db.upsert_luis_simple_payment(date_str, amount_sent, received)
 
             self.db.clear_luis_summary_flag(date_str)
             if result["anomaly_flag"] or result["anomaly_reason"]:
