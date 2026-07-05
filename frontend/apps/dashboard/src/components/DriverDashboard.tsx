@@ -799,23 +799,14 @@ const DriverDashboard: React.FC = () => {
                     .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
     }, [trips]);
 
-    // Client-side earnings — /financials/summary returns $0 (backend bug)
-    const grossEarnings = useMemo(() =>
-        trips.filter(t => !t.id.startsWith('TESSIE-'))
-             .reduce((s, t) => s + (t.fare ?? 0) + (t.tip ?? 0), 0),
-        [trips]
-    );
-    const uberEarnings = useMemo(() =>
-        trips.filter(t => (t.type === 'Uber' || t.type === 'Uber_OffApp') && !t.id.startsWith('TESSIE-'))
-             .reduce((s, t) => s + (t.fare ?? 0) + (t.tip ?? 0), 0),
-        [trips]
-    );
-    const privateIncome = useMemo(() =>
-        trips.filter(t => t.type === 'Private' && !t.id.startsWith('TESSIE-'))
-             .reduce((s, t) => s + (t.fare ?? 0) + (t.tip ?? 0), 0),
-        [trips]
-    );
-    const netProfit = grossEarnings - (summary?.opex_expenses ?? 0);
+    // Earnings come from /financials/summary (operational-window math,
+    // driver_earnings-based). The old client-side fallback summed t.fare —
+    // the RIDER's price, not our cut — inflating Uber earnings by the
+    // platform's share, and counted unpaid private invoices as income.
+    const grossEarnings = summary?.gross_earnings ?? 0;
+    const uberEarnings = summary?.uber_earnings ?? 0;
+    const privateIncome = summary?.private_income ?? 0;
+    const netProfit = summary?.net_profit ?? (grossEarnings - (summary?.opex_expenses ?? 0));
     const deferredTotal = summary?.deferred_total ?? 0;
 
     // Use all loading states to satisfy TS
