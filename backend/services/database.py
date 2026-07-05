@@ -5,6 +5,21 @@ import datetime
 import json
 import uuid
 
+# Client roster rule — single source of truth. Former clients whose invoices
+# are excluded from active receivables (handled separately, not collectable
+# through normal flows). New clients are active by default (denylist model).
+# ESME is an alias token for Esmeralda (same person, not using the service).
+# DIANA: one-time passenger, $30 written off 2026-07-04.
+INACTIVE_CLIENTS = ("JACKIE", "ESMERALDA", "ESME", "TERRANCE", "DIANA")
+
+
+def inactive_invoice_predicate(column: str = "RideID") -> str:
+    """SQL fragment excluding invoices belonging to inactive clients."""
+    return " AND ".join(
+        f"{column} NOT LIKE 'INV-{name}-%'" for name in INACTIVE_CLIENTS
+    )
+
+
 class DatabaseClient:
     def __init__(self):
         self.connection_string = os.environ.get("SQL_CONNECTION_STRING")
@@ -72,35 +87,41 @@ class DatabaseClient:
         finally:
             conn.close()
 
-    def get_unpaid_trips(self, date_str: str = None):
+    def get_unpaid_trips(self, date_str: str = None, active_only: bool = False):
         """All bookings still awaiting payment, oldest first.
         If date_str (YYYY-MM-DD) is provided, only returns invoices for that date.
+        active_only=True applies the client roster rule (INACTIVE_CLIENTS are
+        excluded) — used by agent-facing surfaces; admin/tracker views pass
+        False to keep separately-handled invoices visible.
         """
         conn = self.get_connection()
         if not conn:
             return []
+        roster_filter = f"AND {inactive_invoice_predicate()}" if active_only else ""
         try:
             cursor = conn.cursor()
             self._ensure_payment_status_column(cursor)
             conn.commit()
             if date_str:
-                cursor.execute("""
+                cursor.execute(f"""
                     SELECT RideID, Timestamp_Start, Fare, Classification,
                            Pickup_Location, Dropoff_Location, Sidecar_Artifact_JSON
                     FROM Rides.Rides
                     WHERE PaymentStatus = 'Pending'
                       AND CAST(Timestamp_Start AS DATE) = CAST(? AS DATE)
                       AND DeletedAt IS NULL
+                      {roster_filter}
                     ORDER BY Timestamp_Start ASC
                 """, (date_str,))
             else:
-                cursor.execute("""
+                cursor.execute(f"""
                     SELECT RideID, Timestamp_Start, Fare, Classification,
                            Pickup_Location, Dropoff_Location, Sidecar_Artifact_JSON
                     FROM Rides.Rides
                     WHERE PaymentStatus = 'Pending'
                       AND Timestamp_Start <= GETUTCDATE()
                       AND DeletedAt IS NULL
+                      {roster_filter}
                     ORDER BY Timestamp_Start ASC
                 """)
             trips = []
@@ -580,8 +601,9 @@ class DatabaseClient:
         """
         query = """
         SELECT 
-            RideID AS id, TripType AS type, Fare AS fare, Tip AS tip, 
-            Platform_Cut AS fees, 
+            RideID AS id, TripType AS type, Fare AS fare, Tip AS tip,
+            Driver_Earnings AS driver_earnings,
+            Platform_Cut AS fees,
             0 AS insurance, 0 AS otherFees,
             Tessie_DriveID AS tessie_drive_id, 
             Distance_mi AS distance_miles,
@@ -614,6 +636,26 @@ class DatabaseClient:
         ORDER BY Timestamp_Start DESC
         """
         return self.execute_query_params(query, (date_str, date_str))
+
+    def get_charging_sessions_for_window(self, window_start, window_end):
+        """Charging sessions whose Start_Time falls in [window_start, window_end).
+
+        Callers pass operational-day boundaries from get_operational_window()
+        so overnight sessions attribute to the day the charge began.
+        """
+        query = """
+        SELECT
+            SessionID                                    AS id,
+            Location_Name                                AS location,
+            Format(Start_Time, 'yyyy-MM-ddTHH:mm:ss')    AS start_time,
+            Format(End_Time,   'yyyy-MM-ddTHH:mm:ss')    AS end_time,
+            CAST(Energy_Added_kWh AS FLOAT)              AS energy_added_kwh,
+            CAST(Cost AS FLOAT)                          AS cost
+        FROM Rides.ChargingSessions
+        WHERE Start_Time >= ? AND Start_Time < ?
+        ORDER BY Start_Time ASC
+        """
+        return self.execute_query_params(query, (window_start, window_end))
 
     def get_expenses_by_date(self, date_str):
         """Fetches manual expenses and charging for a specific date."""
@@ -1090,7 +1132,7 @@ class DatabaseClient:
                 SELECT SUM(Driver_Earnings + COALESCE(Tip, 0))
                 FROM Rides.Rides
                 WHERE Timestamp_Start >= ? AND Timestamp_Start < ?
-                  AND TripType = 'Uber'
+                  AND TripType IN ('Uber', 'Uber_OffApp')
                   AND DeletedAt IS NULL
                   AND (IsTest IS NULL OR IsTest = 0)
             """, (start_window_start, end_window_end))
@@ -1173,6 +1215,73 @@ class DatabaseClient:
                 "expenses": 0.0,
                 "net_profit": 0.0
             }
+        finally:
+            conn.close()
+
+    def get_client_balances(self, include_inactive: bool = False) -> list:
+        """Outstanding invoice balance per client from Rides.Rides INV-% records.
+
+        Applies the roster rule: INACTIVE_CLIENTS are excluded unless
+        include_inactive=True, in which case their balances are returned
+        flagged status='written_off/uncollectable'.
+
+        Invoices whose trip hasn't happened yet (Timestamp_Start in the
+        future, local time) are reported as upcoming bookings, not balance —
+        a booking for tomorrow isn't money owed today.
+        """
+        from services.datetime_utils import get_timezone
+        conn = self.get_connection()
+        if not conn:
+            return []
+        # Timestamp_Start is stored naive local (MT); compare naive local now.
+        now_local = datetime.datetime.now(get_timezone()).replace(tzinfo=None)
+        try:
+            cursor = conn.cursor()
+            self._ensure_payment_status_column(cursor)
+            conn.commit()
+            cursor.execute("""
+                SELECT RideID, CAST(Fare AS FLOAT), PaymentStatus,
+                       CONVERT(varchar(19), Timestamp_Start, 120)
+                FROM Rides.Rides
+                WHERE RideID LIKE 'INV-%'
+                  AND PaymentStatus IN ('Pending', 'Deferred')
+                  AND DeletedAt IS NULL
+                  AND (IsTest IS NULL OR IsTest = 0)
+                ORDER BY Timestamp_Start ASC
+            """)
+            clients = {}
+            inactive_upper = set(INACTIVE_CLIENTS)
+            for ride_id, fare, status, trip_ts in cursor.fetchall():
+                parts = (ride_id or "").split("-")
+                name = parts[1].upper() if len(parts) >= 2 else "UNKNOWN"
+                is_inactive = name in inactive_upper
+                if is_inactive and not include_inactive:
+                    continue
+                try:
+                    is_future = datetime.datetime.strptime(trip_ts, "%Y-%m-%d %H:%M:%S") > now_local
+                except (TypeError, ValueError):
+                    is_future = False
+                c = clients.setdefault(name, {
+                    "client": name.title(),
+                    "balance": 0.0,
+                    "invoice_count": 0,
+                    "upcoming_amount": 0.0,
+                    "upcoming_count": 0,
+                    "oldest_invoice_date": None,
+                    "status": "written_off/uncollectable" if is_inactive else "active",
+                })
+                if is_future:
+                    c["upcoming_amount"] = round(c["upcoming_amount"] + float(fare or 0), 2)
+                    c["upcoming_count"] += 1
+                else:
+                    c["balance"] = round(c["balance"] + float(fare or 0), 2)
+                    c["invoice_count"] += 1
+                    if c["oldest_invoice_date"] is None:
+                        c["oldest_invoice_date"] = trip_ts[:10]
+            return sorted(clients.values(), key=lambda c: (-c["balance"], -c["upcoming_amount"]))
+        except Exception as e:
+            logging.error(f"get_client_balances failed: {e}")
+            return []
         finally:
             conn.close()
 
@@ -1271,6 +1380,13 @@ class DatabaseClient:
                 WHERE name = 'UX_LuisBalanceLog_Date' AND object_id = OBJECT_ID('Finance.LuisBalanceLog')
             )
             CREATE UNIQUE INDEX UX_LuisBalanceLog_Date ON Finance.LuisBalanceLog (Date)
+        """)
+        cursor.execute("""
+            IF OBJECT_ID('Finance.SyncLog', 'U') IS NULL
+            CREATE TABLE Finance.SyncLog (
+                Source          VARCHAR(50) PRIMARY KEY,
+                LastSuccessUtc  DATETIME2 NOT NULL
+            )
         """)
 
     def ensure_finance_tables(self):
@@ -1419,6 +1535,228 @@ class DatabaseClient:
 
     def get_open_anomalies(self) -> list:
         return self.get_payments(anomaly_only=True, limit=200)
+
+    def get_area_activity(self, window_start, window_end) -> list:
+        """Raw trip location/earnings rows for area-level aggregation
+        (agent heatmap). Caller passes operational-window boundaries."""
+        conn = self.get_connection()
+        if not conn:
+            return []
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT Pickup_Location, Dropoff_Location,
+                       CAST(ISNULL(Driver_Earnings, 0) AS FLOAT),
+                       CAST(ISNULL(Fare, 0) AS FLOAT),
+                       CAST(ISNULL(Tip, 0) AS FLOAT),
+                       TripType
+                FROM Rides.Rides
+                WHERE Timestamp_Start >= ? AND Timestamp_Start < ?
+                  AND DeletedAt IS NULL
+                  AND (IsTest IS NULL OR IsTest = 0)
+                  AND (Pickup_Location IS NOT NULL OR Dropoff_Location IS NOT NULL)
+            """, (window_start, window_end))
+            cols = ["pickup", "dropoff", "driver_earnings", "fare", "tip", "trip_type"]
+            return [dict(zip(cols, row)) for row in cursor.fetchall()]
+        except Exception as e:
+            logging.error(f"get_area_activity failed: {e}")
+            return []
+        finally:
+            conn.close()
+
+    def get_open_client_invoices(self) -> list:
+        """All open (Pending) INV-% invoices with parsed client token, oldest first.
+        Used by auto-collect to match inbound client payments FIFO."""
+        conn = self.get_connection()
+        if not conn:
+            return []
+        try:
+            cursor = conn.cursor()
+            self._ensure_payment_status_column(cursor)
+            conn.commit()
+            cursor.execute("""
+                SELECT RideID, CAST(Fare AS FLOAT)
+                FROM Rides.Rides
+                WHERE RideID LIKE 'INV-%'
+                  AND PaymentStatus = 'Pending'
+                  AND DeletedAt IS NULL
+                  AND (IsTest IS NULL OR IsTest = 0)
+                  AND Timestamp_Start <= GETUTCDATE()
+                ORDER BY Timestamp_Start ASC
+            """)
+            invoices = []
+            for ride_id, fare in cursor.fetchall():
+                parts = (ride_id or "").split("-")
+                client = parts[1].upper() if len(parts) >= 2 else "UNKNOWN"
+                invoices.append({"ride_id": ride_id, "client": client, "fare": float(fare or 0)})
+            return invoices
+        except Exception as e:
+            logging.error(f"get_open_client_invoices failed: {e}")
+            return []
+        finally:
+            conn.close()
+
+    def resolve_expected_client_anomaly(self, client_token: str, date_str: str) -> None:
+        """Clears the synthetic 'expected $0' anomaly row for a client/date once
+        a real payment arrives (rows written by _check_emerson use the
+        '<client>-missing-<date>' TellerTransactionID convention)."""
+        conn = self.get_connection()
+        if not conn:
+            return
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                UPDATE Finance.Payments
+                SET AnomalyFlag = 0, Notes = COALESCE(Notes, '') + ' | Auto-resolved: payment received'
+                WHERE TellerTransactionID = ? AND AnomalyFlag = 1
+            """, (f"{client_token.lower()}-missing-{date_str}",))
+            conn.commit()
+        except Exception as e:
+            logging.error(f"resolve_expected_client_anomaly failed: {e}")
+        finally:
+            conn.close()
+
+    def get_spending_summary_data(self, date_from: str, date_to: str, account: str = None) -> dict:
+        """Aggregates Finance.Payments for spending analysis: totals by
+        category/direction, monthly trend, and top outbound counterparties."""
+        conn = self.get_connection()
+        if not conn:
+            return {}
+        acct_filter = "AND Account = ?" if account else ""
+        base_params = [date_from, date_to] + ([account] if account else [])
+        try:
+            cursor = conn.cursor()
+            self._ensure_finance_tables(cursor)
+            conn.commit()
+
+            cursor.execute(f"""
+                SELECT Category, Direction, COUNT(*), CAST(SUM(Amount) AS FLOAT)
+                FROM Finance.Payments
+                WHERE Date >= ? AND Date <= ? {acct_filter} AND Amount > 0
+                GROUP BY Category, Direction
+                ORDER BY SUM(Amount) DESC
+            """, base_params)
+            by_category = [
+                {"category": c or "Uncategorized", "direction": d, "count": n, "total": round(t, 2)}
+                for c, d, n, t in cursor.fetchall()
+            ]
+
+            cursor.execute(f"""
+                SELECT FORMAT(Date, 'yyyy-MM') AS Month, Direction, CAST(SUM(Amount) AS FLOAT)
+                FROM Finance.Payments
+                WHERE Date >= ? AND Date <= ? {acct_filter} AND Amount > 0
+                GROUP BY FORMAT(Date, 'yyyy-MM'), Direction
+                ORDER BY Month
+            """, base_params)
+            monthly = [
+                {"month": m, "direction": d, "total": round(t, 2)}
+                for m, d, t in cursor.fetchall()
+            ]
+
+            cursor.execute(f"""
+                SELECT TOP 10 Counterparty, COUNT(*), CAST(SUM(Amount) AS FLOAT)
+                FROM Finance.Payments
+                WHERE Date >= ? AND Date <= ? {acct_filter}
+                  AND Direction = 'outbound' AND Amount > 0
+                GROUP BY Counterparty
+                ORDER BY SUM(Amount) DESC
+            """, base_params)
+            top_merchants = [
+                {"counterparty": cp, "count": n, "total": round(t, 2)}
+                for cp, n, t in cursor.fetchall()
+            ]
+
+            return {"by_category": by_category, "monthly": monthly, "top_merchants": top_merchants}
+        except Exception as e:
+            logging.error(f"get_spending_summary_data failed: {e}")
+            return {}
+        finally:
+            conn.close()
+
+    def search_payments(self, text: str, date_from: str = None, date_to: str = None, limit: int = 50) -> list:
+        """Text search over Counterparty/Notes/Category in Finance.Payments."""
+        conn = self.get_connection()
+        if not conn:
+            return []
+        try:
+            cursor = conn.cursor()
+            self._ensure_finance_tables(cursor)
+            conn.commit()
+            conditions = ["(Counterparty LIKE ? OR Notes LIKE ? OR Category LIKE ? OR SubCategory LIKE ?)"]
+            like = f"%{text}%"
+            params = [like, like, like, like]
+            if date_from:
+                conditions.append("Date >= ?")
+                params.append(date_from)
+            if date_to:
+                conditions.append("Date <= ?")
+                params.append(date_to)
+            cursor.execute(f"""
+                SELECT TOP (?) Date, Account, Direction, Counterparty, CAST(Amount AS FLOAT),
+                       Category, SubCategory
+                FROM Finance.Payments
+                WHERE {" AND ".join(conditions)}
+                ORDER BY Date DESC
+            """, [limit] + params)
+            cols = ["date", "account", "direction", "counterparty", "amount", "category", "subcategory"]
+            out = []
+            for row in cursor.fetchall():
+                d = dict(zip(cols, row))
+                d["date"] = d["date"].isoformat() if hasattr(d["date"], "isoformat") else str(d["date"])
+                out.append(d)
+            return out
+        except Exception as e:
+            logging.error(f"search_payments failed: {e}")
+            return []
+        finally:
+            conn.close()
+
+    def record_sync_success(self, source: str) -> None:
+        """Stamp Finance.SyncLog after a successful ingest for `source`."""
+        conn = self.get_connection()
+        if not conn:
+            return
+        try:
+            cursor = conn.cursor()
+            self._ensure_finance_tables(cursor)
+            cursor.execute("""
+                MERGE INTO Finance.SyncLog AS target
+                USING (SELECT ? AS Source) AS source
+                ON (target.Source = source.Source)
+                WHEN MATCHED THEN UPDATE SET LastSuccessUtc = GETUTCDATE()
+                WHEN NOT MATCHED THEN INSERT (Source, LastSuccessUtc) VALUES (?, GETUTCDATE());
+            """, (source, source))
+            conn.commit()
+        except Exception as e:
+            logging.error(f"record_sync_success failed for {source}: {e}")
+        finally:
+            conn.close()
+
+    def get_last_sync_time(self, source: str = "teller") -> str:
+        """ISO UTC timestamp of the last successful sync for `source`.
+
+        Falls back to MAX(CreatedAt) on Finance.Payments (when the newest row
+        arrived) until the SyncLog has been populated by a post-deploy sync.
+        """
+        conn = self.get_connection()
+        if not conn:
+            return None
+        try:
+            cursor = conn.cursor()
+            self._ensure_finance_tables(cursor)
+            conn.commit()
+            cursor.execute("SELECT LastSuccessUtc FROM Finance.SyncLog WHERE Source = ?", (source,))
+            row = cursor.fetchone()
+            if row and row[0]:
+                return row[0].isoformat() + "Z"
+            cursor.execute("SELECT MAX(CreatedAt) FROM Finance.Payments")
+            row = cursor.fetchone()
+            return (row[0].isoformat() + "Z (newest record; no sync log yet)") if row and row[0] else None
+        except Exception as e:
+            logging.error(f"get_last_sync_time failed for {source}: {e}")
+            return None
+        finally:
+            conn.close()
 
     def resolve_anomaly(self, payment_id: str, resolution_note: str = None) -> bool:
         conn = self.get_connection()

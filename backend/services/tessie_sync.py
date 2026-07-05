@@ -85,12 +85,12 @@ class TessieSyncService:
                     "End_SOC":            drive.get('ending_battery'),
                     "Energy_Used_kWh":    drive.get('energy_used'),
                     "Efficiency_Wh_mi":   drive.get('efficiency'),
-                    "TripType":           "Uber" if "uber" in (drive.get('tag') or "").lower() else "Private",
+                    "TripType":           self._tag_to_triptype(drive.get('tag') or ""),
                     "Classification":     self._classify_drive(drive.get('tag')),
                     "Tessie_Label":       drive.get('tag'),
                     "Sidecar_Artifact_JSON": json.dumps(drive)
                 }
-                
+
                 # Save all drives to DB (filtered out on dashboard if not business, but useful for matching/mileage)
                 # This ensures "Untagged" drives are available for the Uber Matcher to claim them.
                 self.db.save_trip(drive_data)
@@ -161,6 +161,15 @@ class TessieSyncService:
         if not ts: return None
         return datetime.fromtimestamp(ts, self.mdt).strftime('%Y-%m-%d %H:%M:%S')
 
+    def _tag_to_triptype(self, tag: str) -> str:
+        """Maps a Tessie tag string to a TripType value."""
+        t = (tag or "").lower().strip()
+        if re.search(r'off.?app|zelle.*uber|uber.*zelle|uber.*cash|cash.*uber', t):
+            return 'Uber_OffApp'
+        if 'uber' in t:
+            return 'Uber'
+        return 'Private'
+
     def _classify_drive(self, tag: str) -> str:
         """
         Maps a Tessie tag to a SummitOS Classification value.
@@ -195,7 +204,11 @@ class TessieSyncService:
         if t.startswith('charging session') or t.startswith('charge session'):
             return 'Charging'
             
-        # 5. Starts with "Uber Trip" -> Uber_Dropoff
+        # 5. Uber off-app cash/Zelle (must precede generic 'uber' check)
+        if re.search(r'off.?app|zelle.*uber|uber.*zelle|uber.*cash|cash.*uber', t):
+            return 'Uber_OffApp'
+
+        # 5b. Starts with "Uber Trip" -> Uber_Dropoff
         if t.startswith('uber trip') or 'uber' in t:
             return 'Uber_Dropoff'
             
@@ -287,7 +300,7 @@ class TessieSyncService:
                             "End_SOC":            drive.get('ending_battery'),
                             "Energy_Used_kWh":    drive.get('energy_used'),
                             "Efficiency_Wh_mi":   drive.get('efficiency'),
-                            "TripType":           "Uber" if "uber" in tag.lower() else "Private",
+                            "TripType":           self._tag_to_triptype(tag),
                             "Classification":     self._classify_drive(tag),
                             "Tessie_Label":       tag,
                             "Sidecar_Artifact_JSON": json.dumps(drive)

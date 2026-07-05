@@ -149,7 +149,7 @@ interface FinancialsSummaryResponse {
 
 interface DatabaseTrip {
     id: string;
-    type: 'Uber' | 'Private';
+    type: 'Uber' | 'Private' | 'Uber_OffApp';
     fare: number;
     tip: number;
     fees: number;
@@ -258,6 +258,11 @@ const DriverDashboard: React.FC = () => {
     const [expenseNote, setExpenseNote] = useState('');
     const [expenseType, setExpenseType] = useState<'OpEx' | 'CapEx'>('OpEx');
     const [isLoggingExpense, setIsLoggingExpense] = useState(false);
+
+    const [offAppAmount, setOffAppAmount] = useState('');
+    const [offAppMethod, setOffAppMethod] = useState<'Zelle' | 'Cash'>('Zelle');
+    const [offAppNote, setOffAppNote] = useState('');
+    const [isLoggingOffApp, setIsLoggingOffApp] = useState(false);
 
     // Collapsible Panels
     const [expensesCollapsed, setExpensesCollapsed] = useState(true);
@@ -638,6 +643,39 @@ const DriverDashboard: React.FC = () => {
         }
     };
 
+    const handleLogOffApp = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const amt = parseFloat(offAppAmount);
+        if (!amt) return;
+        setIsLoggingOffApp(true);
+        try {
+            const timestamp = `${selectedDate}T${new Date().toTimeString().split(' ')[0]}`;
+            await apiPost('/driver/sync', {
+                trips: [{
+                    id: `M-OFFAPP-${Date.now()}`,
+                    type: "Uber_OffApp",
+                    fare: amt,
+                    tip: 0.0,
+                    distance_miles: 0,
+                    timestamp,
+                    classification: "Uber_OffApp",
+                    pickup_location: offAppNote || "Uber Off-App",
+                    dropoff_location: offAppNote || "Uber Off-App",
+                    payment_status: "Paid",
+                    payment_method: offAppMethod
+                }]
+            });
+            setOffAppAmount('');
+            setOffAppNote('');
+            setIsMobileQuickLogOpen(false);
+            fetchAllData();
+        } catch (err) {
+            console.error("Log off-app trip failed:", err);
+        } finally {
+            setIsLoggingOffApp(false);
+        }
+    };
+
     const handleLogExpense = async (e: React.FormEvent) => {
         e.preventDefault();
         const amt = parseFloat(expenseAmount);
@@ -757,7 +795,7 @@ const DriverDashboard: React.FC = () => {
 
     // Sort and format Uber trips for Ledger
     const uberTrips = useMemo(() => {
-        return trips.filter(t => t.type === 'Uber' && !t.id.startsWith('TESSIE-'))
+        return trips.filter(t => (t.type === 'Uber' || t.type === 'Uber_OffApp') && !t.id.startsWith('TESSIE-'))
                     .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
     }, [trips]);
 
@@ -768,7 +806,7 @@ const DriverDashboard: React.FC = () => {
         [trips]
     );
     const uberEarnings = useMemo(() =>
-        trips.filter(t => t.type === 'Uber' && !t.id.startsWith('TESSIE-'))
+        trips.filter(t => (t.type === 'Uber' || t.type === 'Uber_OffApp') && !t.id.startsWith('TESSIE-'))
              .reduce((s, t) => s + (t.fare ?? 0) + (t.tip ?? 0), 0),
         [trips]
     );
@@ -936,8 +974,10 @@ const DriverDashboard: React.FC = () => {
                                     <div className="flex flex-wrap gap-2">
                                         <button onClick={() => { setSection('financials'); setTimeout(() => document.getElementById("log-cash-tip-form")?.scrollIntoView({ behavior: 'smooth' }), 200); }} 
                                             className="px-4 py-2.5 rounded-xl border border-amber-500/20 bg-amber-500/10 text-amber-400 text-xs font-bold hover:bg-amber-500/20 transition-all">+ Log Cash Tip</button>
-                                        <button onClick={() => { setSection('financials'); setTimeout(() => document.getElementById("log-private-payment-form")?.scrollIntoView({ behavior: 'smooth' }), 200); }} 
+                                        <button onClick={() => { setSection('financials'); setTimeout(() => document.getElementById("log-private-payment-form")?.scrollIntoView({ behavior: 'smooth' }), 200); }}
                                             className="px-4 py-2.5 rounded-xl border border-[var(--accent-purple)]/20 bg-[var(--accent-purple)]/10 text-[var(--accent-purple)] text-xs font-bold hover:bg-[var(--accent-purple)]/20 transition-all">+ Log Private Payment</button>
+                                        <button onClick={() => { setSection('financials'); setTimeout(() => document.getElementById("log-offapp-form")?.scrollIntoView({ behavior: 'smooth' }), 200); }}
+                                            className="px-4 py-2.5 rounded-xl border border-orange-500/20 bg-orange-500/10 text-orange-400 text-xs font-bold hover:bg-orange-500/20 transition-all">+ Off-App Trip</button>
                                         <button onClick={() => { setSection('financials'); setTimeout(() => document.getElementById("log-expense-form")?.scrollIntoView({ behavior: 'smooth' }), 200); }} 
                                             className="px-4 py-2.5 rounded-xl border border-[var(--accent-cyan)]/20 bg-[var(--accent-cyan)]/10 text-[var(--accent-cyan)] text-xs font-bold hover:bg-[var(--accent-cyan)]/20 transition-all">+ Log Expense</button>
                                         <button onClick={() => { setSection('financials'); setTimeout(() => { document.getElementById("log-expense-form")?.scrollIntoView({ behavior: 'smooth' }); setExpenseCategory('Charging'); }, 200); }} 
@@ -1026,20 +1066,25 @@ const DriverDashboard: React.FC = () => {
                                                                 </div>
                                                             );
                                                         }
+                                                        const isOffApp = t.type === 'Uber_OffApp';
                                                         return (
-                                                            <div key={t.id} className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-1.5 hover:bg-white/[0.03] transition-colors">
+                                                            <div key={t.id} className={`p-3.5 rounded-xl border space-y-1.5 hover:bg-white/[0.03] transition-colors ${isOffApp ? 'bg-orange-500/[0.03] border-orange-500/15' : 'bg-white/[0.02] border-white/5'}`}>
                                                                 <div className="flex items-center justify-between">
-                                                                    <span className="text-xs font-bold text-white font-sans">Uber {idx + 1}</span>
-                                                                    {t.tessie_drive_id ? (
+                                                                    <span className="text-xs font-bold text-white font-sans">{isOffApp ? 'Off-App' : `Uber ${idx + 1}`}</span>
+                                                                    {isOffApp ? (
+                                                                        <span className="px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-400 border border-orange-500/25 text-[8px] font-bold uppercase font-mono">Zelle/Cash</span>
+                                                                    ) : t.tessie_drive_id ? (
                                                                         <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[8px] font-bold uppercase font-mono">Matched</span>
                                                                     ) : (
                                                                         <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[8px] font-bold uppercase font-mono">Unmatched</span>
                                                                     )}
                                                                 </div>
-                                                                <p className="text-[10px] text-[var(--text-muted)] font-mono truncate">Distance: {t.distance_miles.toFixed(1)} mi</p>
+                                                                <p className="text-[10px] text-[var(--text-muted)] font-mono truncate">
+                                                                    {isOffApp ? (t.pickup_location || 'Off-app payment') : `Distance: ${(t.distance_miles ?? 0).toFixed(1)} mi`}
+                                                                </p>
                                                                 <div className="flex items-center justify-between pt-1 font-mono">
                                                                     <span className="text-[10px] text-[#606060]">{formatToLocalTime(t.timestamp)}</span>
-                                                                    <span className="text-sm font-black text-white">${t.fare.toFixed(2)}</span>
+                                                                    <span className={`text-sm font-black ${isOffApp ? 'text-orange-400' : 'text-white'}`}>${t.fare.toFixed(2)}</span>
                                                                 </div>
                                                             </div>
                                                         );
@@ -1124,6 +1169,22 @@ const DriverDashboard: React.FC = () => {
                                                     <button type="submit" disabled={isLoggingPrivate} className="px-3.5 py-1.5 bg-[var(--accent-purple)] text-white rounded-lg text-xs font-bold flex items-center gap-2 disabled:opacity-50">
                                                         {isLoggingPrivate && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                                                         Log Private Payment
+                                                    </button>
+                                                </form>
+
+                                                <form id="log-offapp-form" onSubmit={handleLogOffApp} className="space-y-3 p-3 bg-orange-500/[0.03] border border-orange-500/15 rounded-xl lg:col-span-2">
+                                                    <h4 className="text-[10px] font-bold font-mono text-orange-400 uppercase tracking-wider">Log Uber Off-App Trip (Zelle / Cash)</h4>
+                                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                                        <input type="number" placeholder="Amount ($)" step="0.01" value={offAppAmount} onChange={e=>setOffAppAmount(e.target.value)} className="p-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white focus:outline-none" />
+                                                        <select value={offAppMethod} onChange={e=>setOffAppMethod(e.target.value as 'Zelle' | 'Cash')} className="p-2 bg-[var(--bg-surface)] border border-white/10 rounded-lg text-xs text-white focus:outline-none font-sans">
+                                                            <option value="Zelle">Zelle</option>
+                                                            <option value="Cash">Cash</option>
+                                                        </select>
+                                                        <input type="text" placeholder="Note (rider, route…)" value={offAppNote} onChange={e=>setOffAppNote(e.target.value)} className="p-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white focus:outline-none" />
+                                                    </div>
+                                                    <button type="submit" disabled={isLoggingOffApp} className="px-3.5 py-1.5 bg-orange-500 text-white rounded-lg text-xs font-bold flex items-center gap-2 disabled:opacity-50">
+                                                        {isLoggingOffApp && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                                                        Log Off-App Trip
                                                     </button>
                                                 </form>
                                             </div>
