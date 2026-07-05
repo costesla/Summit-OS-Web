@@ -7,17 +7,18 @@ bp = func.Blueprint()
 
 MDT = ZoneInfo("America/Denver")
 
-# ─── Nightly Payment Tracker Safety-Net Sync ─────────────────────────────────
-# Fires at 06:00 UTC = 12:00 AM MDT every night — after the local
+# ─── Payment Tracker Safety-Net Sync (2x daily) ──────────────────────────────
+# Overnight run (06:30 UTC = 12:30 AM MDT): cloud fallback after the local
 # Teller-MCP-based sync (scripts/sync_payments_from_teller.py) is expected to
-# have already run on Peter's machine. This is a cloud-side fallback using
-# the existing BankingClient's direct Teller access, so the ledger still
-# gets built even if the local machine was off. Both paths dedupe on
-# TellerTransactionID, so this can never double-count.
+# have already run on Peter's machine, so the ledger still gets built even if
+# the local machine was off.
+# Morning run (12:30 UTC = 6:30 AM MDT): catches early-morning client
+# payments (Emerson pays ~4:30 AM) the same day instead of ~21 hours later.
+# Both paths dedupe on TellerTransactionID, so reruns can never double-count.
 # ─────────────────────────────────────────────────────────────────────────────
 
 @bp.schedule(
-    schedule="0 0 6 * * *",   # 6:00 AM UTC = 12:00 AM MDT
+    schedule="0 30 6,12 * * *",   # 06:30 & 12:30 UTC = 12:30 AM & 6:30 AM MDT
     arg_name="paymentSyncTimer",
     run_on_startup=False,
     use_monitor=True

@@ -46,6 +46,7 @@ blueprints = [
     "api.auto_fix",
     "api.payments",
     "api.timer_payment_sync",
+    "api.mcp_tools",
 ]
 
 registration_logs = []

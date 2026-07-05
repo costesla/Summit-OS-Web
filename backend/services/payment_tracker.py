@@ -97,12 +97,20 @@ class PaymentTrackerService:
                     "notes": tx.get("notes"),
                 })
                 saved += 1
+                if (classification["category"] == "Private Client Revenue"
+                        and classification["direction"] == "inbound"
+                        and abs(amount) > 0):
+                    try:
+                        self._auto_collect_invoices(counterparty, abs(amount), tx["date"].isoformat())
+                    except Exception as ce:
+                        logging.warning(f"sync_day: auto-collect failed for {tx.get('id')} (non-fatal): {ce}")
             except Exception as e:
                 logging.error(f"sync_day: failed to save transaction {tx.get('id')}: {e}")
 
         self._recompute_luis_chain(date_str)
         self._check_emerson(date_str, emerson_paid)
         self._check_recurring_obligations(date_str)
+        self.db.record_sync_success("teller")
 
         return {"success": True, "date": date_str, "transactions_saved": saved}
 
@@ -245,6 +253,43 @@ class PaymentTrackerService:
         self._recompute_luis_chain(min(original_date, target_date))
 
         return {"success": True, "original_date": original_date, "target_date": target_date}
+
+    def _auto_collect_invoices(self, counterparty: str, amount: float, date_str: str):
+        """Match an inbound client payment to that client's oldest open
+        invoices and mark them Paid, FIFO, up to the payment amount.
+
+        Client identification: the invoice token (INV-<CLIENT>-...) must appear
+        in the payment counterparty (e.g. 'Zelle payment from EMERSON JEAN
+        BAPTISTE' -> EMERSON). Inactive/written-off clients never auto-collect.
+        Also clears the same-day synthetic 'expected $0' anomaly, which the
+        overnight sync writes whenever a client pays after it ran.
+        """
+        from .database import INACTIVE_CLIENTS
+        cp_upper = (counterparty or "").upper()
+        open_invoices = self.db.get_open_client_invoices()
+
+        matched_client = None
+        for inv in open_invoices:
+            token = inv["client"]
+            if token not in INACTIVE_CLIENTS and len(token) >= 3 and token in cp_upper:
+                matched_client = token
+                break
+        if not matched_client:
+            return
+
+        remaining = amount
+        to_collect = []
+        for inv in open_invoices:
+            if inv["client"] != matched_client:
+                continue
+            if inv["fare"] <= remaining + 0.01:
+                to_collect.append(inv["ride_id"])
+                remaining = round(remaining - inv["fare"], 2)
+
+        if to_collect:
+            self.db.bulk_collect_invoices(to_collect)
+            logging.info(f"Auto-collected {len(to_collect)} invoice(s) for {matched_client}: {to_collect}")
+        self.db.resolve_expected_client_anomaly(matched_client, date_str)
 
     def _check_emerson(self, date_str: str, had_payment: bool):
         reason = should_flag_missing_emerson(date_str, had_payment)
