@@ -444,6 +444,7 @@ def financials_summary(req: func.HttpRequest) -> func.HttpResponse:
             "date": date_str,
             "gross_earnings": today_stats["gross_earnings"],
             "uber_earnings": today_stats["uber_earnings"],
+            "uber_tips": today_stats.get("uber_tips", 0.0),
             "private_income": today_stats["private_income"],
             "opex_expenses": today_stats.get("opex_expenses", 0.0),
             "capex_expenses": today_stats.get("capex_expenses", 0.0),

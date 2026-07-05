@@ -95,9 +95,13 @@ def get_day_summary(context) -> str:
                 "timezone": "Mountain Time (America/Denver)",
             },
             "revenue": {
-                "uber_earnings":  _money(totals.get("uber_earnings")),
-                "private_income": _money(totals.get("private_income")),
-                "gross_earnings": _money(totals.get("gross_earnings")),
+                # uber_earnings already includes tips (OCR trip cards report
+                # earnings tip-inclusive); uber_tips_included is the breakdown
+                # of how much of that was tips, not an addition.
+                "uber_earnings":       _money(totals.get("uber_earnings")),
+                "uber_tips_included":  _money(totals.get("uber_tips")),
+                "private_income":      _money(totals.get("private_income")),
+                "gross_earnings":      _money(totals.get("gross_earnings")),
             },
             "expenses": {
                 "charging":  charging_cost,

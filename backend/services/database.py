@@ -1127,9 +1127,12 @@ class DatabaseClient:
         
         try:
             cursor = conn.cursor()
-            # 1. Uber Earnings
+            # 1. Uber Earnings. Driver_Earnings comes from the OCR'd Uber trip
+            # detail cards, whose earnings figure ALREADY INCLUDES the tip —
+            # never add Tip on top (that double-counts tipped trips). The Tip
+            # column is an informational breakdown within Driver_Earnings.
             cursor.execute("""
-                SELECT SUM(Driver_Earnings + COALESCE(Tip, 0))
+                SELECT SUM(Driver_Earnings), SUM(COALESCE(Tip, 0))
                 FROM Rides.Rides
                 WHERE Timestamp_Start >= ? AND Timestamp_Start < ?
                   AND TripType IN ('Uber', 'Uber_OffApp')
@@ -1137,7 +1140,8 @@ class DatabaseClient:
                   AND (IsTest IS NULL OR IsTest = 0)
             """, (start_window_start, end_window_end))
             row = cursor.fetchone()
-            uber_sum = float(row[0] or 0.0) if row else 0.0
+            uber_sum  = float(row[0] or 0.0) if row else 0.0
+            uber_tips = float(row[1] or 0.0) if row else 0.0
 
             # 2. Paid Private Bookings
             cursor.execute("""
@@ -1194,11 +1198,13 @@ class DatabaseClient:
             row = cursor.fetchone()
             total_capex = float(row[0] or 0.0) if row else 0.0
 
+            # uber_sum already contains tips (see above) — do not add uber_tips.
             gross_earnings = uber_sum + private_booking_sum + private_payment_sum
             total_expenses = total_opex + total_capex
 
             return {
                 "uber_earnings": uber_sum,
+                "uber_tips": uber_tips,
                 "private_income": private_booking_sum + private_payment_sum,
                 "gross_earnings": gross_earnings,
                 "opex_expenses": total_opex,
