@@ -135,6 +135,22 @@ def finalize_stripe_session(session_id: str) -> dict:
     if meta.get("source") == "post_trip_invoice":
         logging.info(f"Post-trip invoice paid for {customer_name}. Skipping calendar booking.")
 
+        # Settle the invoice row. Payment Links carry invoiceId in metadata
+        # (Stripe copies link metadata onto the session), so the exact
+        # Rides.Rides row can be marked Paid instead of sitting in Unpaid
+        # Invoices until someone manually collects it. Best-effort: the
+        # money is already in Stripe either way.
+        invoice_id = meta.get("invoiceId")
+        if invoice_id:
+            try:
+                marked = DatabaseClient().set_payment_status(invoice_id, "Paid")
+                if marked:
+                    logging.info(f"Invoice {invoice_id} marked Paid via Stripe webhook")
+                else:
+                    logging.warning(f"Invoice {invoice_id} not found in Rides.Rides — mark Paid manually")
+            except Exception as mark_err:
+                logging.error(f"Failed to mark invoice {invoice_id} Paid: {mark_err}")
+
         # Email is best-effort for this path — the "booking" is the invoice
         # payment itself, which Stripe already recorded.  A failed email
         # doesn't constitute a lost booking, so we do NOT release the claim.

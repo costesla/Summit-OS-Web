@@ -143,7 +143,7 @@ def send_invoice(req: func.HttpRequest) -> func.HttpResponse:
     stripe_url = None
     if gen_stripe:
         trip_label = f"{pickup} → {dropoff} on {trip_date_fmt}"
-        stripe_url = create_stripe_payment_link(customer_name, customer_email, float(amount_usd), trip_label)
+        stripe_url = create_stripe_payment_link(customer_name, customer_email, float(amount_usd), trip_label, invoice_id=invoice_id)
 
     # ── Calculate Thor Telemetry ──────────────────────────────────────────────
     telemetry = calculate_thor_telemetry(distance_miles, energy_kwh if energy_kwh > 0 else None)

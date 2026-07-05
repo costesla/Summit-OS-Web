@@ -26,10 +26,19 @@ TESLA_WH_PER_MILE = 250.0
 
 # ─── Stripe Payment Link ───────────────────────────────────────────────────────
 
-def create_stripe_payment_link(customer_name: str, customer_email: str, amount_usd: float, trip_label: str) -> str:
+def create_stripe_payment_link(customer_name: str, customer_email: str, amount_usd: float, trip_label: str, invoice_id: str = None) -> str:
     """
-    Creates a one-time Stripe Checkout session and returns the hosted URL.
+    Creates a Stripe Payment Link and returns the hosted URL.
     Falls back to None if Stripe is unavailable.
+
+    Payment Links never expire — a Checkout Session URL (the previous
+    implementation) goes dead 24 hours after the invoice email is sent,
+    which broke the card option for anyone paying later.
+
+    Metadata on the Payment Link is copied by Stripe onto the Checkout
+    Session it spawns, so the existing checkout.session.completed webhook
+    handles these payments unchanged; invoiceId lets it mark the exact
+    Rides.Rides invoice row Paid.
     """
     try:
         stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
@@ -38,35 +47,30 @@ def create_stripe_payment_link(customer_name: str, customer_email: str, amount_u
             return None
 
         amount_cents = int(round(amount_usd * 100))
-        base_url = os.environ.get("SITE_BASE_URL", "https://costesla.com")
 
-        session = stripe.checkout.Session.create(
-            payment_method_types=["card"],
-            customer_email=customer_email if customer_email else None,
-            payment_intent_data={
-                "receipt_email": customer_email if customer_email else None,
-            },
-            line_items=[{
-                "price_data": {
-                    "currency": "usd",
-                    "product_data": {
-                        "name": "SummitOS Private Trip",
-                        "description": trip_label,
-                    },
-                    "unit_amount": amount_cents,
-                },
-                "quantity": 1,
-            }],
-            mode="payment",
-            success_url=f"{base_url}/book/success?session_id={{CHECKOUT_SESSION_ID}}",
-            cancel_url=f"{base_url}/book",
-            metadata={
-                "customerName": customer_name,
-                "customerEmail": customer_email,
-                "source": "post_trip_invoice",
-            }
+        price = stripe.Price.create(
+            currency="usd",
+            unit_amount=amount_cents,
+            product_data={"name": f"SummitOS Private Trip — {trip_label}"[:250]},
         )
-        return session.url
+        metadata = {
+            "customerName": customer_name,
+            "customerEmail": customer_email or "",
+            "source": "post_trip_invoice",
+        }
+        if invoice_id:
+            metadata["invoiceId"] = invoice_id
+        link = stripe.PaymentLink.create(
+            line_items=[{"price": price.id, "quantity": 1}],
+            metadata=metadata,
+        )
+        url = link.url
+        # Prefill the email field on the hosted page (Payment Links can't
+        # take customer_email at creation time the way Sessions can).
+        if customer_email:
+            from urllib.parse import quote
+            url = f"{url}?prefilled_email={quote(customer_email)}"
+        return url
     except Exception as e:
         logging.error(f"Stripe payment link error: {e}")
         return None
