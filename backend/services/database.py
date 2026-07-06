@@ -1565,15 +1565,31 @@ class DatabaseClient:
     def get_open_anomalies(self) -> list:
         return self.get_payments(anomaly_only=True, limit=200)
 
-    def get_area_activity(self, window_start, window_end) -> list:
+    def get_area_activity(self, window_start, window_end, start_time: str = None, end_time: str = None) -> list:
         """Raw trip location/earnings rows for area-level aggregation
-        (agent heatmap). Caller passes operational-window boundaries."""
+        (agent heatmap). Caller passes operational-window boundaries.
+
+        start_time/end_time ('HH:MM', local — Timestamp_Start is stored
+        naive Mountain Time) restrict to that time-of-day slot across every
+        day in the range. A window that wraps midnight (start > end, e.g.
+        22:00–02:00) matches either side of it."""
+        time_filter = ""
+        params = [window_start, window_end]
+        if start_time and end_time:
+            if start_time <= end_time:
+                time_filter = ("AND CAST(Timestamp_Start AS TIME) >= CAST(? AS TIME) "
+                               "AND CAST(Timestamp_Start AS TIME) < CAST(? AS TIME)")
+            else:
+                time_filter = ("AND (CAST(Timestamp_Start AS TIME) >= CAST(? AS TIME) "
+                               "OR CAST(Timestamp_Start AS TIME) < CAST(? AS TIME))")
+            params += [start_time, end_time]
+
         conn = self.get_connection()
         if not conn:
             return []
         try:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(f"""
                 SELECT Pickup_Location, Dropoff_Location,
                        CAST(ISNULL(Driver_Earnings, 0) AS FLOAT),
                        CAST(ISNULL(Fare, 0) AS FLOAT),
@@ -1581,10 +1597,11 @@ class DatabaseClient:
                        TripType
                 FROM Rides.Rides
                 WHERE Timestamp_Start >= ? AND Timestamp_Start < ?
+                  {time_filter}
                   AND DeletedAt IS NULL
                   AND (IsTest IS NULL OR IsTest = 0)
                   AND (Pickup_Location IS NOT NULL OR Dropoff_Location IS NOT NULL)
-            """, (window_start, window_end))
+            """, params)
             cols = ["pickup", "dropoff", "driver_earnings", "fare", "tip", "trip_type"]
             return [dict(zip(cols, row)) for row in cursor.fetchall()]
         except Exception as e:

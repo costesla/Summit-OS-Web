@@ -764,6 +764,27 @@ _HEATMAP_PROPERTIES = json.dumps([
         "description": "Last operational date (inclusive), YYYY-MM-DD. Omit for the current operational day.",
         "isRequired": False,
     },
+    {
+        "propertyName": "start_time",
+        "propertyType": "string",
+        "description": (
+            "Start of a time-of-day window, HH:MM 24-hour Mountain Time "
+            "(e.g. '04:30'). Use with end_time to answer staging questions "
+            "like 'morning rush' or 'where should I sit before 10 AM'. "
+            "Omit for all hours."
+        ),
+        "isRequired": False,
+    },
+    {
+        "propertyName": "end_time",
+        "propertyType": "string",
+        "description": (
+            "End of the time-of-day window (exclusive), HH:MM 24-hour "
+            "Mountain Time (e.g. '10:00'). Windows that wrap midnight "
+            "(start later than end, e.g. 22:00 to 02:00) are supported."
+        ),
+        "isRequired": False,
+    },
 ])
 
 
@@ -785,9 +806,13 @@ def _parse_area(address: str) -> str:
     description=(
         "Returns trip activity aggregated by area of town (city + zip) for a "
         "date range: pickups, dropoffs, and earnings per area, ranked by "
-        "activity. Use for questions like 'what part of town did I spend the "
-        "day in', 'where do my best-paying trips come from', 'which "
-        "neighborhoods were busiest this month'."
+        "activity. Optionally restricted to a time-of-day window via "
+        "start_time/end_time (Mountain Time) — use that for staging "
+        "questions like 'where should I sit during the morning rush' or "
+        "'where are pickups between 4:30 and 10 AM'. Also for questions "
+        "like 'what part of town did I spend the day in', 'where do my "
+        "best-paying trips come from', 'which neighborhoods were busiest "
+        "this month'."
     ),
     tool_properties=_HEATMAP_PROPERTIES,
 )
@@ -800,11 +825,21 @@ def get_activity_heatmap(context) -> str:
         if not _valid_date(d):
             return json.dumps({"error": _INVALID_DATE.format(d)})
 
+    import re as _re
+    start_time = (str(args.get("start_time") or "")).strip() or None
+    end_time = (str(args.get("end_time") or "")).strip() or None
+    if bool(start_time) != bool(end_time):
+        return json.dumps({"error": "start_time and end_time must be provided together (HH:MM, 24-hour Mountain Time)."})
+    if start_time:
+        for t in (start_time, end_time):
+            if not _re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", t):
+                return json.dumps({"error": f"Invalid time '{t}' — use HH:MM, 24-hour Mountain Time (e.g. '04:30')."})
+
     try:
         window_start, _ = get_operational_window(start_date)
         _, window_end = get_operational_window(end_date)
         db = DatabaseClient()
-        rows = db.get_area_activity(window_start, window_end)
+        rows = db.get_area_activity(window_start, window_end, start_time=start_time, end_time=end_time)
 
         areas = {}
         for r in rows:
@@ -824,6 +859,7 @@ def get_activity_heatmap(context) -> str:
         return json.dumps({
             "start_date": start_date,
             "end_date": end_date,
+            "time_window": f"{start_time}–{end_time} Mountain Time" if start_time else "all hours",
             "area_count": len(ranked),
             "areas": ranked[:25],
             "note": "earnings are attributed to the pickup area of each trip",
