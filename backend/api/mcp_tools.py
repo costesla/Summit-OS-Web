@@ -869,6 +869,70 @@ def get_activity_heatmap(context) -> str:
         return json.dumps({"error": f"Activity heatmap failed: {e}"})
 
 
+_UPCOMING_BOOKINGS_PROPERTIES = json.dumps([
+    {
+        "propertyName": "days_ahead",
+        "propertyType": "number",
+        "description": "How many days forward to look, starting now. Defaults to 7, max 60.",
+        "isRequired": False,
+    },
+])
+
+
+@bp.mcp_tool_trigger(
+    arg_name="context",
+    tool_name="get_upcoming_bookings",
+    description=(
+        "Returns FUTURE bookings and calendar events from the business "
+        "calendar: customer, pickup time (Mountain Time), location, and "
+        "trip details. Use for questions like 'what's on the schedule "
+        "tomorrow', 'do I have any bookings this week', 'when is my next "
+        "pickup'. This reads the live calendar, so it includes bookings "
+        "made through the website and ones added directly to the calendar."
+    ),
+    tool_properties=_UPCOMING_BOOKINGS_PROPERTIES,
+)
+def get_upcoming_bookings(context) -> str:
+    args = _parse_args(context)
+    try:
+        try:
+            days_ahead = int(float(args.get("days_ahead") or 7))
+        except (TypeError, ValueError):
+            days_ahead = 7
+        days_ahead = max(1, min(days_ahead, 60))
+
+        from services.graph import GraphClient
+        now_local = datetime.datetime.now(get_timezone())
+        end_local = now_local + datetime.timedelta(days=days_ahead)
+        events = GraphClient().get_calendar_view(now_local, end_local)
+
+        bookings = []
+        for ev in events:
+            subject = ev.get("subject") or ""
+            bookings.append({
+                "subject": subject,
+                "is_booking": subject.startswith("Booking:"),
+                "customer": subject.replace("Booking:", "").strip() if subject.startswith("Booking:") else None,
+                "start": (ev.get("start") or {}).get("dateTime"),
+                "end": (ev.get("end") or {}).get("dateTime"),
+                "location": ((ev.get("location") or {}).get("displayName")) or None,
+                "details": (ev.get("bodyPreview") or "")[:300] or None,
+            })
+
+        return json.dumps({
+            "from": now_local.strftime("%Y-%m-%d %H:%M"),
+            "to": end_local.strftime("%Y-%m-%d %H:%M"),
+            "timezone": "Mountain Time (America/Denver)",
+            "event_count": len(bookings),
+            "booking_count": sum(1 for b in bookings if b["is_booking"]),
+            "events": bookings,
+            "note": "times are already in Mountain Time; is_booking=false rows are other calendar events (time off, personal)",
+        }, default=str)
+    except Exception as e:
+        logging.error(f"MCP get_upcoming_bookings failed: {e}")
+        return json.dumps({"error": f"Upcoming bookings lookup failed: {e}"})
+
+
 _RECORD_EXPENSE_PROPERTIES = json.dumps([
     {
         "propertyName": "amount",

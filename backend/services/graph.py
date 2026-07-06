@@ -247,6 +247,32 @@ class GraphClient:
             
         return resp.json().get("businessHours", [])
 
+    def get_calendar_view(self, start_dt, end_dt, top: int = 50):
+        """Calendar events in [start_dt, end_dt), ordered by start, with
+        times rendered in Mountain Time (Prefer header) so callers don't
+        have to convert. This is where SummitOS bookings actually live —
+        create_appointment writes standard calendar events, not Bookings
+        API appointments."""
+        token = self._get_token()
+        url = f"https://graph.microsoft.com/v1.0/users/{self.user_email}/calendar/calendarView"
+        params = {
+            "startDateTime": self._format_iso_z(start_dt),
+            "endDateTime": self._format_iso_z(end_dt),
+            "$orderby": "start/dateTime",
+            "$top": top,
+            "$select": "subject,start,end,location,bodyPreview",
+        }
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+            "Prefer": 'outlook.timezone="America/Denver"',
+        }
+        resp = requests.get(url, headers=headers, params=params)
+        if not resp.ok:
+            logging.error(f"Graph Calendar View Error: {resp.text}")
+            raise Exception(f"Graph Calendar View Error: {resp.status_code} {resp.text}")
+        return resp.json().get("value", [])
+
     def get_staff_time_off(self, staff_id, start_dt, end_dt):
         """Fetches Time Off for a specific staff member within a range."""
         token = self._get_token()
