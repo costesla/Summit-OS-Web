@@ -83,15 +83,18 @@ def copilot_banking_transactions(req: func.HttpRequest) -> func.HttpResponse:
 
         formatted = []
         for t in txs:
+            # details/counterparty can be explicit null (e.g. transfers)
+            details = t.get("details") or {}
+            counterparty = details.get("counterparty") or {}
             formatted.append({
                 "transaction_id": t.get("id"),
                 "date": t.get("date"),
                 "description": t.get("description"),
-                "counterparty": t.get("details", {}).get("counterparty", {}).get("name") or t.get("description"),
+                "counterparty": counterparty.get("name") or t.get("description"),
                 "amount": float(t.get("amount") or 0),
                 "type": t.get("type"),
                 "status": t.get("status"),
-                "category": t.get("details", {}).get("category")
+                "category": details.get("category")
             })
 
         return copilot_response({"count": len(formatted), "transactions": formatted}, req)

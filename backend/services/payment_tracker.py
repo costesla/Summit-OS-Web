@@ -152,12 +152,15 @@ class PaymentTrackerService:
             for tx in raw_txs:
                 if tx.get("date") != date_str:
                     continue
+                # Teller returns details/counterparty as explicit null on some
+                # transactions (e.g. transfers) — `or {}` guards the chain.
+                counterparty = (tx.get("details") or {}).get("counterparty") or {}
                 transactions.append({
                     "id": tx.get("id"),
                     "account": last_four,
                     "amount": float(tx.get("amount") or 0),
                     "date": tx.get("date"),
-                    "counterparty": tx.get("details", {}).get("counterparty", {}).get("name") or tx.get("description") or "",
+                    "counterparty": counterparty.get("name") or tx.get("description") or "",
                 })
 
         result = self.sync_day(date_str, transactions)

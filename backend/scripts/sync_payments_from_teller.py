@@ -26,7 +26,6 @@ import sys
 import asyncio
 import logging
 import datetime
-from datetime import timedelta
 
 BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FINANCE_MCP_SRC = os.path.join(BACKEND_DIR, "finance_mcp", "src")
@@ -68,8 +67,6 @@ async def refresh_finance_cache(config: Config, db: Database) -> dict:
     total_accounts = 0
     total_transactions = 0
     errors = []
-    last_sync = db.get_last_sync_date("teller")
-    from_date = (datetime.datetime.fromisoformat(last_sync) - timedelta(days=3)).strftime("%Y-%m-%d") if last_sync else None
     sync_id = db.start_sync_log("teller")
 
     for enrollment in enrollments:
@@ -90,7 +87,12 @@ async def refresh_finance_cache(config: Config, db: Database) -> dict:
                 except TellerAPIError as e:
                     errors.append(f"Balance fetch failed for {account['name']}: {e}")
                 try:
-                    transactions = await client.get_transactions(token, account["id"], from_date=from_date)
+                    # Single newest-first page only: Teller ignores from_date,
+                    # so pagination would re-download the full history every
+                    # night and burn the rate budget (the cause of the chronic
+                    # 429s on the business account). 50 covers several days;
+                    # insert_transactions dedups the overlap.
+                    transactions = await client.get_transactions(token, account["id"], count=50, max_pages=1)
                     if account.get("type") == "credit":
                         for t in transactions:
                             t["amount"] = -t["amount"]

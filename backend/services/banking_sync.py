@@ -31,7 +31,7 @@ def _is_expense(tx: dict) -> tuple[bool, str]:
     description = (tx.get("description") or "").lower()
     tx_type = (tx.get("type") or "").lower()
     category = (
-        tx.get("details", {}).get("category") or
+        (tx.get("details") or {}).get("category") or
         tx.get("category") or ""
     ).lower()
 
@@ -118,7 +118,7 @@ class BankingSyncService:
                     status = tx.get("status", "posted")   # posted | pending
                     description = tx.get("description") or ""
                     category = (
-                        tx.get("details", {}).get("category") or
+                        (tx.get("details") or {}).get("category") or
                         tx.get("category") or "General"
                     )
 
@@ -198,7 +198,7 @@ class BankingSyncService:
                         "amount": abs(float(tx.get("amount", 0))),
                         "description": tx.get("description") or "",
                         "category": (
-                            tx.get("details", {}).get("category") or
+                            (tx.get("details") or {}).get("category") or
                             tx.get("category") or "General"
                         ),
                         "account_name": acc.get("name", "Unknown")

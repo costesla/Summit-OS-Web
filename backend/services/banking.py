@@ -61,6 +61,10 @@ class BankingClient:
             resp = session.get(f"{self.base_url}/accounts")
             resp.raise_for_status()
             return resp.json()
+        except requests.exceptions.HTTPError as e:
+            body = e.response.text[:300] if e.response is not None else ""
+            logging.error(f"Teller API Error (get_accounts): {e} — {body}")
+            return []
         except Exception as e:
             logging.error(f"Teller API Error (get_accounts): {e}")
             return []
@@ -82,6 +86,13 @@ class BankingClient:
             resp = session.get(f"{self.base_url}/accounts/{acc_id}/transactions", params=params)
             resp.raise_for_status()
             return resp.json()
+        except requests.exceptions.HTTPError as e:
+            # Propagate HTTP errors: sync_day_via_banking_client's 429
+            # skip-and-continue handling depends on catching HTTPError —
+            # swallowing it here made rate limits look like empty days.
+            body = e.response.text[:300] if e.response is not None else ""
+            logging.error(f"Teller API Error (get_transactions): {e} — {body}")
+            raise
         except Exception as e:
             logging.error(f"Teller API Error (get_transactions): {e}")
             return []

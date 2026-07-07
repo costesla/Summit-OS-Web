@@ -113,13 +113,23 @@ class TellerClient:
         account_id: str,
         from_date: str | None = None,
         count: int = 250,
+        max_pages: int | None = None,
     ) -> list[dict]:
-        """Fetch transactions, handling pagination."""
+        """Fetch transactions, handling pagination.
+
+        Teller ignores `from_date` — it is NOT a server-side filter, so
+        without `max_pages` this paginates the account's entire history
+        (10+ requests on a mature account), which is what exhausts the
+        rate budget. Incremental syncs should pass max_pages=1: the
+        endpoint returns newest-first, so one page of `count` covers
+        recent days and dedup discards the overlap.
+        """
         all_transactions: list[dict] = []
         params: dict[str, Any] = {"count": count}
         if from_date:
             params["from_date"] = from_date
 
+        pages = 0
         while True:
             response = await self._request_with_retry(
                 access_token, "GET",
@@ -133,6 +143,10 @@ class TellerClient:
 
             for t in raw:
                 all_transactions.append(self._normalize_transaction(t))
+
+            pages += 1
+            if max_pages is not None and pages >= max_pages:
+                break
 
             # Pagination: use last transaction ID
             if len(raw) < count:
