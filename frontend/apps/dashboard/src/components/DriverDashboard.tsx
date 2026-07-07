@@ -152,6 +152,8 @@ interface DatabaseTrip {
     id: string;
     type: 'Uber' | 'Private' | 'Uber_OffApp';
     fare: number;
+    /** Driver's cut, tip-inclusive (OCR trip card figure). fare is the RIDER's price. */
+    driver_earnings?: number;
     tip: number;
     fees: number;
     distance_miles: number;
@@ -270,8 +272,9 @@ const DriverDashboard: React.FC = () => {
     const [unpaidCollapsed, setUnpaidCollapsed] = useState(true);
     const [paymentTrackerCollapsed, setPaymentTrackerCollapsed] = useState(false);
     const [paymentAnomalyCount, setPaymentAnomalyCount] = useState(0);
-    const [weekActual, setWeekActual] = useState(0);
-    const [monthActual, setMonthActual] = useState(0);
+    // Placeholder while /financials/summary loads; progress rows prefer summary values.
+    const weekActual = 0;
+    const monthActual = 0;
 
     const activePollRef = useRef<(() => void) | null>(null);
 
@@ -367,41 +370,10 @@ const DriverDashboard: React.FC = () => {
         return () => clearInterval(interval);
     }, [lastSyncTime]);
 
-    // Client-side period earnings — bypasses broken /financials/summary endpoint
-    useEffect(() => {
-        let cancelled = false;
-        const compute = async () => {
-            const selected = new Date(selectedDate + 'T12:00:00');
-            const monthStart = new Date(selected.getFullYear(), selected.getMonth(), 1);
-            const weekCutoff = new Date(selected);
-            weekCutoff.setDate(selected.getDate() - 6);
-            const dates: string[] = [];
-            const cur = new Date(monthStart);
-            while (cur <= selected) {
-                dates.push(cur.toLocaleDateString('sv-SE', { timeZone: 'America/Denver' }));
-                cur.setDate(cur.getDate() + 1);
-            }
-            const results = await Promise.all(dates.map(async d => {
-                try {
-                    const res = await apiGet<{ trips: DatabaseTrip[] }>(`/driver/sync?date=${d}`);
-                    const earned = (res.trips || [])
-                        .filter((t: DatabaseTrip) => !t.id.startsWith('TESSIE-'))
-                        .reduce((s: number, t: DatabaseTrip) => s + (t.fare ?? 0) + (t.tip ?? 0), 0);
-                    return { d, earned };
-                } catch { return { d, earned: 0 }; }
-            }));
-            if (cancelled) return;
-            const wkCut = weekCutoff.getTime();
-            const week = results
-                .filter(r => new Date(r.d + 'T12:00:00').getTime() >= wkCut)
-                .reduce((s, r) => s + r.earned, 0);
-            const month = results.reduce((s, r) => s + r.earned, 0);
-            setWeekActual(week);
-            setMonthActual(month);
-        };
-        compute();
-        return () => { cancelled = true; };
-    }, [selectedDate]);
+    // Week/month progress comes from /financials/summary (progress.week /
+    // progress.month, driver_earnings-based). The old client-side loop here
+    // re-fetched every day of the month and summed rider fares — inflated
+    // numbers at ~30 requests per date change. Removed 2026-07-05.
 
     // Fetch live vehicle status (battery, temp, asleep/charging status)
     useEffect(() => {
@@ -1076,7 +1048,8 @@ const DriverDashboard: React.FC = () => {
                                                                 </p>
                                                                 <div className="flex items-center justify-between pt-1 font-mono">
                                                                     <span className="text-[10px] text-[#606060]">{formatToLocalTime(t.timestamp)}</span>
-                                                                    <span className={`text-sm font-black ${isOffApp ? 'text-orange-400' : 'text-white'}`}>${t.fare.toFixed(2)}</span>
+                                                                    {/* On-app: driver_earnings (our cut, tip-inclusive). Off-app: fare IS our money. */}
+                                                                    <span className={`text-sm font-black ${isOffApp ? 'text-orange-400' : 'text-white'}`}>${(isOffApp ? t.fare : (t.driver_earnings ?? t.fare)).toFixed(2)}</span>
                                                                 </div>
                                                             </div>
                                                         );
