@@ -917,7 +917,6 @@ const DriverDashboard: React.FC = () => {
                                     <StatCard label="Daily OpEx" value={`$${summary?.opex_expenses?.toFixed(2) ?? '0.00'}`} sub="Charging & tolls" icon={<Zap className="w-4.5 h-4.5" />} color="red" />
                                     <StatCard label="CapEx & Maintenance" value={`$${summary?.capex_expenses?.toFixed(2) ?? '0.00'}`} sub="Asset investments" icon={<Wrench className="w-4.5 h-4.5" />} color="amber" />
                                     <StatCard label="Net Profit" value={`$${netProfit.toFixed(2)}`} sub="Gross - OpEx margin" icon={<TrendingUp className="w-4.5 h-4.5" />} color="cyan" highlight />
-                                    <StatCard label="Unpaid/Deferred Total" value={`$${deferredTotal.toFixed(2)}`} sub="Outstanding balance" icon={<Receipt className="w-4.5 h-4.5" />} color="amber" />
                                 </div>
 
                                 {/* RevenueGoalTracker */}
