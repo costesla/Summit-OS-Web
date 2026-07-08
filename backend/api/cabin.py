@@ -99,6 +99,9 @@ def cabin_state(req: func.HttpRequest) -> func.HttpResponse:
         
         # Enhanced Weather (Open-Meteo) if we have location
         condition_text = "N/A"
+        # Tesla's live drive_state has no elevation field, so this is almost
+        # always None; the Open-Meteo call below fills it from terrain data.
+        elevation_ft = drive.get("elevation")
         lat = drive.get("latitude")
         lon = drive.get("longitude")
         
@@ -128,12 +131,19 @@ def cabin_state(req: func.HttpRequest) -> func.HttpResponse:
                     
                     if code is not None:
                         condition_text = wmo_map.get(code, "Conditions")
+
+                    # Open-Meteo returns the terrain elevation (~90m DEM) in
+                    # metres at the car's coordinates — Tessie never provides
+                    # this, so it's the only way to make elevation track.
+                    elev_m = wdata.get("elevation")
+                    if elevation_ft is None and elev_m is not None:
+                        elevation_ft = round(elev_m * 3.28084)
             except Exception as e:
                 logging.warning(f"Weather fetch failed: {e}")
 
         payload = {
             "speed": drive.get("speed") or 0,
-            "elevation": drive.get("elevation") or 0,
+            "elevation": elevation_ft or 0,
             "heading": drive.get("heading"),
             "inside_temp_f": round(inside_c * 9/5 + 32) if inside_c is not None else None,
             "outside_temp_f": outside_f,

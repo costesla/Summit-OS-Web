@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, useCallback, Suspense } from "react";
+import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import {
     Wind,
@@ -80,6 +80,17 @@ function CabinContent() {
     const [sending, setSending] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
+    // Fields the user just changed are "locked" briefly so the 6s poll (which
+    // reads Tessie's slightly-stale cache) doesn't snap them back to old values.
+    const localOverrides = useRef<Record<string, number>>({});
+    const LOCK_MS = 8000;
+    const lockField = (field: string) => {
+        localOverrides.current[field] = Date.now() + LOCK_MS;
+    };
+    // Mirrors target_temp_f so rapid +/- taps compound instead of each reading a
+    // stale render value.
+    const targetTempRef = useRef<number>(INITIAL_STATE.target_temp_f);
+
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
         if (manualToken.trim()) {
@@ -119,7 +130,20 @@ function CabinContent() {
                 return;
             }
             if (data && !data.error) {
-                setState((prev) => ({ ...prev, ...data }));
+                setState((prev) => {
+                    const merged = { ...prev, ...data } as CabinState;
+                    const now = Date.now();
+                    for (const [field, until] of Object.entries(localOverrides.current)) {
+                        if (until > now) {
+                            // Keep the user's just-set value; vehicle cache lags.
+                            (merged as unknown as Record<string, unknown>)[field] =
+                                (prev as unknown as Record<string, unknown>)[field];
+                        } else {
+                            delete localOverrides.current[field];
+                        }
+                    }
+                    return merged;
+                });
                 setVehicleStatus("online");
                 setConnected(true);
                 setError(null);
@@ -142,6 +166,11 @@ function CabinContent() {
         return () => clearInterval(interval);
     }, [token, fetchState]);
 
+    // Keep the temp ref in sync with whatever the panel currently shows.
+    useEffect(() => {
+        targetTempRef.current = state.target_temp_f;
+    }, [state.target_temp_f]);
+
     // ── Send Command ─────────────────────────────────────────────────
     const sendCommand = async (payload: Record<string, unknown>) => {
         setSending(payload.command as string);
@@ -162,13 +191,18 @@ function CabinContent() {
     const toggleSeat = (seat: "rear_left" | "rear_right" | "rear_center") => {
         const key = seat === "rear_left" ? "rl" : seat === "rear_right" ? "rr" : "rc";
         const next = ((state.seats[key] || 0) + 1) % 4;
+        lockField("seats");
         setState((p) => ({ ...p, seats: { ...p.seats, [key]: next } }));
         sendCommand({ command: "seat_heater", seat, level: next });
     };
 
     // ── Window Toggle ────────────────────────────────────────────────
     const toggleWindows = () => {
+        // Tesla blocks window venting while the car is in motion — the API
+        // accepts the command but the vehicle no-ops it. Don't fake success.
+        if ((state.speed ?? 0) > 0) return;
         const next = !state.windows_vented;
+        lockField("windows_vented");
         setState((p) => ({ ...p, windows_vented: next }));
         sendCommand({ command: next ? "vent_windows" : "close_windows" });
     };
@@ -176,13 +210,16 @@ function CabinContent() {
     // ── Climate Toggle ───────────────────────────────────────────────
     const toggleClimate = () => {
         const next = !state.climate_on;
+        lockField("climate_on");
         setState((p) => ({ ...p, climate_on: next }));
         sendCommand({ command: next ? "start_climate" : "stop_climate" });
     };
 
     // ── Temp Adjust ──────────────────────────────────────────────────
     const adjustTemp = (delta: number) => {
-        const next = Math.max(60, Math.min(85, state.target_temp_f + delta));
+        const next = Math.max(60, Math.min(85, targetTempRef.current + delta));
+        targetTempRef.current = next;
+        lockField("target_temp_f");
         setState((p) => ({ ...p, target_temp_f: next }));
         sendCommand({ command: "set_temp", temp_f: next });
     };
@@ -428,17 +465,20 @@ function CabinContent() {
 
                 {/* ─── Controls Grid ──────────────────────────────────────── */}
                 <div className="grid grid-cols-2 gap-3">
-                    {/* Windows */}
+                    {/* Windows — Tesla only allows venting while parked */}
                     <button
                         onClick={toggleWindows}
-                        className={`h-24 rounded-2xl border flex flex-col items-center justify-center gap-2 transition-all active:scale-95 ${state.windows_vented
+                        disabled={(state.speed ?? 0) > 0}
+                        className={`h-24 rounded-2xl border flex flex-col items-center justify-center gap-2 transition-all active:scale-95 ${(state.speed ?? 0) > 0
+                            ? "bg-white/[.02] border-white/[.04] opacity-50 cursor-not-allowed"
+                            : state.windows_vented
                             ? "bg-cyan-500/10 border-cyan-500/30"
                             : "bg-white/[.03] border-white/[.06] hover:bg-white/[.05]"}`}
                     >
-                        <Wind size={20} className={state.windows_vented ? "text-cyan-400" : "text-gray-400"} />
+                        <Wind size={20} className={state.windows_vented && (state.speed ?? 0) === 0 ? "text-cyan-400" : "text-gray-400"} />
                         <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">Windows</span>
-                        <div className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${state.windows_vented ? "bg-cyan-500 text-black" : "bg-white/10 text-gray-500"}`}>
-                            {state.windows_vented ? "VENTED" : "CLOSED"}
+                        <div className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${state.windows_vented && (state.speed ?? 0) === 0 ? "bg-cyan-500 text-black" : "bg-white/10 text-gray-500"}`}>
+                            {(state.speed ?? 0) > 0 ? "PARKED ONLY" : state.windows_vented ? "VENTED" : "CLOSED"}
                         </div>
                     </button>
 
