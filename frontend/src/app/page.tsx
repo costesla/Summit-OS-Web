@@ -254,7 +254,7 @@ export default function Home() {
               <div className="flex items-center justify-between py-4">
                 <div>
                   <div className="font-semibold text-slate-800">Extra Stops</div>
-                  <div className="text-xs text-slate-400 mt-0.5">Each intermediate stop on either leg</div>
+                  <div className="text-xs text-slate-400 mt-0.5">Each intermediate stop on your route</div>
                 </div>
                 <span className="text-lg font-bold text-blue-600">$5.00 <span className="text-slate-400 text-sm font-normal">/ stop</span></span>
               </div>
@@ -262,7 +262,7 @@ export default function Home() {
               <div className="flex items-center justify-between py-4">
                 <div>
                   <div className="font-semibold text-slate-800">Driver Wait Time</div>
-                  <div className="text-xs text-slate-400 mt-0.5">Layover or on-site wait</div>
+                  <div className="text-xs text-slate-400 mt-0.5">On-site wait, per hour</div>
                 </div>
                 <span className="text-lg font-bold text-slate-700">$20.00 <span className="text-slate-400 text-sm font-normal">/ hr</span></span>
               </div>
@@ -275,13 +275,6 @@ export default function Home() {
                 <span className="text-lg font-bold text-slate-700">$15.00 <span className="text-slate-400 text-sm font-normal">surcharge</span></span>
               </div>
 
-              <div className="flex items-center justify-between py-4 bg-slate-50 -mx-4 px-4 rounded-2xl mt-2">
-                <div>
-                  <div className="font-bold text-slate-900">Round Trip</div>
-                  <div className="text-xs text-slate-400 mt-0.5">Each leg priced independently</div>
-                </div>
-                <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 border border-blue-100 px-3 py-1.5 rounded-lg">LEG 1 + LEG 2</span>
-              </div>
             </div>
 
             <p className="mt-8 text-xs text-slate-400 font-mono leading-relaxed border-t border-slate-100 pt-6">

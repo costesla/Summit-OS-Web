@@ -3,7 +3,7 @@
 /// <reference types="@types/google.maps" />
 
 import { useState, useEffect, useRef } from "react";
-import { Minus, Plus, MapPin, Clock, ChevronRight, AlertCircle, X } from "lucide-react";
+import { Minus, Plus, Clock, ChevronRight, AlertCircle, X } from "lucide-react";
 import styles from "./BookingForm.module.css"; // Reuse existing clean styles
 import { PriceBreakdown } from "../utils/pricing";
 import dynamic from "next/dynamic";
@@ -27,15 +27,11 @@ export default function BookingEngine() {
     });
 
 
-    const [tripType, setTripType] = useState<'one-way' | 'round-trip'>('one-way');
-
     const [pickup, setPickup] = useState("");
     const [dropoff, setDropoff] = useState("");
-    // Stop counters — $5 per stop per leg
+    // Stop counters — $5 per stop
     const [stopCount, setStopCount] = useState(0);
     const [stopAddresses, setStopAddresses] = useState<string[]>([]);
-    const [returnStopCount, setReturnStopCount] = useState(0);
-    const [returnStopAddresses, setReturnStopAddresses] = useState<string[]>([]);
 
     // Toast notification state
     const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -43,9 +39,8 @@ export default function BookingEngine() {
     // Autocomplete refs
     const pickupAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
     const dropoffAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
-    const [layoverHours, setLayoverHours] = useState(0);
 
-    // Wait Time (Single Trip)
+    // Driver Wait Time
     const [waitTimeHours, setWaitTimeHours] = useState(0);
 
     const [quote, setQuote] = useState<PriceBreakdown | null>(null);
@@ -81,12 +76,13 @@ export default function BookingEngine() {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        tripType,
+                        // Round trips were removed from the UI; always price as one-way.
+                        tripType: 'one-way',
                         pickup,
                         dropoff,
                         stops: stopAddresses.length > 0 ? stopAddresses : Array(stopCount).fill(''),
-                        returnStops: returnStopAddresses.length > 0 ? returnStopAddresses : Array(returnStopCount).fill(''),
-                        layoverHours: parseFloat(layoverHours.toString()) || 0,
+                        returnStops: [],
+                        layoverHours: 0,
                         waitTimeHours: parseFloat(waitTimeHours.toString()) || 0
                     })
                 });
@@ -130,7 +126,7 @@ export default function BookingEngine() {
         const timeout = setTimeout(fetchQuote, 500); // Debounce
         return () => clearTimeout(timeout);
 
-    }, [pickup, dropoff, stopCount, returnStopCount, stopAddresses, returnStopAddresses, tripType, layoverHours, waitTimeHours]);
+    }, [pickup, dropoff, stopCount, stopAddresses, waitTimeHours]);
 
     // Stop address helpers — keep arrays in sync with counts
     const handleStopCountChange = (newCount: number) => {
@@ -142,20 +138,8 @@ export default function BookingEngine() {
             return next.slice(0, clamped);
         });
     };
-    const handleReturnStopCountChange = (newCount: number) => {
-        const clamped = Math.max(0, Math.min(5, newCount));
-        setReturnStopCount(clamped);
-        setReturnStopAddresses(prev => {
-            const next = [...prev];
-            while (next.length < clamped) next.push('');
-            return next.slice(0, clamped);
-        });
-    };
     const updateStopAddress = (idx: number, val: string) => {
         setStopAddresses(prev => { const a = [...prev]; a[idx] = val; return a; });
-    };
-    const updateReturnStopAddress = (idx: number, val: string) => {
-        setReturnStopAddresses(prev => { const a = [...prev]; a[idx] = val; return a; });
     };
 
     // Validation: Check if address is outside Colorado
@@ -189,22 +173,6 @@ export default function BookingEngine() {
                 <div>
                     <h2 className="text-3xl font-bold text-white tracking-tight">Trip Configuration</h2>
                     <p className="text-gray-400 text-sm mt-1 tracking-wide uppercase">COS Tesla LLC | Powered by: SummitOS</p>
-                </div>
-
-                {/* Trip Type Toggle */}
-                <div className="bg-white/10 p-1 rounded-xl flex">
-                    <button
-                        onClick={() => setTripType('one-way')}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${tripType === 'one-way' ? 'bg-white text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
-                    >
-                        One Way
-                    </button>
-                    <button
-                        onClick={() => setTripType('round-trip')}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${tripType === 'round-trip' ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-500/20' : 'text-gray-400 hover:text-white'}`}
-                    >
-                        Round Trip
-                    </button>
                 </div>
             </div>
 
@@ -266,7 +234,7 @@ export default function BookingEngine() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Extra Stops</p>
-                                <p className="text-[11px] text-gray-500 mt-0.5">$5.00 per stop, outbound leg</p>
+                                <p className="text-[11px] text-gray-500 mt-0.5">$5.00 per stop</p>
                             </div>
                             {stopCount > 0 && (
                                 <span className="text-xs font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-2 py-1 rounded-lg">
@@ -353,140 +321,28 @@ export default function BookingEngine() {
                         )}
                     </div>
 
-                    {/* --- LAYOVER / WAIT TIME --- */}
+                    {/* --- WAIT TIME --- */}
                     <div className="pt-6 border-t border-white/10">
-                        {tripType === 'round-trip' ? (
-                            <div className="animate-in fade-in slide-in-from-top-4 duration-300 bg-white/5 p-4 rounded-xl border border-white/10">
-                                <label className="flex items-center gap-3 mb-3">
-                                    <Clock size={16} className="text-blue-400" />
-                                    <span className="text-sm font-bold text-blue-100 uppercase tracking-widest">Layover Duration</span>
-                                </label>
-                                <div className="flex gap-4 items-center">
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        max="24"
-                                        step="0.5"
-                                        value={layoverHours}
-                                        onChange={e => setLayoverHours(parseFloat(e.target.value) || 0)}
-                                        className="w-20 bg-black/30 border border-blue-500/30 rounded-lg p-2 text-center !text-white font-mono text-lg focus:border-blue-500 focus:outline-none"
-                                        style={{ color: '#ffffff', backgroundColor: 'rgba(0, 0, 0, 0.3)', borderColor: 'rgba(59, 130, 246, 0.3)' }}
-                                    />
-                                    <span className="text-gray-400 text-sm">Hours @ $20/hr</span>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="animate-in fade-in slide-in-from-top-4 duration-300 bg-white/5 p-4 rounded-xl border border-white/10">
-                                <label className="flex items-center gap-3 mb-3">
-                                    <Clock size={16} className="text-cyan-400" />
-                                    <span className="text-sm font-bold text-cyan-100 uppercase tracking-widest">Driver Wait Time</span>
-                                </label>
-                                <div className="flex gap-4 items-center">
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        max="24"
-                                        step="0.5"
-                                        value={waitTimeHours}
-                                        onChange={e => setWaitTimeHours(parseFloat(e.target.value) || 0)}
-                                        className="w-20 bg-black/30 border border-cyan-500/30 rounded-lg p-2 text-center !text-white font-mono text-lg focus:border-cyan-500 focus:outline-none"
-                                        style={{ color: '#ffffff', backgroundColor: 'rgba(0, 0, 0, 0.3)', borderColor: 'rgba(6, 182, 212, 0.3)' }}
-                                    />
-                                    <span className="text-gray-400 text-sm">Hours @ $20/hr</span>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* --- LEG 2 (Round Trip Only) --- */}
-                    {tripType === 'round-trip' && (
-                        <div className="pt-6 border-t border-white/10 animate-in fade-in slide-in-from-top-10 duration-500">
-                            <div className="flex items-center gap-2 mb-4">
-                                <div className="h-6 w-1 bg-cyan-600 rounded-full"></div>
-                                <h4 className="text-lg font-bold text-white uppercase tracking-tight">Return Journey</h4>
-                            </div>
-
-                            <div className="pl-4 border-l-2 border-white/5 space-y-4">
-                                <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 flex items-center gap-3">
-                                    <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
-                                        <MapPin size={16} />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <label className="text-[10px] font-bold text-cyan-500/70 tracking-widest uppercase mb-0.5 block">Return Origin</label>
-                                        <div className="text-sm text-gray-300 truncate font-medium">
-                                            {dropoff || <span className="text-gray-500 italic">Enter destination above</span>}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Return Stop Counter */}
-                                <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 space-y-4">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Return Stops</p>
-                                            <p className="text-[11px] text-gray-500 mt-0.5">$5.00 per stop, return leg</p>
-                                        </div>
-                                        {returnStopCount > 0 && (
-                                            <span className="text-xs font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-2 py-1 rounded-lg">
-                                                +${(returnStopCount * 5).toFixed(2)}
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div className="flex items-center gap-4">
-                                        <button
-                                            onClick={() => handleReturnStopCountChange(returnStopCount - 1)}
-                                            disabled={returnStopCount === 0}
-                                            className="w-10 h-10 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center text-gray-300 hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                                        >
-                                            <Minus size={16} />
-                                        </button>
-                                        <div className="flex-1 text-center">
-                                            <span className="text-3xl font-bold text-white tabular-nums">{returnStopCount}</span>
-                                            <span className="text-gray-500 text-sm ml-2">{returnStopCount === 1 ? 'stop' : 'stops'}</span>
-                                        </div>
-                                        <button
-                                            onClick={() => handleReturnStopCountChange(returnStopCount + 1)}
-                                            disabled={returnStopCount === 5}
-                                            className="w-10 h-10 rounded-xl border border-cyan-500/30 bg-cyan-500/10 flex items-center justify-center text-cyan-400 hover:bg-cyan-500/20 hover:text-cyan-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                                        >
-                                            <Plus size={16} />
-                                        </button>
-                                    </div>
-                                    {/* Optional return address fields */}
-                                    {returnStopCount > 0 && (
-                                        <div className="space-y-2 pt-2 border-t border-white/5 animate-in fade-in slide-in-from-top-2 duration-300">
-                                            <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Stop Addresses <span className="normal-case font-normal">(optional)</span></p>
-                                            {Array.from({ length: returnStopCount }).map((_, idx) => (
-                                                <div key={idx} className="flex items-center gap-2">
-                                                    <span className="text-[10px] font-bold text-cyan-500/60 w-5 text-center">{idx + 1}</span>
-                                                    <input
-                                                        type="text"
-                                                        value={returnStopAddresses[idx] || ''}
-                                                        onChange={e => updateReturnStopAddress(idx, e.target.value)}
-                                                        placeholder={`Return stop ${idx + 1} address (optional)`}
-                                                        className="flex-1 bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm !text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 transition-colors"
-                                                        style={{ color: '#ffffff', backgroundColor: 'rgba(0,0,0,0.2)' }}
-                                                    />
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 flex items-center gap-3">
-                                    <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
-                                        <MapPin size={16} />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <label className="text-[10px] font-bold text-cyan-500/70 tracking-widest uppercase mb-0.5 block">Return Destination</label>
-                                        <div className="text-sm text-gray-300 truncate font-medium">
-                                            {pickup || <span className="text-gray-500 italic">Enter origin above</span>}
-                                        </div>
-                                    </div>
-                                </div>
+                        <div className="animate-in fade-in slide-in-from-top-4 duration-300 bg-white/5 p-4 rounded-xl border border-white/10">
+                            <label className="flex items-center gap-3 mb-3">
+                                <Clock size={16} className="text-cyan-400" />
+                                <span className="text-sm font-bold text-cyan-100 uppercase tracking-widest">Driver Wait Time</span>
+                            </label>
+                            <div className="flex gap-4 items-center">
+                                <input
+                                    type="number"
+                                    min="0"
+                                    max="24"
+                                    step="0.5"
+                                    value={waitTimeHours}
+                                    onChange={e => setWaitTimeHours(parseFloat(e.target.value) || 0)}
+                                    className="w-20 bg-black/30 border border-cyan-500/30 rounded-lg p-2 text-center !text-white font-mono text-lg focus:border-cyan-500 focus:outline-none"
+                                    style={{ color: '#ffffff', backgroundColor: 'rgba(0, 0, 0, 0.3)', borderColor: 'rgba(6, 182, 212, 0.3)' }}
+                                />
+                                <span className="text-gray-400 text-sm">Hours @ $20/hr</span>
                             </div>
                         </div>
-                    )}
+                    </div>
                 </div>
 
                 {/* RIGHT: Visuals & Quote */}
@@ -503,13 +359,6 @@ export default function BookingEngine() {
                         ) : (
                             <div className="w-full h-full bg-gradient-to-br from-gray-900 to-black flex items-center justify-center">
                                 <span className="text-gray-500 text-sm">Enter locations to see route</span>
-                            </div>
-                        )}
-
-                        {/* Round Trip Badge Overlay */}
-                        {tripType === 'round-trip' && (
-                            <div className="absolute bottom-2 right-2 bg-cyan-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg uppercase tracking-widest z-10">
-                                Round Trip Active
                             </div>
                         )}
 
@@ -552,7 +401,7 @@ export default function BookingEngine() {
                                     )}
                                     {quote.stopFee > 0 && (
                                         <div className="flex justify-between text-sm text-gray-300">
-                                            <span>Extra Stops ({stopCount + returnStopCount}×)</span>
+                                            <span>Extra Stops ({stopCount}×)</span>
                                             <span>${quote.stopFee.toFixed(2)}</span>
                                         </div>
                                     )}
