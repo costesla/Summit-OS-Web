@@ -146,7 +146,7 @@ function CabinContent() {
     const sendCommand = async (payload: Record<string, unknown>) => {
         setSending(payload.command as string);
         try {
-            await fetch(`${API_BASE}/api/cabin/control`, {
+            await fetch(`${API_BASE}/api/cabin/command`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ token, ...payload }),

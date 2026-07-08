@@ -69,9 +69,16 @@ def cabin_state(req: func.HttpRequest) -> func.HttpResponse:
             return _json_response({"error": "Vehicle configuration missing (VIN)"}, 500)
 
         state = tessie.get_vehicle_state(vin)
-        # Fallback to empty context if Tessie fails (but try to get location from DB or defaults if desperate?)
-        # For now, if vehicle unreachable, we can't get location, so minimal return.
-        
+
+        # Surface vehicle reachability so the UI can show its waking/offline
+        # screens instead of a fake-live dashboard full of nulls.
+        # get_vehicle_state returns None when unreachable, or a marker dict
+        # with "_vehicle_asleep": True (Tessie auto-wakes on the next command).
+        if not state:
+            return _json_response({"status": "offline"})
+        if state.get("_vehicle_asleep"):
+            return _json_response({"status": "waking"})
+
         drive = {}
         vehicle = {}
         climate = {}
