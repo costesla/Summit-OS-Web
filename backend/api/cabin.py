@@ -98,9 +98,10 @@ def cabin_state(req: func.HttpRequest) -> func.HttpResponse:
         
         # Enhanced Weather (Open-Meteo) if we have location
         condition_text = "N/A"
-        # Tesla's live drive_state has no elevation field, so this is almost
-        # always None; the Open-Meteo call below fills it from terrain data.
-        elevation_ft = drive.get("elevation")
+        # Tessie's drive_state does NOT include an elevation field — Tesla removed
+        # it from the API. Elevation is sourced exclusively from the Open-Meteo
+        # terrain DEM (elevation key in the forecast response, ~90 m resolution).
+        elevation_ft = None
         lat = drive.get("latitude")
         lon = drive.get("longitude")
         
