@@ -149,6 +149,7 @@ export function AirshowMap({
         <APIProvider apiKey={apiKey}>
             <Map
                 mapId={mapId}
+                renderingType={"VECTOR"}
                 style={{ width: "100%", height: "100%" }}
                 defaultCenter={{ lat: 38.8339, lng: -104.8214 }}
                 defaultZoom={16}
