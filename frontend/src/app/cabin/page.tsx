@@ -100,7 +100,7 @@ function CabinContent() {
     // Fields the user just changed are "locked" briefly so the 6s poll (which
     // reads Tessie's slightly-stale cache) doesn't snap them back to old values.
     const localOverrides = useRef<Record<string, number>>({});
-    const LOCK_MS = 8000;
+    const LOCK_MS = 20000;
     const lockField = (field: string) => {
         localOverrides.current[field] = Date.now() + LOCK_MS;
     };
