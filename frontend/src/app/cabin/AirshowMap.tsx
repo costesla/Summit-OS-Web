@@ -92,12 +92,7 @@ export function AirshowMap({
     }
 
     const apiKey = process.env.NEXT_PUBLIC_GMAPS_API_KEY;
-    // Baked-in fallback: NEXT_PUBLIC_ vars are inlined at Next.js build time.
-    // If the env var is stripped by the SWA/Docker build boundary, this ensures
-    // the correct Map ID is always present in the bundle.
-    const mapId =
-        process.env.NEXT_PUBLIC_GMAPS_MAP_ID ||
-        "947d8013d8f353f487f7fe7e"; // summitos-cabin-airshow-vector
+    const mapId = process.env.NEXT_PUBLIC_GMAPS_MAP_ID;
 
     if (!apiKey) {
         console.error(
@@ -106,13 +101,15 @@ export function AirshowMap({
         );
         return <StandbyOverlay />;
     }
-    if (!process.env.NEXT_PUBLIC_GMAPS_MAP_ID) {
+    if (!mapId) {
         console.error(
-            "[AirshowMap] WARNING: NEXT_PUBLIC_GMAPS_MAP_ID is undefined at runtime. " +
-            "Falling back to hardcoded Map ID '947d8013d8f353f487f7fe7e'. " +
-            "Add NEXT_PUBLIC_GMAPS_MAP_ID to GitHub Actions secrets to silence this."
+            "[AirshowMap] FATAL: NEXT_PUBLIC_GMAPS_MAP_ID is undefined. " +
+            "Map will not load without a Vector Map ID — dark style and tilt require it. " +
+            "Add NEXT_PUBLIC_GMAPS_MAP_ID to GitHub Actions secrets and redeploy."
         );
+        return <StandbyOverlay />;
     }
+
 
     return (
         <APIProvider apiKey={apiKey}>

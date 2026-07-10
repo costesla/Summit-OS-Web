@@ -85,9 +85,16 @@ function CabinContent() {
     const [sending, setSending] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const positionEverReceived = useRef(false);
+    // Hold last-known elevation so a transient weather-fetch failure never
+    // flashes "0 ft" mid-drive. Only updates when the backend returns a
+    // non-zero value. Same failure philosophy as positionEverReceived.
+    const lastKnownElevation = useRef<number>(0);
 
     if (state.latitude !== null && state.longitude !== null) {
         positionEverReceived.current = true;
+    }
+    if (state.elevation > 0) {
+        lastKnownElevation.current = state.elevation;
     }
 
     // Fields the user just changed are "locked" briefly so the 6s poll (which
@@ -435,7 +442,7 @@ function CabinContent() {
                         </div>
                         <div className="bg-white/[.02] border border-white/[.04] rounded-xl py-2 px-4 flex items-center justify-between">
                             <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Elevation</span>
-                            <span className="font-mono font-bold text-sm">{state.elevation ? state.elevation.toLocaleString() : "0"} <span className="text-[10px] text-gray-600 font-sans">ft</span></span>
+                            <span className="font-mono font-bold text-sm">{lastKnownElevation.current > 0 ? lastKnownElevation.current.toLocaleString() : "--"} <span className="text-[10px] text-gray-600 font-sans">ft</span></span>
                         </div>
                     </div>
                 </section>
