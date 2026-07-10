@@ -59,10 +59,10 @@ function ConfigErrorOverlay() {
                 </svg>
             </div>
             <p className="text-xs font-bold uppercase tracking-widest text-center px-4 text-amber-400">
-                Map configuration error
+                Map temporarily unavailable
             </p>
             <p className="text-[10px] text-gray-500 text-center px-6 mt-1">
-                Check deploy config — see console for details
+                We&rsquo;ll be back shortly
             </p>
         </div>
     );

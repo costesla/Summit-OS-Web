@@ -36,3 +36,27 @@ const scrubAddress = (addr: string | null | undefined): string | null => {
 - Full legal names (first + last + middle)
 - Street or building numbers
 - Raw GPS coordinates as visible text
+
+---
+
+## Terminal — PowerShell Chaining
+
+The project runs on Windows PowerShell. Use `pwsh` (PowerShell 7+) for any chained git or deploy commands so that `&&` fail-fast chaining works natively:
+
+```powershell
+# Correct — fails fast if commit fails, push never fires
+git add . && git commit -m "msg" && git pull --rebase && git push
+```
+
+Legacy `powershell.exe` (5.1) does not support `&&`. Use `;` only when you explicitly want unconditional chaining. Never use `;` for deploy pipelines.
+
+---
+
+## Cabin Console — Error Copy Voice
+
+The cabin console is **passenger-facing**. Error states must be written for passengers, not engineers:
+
+- ✅ "Map temporarily unavailable" — passenger voice, technical detail in `console.error`
+- ❌ "Check deploy config — see console for details" — developer voice on a customer screen
+
+Rule: anything visible in the cabin UI must make sense to someone who has never opened DevTools. Technical detail belongs exclusively in the console log.
