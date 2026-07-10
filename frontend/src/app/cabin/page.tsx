@@ -1,8 +1,9 @@
 
 "use client";
 
-import { useEffect, useState, useCallback, useRef, Suspense } from "react";
+import { useEffect, useState, useCallback, Suspense, useRef } from "react";
 import { useSearchParams } from "next/navigation";
+import { AirshowMap } from "./AirshowMap";
 import {
     Wind,
     Thermometer,
@@ -22,6 +23,8 @@ import {
 
 // ─── Types ───────────────────────────────────────────────────────────
 interface CabinState {
+    latitude: number | null;
+    longitude: number | null;
     speed: number;
     elevation: number;
     heading?: number;
@@ -42,6 +45,8 @@ interface CabinState {
 const API_BASE = "";
 
 const INITIAL_STATE: CabinState = {
+    latitude: null,
+    longitude: null,
     speed: 0,
     elevation: 0,
     inside_temp_f: null,
@@ -79,6 +84,11 @@ function CabinContent() {
     const [connected, setConnected] = useState(false);
     const [sending, setSending] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const positionEverReceived = useRef(false);
+
+    if (state.latitude !== null && state.longitude !== null) {
+        positionEverReceived.current = true;
+    }
 
     // Fields the user just changed are "locked" briefly so the 6s poll (which
     // reads Tessie's slightly-stale cache) doesn't snap them back to old values.
@@ -363,6 +373,17 @@ function CabinContent() {
             </header>
 
             <main className="pt-24 pb-12 px-5 max-w-md mx-auto space-y-5">
+                {/* ─── Airshow Map ──────────────────────────────────────────────── */}
+                <div className="rounded-3xl overflow-hidden border border-white/[.06] bg-white/[.02] relative h-64 shadow-lg shadow-black/50">
+                    <AirshowMap 
+                        latitude={state.latitude} 
+                        longitude={state.longitude} 
+                        heading={state.heading} 
+                        speed={state.speed} 
+                        isStandby={!positionEverReceived.current && (state.latitude === null || state.longitude === null)}
+                    />
+                </div>
+
                 {/* ─── Vehicle Status & Telemetry ─────────────────────────── */}
                 <section className="space-y-3">
                     {/* Battery Bar */}

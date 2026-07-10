@@ -17,6 +17,7 @@
     "@stripe/stripe-js": "^8.11.0",
     "@types/canvas-confetti": "^1.9.0",
     "@types/leaflet": "^1.9.21",
+    "@vis.gl/react-google-maps": "1.9.0",
     "canvas-confetti": "^1.9.4",
     "dotenv": "^17.2.3",
     "fireworks-js": "^2.10.8",

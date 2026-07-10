@@ -142,6 +142,8 @@ def cabin_state(req: func.HttpRequest) -> func.HttpResponse:
                 logging.warning(f"Weather fetch failed: {e}")
 
         payload = {
+            "latitude": drive.get("latitude"),
+            "longitude": drive.get("longitude"),
             "speed": drive.get("speed") or 0,
             "elevation": elevation_ft or 0,
             "heading": drive.get("heading"),
