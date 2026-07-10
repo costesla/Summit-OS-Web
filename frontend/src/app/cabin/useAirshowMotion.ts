@@ -12,6 +12,7 @@ export function useAirshowMotion(
     const map = useMap();
     const posRef = useRef<{ lat: number; lng: number } | null>(null);
     const headingRef = useRef<number>(0);
+    const headingInitialized = useRef<boolean>(false);
     const rafRef = useRef<number>(0);
     const lastTimeRef = useRef<number>(0);
 
@@ -21,11 +22,11 @@ export function useAirshowMotion(
     useEffect(() => {
         if (!map) return;
 
-        // Immediately update heading if it jumps significantly or initializes
+        // Initialize heading on first fix, or update if speed is high enough
         if (rawHeading !== undefined) {
-            // Check if this is initial set or speed is high enough
-            if (speedMs >= 2.23) { // ~5mph = 2.23m/s
+            if (!headingInitialized.current || speedMs >= 2.23) { // ~5mph = 2.23m/s
                 headingRef.current = rawHeading;
+                headingInitialized.current = true;
             }
         }
 

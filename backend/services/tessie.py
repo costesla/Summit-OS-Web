@@ -80,13 +80,13 @@ class TessieClient:
                     vehicle_status = "asleep"
                 
                 # Return a marker dict so callers know the vehicle is asleep
-                # but can still render a meaningful UI state
+                # but can still render a meaningful UI state using cached data
                 return {
                     "_vehicle_asleep": True,
                     "_vehicle_status": vehicle_status,
-                    "charge_state": {},
-                    "climate_state": {},
-                    "drive_state": {},
+                    "charge_state": data.get("charge_state", {}) if isinstance(data, dict) else {},
+                    "climate_state": data.get("climate_state", {}) if isinstance(data, dict) else {},
+                    "drive_state": data.get("drive_state", {}) if isinstance(data, dict) else {},
                 }
             
             # For any other error, log and return None

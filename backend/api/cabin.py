@@ -76,8 +76,7 @@ def cabin_state(req: func.HttpRequest) -> func.HttpResponse:
         # with "_vehicle_asleep": True (Tessie auto-wakes on the next command).
         if not state:
             return _json_response({"status": "offline"})
-        if state.get("_vehicle_asleep"):
-            return _json_response({"status": "waking"})
+
 
         drive = {}
         vehicle = {}
