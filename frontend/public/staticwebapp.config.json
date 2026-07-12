@@ -9,6 +9,12 @@
             "allowedRoles": [
                 "authenticated"
             ]
+        },
+        {
+            "route": "/sw.js",
+            "headers": {
+                "Cache-Control": "no-cache"
+            }
         }
     ],
     "responseOverrides": {
@@ -73,8 +79,12 @@
             "/_next/*",
             "/driver-dashboard/*",
             "/images/*",
+            "/.well-known/*",
             "/*.{css,scss,js,json,png,gif,ico,jpg,svg,woff,woff2}"
         ]
+    },
+    "mimeTypes": {
+        ".webmanifest": "application/manifest+json"
     },
     "globalHeaders": {
         "X-Frame-Options": "SAMEORIGIN",

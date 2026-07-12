@@ -1,0 +1,3 @@
+{
+    "purpose": "Deployment probe: verifies /.well-known/ paths deploy and serve as JSON on Azure SWA. Replaced by assetlinks.json in Phase 2 (TWA)."
+}
