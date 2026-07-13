@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { ChevronRight, Receipt, Mail } from "lucide-react";
 import FeedbackForm from "@/components/FeedbackForm";
+import DriverNotifications from "@/components/DriverNotifications";
 
 export const metadata: Metadata = {
     title: "More | COS Tesla",
@@ -19,6 +20,9 @@ export default function MorePage() {
     return (
         <main className="min-h-screen container mx-auto px-6 pt-28 pb-16 max-w-lg">
             <h1 className="text-3xl font-bold mb-8">More</h1>
+
+            {/* Owner-only (renders nothing for customers) */}
+            <DriverNotifications />
 
             {/* ── Trips & Receipts ─────────────────────────────────────
                  Placeholder by design: no receipts API or customer identity

@@ -9,7 +9,7 @@
  * Bump CACHE_VERSION on ANY change to this file — activation deletes
  * every cache that doesn't match the current version.
  */
-const CACHE_VERSION = 'costesla-pwa-v1';
+const CACHE_VERSION = 'costesla-v2026-07-13'; // date-based: bump to current date on every SW change
 const OFFLINE_URL = '/offline.html';
 const PRECACHE_URLS = [OFFLINE_URL, '/manifest.json', '/icons/icon-192.png', '/logo.png'];
 
@@ -81,4 +81,41 @@ self.addEventListener('fetch', (event) => {
         );
     }
     // Anything else same-origin: default browser behavior (no respondWith).
+});
+
+/* ── Web Push (B5a) ─────────────────────────────────────────────────────
+   Graceful no-op by design: these handlers only fire when a subscription
+   exists, and subscribing is owner-gated in the UI. */
+self.addEventListener('push', (event) => {
+    let payload = {};
+    try {
+        payload = event.data ? event.data.json() : {};
+    } catch {
+        payload = { body: event.data ? event.data.text() : '' };
+    }
+    event.waitUntil(
+        self.registration.showNotification(payload.title || 'COS Tesla', {
+            body: payload.body || '',
+            icon: '/icons/icon-192.png',
+            badge: '/icons/icon-192.png',
+            tag: payload.tag || 'costesla',
+            data: { url: payload.url || '/' },
+        })
+    );
+});
+
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    const url = (event.notification.data && event.notification.data.url) || '/';
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((wins) => {
+            for (const w of wins) {
+                if (new URL(w.url).origin === self.location.origin && 'focus' in w) {
+                    w.navigate(url);
+                    return w.focus();
+                }
+            }
+            return clients.openWindow(url);
+        })
+    );
 });
