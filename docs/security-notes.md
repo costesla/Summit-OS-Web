@@ -4,21 +4,22 @@ Short, load-bearing security facts that outlive any single feature. Read this be
 
 ---
 
-## 1. Do not trust proxy-injected headers as authentication (`x-ms-client-principal`)
+## 1. `x-ms-client-principal` — trustworthy TODAY only because Easy Auth is enabled; do not depend on it alone for PII
 
-**Constraint:** While `summitos-api.azurewebsites.net` is publicly reachable, **no endpoint may treat `x-ms-client-principal` — or any other proxy-injected header — as proof of identity for sensitive data or actions.**
+This section was revised 2026-07-13 after a live probe corrected an earlier assumption.
 
-**Why:**
-- The frontend reaches the backend two ways: through the Azure SWA front door (`www.costesla.com/api/*`, linked-backend proxy) **and** directly from the browser to `summitos-api.azurewebsites.net` (the live map, weather, battery, flight tracker, dashboard, and booking all call the host directly — 12 call sites). The Copilot Studio agent also calls it from Microsoft's cloud. It is a **multi-consumer public API by design.**
-- Through the SWA front door, `x-ms-client-principal` is trustworthy: SWA strips any client-supplied copy and injects its own after validating the Easy Auth session.
-- On a **direct** request to `summitos-api.azurewebsites.net`, nothing strips or validates the header — it is just a base64 string the caller sets. **It is forgeable.**
-- Because legitimate traffic arrives from end-user browsers on arbitrary IPs, there is **no "SWA-only" network boundary** that can be drawn around the host. Network access restrictions are not an available mitigation.
+**What we assumed:** that on a direct request to `summitos-api.azurewebsites.net`, a client could forge `x-ms-client-principal` and impersonate the owner.
 
-**Evidence (probe, 2026-07-13):** the one FUNCTION-level route already live, `log-private-trip`, returns **401 even through the SWA front door** — proving the SWA linked backend does **not** inject Azure Functions keys. So "just require a function key" is also not a drop-in fix: SWA won't supply it, and legitimate browser calls would break.
+**What the probe showed:** App Service Authentication **is enabled** on `summitos-api` (`az webapp auth show` → `enabled: true`). With Easy Auth on, the Azure platform **strips client-supplied `x-ms-client-principal` (and related reserved headers) from inbound requests** before they reach function code. Verified: a forged principal header sent directly to `https://summitos-api.azurewebsites.net/api/push/subscribe` returns **401** (the function never sees it), while anonymous routes like `vehicle-location` still return 200 (host reachable). Through the SWA front door a forged header is likewise stripped → 401.
 
-**What to do instead:**
-- For endpoints that only *act on the owner's behalf with non-sensitive payloads* (e.g. push notifications), keep the payload **content-free** — carry no PII, link into an Easy-Auth-gated page for details. (This is the mitigation applied to the B5 push feature: notifications say only that a booking occurred; name/route/price live behind `/driver-dashboard`.)
-- For endpoints that *serve or mutate PII* (receipts, trips, customer profile), **validate a real bearer token inside the function** — verify the Entra-issued JWT's signature, issuer, audience, and expiry. Never rely on a proxy header. See `identity-spec.md` §"Endpoint auth requirement."
+**So the push endpoints' header check is a valid gate as currently deployed** — the platform guarantees the header is present only when a request is genuinely authenticated, on both the front door and the direct host.
+
+**But the safety rests entirely on a platform config that lives outside the code.** If App Service Authentication is ever disabled on `summitos-api` (config drift, a migration, a new slot), every endpoint that trusts the header silently becomes spoofable — with no code change to signal it. Treat that as the standing risk.
+
+**Rules that follow:**
+- The multi-consumer reality still holds: the frontend calls `summitos-api` directly from the browser (12 call sites: map, weather, battery, flight, dashboard, booking) and Copilot Studio calls it from Microsoft's cloud, so there is **no "SWA-only" network boundary** and network access restriction is not a mitigation. (Also confirmed: SWA does **not** inject Azure Functions keys — the live FUNCTION-level route `log-private-trip` 401s even through the front door — so "require a function key" is not a drop-in fix either.)
+- For actions with **non-sensitive payloads** (e.g. push), keep the payload **content-free** regardless — carry no PII, link into an Easy-Auth-gated page for details. This is defense-in-depth that survives the config-drift risk above. (Applied to B5 push: notifications say only that a booking occurred; name/route/price stay behind `/driver-dashboard`.)
+- For endpoints that **serve or mutate PII** (receipts, trips, profile), **validate a real bearer token inside the function** — verify the Entra JWT's signature, issuer, audience, expiry — and do **not** rely solely on the platform stripping the header. This removes the config-drift dependency for the endpoints that matter most. See `identity-spec.md` §5.
 
 ## 2. Cabin access is token-based, not Easy Auth
 
