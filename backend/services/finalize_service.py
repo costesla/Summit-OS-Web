@@ -279,12 +279,17 @@ def finalize_stripe_session(session_id: str) -> dict:
     except Exception:
         pass
 
-    # B5b: driver push notification — best-effort, never blocks finalization
+    # B5b: driver push notification — best-effort, never blocks finalization.
+    # PAYLOAD IS DELIBERATELY CONTENT-FREE (no customer PII): the push route's
+    # host (summitos-api) is public and its Easy-Auth principal header is
+    # forgeable on a direct hit, so a forged subscription could route this
+    # notification to an attacker. Details live behind the Easy-Auth-gated
+    # dashboard; the push only says a booking happened. (See BATCH_REVIEW_B5.)
     try:
         from services.push_sender import notify_driver
         notify_driver(
             title="New booking (paid)",
-            body=f"{meta.get('customerName')} · {meta.get('pickup')} → {meta.get('dropoff')} · ${amount_usd}",
+            body="A new paid booking came in. Tap to view details.",
             url="/driver-dashboard/",
         )
     except Exception as push_err:

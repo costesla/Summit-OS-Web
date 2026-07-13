@@ -422,12 +422,16 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
             except Exception as cal_err:
                 logging.error(f"Failed to create return-leg calendar event for {booking_id}: {cal_err}")
 
-        # B5b: driver push notification — best-effort, never blocks the booking
+        # B5b: driver push notification — best-effort, never blocks the booking.
+        # Content-free by design (no customer PII in the payload) — see the
+        # matching note in finalize_service.py: the push route is publicly
+        # reachable and its principal header is forgeable, so details stay
+        # behind the Easy-Auth-gated dashboard.
         try:
             from services.push_sender import notify_driver
             notify_driver(
                 title="New booking",
-                body=f"{name} · {pickup} → {dropoff} · {pickup_time} · {price} ({payment_method})",
+                body="A new booking came in. Tap to view details.",
                 url="/driver-dashboard/",
             )
         except Exception as push_err:
