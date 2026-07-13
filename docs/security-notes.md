@@ -21,6 +21,12 @@ This section was revised 2026-07-13 after a live probe corrected an earlier assu
 - For actions with **non-sensitive payloads** (e.g. push), keep the payload **content-free** regardless — carry no PII, link into an Easy-Auth-gated page for details. This is defense-in-depth that survives the config-drift risk above. (Applied to B5 push: notifications say only that a booking occurred; name/route/price stay behind `/driver-dashboard`.)
 - For endpoints that **serve or mutate PII** (receipts, trips, profile), **validate a real bearer token inside the function** — verify the Entra JWT's signature, issuer, audience, expiry — and do **not** rely solely on the platform stripping the header. This removes the config-drift dependency for the endpoints that matter most. See `identity-spec.md` §5.
 
+**Named config invariant — check on every deploy, forever:** App Service Authentication must stay enabled on `summitos-api`. This one flag is what makes `x-ms-client-principal` unforgeable; if it is ever off, every header-trusting endpoint becomes spoofable everywhere, silently.
+
+```
+az webapp auth show --name summitos-api -g rg-summitos-prod --query enabled -o tsv    # must return: true
+```
+
 ## 2. Cabin access is token-based, not Easy Auth
 
 `/cabin` authenticates with a per-booking `?token=` code (backend-issued, stored in `create_cabin_token`), not Easy Auth. The B3 owner "lock" on the tokenless entry path is a **visibility gate only** (hides the code form behind `/.auth/me`); the token remains the real authorization. Retirement path to role-based auth is in `identity-spec.md`.
