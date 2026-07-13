@@ -19,6 +19,7 @@ import {
     ChevronUp,
     ChevronDown,
     Power,
+    LogIn,
 } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -79,6 +80,10 @@ function CabinContent() {
 
     const [authorized, setAuthorized] = useState<boolean | null>(null);
     const [manualToken, setManualToken] = useState("");
+    // B3: Easy Auth visibility lock for the no-token entry path. This gates
+    // WHO SEES the access-code form; the token remains the real cabin auth.
+    // Tokenized links (in-car display, passengers) never hit this check.
+    const [ownerSession, setOwnerSession] = useState<boolean | null>(null);
     const [state, setState] = useState<CabinState>(INITIAL_STATE);
     const [vehicleStatus, setVehicleStatus] = useState<"connecting" | "online" | "waking" | "offline">("connecting");
     const [connected, setConnected] = useState(false);
@@ -171,6 +176,21 @@ function CabinContent() {
         }
     }, [token, router]);
 
+    // ── Easy Auth session check (only relevant when arriving tokenless) ──
+    useEffect(() => {
+        if (token) return; // tokenized access: existing flow, no session check
+        let cancelled = false;
+        fetch("/.auth/me")
+            .then((res) => (res.ok ? res.json() : null))
+            .then((data) => {
+                if (!cancelled) setOwnerSession(!!data?.clientPrincipal);
+            })
+            .catch(() => {
+                if (!cancelled) setOwnerSession(false); // e.g. next dev has no /.auth
+            });
+        return () => { cancelled = true; };
+    }, [token]);
+
     // ── Auth + Polling ───────────────────────────────────────────────
     useEffect(() => {
         if (!token) {
@@ -242,6 +262,45 @@ function CabinContent() {
     };
 
     // ── Unauthorized ─────────────────────────────────────────────────
+    // B3 visibility lock: tokenless visitors without an Easy Auth session see
+    // a locked state (not an error, not the code form). The owner signs in via
+    // the existing /.auth machinery and returns here to the code form.
+    if (authorized === false && !token && ownerSession === null) {
+        return (
+            <div className="min-h-screen bg-black flex items-center justify-center">
+                <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
+    }
+
+    if (authorized === false && !token && ownerSession === false) {
+        return (
+            <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
+                <div className="w-full max-w-sm space-y-8 text-center">
+                    <div className="w-20 h-20 mx-auto rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-[0_0_30px_rgba(6,182,212,0.1)]">
+                        <Lock size={32} className="text-gray-500" />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight">Cabin Console</h1>
+                        <p className="text-gray-500 text-sm mt-2">
+                            Owner access. Passengers receive a direct cabin link for their trip.
+                        </p>
+                    </div>
+                    <a
+                        href="/.auth/login/aad?post_login_redirect_uri=/cabin/"
+                        className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2"
+                    >
+                        <LogIn size={18} className="text-cyan-400" />
+                        Owner Sign In
+                    </a>
+                    <p className="text-[10px] text-gray-700 uppercase tracking-widest">
+                        COS Tesla · SummitOS
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
     // ─── Enter Key Screen (Unauthorized) ─────────────────────────────
     if (authorized === false) {
         return (
