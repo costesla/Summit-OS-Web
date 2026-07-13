@@ -279,6 +279,17 @@ def finalize_stripe_session(session_id: str) -> dict:
     except Exception:
         pass
 
+    # B5b: driver push notification — best-effort, never blocks finalization
+    try:
+        from services.push_sender import notify_driver
+        notify_driver(
+            title="New booking (paid)",
+            body=f"{meta.get('customerName')} · {meta.get('pickup')} → {meta.get('dropoff')} · ${amount_usd}",
+            url="/driver-dashboard/",
+        )
+    except Exception as push_err:
+        logging.warning(f"Driver push failed (non-fatal): {push_err}")
+
     return {
         "success": True,
         "eventId": event_id,

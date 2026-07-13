@@ -422,6 +422,17 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
             except Exception as cal_err:
                 logging.error(f"Failed to create return-leg calendar event for {booking_id}: {cal_err}")
 
+        # B5b: driver push notification — best-effort, never blocks the booking
+        try:
+            from services.push_sender import notify_driver
+            notify_driver(
+                title="New booking",
+                body=f"{name} · {pickup} → {dropoff} · {pickup_time} · {price} ({payment_method})",
+                url="/driver-dashboard/",
+            )
+        except Exception as push_err:
+            logging.warning(f"Driver push failed (non-fatal): {push_err}")
+
         # Generate cabin access token
         # Valid from now until 6 hours after the trip starts (ensures access on trip day)
         try:

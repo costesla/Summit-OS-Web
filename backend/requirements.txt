@@ -14,3 +14,4 @@ openai
 pydantic
 stripe>=8.6.0,<15  # v15 removes dict-style StripeObject (.get) used by finalize_service
 cryptography==40.0.2
+pywebpush>=2.0.0  # B5b driver push notifications (VAPID Web Push; approved dependency)

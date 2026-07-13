@@ -48,6 +48,7 @@ blueprints = [
     "api.timer_payment_sync",
     "api.mcp_tools",
     "api.feedback",
+    "api.push",
 ]
 
 registration_logs = []
