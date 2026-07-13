@@ -12,7 +12,7 @@ import { Bell, BellOff, Send } from "lucide-react";
 
 // VAPID public key — public by design (pairs with VAPID_PRIVATE_KEY app setting)
 const VAPID_PUBLIC_KEY =
-    "BJIUmDlQOtdGziSmRml8VGSvg5wI-5CxWuW2stXCgvARbbHmziZrVELpDrhGKC_AF8h0XE2IJfLz0dObFd2NnYI";
+    "BF88VZMS7Jp-jjAWJUKRbW-VjAxC1zhIojVMx4tvPPFAbaAASi9TzuA1sW3Sd2pg7uRqDxkbgLatgI2h9LToKZs";
 
 function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
     const padding = "=".repeat((4 - (base64.length % 4)) % 4);
