@@ -4,6 +4,7 @@ import './globals.css'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import ServiceWorkerRegister from '../components/ServiceWorkerRegister'
+import AppTabBar from '../components/AppTabBar'
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -45,6 +46,7 @@ export default function RootLayout({
         <Navbar />
         {children}
         <Footer />
+        <AppTabBar />
       </body>
     </html>
   )

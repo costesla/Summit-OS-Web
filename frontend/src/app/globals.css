@@ -193,3 +193,52 @@ textarea[class*="!text-white"]:focus {
   border-color: #06b6d4 !important; /* cyan-500 */
   box-shadow: 0 0 15px rgba(6, 182, 212, 0.15) !important;
 }
+
+/* ── App shell: bottom tab bar (installed/standalone mode ONLY) ─────────
+   Hidden everywhere by default so the browser site stays pixel-unchanged;
+   the media query flips it on only when running as an installed app. */
+.app-tab-bar {
+  display: none;
+}
+
+@media (display-mode: standalone) {
+  .app-tab-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 60; /* Navbar is z-50 */
+    display: flex;
+    justify-content: space-around;
+    align-items: stretch;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(15, 23, 42, 0.08);
+    /* Gesture-nav devices: keep tabs above the system inset */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Keep page content (incl. Footer) clear of the fixed bar */
+  body {
+    padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .app-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 8px 0 6px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .app-tab-active {
+    color: #2563eb;
+  }
+}
