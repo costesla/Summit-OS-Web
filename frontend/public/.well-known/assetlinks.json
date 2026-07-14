@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.costesla.app",
+      "sha256_cert_fingerprints": [
+        "35:2A:90:B5:D2:CD:28:EE:72:D4:07:2E:0D:27:8B:E9:F0:59:87:F1:84:6D:7B:3D:3F:C6:35:2E:BF:15:02:12"
+      ]
+    }
+  }
+]
