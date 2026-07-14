@@ -27,7 +27,7 @@ Actionable payment options, each a single tap. Amount is the fare formatted to 2
 |---|---|
 | `ZELLE_RECIPIENT` | `peter.teehan@costesla.com` (Zelle-registered work email) |
 | `VENMO_HANDLE` | *(TBD)* |
-| `CASHAPP_CASHTAG` | *(TBD)* |
+| `CASHAPP_CASHTAG` | `$COSTesla` → link `https://cash.app/$COSTesla/{amount}` |
 | Stripe / Cash | Stripe via existing keys; cash needs no config |
 
 **Deep-link formats:**
@@ -35,7 +35,7 @@ Actionable payment options, each a single tap. Amount is the fare formatted to 2
 | Method | Primary (mobile, opens app) | Fallback (desktop / app absent) | Note prefill? |
 |---|---|---|---|
 | **Venmo** | `venmo://paycharge?txn=pay&recipients={handle}&amount={amount}&note={note}` | `https://venmo.com/{handle}?txn=pay&amount={amount}&note={note}` | Yes (app); web prefill unreliable — show handle + amount as text too |
-| **Cash App** | `https://cash.app/${cashtag}/{amount}` (universal link — opens app or web, amount prefilled) | same URL renders a web pay page | **No** — cashtag URL can't carry a note; show the memo as copyable text |
+| **Cash App** | `https://cash.app/$COSTesla/{amount}` (universal link — opens app or web, amount prefilled) | same URL renders a web pay page | **No** — cashtag URL can't carry a note; show the memo as copyable text |
 | **Zelle** | *(no public deep link exists)* | Show **`peter.teehan@costesla.com`** (`ZELLE_RECIPIENT`), the **amount**, and the **memo** as three copy-to-clipboard fields + "Open your banking app to send" | N/A — honest limitation; do not fake a `zelle://` link |
 | **Stripe (card/Apple Pay)** | Button → the server-generated pay link from `create_stripe_payment_link` (`https://buy.stripe.com/…`) | same URL | Handled by Stripe |
 | **Cash** | Static note: "Pay the driver directly in cash — exact fare appreciated." | — | — |
