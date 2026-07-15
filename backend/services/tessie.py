@@ -389,7 +389,22 @@ class TessieClient:
                 "privacy": True,
                 "status": "Vehicle is currently docked."
             }
-            
+
+        # ── Trip gate (SECURITY) ─────────────────────────────────────────
+        # The HQ geofence above only ever covered home. Everything else —
+        # a charger, errands, a friend's driveway — used to be broadcast
+        # publicly. Live coordinates are now released ONLY while a real
+        # booking window is running. Fails closed: any Graph/parse error
+        # returns False here, which keeps the location private.
+        # Checked after the geofence so a docked car never costs a lookup.
+        from services.trip_window import is_trip_active
+
+        if not is_trip_active():
+            return {
+                "privacy": True,
+                "status": "Driver offline",
+            }
+
         # Return Public Data
         return {
             "lat": lat,
