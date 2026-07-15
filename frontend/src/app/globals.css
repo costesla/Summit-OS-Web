@@ -194,6 +194,36 @@ textarea[class*="!text-white"]:focus {
   box-shadow: 0 0 15px rgba(6, 182, 212, 0.15) !important;
 }
 
+/* ══ SummitOS dark shell ════════════════════════════════════════════════
+   Night-sky palette lifted from the /cabin console (the design reference).
+   Additive: these are new tokens/classes — existing light pages are
+   untouched until each is restyled. */
+:root {
+  --sos-bg: #0a0a0a;           /* console black */
+  --sos-surface: #111318;      /* raised panel */
+  --sos-surface-2: #16181f;    /* hover / nested */
+  --sos-border: rgba(255, 255, 255, 0.08);
+  --sos-text: #f8fafc;
+  --sos-text-dim: #94a3b8;
+  --sos-accent: #22d3ee;       /* cyan — cabin's active/glow color */
+  --sos-accent-glow: rgba(34, 211, 238, 0.35);
+  --sos-nav-w: 264px;
+}
+
+/* Native touch feel: kill double-tap zoom + tap flash on interactive
+   chrome WITHOUT blocking pinch-zoom (user-scalable=no breaks a11y and
+   Lighthouse flags it). The legacy 300ms delay is already gone in modern
+   Chrome because the viewport is width=device-width. */
+.sos-touch,
+.sos-nav a,
+.sos-nav button,
+.app-tab {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 /* ── App shell: bottom tab bar (installed/standalone mode ONLY) ─────────
    Hidden everywhere by default so the browser site stays pixel-unchanged;
    the media query flips it on only when running as an installed app. */

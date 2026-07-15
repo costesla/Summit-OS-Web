@@ -1,10 +1,9 @@
 import type { Metadata, Viewport } from 'next'
 import { Outfit } from 'next/font/google'
 import './globals.css'
-import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import ServiceWorkerRegister from '../components/ServiceWorkerRegister'
-import AppTabBar from '../components/AppTabBar'
+import AppShell from '../components/AppShell'
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -43,10 +42,12 @@ export default function RootLayout({
     <html lang="en">
       <body className={outfit.variable}>
         <ServiceWorkerRegister />
-        <Navbar />
-        {children}
-        <Footer />
-        <AppTabBar />
+        <AppShell />
+        {/* Sidebar is fixed on lg+, so content is offset to clear it */}
+        <div className="lg:pl-[var(--sos-nav-w)]">
+          {children}
+          <Footer />
+        </div>
       </body>
     </html>
   )
