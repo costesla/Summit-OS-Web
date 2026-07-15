@@ -224,6 +224,15 @@ textarea[class*="!text-white"]:focus {
   user-select: none;
 }
 
+/* Map wrapper only — NOT the map surface itself. Google Maps manages
+   touch-action on its own inner elements; overriding those would fight its
+   gesture layer. manipulation here kills double-tap zoom on the frame while
+   leaving pinch-to-zoom (and Google's pan/zoom) fully intact. */
+.sos-map {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* ── App shell: bottom tab bar (installed/standalone mode ONLY) ─────────
    Hidden everywhere by default so the browser site stays pixel-unchanged;
    the media query flips it on only when running as an installed app. */

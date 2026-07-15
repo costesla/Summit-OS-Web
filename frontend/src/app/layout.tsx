@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Outfit } from 'next/font/google'
 import './globals.css'
-import Footer from '../components/Footer'
+import SiteFooter from '../components/SiteFooter'
 import ServiceWorkerRegister from '../components/ServiceWorkerRegister'
 import AppShell from '../components/AppShell'
 
@@ -46,7 +46,7 @@ export default function RootLayout({
         {/* Sidebar is fixed on lg+, so content is offset to clear it */}
         <div className="lg:pl-[var(--sos-nav-w)]">
           {children}
-          <Footer />
+          <SiteFooter />
         </div>
       </body>
     </html>
