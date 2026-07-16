@@ -9,7 +9,7 @@
  * Bump CACHE_VERSION on ANY change to this file — activation deletes
  * every cache that doesn't match the current version.
  */
-const CACHE_VERSION = 'costesla-v2026-07-13'; // date-based: bump to current date on every SW change
+const CACHE_VERSION = 'costesla-v2026-07-16'; // date-based: bump to current date on every SW change
 const OFFLINE_URL = '/offline.html';
 const PRECACHE_URLS = [OFFLINE_URL, '/manifest.json', '/icons/icon-192.png', '/logo.png'];
 

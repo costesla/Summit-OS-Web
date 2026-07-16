@@ -20,6 +20,7 @@ import {
     ChevronDown,
     Power,
     LogIn,
+    Home,
 } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -415,27 +416,35 @@ function CabinContent() {
         <div className="min-h-screen bg-sos-dark text-white font-sans selection:bg-cyan-500/30">
             {/* ─── Header ─────────────────────────────────────────────── */}
             <header className="fixed top-0 w-full bg-sos-dark/60 backdrop-blur-xl border-b border-white/[.06] z-50">
-                {/* pl-16 on mobile clears the shell's fixed hamburger (top-left);
-                    lg has the sidebar instead, so normal symmetric padding. */}
-                <div className="flex justify-between items-center max-w-md mx-auto pl-16 pr-5 py-4 lg:px-5">
+                <div className="flex justify-between items-center max-w-md mx-auto px-5 py-4">
                     <div>
                         <h1 className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.3em]">
                             COS Tesla
                         </h1>
                         <p className="text-base font-semibold text-white mt-0.5">Cabin Console</p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                         {connected ? (
-                            <>
+                            <div className="flex items-center gap-1.5">
                                 <Wifi size={14} className="text-emerald-400" />
                                 <span className="text-[10px] text-emerald-400 font-mono tracking-wider">LIVE</span>
-                            </>
+                            </div>
                         ) : (
-                            <>
+                            <div className="flex items-center gap-1.5">
                                 <WifiOff size={14} className="text-red-400" />
                                 <span className="text-[10px] text-red-400 font-mono tracking-wider">OFFLINE</span>
-                            </>
+                            </div>
                         )}
+                        {/* Dedicated exit — the console has its own full-width header
+                            that was burying the shell's hamburger, trapping users.
+                            This in-header button always works, no z-index dependency. */}
+                        <button
+                            onClick={() => router.push("/")}
+                            aria-label="Back to app"
+                            className="sos-touch flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white active:bg-white/10 transition-colors"
+                        >
+                            <Home size={18} />
+                        </button>
                     </div>
                 </div>
             </header>
