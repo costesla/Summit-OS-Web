@@ -151,7 +151,12 @@ def cabin_state(req: func.HttpRequest) -> func.HttpResponse:
             "outside_temp_f": outside_f,
             "condition_text": condition_text,
             "climate_on": climate.get("is_climate_on", False),
-            "target_temp_f": round(driver_temp_c * 9/5 + 32) if driver_temp_c is not None else 72,
+            # Match the CAR's own display: Tesla truncates the C->F setpoint
+            # rather than rounding it. round(17.0*9/5+32)=63, but the car shows
+            # 62 for 17.0C — so we truncate to mirror the main screen exactly.
+            # (Confirmed against the vehicle 2026-07-16; if a temp still reads
+            # 1 off, capture console-vs-car at that step and revisit.)
+            "target_temp_f": int(driver_temp_c * 9/5 + 32) if driver_temp_c is not None else 72,
             "seats": {
                 "rl": climate.get("seat_heater_rear_left", 0),
                 "rr": climate.get("seat_heater_rear_right", 0),
