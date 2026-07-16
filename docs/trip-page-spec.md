@@ -48,7 +48,8 @@ Client detection: on mobile, try the app deep link (`venmo://`, and `cash.app` u
 
 - **Server-enforced window.** The section is inert outside the trip window and active only from shortly before pickup through the end of the ride — enforced by the backend (the existing cabin token's time-box: valid until ~6 h after trip start), **not** by client-side time checks. The page asks the server "is the cabin live for this trip right now?" and renders accordingly.
 - **Time-boxed access code.** During the window, cabin control uses the booking's cabin token/code (already minted at booking time). The trip page surfaces the cabin controls inline rather than sending the passenger to `/cabin?token=`.
-- **Comfort commands only.** Exactly the existing set — climate on/off, target temp, rear seat heaters, window vent (server-blocks venting while the car is moving). **No drive, unlock, trunk, or horn** — the command allow-list is enforced server-side; the client never widens it.
+- **Existing allow-list only.** Exactly the set the backend already permits (`backend/api/cabin.py`): climate on/off, target temp, rear seat heaters, window vent/close (venting is server-blocked while moving) — **plus `open_trunk`**. Doors, frunk, drive, and horn are *not* exposed. The allow-list is enforced server-side; the client never widens it.
+  > ⚠️ **Corrected 2026-07-15:** an earlier draft of this spec claimed "no drive, unlock, trunk, or horn." Trunk **is** allowed today — see `security-notes.md` §2a. That makes the cabin token a bearer capability for physical cargo access, which matters for how long this page keeps it live. If trunk should be tighter than comfort, gate it on the active trip window rather than the 6h token.
 - **After the window:** the section deactivates automatically (token expired, server refuses commands), no matter what the client shows.
 
 ## 5. Data model & the receipt
