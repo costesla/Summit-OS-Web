@@ -613,8 +613,12 @@ class TessieClient:
         if not self.api_key:
             return None
 
-        temp_c = round((temp_f - 32) * 5 / 9, 1)
-        logging.info(f"Setting climate temp to {temp_f}°F ({temp_c}°C) for {vin}")
+        # Tesla setpoints are quantized to 0.5°C. Rounding to 0.1°C (the old
+        # behaviour) sent a value the car then silently re-snapped to its
+        # nearest 0.5°C step — so "set 63°F" could land the car on 62°F.
+        # Snap to the car's real grid here so what we request == what it takes.
+        temp_c = round((temp_f - 32) * 5 / 9 * 2) / 2
+        logging.info(f"Setting climate temp to {temp_f}°F (snapped to {temp_c}°C) for {vin}")
         try:
             url = f"{self.base_url}/{vin}/command/set_temperatures"
             headers = {"Authorization": f"Bearer {self.api_key}"}
