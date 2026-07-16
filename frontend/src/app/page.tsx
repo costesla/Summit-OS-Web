@@ -139,9 +139,6 @@ export default function Home() {
                         <div className="mb-4 flex items-center justify-between gap-4">
                             <div>
                                 <p className="text-sm font-bold text-sos-main">Model Y</p>
-                                <p className="font-mono text-[0.6rem] uppercase tracking-[0.2em] text-sos-dim">
-                                    Trip in progress
-                                </p>
                             </div>
                             <span className="flex items-center gap-1.5 text-[0.65rem] font-bold uppercase tracking-wider text-sos-accent">
                                 <span className="relative flex h-2 w-2">
