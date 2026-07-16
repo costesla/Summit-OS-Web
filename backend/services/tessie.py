@@ -1,7 +1,39 @@
 import logging
+import os
 import requests
 from datetime import datetime
+from math import radians, cos, sin, asin, sqrt
 from services.secret_manager import SecretManager
+
+
+def _haversine_mi(lat1, lon1, lat2, lon2):
+    """Great-circle distance in miles."""
+    R = 3959.87433
+    dLat = radians(lat2 - lat1)
+    dLon = radians(lon2 - lon1)
+    lat1 = radians(lat1)
+    lat2 = radians(lat2)
+    a = sin(dLat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dLon / 2) ** 2
+    return R * 2 * asin(sqrt(a))
+
+
+def _home_geofence():
+    """(lat, lon, radius_mi) for the owner's home shield, or None.
+
+    Read from app settings only — this repo is PUBLIC, so the coordinates
+    must never live in source (they reverse-geocode to a home address).
+    There is deliberately no default: None means the caller fails closed.
+    """
+    try:
+        lat = float(os.environ["HOME_LAT"])
+        lon = float(os.environ["HOME_LON"])
+        radius = float(os.environ.get("HOME_RADIUS_MI", "0.25"))
+        if radius <= 0:
+            return None
+        return lat, lon, radius
+    except (KeyError, TypeError, ValueError):
+        return None
+
 
 class TessieClient:
     def __init__(self):
@@ -365,27 +397,28 @@ class TessieClient:
             
         lat = drive_state.get('latitude')
         lon = drive_state.get('longitude')
-        
-        # Hardcoded Geofence (HQ)
-        HOME_LAT = 38.886637
-        HOME_LONG = -104.804107
-        
-        # Haversine Distance
-        from math import radians, cos, sin, asin, sqrt
-        def haversine(lat1, lon1, lat2, lon2):
-             R = 3959.87433 # Miles
-             dLat = radians(lat2 - lat1)
-             dLon = radians(lon2 - lon1)
-             lat1 = radians(lat1)
-             lat2 = radians(lat2)
-             a = sin(dLat/2)**2 + cos(lat1)*cos(lat2) * sin(dLon/2)**2
-             c = 2 * asin(sqrt(a))
-             return R * c
-             
-        dist = haversine(HOME_LAT, HOME_LONG, lat, lon)
-        
-        if dist < 0.25:
-             return {
+
+        # ── Home geofence ────────────────────────────────────────────────
+        # Centre + radius come from app settings (HOME_LAT / HOME_LON /
+        # HOME_RADIUS_MI), NEVER from source: this repo is public, and a
+        # hardcoded lat/lon reverse-geocodes straight to the owner's front
+        # door. Missing or malformed config fails CLOSED (privacy on) —
+        # same rule as the trip gate: if we can't prove it's safe to show,
+        # we don't show it.
+        home = _home_geofence()
+        if home is None:
+            logging.error(
+                "HOME_LAT/HOME_LON not configured — failing closed (privacy on). "
+                "Set them as Function App settings."
+            )
+            return {"privacy": True, "status": "Vehicle is currently docked."}
+
+        home_lat, home_lon, radius_mi = home
+        if lat is None or lon is None:
+            return {"privacy": True, "status": "Vehicle is currently docked."}
+
+        if _haversine_mi(home_lat, home_lon, lat, lon) < radius_mi:
+            return {
                 "privacy": True,
                 "status": "Vehicle is currently docked."
             }
