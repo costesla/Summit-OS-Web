@@ -423,20 +423,17 @@ class TessieClient:
                 "status": "Vehicle is currently docked."
             }
 
-        # ── Trip gate (SECURITY) ─────────────────────────────────────────
-        # The HQ geofence above only ever covered home. Everything else —
-        # a charger, errands, a friend's driveway — used to be broadcast
-        # publicly. Live coordinates are now released ONLY while a real
-        # booking window is running. Fails closed: any Graph/parse error
-        # returns False here, which keeps the location private.
-        # Checked after the geofence so a docked car never costs a lookup.
-        from services.trip_window import is_trip_active
-
-        if not is_trip_active():
-            return {
-                "privacy": True,
-                "status": "Driver offline",
-            }
+        # ── Visibility model: PUBLIC-WHEN-AWAY (owner decision, 2026-07-16) ─
+        # The home geofence above is the ONLY shield. Once the vehicle is
+        # outside the home radius, its live location is public to anyone
+        # loading the site — by owner request, so passengers can watch the
+        # car approach. This intentionally reverses the earlier trip-only
+        # gate: personal driving away from home is now visible too.
+        # `services/trip_window.py` is retained (unused here) for the future
+        # per-trip visibility model (docs/trip-page-spec.md), which would show
+        # live location only to the booked passenger instead of the public.
+        # Fail-closed still applies UPSTREAM: asleep, missing coords, or
+        # unconfigured/at-home geofence all returned privacy above.
 
         # Return Public Data
         return {

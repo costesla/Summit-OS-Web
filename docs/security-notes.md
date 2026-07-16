@@ -27,6 +27,14 @@ This section was revised 2026-07-13 after a live probe corrected an earlier assu
 az webapp auth show --name summitos-api -g rg-summitos-prod --query enabled -o tsv    # must return: true
 ```
 
+## 1b. Public vehicle location — model is "public-when-away-from-home" (owner decision 2026-07-16)
+
+`get_public_state` (`services/tessie.py`) releases the vehicle's **live location to anyone** loading the site whenever the car is **outside the home geofence** (`HOME_LAT`/`HOME_LON`/`HOME_RADIUS_MI`, ~0.25 mi). The home geofence — and the asleep / missing-coords / unconfigured cases — are the only things that return `privacy: true`.
+
+This was a deliberate reversal of the earlier trip-only gate: the owner wants passengers to watch the car approach, and accepted that on a **public** homepage this means personal driving away from home is visible to everyone, not just booked passengers.
+
+`services/trip_window.py` (+ its 13 tests) is **retained but unused by `get_public_state`**. It's the building block for the future *per-trip* visibility model (`docs/trip-page-spec.md`) — showing live location only to the passenger holding the trip link — which would let personal driving go private again without losing "passenger sees me coming." If that ships, re-gate here.
+
 ## 2. Cabin access is token-based, not Easy Auth
 
 `/cabin` authenticates with a per-booking `?token=` code (backend-issued, stored in `create_cabin_token`), not Easy Auth. The B3 owner "lock" on the tokenless entry path is a **visibility gate only** (hides the code form behind `/.auth/me`); the token remains the real authorization. Retirement path to role-based auth is in `identity-spec.md`.
