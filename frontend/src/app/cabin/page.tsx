@@ -415,7 +415,9 @@ function CabinContent() {
         <div className="min-h-screen bg-sos-dark text-white font-sans selection:bg-cyan-500/30">
             {/* ─── Header ─────────────────────────────────────────────── */}
             <header className="fixed top-0 w-full bg-sos-dark/60 backdrop-blur-xl border-b border-white/[.06] z-50">
-                <div className="flex justify-between items-center max-w-md mx-auto px-5 py-4">
+                {/* pl-16 on mobile clears the shell's fixed hamburger (top-left);
+                    lg has the sidebar instead, so normal symmetric padding. */}
+                <div className="flex justify-between items-center max-w-md mx-auto pl-16 pr-5 py-4 lg:px-5">
                     <div>
                         <h1 className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.3em]">
                             COS Tesla

@@ -118,7 +118,7 @@ export default function AppShell() {
     return (
         <>
             {/* Desktop: persistent sidebar */}
-            <aside className="fixed inset-y-0 left-0 z-40 hidden w-[var(--sos-nav-w)] border-r border-white/5 bg-[#0a0a0a]/95 backdrop-blur-xl lg:block">
+            <aside className="fixed inset-y-0 left-0 z-[60] hidden w-[var(--sos-nav-w)] border-r border-white/5 bg-[#0a0a0a]/95 backdrop-blur-xl lg:block">
                 <NavList />
             </aside>
 
@@ -128,7 +128,7 @@ export default function AppShell() {
                 onClick={() => setOpen(true)}
                 aria-label="Open navigation"
                 aria-expanded={open}
-                className="sos-touch fixed left-4 top-4 z-40 flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-black/70 text-white shadow-lg backdrop-blur-md lg:hidden"
+                className="sos-touch fixed left-4 top-4 z-[60] flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-black/70 text-white shadow-lg backdrop-blur-md lg:hidden"
             >
                 <Menu size={20} />
             </button>
@@ -137,14 +137,14 @@ export default function AppShell() {
             <div
                 onClick={() => setOpen(false)}
                 aria-hidden="true"
-                className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
+                className={`fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
                     open ? "opacity-100" : "pointer-events-none opacity-0"
                 }`}
             />
 
             {/* Mobile: slide-out drawer */}
             <aside
-                className={`fixed inset-y-0 left-0 z-50 w-[var(--sos-nav-w)] max-w-[82vw] border-r border-white/5 bg-[#0a0a0a] shadow-2xl transition-transform duration-300 ease-out lg:hidden ${
+                className={`fixed inset-y-0 left-0 z-[70] w-[var(--sos-nav-w)] max-w-[82vw] border-r border-white/5 bg-[#0a0a0a] shadow-2xl transition-transform duration-300 ease-out lg:hidden ${
                     open ? "translate-x-0" : "-translate-x-full"
                 }`}
                 style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
