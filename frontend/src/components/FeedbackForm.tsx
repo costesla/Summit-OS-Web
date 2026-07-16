@@ -34,15 +34,15 @@ export default function FeedbackForm() {
 
     if (status === "sent") {
         return (
-            <div className="flex items-center gap-3 rounded-2xl bg-white border border-slate-200/60 shadow-sm px-5 py-6 text-slate-700">
-                <CheckCircle size={22} className="text-green-600 shrink-0" aria-hidden="true" />
+            <div className="flex items-center gap-3 rounded-2xl bg-sos-surface border border-sos-border shadow-sm px-5 py-6 text-sos-main">
+                <CheckCircle size={22} className="text-green-400 shrink-0" aria-hidden="true" />
                 <p className="text-sm font-medium">Thank you — your feedback went straight to the owner.</p>
             </div>
         );
     }
 
     return (
-        <form onSubmit={submit} className="rounded-2xl bg-white border border-slate-200/60 shadow-sm px-5 py-5 space-y-4">
+        <form onSubmit={submit} className="rounded-2xl bg-sos-surface border border-sos-border shadow-sm px-5 py-5 space-y-4">
             <div className="flex items-center gap-1" role="radiogroup" aria-label="Rating">
                 {[1, 2, 3, 4, 5].map((n) => (
                     <button
@@ -58,7 +58,7 @@ export default function FeedbackForm() {
                     >
                         <Star
                             size={26}
-                            className={(hover || rating) >= n ? "text-amber-400" : "text-slate-300"}
+                            className={(hover || rating) >= n ? "text-amber-400" : "text-sos-dim"}
                             fill={(hover || rating) >= n ? "currentColor" : "none"}
                         />
                     </button>
@@ -70,7 +70,7 @@ export default function FeedbackForm() {
                 onChange={(e) => setMessage(e.target.value.slice(0, 2000))}
                 placeholder="How was your experience?"
                 rows={4}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all resize-none"
+                className="w-full rounded-xl border border-sos-border bg-white/[0.03] px-4 py-3 text-sm text-sos-main placeholder:text-slate-600 focus:outline-none focus:border-sos-accent focus:ring-1 focus:ring-sos-accent transition-all resize-none"
             />
 
             <input
@@ -78,11 +78,11 @@ export default function FeedbackForm() {
                 value={contact}
                 onChange={(e) => setContact(e.target.value.slice(0, 200))}
                 placeholder="Email or phone (optional — if you'd like a reply)"
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                className="w-full rounded-xl border border-sos-border bg-white/[0.03] px-4 py-3 text-sm text-sos-main placeholder:text-slate-600 focus:outline-none focus:border-sos-accent focus:ring-1 focus:ring-sos-accent transition-all"
             />
 
             {status === "error" && (
-                <p className="text-xs text-red-600">
+                <p className="text-xs text-red-400">
                     Couldn&rsquo;t send just now — please email{" "}
                     <a href="mailto:peter.teehan@costesla.com" className="underline font-medium">
                         peter.teehan@costesla.com
@@ -94,7 +94,7 @@ export default function FeedbackForm() {
             <button
                 type="submit"
                 disabled={!rating || !message.trim() || status === "sending"}
-                className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#2563eb] hover:bg-blue-700 text-white font-bold py-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-sos-accent hover:bg-cyan-300 text-black font-bold py-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 <Send size={16} aria-hidden="true" />
                 {status === "sending" ? "Sending…" : "Send Feedback"}
