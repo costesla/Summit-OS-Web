@@ -418,10 +418,10 @@ function CabinContent() {
             <header className="fixed top-0 w-full bg-sos-dark/60 backdrop-blur-xl border-b border-white/[.06] z-50">
                 <div className="flex justify-between items-center max-w-md mx-auto px-5 py-4">
                     <div>
-                        <h1 className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.3em]">
-                            COS Tesla
-                        </h1>
-                        <p className="text-base font-semibold text-white mt-0.5">Cabin Console</p>
+                        <h1 className="text-base font-semibold text-white">Cabin Console</h1>
+                        <p className="text-[10px] font-mono text-gray-500 uppercase tracking-[0.2em] mt-0.5">
+                            Powered by SummitOS
+                        </p>
                     </div>
                     <div className="flex items-center gap-3">
                         {connected ? (
