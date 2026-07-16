@@ -15,16 +15,6 @@
             "headers": {
                 "Cache-Control": "no-cache"
             }
-        },
-        {
-            "route": "/track",
-            "redirect": "/",
-            "statusCode": 301
-        },
-        {
-            "route": "/track/*",
-            "redirect": "/",
-            "statusCode": 301
         }
     ],
     "responseOverrides": {

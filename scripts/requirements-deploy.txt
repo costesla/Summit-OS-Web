@@ -1,4 +1,0 @@
-# Deploy-only dependencies for scripts/upload_bundle.py — NOT backend runtime.
-# Both are maintained by Google; no third-party CLI touches the publishing key.
-google-api-python-client>=2.120.0
-google-auth>=2.28.0

@@ -65,7 +65,7 @@ const INITIAL_STATE: CabinState = {
 // ─── Heat level helper ───────────────────────────────────────────────
 const HEAT_LABELS = ["Off", "Low", "Med", "High"];
 const HEAT_COLORS = [
-    "from-white/5 to-white/5 border-sos-border",
+    "from-white/5 to-white/5 border-white/10",
     "from-amber-900/40 to-amber-800/20 border-amber-700/40",
     "from-orange-800/50 to-orange-700/25 border-orange-600/50",
     "from-red-700/50 to-orange-600/30 border-red-500/60",
@@ -267,7 +267,7 @@ function CabinContent() {
     // the existing /.auth machinery and returns here to the code form.
     if (authorized === false && !token && ownerSession === null) {
         return (
-            <div className="min-h-screen bg-sos-dark flex items-center justify-center">
+            <div className="min-h-screen bg-black flex items-center justify-center">
                 <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
             </div>
         );
@@ -275,9 +275,9 @@ function CabinContent() {
 
     if (authorized === false && !token && ownerSession === false) {
         return (
-            <div className="min-h-screen bg-sos-dark text-white flex items-center justify-center p-6">
+            <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
                 <div className="w-full max-w-sm space-y-8 text-center">
-                    <div className="w-20 h-20 mx-auto rounded-2xl bg-white/5 border border-sos-border flex items-center justify-center shadow-[0_0_30px_rgba(6,182,212,0.1)]">
+                    <div className="w-20 h-20 mx-auto rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-[0_0_30px_rgba(6,182,212,0.1)]">
                         <Lock size={32} className="text-gray-500" />
                     </div>
                     <div>
@@ -288,9 +288,9 @@ function CabinContent() {
                     </div>
                     <a
                         href="/.auth/login/aad?post_login_redirect_uri=/cabin/"
-                        className="w-full bg-white/5 hover:bg-white/10 border border-sos-border text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2"
+                        className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2"
                     >
-                        <LogIn size={18} className="text-sos-accent" />
+                        <LogIn size={18} className="text-cyan-400" />
                         Owner Sign In
                     </a>
                     <p className="text-[10px] text-gray-700 uppercase tracking-widest">
@@ -304,11 +304,11 @@ function CabinContent() {
     // ─── Enter Key Screen (Unauthorized) ─────────────────────────────
     if (authorized === false) {
         return (
-            <div className="min-h-screen bg-sos-dark text-white flex items-center justify-center p-6">
+            <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
                 <div className="w-full max-w-sm space-y-8">
                     <div className="text-center space-y-4">
-                        <div className="w-20 h-20 mx-auto rounded-2xl bg-white/5 border border-sos-border flex items-center justify-center shadow-[0_0_30px_rgba(6,182,212,0.1)]">
-                            <Lock size={32} className="text-sos-accent" />
+                        <div className="w-20 h-20 mx-auto rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-[0_0_30px_rgba(6,182,212,0.1)]">
+                            <Lock size={32} className="text-cyan-400" />
                         </div>
                         <div>
                             <h1 className="text-2xl font-bold tracking-tight">Cabin Console</h1>
@@ -334,7 +334,7 @@ function CabinContent() {
                                 value={manualToken}
                                 onChange={(e) => setManualToken(e.target.value.replace(/\D/g, '').slice(0, 6))}
                                 placeholder="000000"
-                                className="w-full bg-white/5 border border-sos-border rounded-xl px-4 py-4 text-center text-white placeholder:text-gray-600 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all font-mono text-2xl tracking-[0.5em]"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-center text-white placeholder:text-gray-600 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all font-mono text-2xl tracking-[0.5em]"
                                 autoFocus
                             />
                         </div>
@@ -361,7 +361,7 @@ function CabinContent() {
     // ── Loading / Vehicle status screens ─────────────────────────────
     if (authorized === null) {
         return (
-            <div className="min-h-screen bg-sos-dark flex items-center justify-center">
+            <div className="min-h-screen bg-black flex items-center justify-center">
                 <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
             </div>
         );
@@ -371,9 +371,9 @@ function CabinContent() {
     if (authorized && vehicleStatus !== "online" && !connected) {
         const isWaking = vehicleStatus === "waking";
         return (
-            <div className="min-h-screen bg-sos-dark text-white flex items-center justify-center p-6">
+            <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
                 <div className="w-full max-w-sm text-center space-y-6">
-                    <div className="w-20 h-20 mx-auto rounded-2xl bg-white/5 border border-sos-border flex items-center justify-center">
+                    <div className="w-20 h-20 mx-auto rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
                         {isWaking ? (
                             <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
                         ) : (
@@ -412,9 +412,9 @@ function CabinContent() {
     const isCharging = state.charging_state === "Charging";
 
     return (
-        <div className="min-h-screen bg-sos-dark text-white font-sans selection:bg-cyan-500/30">
+        <div className="min-h-screen bg-black text-white font-sans selection:bg-cyan-500/30">
             {/* ─── Header ─────────────────────────────────────────────── */}
-            <header className="fixed top-0 w-full bg-sos-dark/60 backdrop-blur-xl border-b border-white/[.06] z-50">
+            <header className="fixed top-0 w-full bg-black/60 backdrop-blur-xl border-b border-white/[.06] z-50">
                 <div className="flex justify-between items-center max-w-md mx-auto px-5 py-4">
                     <div>
                         <h1 className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.3em]">
@@ -543,7 +543,7 @@ function CabinContent() {
                     </div>
 
                     {/* Integrated Seat Heaters */}
-                    <div className="bg-sos-dark/20 border-t border-white/[.04] p-3 grid grid-cols-3 gap-2">
+                    <div className="bg-black/20 border-t border-white/[.04] p-3 grid grid-cols-3 gap-2">
                         <SeatButton label="L" level={state.seats.rl} onClick={() => toggleSeat("rear_left")} />
                         <SeatButton label="C" level={state.seats.rc} onClick={() => toggleSeat("rear_center")} />
                         <SeatButton label="R" level={state.seats.rr} onClick={() => toggleSeat("rear_right")} />
@@ -562,7 +562,7 @@ function CabinContent() {
                             ? "bg-cyan-500/10 border-cyan-500/30"
                             : "bg-white/[.03] border-white/[.06] hover:bg-white/[.05]"}`}
                     >
-                        <Wind size={20} className={state.windows_vented && (state.speed ?? 0) === 0 ? "text-sos-accent" : "text-gray-400"} />
+                        <Wind size={20} className={state.windows_vented && (state.speed ?? 0) === 0 ? "text-cyan-400" : "text-gray-400"} />
                         <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">Windows</span>
                         <div className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${state.windows_vented && (state.speed ?? 0) === 0 ? "bg-cyan-500 text-black" : "bg-white/10 text-gray-500"}`}>
                             {(state.speed ?? 0) > 0 ? "PARKED ONLY" : state.windows_vented ? "VENTED" : "CLOSED"}
@@ -643,7 +643,7 @@ export default function CabinPage() {
     return (
         <Suspense
             fallback={
-                <div className="min-h-screen bg-sos-dark flex items-center justify-center">
+                <div className="min-h-screen bg-black flex items-center justify-center">
                     <div className="text-center space-y-3">
                         <div className="w-8 h-8 mx-auto border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
                         <p className="text-xs text-gray-500 font-mono tracking-wider">INITIALIZING CABIN...</p>

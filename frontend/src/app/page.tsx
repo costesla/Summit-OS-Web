@@ -1,243 +1,343 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { BatteryCharging, Battery, Gauge, MoonStar, CalendarCheck } from "lucide-react";
-import type { LatLng } from "@/components/HomeMap";
+import Image from "next/image";
+import WeatherWatch from "../components/WeatherWatch";
+import FlightTracker from "../components/FlightTracker";
+import BookingEngine from "../components/BookingEngine";
+import { useEffect } from "react";
 
-/*
- * Home — the live map.
- *
- * Two operational states, decided ENTIRELY by the backend privacy gate
- * (services/trip_window.py -> get_public_state):
- *
- *   privacy: true   -> Driver offline. Regional overview, zero coordinates.
- *   privacy absent  -> A trip is running. Live map + telemetry.
- *
- * Do not add a client-side "guess" at the state. When a trip IS active the
- * API omits `privacy` and returns coordinates, so treating "missing" as
- * private would break live tracking — and treating it as public is exactly
- * what the backend gate exists to prevent. Trust the payload; the gate is
- * the control.
- */
-
-const HomeMap = dynamic(() => import("@/components/HomeMap"), {
-    ssr: false,
-    loading: () => <div className="h-full w-full bg-sos-dark" />,
+const LiveMap = dynamic(() => import("../components/LiveMap"), {
+  ssr: false,
+  loading: () => <div className="h-[200px] flex items-center justify-center text-gray-500 font-mono text-xs">INITIALIZING GPS...</div>
 });
 
-const API = "https://summitos-api.azurewebsites.net/api";
-const LOCATION_POLL_MS = 20_000;
-const CHARGE_POLL_MS = 60_000;
-
-/** Shape returned by get_public_state (backend/services/tessie.py). */
-interface PublicState {
-    privacy?: boolean;
-    status?: string;
-    lat?: number;
-    long?: number;
-    speed?: number;
-    heading?: number;
-    ignition?: boolean;
-    updatedAt?: string;
-}
-
-interface ChargeState {
-    soc: number | null;
-    isCharging: boolean;
-    rangeMi: number | null;
-    asleep: boolean;
-}
-
 export default function Home() {
-    const [state, setState] = useState<PublicState | null>(null);
-    const [charge, setCharge] = useState<ChargeState | null>(null);
-    const [reachable, setReachable] = useState(true);
-    const isLive = useRef(false);
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const host = window.location.hostname.toLowerCase();
+      if (
+        host.includes("dashboard") ||
+        host.includes("driver") ||
+        host === "summit-os.com"
+      ) {
+        window.location.replace("/driver-dashboard");
+      }
+    }
+  }, []);
 
-    // ── Location poll — the source of truth for which state we render ──
-    useEffect(() => {
-        let cancelled = false;
-        const fetchState = async () => {
-            try {
-                const res = await fetch(`${API}/vehicle-location`);
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const data: PublicState = await res.json();
-                if (cancelled) return;
-                setState(data);
-                isLive.current = data?.privacy !== true && typeof data?.lat === "number";
-                setReachable(true);
-            } catch {
-                // Backend unreachable: show the offline state. Never fall back
-                // to a stale/last-known position — that would leak a location
-                // the gate may since have closed.
-                if (!cancelled) {
-                    setReachable(false);
-                    setState({ privacy: true, status: "Driver offline" });
-                    isLive.current = false;
-                }
-            }
-        };
-        fetchState();
-        const iv = setInterval(fetchState, LOCATION_POLL_MS);
-        return () => { cancelled = true; clearInterval(iv); };
-    }, []);
+  return (
+    <main className="min-h-screen bg-slate-50 text-slate-900 overflow-x-hidden selection:bg-blue-600 selection:text-white">
 
-    // ── Charge poll — only while a trip is live (no need otherwise) ──
-    useEffect(() => {
-        let cancelled = false;
-        const fetchCharge = async () => {
-            if (!isLive.current) return;
-            try {
-                const res = await fetch(`${API}/copilot/charging/live`);
-                if (!res.ok) return;
-                const j = await res.json();
-                if (cancelled) return;
-                setCharge({
-                    soc: j.current_soc ?? null,
-                    isCharging: !!j.is_charging,
-                    rangeMi: j.battery_range_mi ?? null,
-                    asleep: !!j.vehicle_asleep,
-                });
-            } catch {
-                /* telemetry is a nicety — never let it break the map */
-            }
-        };
-        const first = setTimeout(fetchCharge, 1_500);
-        const iv = setInterval(fetchCharge, CHARGE_POLL_MS);
-        return () => { cancelled = true; clearTimeout(first); clearInterval(iv); };
-    }, []);
+      {/* 1. HERO SECTION: PIKES PEAK PARALLAX */}
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
 
-    const priv = state?.privacy === true || state === null;
-    const position: LatLng | null =
-        !priv && typeof state?.lat === "number" && typeof state?.long === "number"
-            ? { lat: state.lat, lng: state.long }
-            : null;
-    const live = !!position;
-
-    return (
-        <main className="relative h-[100dvh] w-full overflow-hidden bg-sos-dark">
-            {/* Map fills the viewport beside/below the AppShell nav */}
-            <div className="sos-map absolute inset-0">
-                <HomeMap mode={live ? "live" : "offline"} position={position} heading={state?.heading} />
-            </div>
-
-            {/* Subtle vignette so overlay cards stay legible over the map */}
-            <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/40"
-            />
-
-            {live ? (
-                /* ── State B: active trip — telemetry, thumb-reachable ── */
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center p-4 sm:justify-end sm:p-6">
-                    <div
-                        className="sos-touch pointer-events-auto w-full max-w-sm rounded-2xl border border-sos-border bg-black/75 p-5 backdrop-blur-xl sm:max-w-xs"
-                        style={{ marginBottom: "env(safe-area-inset-bottom, 0px)" }}
-                    >
-                        <div className="mb-4 flex items-center justify-between gap-4">
-                            <div>
-                                <p className="text-sm font-bold text-sos-main">Model Y</p>
-                                <p className="font-mono text-[0.6rem] uppercase tracking-[0.2em] text-sos-dim">
-                                    Trip in progress
-                                </p>
-                            </div>
-                            <span className="flex items-center gap-1.5 text-[0.65rem] font-bold uppercase tracking-wider text-sos-accent">
-                                <span className="relative flex h-2 w-2">
-                                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400/70" />
-                                    <span className="relative inline-flex h-2 w-2 rounded-full bg-cyan-400" />
-                                </span>
-                                Live
-                            </span>
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-3">
-                            <Metric
-                                icon={<Gauge size={15} className="text-sos-accent" />}
-                                label="Speed"
-                                value={`${Math.round(state?.speed ?? 0)}`}
-                                unit="mph"
-                            />
-                            <Metric
-                                icon={
-                                    charge?.isCharging ? (
-                                        <BatteryCharging size={15} className="text-green-400" />
-                                    ) : (
-                                        <Battery size={15} className="text-sos-accent" />
-                                    )
-                                }
-                                label="Charge"
-                                value={charge?.soc != null ? `${Math.round(charge.soc)}` : "—"}
-                                unit="%"
-                            />
-                            <Metric
-                                icon={
-                                    charge?.asleep ? (
-                                        <MoonStar size={15} className="text-slate-400" />
-                                    ) : charge?.isCharging ? (
-                                        <BatteryCharging size={15} className="text-green-400" />
-                                    ) : (
-                                        <Gauge size={15} className="text-sos-accent" />
-                                    )
-                                }
-                                label="Status"
-                                value={charge?.isCharging ? "Charging" : (state?.speed ?? 0) > 0 ? "Driving" : "Stopped"}
-                            />
-                        </div>
-                    </div>
-                </div>
-            ) : (
-                /* ── State A: privacy active — no coordinates rendered ── */
-                <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center p-6">
-                    <div className="sos-touch pointer-events-auto w-full max-w-md rounded-3xl border border-sos-border bg-black/70 p-8 text-center backdrop-blur-xl">
-                        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
-                            <MoonStar size={26} className="text-sos-dim" aria-hidden="true" />
-                        </div>
-                        <h1 className="text-xl font-bold tracking-tight text-sos-main">Driver Offline</h1>
-                        <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-sos-dim">
-                            Next-trip dispatch tracking will appear here.
-                        </p>
-                        {!reachable && (
-                            <p className="mt-3 font-mono text-[0.6rem] uppercase tracking-widest text-slate-600">
-                                Reconnecting…
-                            </p>
-                        )}
-                        <Link
-                            href="/book/"
-                            className="sos-touch mt-7 inline-flex items-center gap-2 rounded-xl bg-sos-accent px-7 py-3 text-sm font-bold text-black transition-colors hover:bg-cyan-300"
-                        >
-                            <CalendarCheck size={16} aria-hidden="true" />
-                            Book a Ride
-                        </Link>
-                    </div>
-                </div>
-            )}
-        </main>
-    );
-}
-
-function Metric({
-    icon,
-    label,
-    value,
-    unit,
-}: {
-    icon: React.ReactNode;
-    label: string;
-    value: string;
-    unit?: string;
-}) {
-    return (
-        <div className="rounded-xl border border-white/5 bg-white/[0.03] p-3">
-            <div className="mb-1.5 flex items-center gap-1.5">
-                {icon}
-                <span className="font-mono text-[0.55rem] uppercase tracking-widest text-sos-dim">{label}</span>
-            </div>
-            <p className="text-base font-bold leading-none text-sos-main">
-                {value}
-                {unit && <span className="ml-0.5 text-[0.65rem] font-normal text-sos-dim">{unit}</span>}
-            </p>
+        {/* Background Image (Fixed/Parallax feel) */}
+        <div className="absolute inset-0 z-0">
+          <Image
+            src="/pikes-peak-bg.png"
+            alt="Pikes Peak Silhouette"
+            fill
+            className="object-cover opacity-60"
+            priority
+          />
+          {/* Gradient Overlay for Text Readability - Morning/Foggy theme */}
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-50 via-transparent to-white/30" />
+          <div className="absolute inset-0 bg-gradient-to-r from-white/90 via-transparent to-transparent" />
         </div>
-    );
+
+        <div className="container mx-auto px-6 relative z-10 grid lg:grid-cols-12 gap-12 items-center pt-20">
+
+          {/* Left: Copy */}
+          <div className="lg:col-span-6 space-y-10 animate-in fade-in slide-in-from-left duration-1000">
+            <div>
+              <h2 className="flex items-center gap-3 text-xs font-bold tracking-[0.4em] text-blue-600 mb-6 uppercase">
+                <span className="w-8 h-[1px] bg-blue-600"></span>
+                El Paso County • Colorado
+              </h2>
+              <h1 className="text-6xl lg:text-8xl font-bold leading-tight tracking-tighter">
+                COS <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-slate-900 to-slate-500">TESLA.</span>
+              </h1>
+              <p className="font-mono text-blue-600 tracking-[0.3em] text-xs mt-4 uppercase">Powered by SummitOS</p>
+            </div>
+
+            <p className="text-2xl text-slate-700 font-light max-w-lg leading-relaxed border-l-2 border-slate-300 pl-6">
+              The executive standard for private transport.
+              Precision pricing. Zero surge.
+              Driven by <strong className="font-semibold text-slate-900">Technology</strong>.
+            </p>
+
+
+          </div>
+
+          {/* Right: Car Image (Floating) */}
+          {/* Right: Car Image - Removed per request */}
+          <div className="lg:col-span-6 hidden lg:block"></div>
+        </div>
+
+        {/* Scroll Indicator */}
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce opacity-50">
+          <div className="w-[1px] h-16 bg-gradient-to-b from-slate-900 to-transparent"></div>
+        </div>
+      </section>
+
+      {/* 2. PRECISION QUOTE (Floating Overlay) */}
+      <section className="relative z-20 -mt-24 lg:-mt-32 px-4 mb-32">
+        <div className="max-w-5xl mx-auto">
+          <div className="bg-[#0a0a0a]/80 backdrop-blur-2xl border border-white/10 rounded-[3rem] p-1 shadow-2xl shadow-black/80">
+            <div className="bg-[#111]/50 rounded-[2.8rem] p-8 lg:p-12 border border-white/5 text-white">
+              <div className="flex flex-col lg:flex-row items-center justify-between mb-8 gap-4">
+                <h3 className="text-xl font-medium tracking-wide text-white">
+                  <span className="font-bold text-cyan-400">01.</span> Instant Quote
+                </h3>
+                <div className="h-[1px] flex-1 bg-white/10 mx-6 hidden lg:block"></div>
+                <span className="text-xs font-mono text-gray-400 uppercase tracking-widest">Powered by Google Distance Matrix</span>
+              </div>
+              <BookingEngine />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. FEATURE: GARDEN OF THE GODS */}
+      <section className="relative py-32 overflow-hidden border-t border-slate-200/50">
+        {/* Background */}
+        <div className="absolute inset-0 bg-slate-100/50 opacity-0 lg:opacity-100 transition-opacity duration-500">
+          <Image
+            src="/garden-gods-bg.png"
+            alt="Garden of the Gods"
+            fill
+            className="object-cover opacity-10 blur-sm"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-50 via-transparent to-slate-50" />
+        </div>
+
+        <div className="container mx-auto px-6 relative z-10">
+          <div className="grid lg:grid-cols-2 gap-20 items-center">
+
+            {/* Visual */}
+            <div className="relative h-[600px] w-full rounded-[3rem] overflow-hidden border border-slate-200 shadow-xl group">
+              <LiveMap className="h-full w-full grayscale opacity-90 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-1000 scale-105 group-hover:scale-100" />
+
+              {/* Overlay Info */}
+              <div className="absolute bottom-0 left-0 w-full p-8 bg-gradient-to-t from-white via-white/95 to-transparent">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-semibold font-mono text-blue-600 mb-1">LIVE TELEMETRY</div>
+                    <div className="text-2xl font-bold text-slate-900">COS Tesla Fleet Location</div>
+                  </div>
+                  <div className="w-12 h-12 rounded-full border border-slate-200 flex items-center justify-center bg-white/80 backdrop-blur-md shadow-sm">
+                    <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="space-y-12">
+              <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <span className="text-6xl font-thin text-slate-200 select-none">02</span>
+                  <h2 className="text-4xl font-bold text-slate-900">Local Knowledge.<br />Global Tech.</h2>
+                </div>
+                <p className="text-lg text-slate-600 font-light leading-relaxed">
+                  Driving El Paso County isn't just about GPS; it's about knowing the terrain.
+                  From the icy switchbacks of <strong className="font-semibold text-slate-900">Broadmoor Bluffs</strong> to the unpaved expanses of <strong className="font-semibold text-slate-900">Black Forest</strong>,
+                  we combine 20 years of local IT expertise with our advanced AWD fleet.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-8 border-t border-slate-200 pt-8">
+                <div>
+                  <div className="text-3xl font-bold text-slate-900 mb-2">20+</div>
+                  <div className="text-sm text-slate-500 uppercase tracking-widest font-semibold">Years IT Exp</div>
+                </div>
+                <div>
+                  <div className="text-3xl font-bold text-slate-900 mb-2">100%</div>
+                  <div className="text-sm text-slate-500 uppercase tracking-widest font-semibold">Safety Rating</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. THE CABIN EXPERIENCE */}
+      <section className="py-32 bg-slate-50/50 relative border-y border-slate-200/50">
+        <div className="container mx-auto px-6">
+          <div className="max-w-4xl mx-auto text-center mb-20">
+            <h2 className="text-4xl lg:text-5xl font-bold mb-6 text-slate-900">Your Private <span className="text-blue-600">Command Center</span>.</h2>
+            <p className="text-xl text-slate-600 font-light">
+              Control your environment from your phone. No apps to install. Just a secure link.
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Card 1 */}
+            <div className="bg-white/90 backdrop-blur-md p-8 rounded-3xl border border-slate-200/60 shadow-sm hover:border-blue-500/40 hover:shadow-md transition-all group">
+              <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-6 text-blue-600 group-hover:scale-110 transition-transform">
+                <span className="text-2xl">🌡️</span>
+              </div>
+              <h3 className="text-xl font-bold mb-3 text-slate-900">Climate Control</h3>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Too hot? Too cold? Adjust the rear seat heaters instantly from your personal dashboard.
+              </p>
+            </div>
+
+            {/* Card 2 */}
+            <div className="bg-white/90 backdrop-blur-md p-8 rounded-3xl border border-slate-200/60 shadow-sm hover:border-blue-500/40 hover:shadow-md transition-all group relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-4 opacity-5 font-bold text-8xl -translate-y-4 translate-x-4 text-slate-400 select-none">ui</div>
+              <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-6 text-blue-600 group-hover:scale-110 transition-transform">
+                <span className="text-2xl">🧭</span>
+              </div>
+              <h3 className="text-xl font-bold mb-3 text-slate-900">Live Telemetry</h3>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Watch your altitude climb as we ascend Ute Pass. Monitor speed and ETA in real-time.
+              </p>
+            </div>
+
+            {/* Card 3 */}
+            <div className="bg-white/90 backdrop-blur-md p-8 rounded-3xl border border-slate-200/60 shadow-sm hover:border-blue-500/40 hover:shadow-md transition-all group">
+              <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mb-6 text-slate-800 group-hover:scale-110 transition-transform">
+                <span className="text-2xl">🔒</span>
+              </div>
+              <h3 className="text-xl font-bold mb-3 text-slate-900">Secure Access</h3>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Each trip generates a unique session token. Your controls expire safely when you drop off.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-16 text-center">
+            <Link href="/cabin" className="inline-flex items-center gap-3 text-lg font-medium border-b border-blue-600 pb-1 text-blue-600 hover:text-blue-800 transition-colors">
+              Access Cabin Dashboard <span className="text-xl">&rarr;</span>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* 5. PRICING & WIDGETS */}
+      <section className="py-32 container mx-auto px-6">
+        <div className="grid lg:grid-cols-2 gap-20">
+
+          {/* Pricing Logic */}
+          <div className="bg-white/95 backdrop-blur-md rounded-[3rem] p-12 border border-slate-200/80 shadow-lg relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-[100px] rounded-full pointer-events-none" />
+
+            <div className="flex items-center gap-3 mb-2">
+              <span className="font-mono text-xs font-bold text-blue-600 tracking-widest uppercase">SummitOS</span>
+            </div>
+            <h3 className="text-3xl font-bold mb-2 text-slate-900">Fairness Engine v5.0</h3>
+            <p className="text-slate-500 text-sm mb-8 leading-relaxed">
+              Pricing emerges from your actual route — not a menu. Every dollar is earned by real distance, real time, and real complexity.
+            </p>
+
+            <div className="space-y-0 divide-y divide-slate-100">
+              <div className="flex items-center justify-between py-4">
+                <div>
+                  <div className="font-semibold text-slate-800">Base Fare</div>
+                  <div className="text-xs text-slate-400 mt-0.5">Every trip starts here</div>
+                </div>
+                <span className="text-2xl font-bold text-slate-900">$30.00</span>
+              </div>
+
+              <div className="flex items-center justify-between py-4">
+                <div>
+                  <div className="font-semibold text-slate-800">Distance</div>
+                  <div className="text-xs text-slate-400 mt-0.5">Free within El Paso County · $1.75/mi beyond</div>
+                </div>
+                <span className="font-mono text-sm font-bold text-slate-500">by route</span>
+              </div>
+
+              <div className="flex items-center justify-between py-4">
+                <div>
+                  <div className="font-semibold text-slate-800">Extra Stops</div>
+                  <div className="text-xs text-slate-400 mt-0.5">Each intermediate stop on your route</div>
+                </div>
+                <span className="text-lg font-bold text-blue-600">$5.00 <span className="text-slate-400 text-sm font-normal">/ stop</span></span>
+              </div>
+
+              <div className="flex items-center justify-between py-4">
+                <div>
+                  <div className="font-semibold text-slate-800">Driver Wait Time</div>
+                  <div className="text-xs text-slate-400 mt-0.5">On-site wait, per hour</div>
+                </div>
+                <span className="text-lg font-bold text-slate-700">$20.00 <span className="text-slate-400 text-sm font-normal">/ hr</span></span>
+              </div>
+
+              <div className="flex items-center justify-between py-4">
+                <div>
+                  <div className="font-semibold text-slate-800">Teller County</div>
+                  <div className="text-xs text-slate-400 mt-0.5">Woodland Park, Cripple Creek, Divide</div>
+                </div>
+                <span className="text-lg font-bold text-slate-700">$15.00 <span className="text-slate-400 text-sm font-normal">surcharge</span></span>
+              </div>
+
+            </div>
+
+            <p className="mt-8 text-xs text-slate-400 font-mono leading-relaxed border-t border-slate-100 pt-6">
+              ROUTE CALCULATED VIA GOOGLE DISTANCE MATRIX. NO SURGE PRICING. NO HIDDEN FEES. DETERMINISTIC — SAME ROUTE ALWAYS YIELDS SAME PRICE.
+            </p>
+          </div>
+
+          {/* Widgets */}
+          <div className="space-y-8">
+            <h3 className="text-3xl font-bold mb-2 text-slate-900">Live Status</h3>
+            <p className="text-slate-600 mb-8">Monitoring conditions for a smooth ascent.</p>
+
+            <div className="opacity-95 hover:opacity-100 transition-opacity">
+              <WeatherWatch />
+            </div>
+
+            <div className="opacity-95 hover:opacity-100 transition-opacity">
+              <FlightTracker />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. FOOTER */}
+      <footer className="border-t border-slate-200 bg-slate-50 pt-20 pb-10 text-slate-700">
+        <div className="container mx-auto px-6">
+          <div className="grid md:grid-cols-4 gap-12 mb-20">
+            <div className="col-span-2">
+              <h2 className="text-2xl font-bold tracking-tighter mb-1 text-slate-900">COS TESLA.</h2>
+              <p className="font-mono text-blue-600 tracking-[0.2em] text-xs font-semibold uppercase mb-6">Powered by SummitOS</p>
+              <p className="text-slate-600 max-w-sm">
+                Executive transport redefined for the modern era.
+                Locally owned in Colorado Springs.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-bold mb-6 text-slate-900">Links</h4>
+              <ul className="space-y-4 text-slate-600 text-sm">
+                <li><Link href="/book" className="hover:text-blue-600 transition-colors">Book a Ride</Link></li>
+                <li><Link href="/cabin" className="hover:text-blue-600 transition-colors">Passenger Cabin</Link></li>
+                <li><Link href="/track" className="hover:text-blue-600 transition-colors">Track Vehicle</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-bold mb-6 text-slate-900">Legal</h4>
+              <ul className="space-y-4 text-slate-600 text-sm">
+                <li><Link href="/privacy" className="hover:text-blue-600 transition-colors">Privacy Policy</Link></li>
+                <li><Link href="/terms" className="hover:text-blue-600 transition-colors">Terms of Service</Link></li>
+                <li><Link href="/contact" className="hover:text-blue-600 transition-colors">Contact Support</Link></li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="border-t border-slate-200 pt-10 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-xs text-slate-500">
+              &copy; {new Date().getFullYear()} COS Tesla LLC.
+            </p>
+            <p className="text-xs text-slate-500 font-mono">
+              CO PUC 0250
+            </p>
+          </div>
+        </div>
+      </footer>
+    </main>
+  );
 }

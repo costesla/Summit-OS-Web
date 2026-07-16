@@ -115,24 +115,24 @@ export default function DriverNotifications() {
 
     return (
         <>
-            <h2 className="text-xs font-bold uppercase tracking-widest text-sos-dim mb-3">Driver</h2>
-            <div className="rounded-2xl bg-sos-surface border border-sos-border shadow-sm px-5 py-5 mb-8">
+            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Driver</h2>
+            <div className="rounded-2xl bg-white border border-slate-200/60 shadow-sm px-5 py-5 mb-8">
                 <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
                         {state === "on"
-                            ? <Bell size={20} className="text-sos-accent" aria-hidden="true" />
-                            : <BellOff size={20} className="text-sos-dim" aria-hidden="true" />}
+                            ? <Bell size={20} className="text-[#2563eb]" aria-hidden="true" />
+                            : <BellOff size={20} className="text-slate-400" aria-hidden="true" />}
                     </div>
                     <div className="flex-1">
-                        <p className="text-sm font-semibold text-sos-main mb-1">New-booking alerts</p>
+                        <p className="text-sm font-semibold text-slate-800 mb-1">New-booking alerts</p>
                         {state === "unsupported" && (
-                            <p className="text-sm text-sos-dim">This browser doesn&rsquo;t support push notifications.</p>
+                            <p className="text-sm text-slate-500">This browser doesn&rsquo;t support push notifications.</p>
                         )}
                         {state === "blocked" && (
-                            <p className="text-sm text-sos-dim">Notifications are blocked for this site — allow them in browser settings, then retry.</p>
+                            <p className="text-sm text-slate-500">Notifications are blocked for this site — allow them in browser settings, then retry.</p>
                         )}
                         {(state === "off" || state === "on" || state === "busy") && (
-                            <p className="text-sm text-sos-dim mb-3">
+                            <p className="text-sm text-slate-500 mb-3">
                                 {state === "on"
                                     ? "This device gets a notification whenever a booking lands."
                                     : "Get a notification on this device whenever a booking lands."}
@@ -140,23 +140,23 @@ export default function DriverNotifications() {
                         )}
                         <div className="flex gap-2">
                             {state === "off" && (
-                                <button onClick={enable} className="rounded-xl bg-sos-accent hover:bg-cyan-300 text-black text-sm font-bold px-4 py-2 transition-colors">
+                                <button onClick={enable} className="rounded-xl bg-[#2563eb] hover:bg-blue-700 text-white text-sm font-bold px-4 py-2 transition-colors">
                                     Enable on this device
                                 </button>
                             )}
                             {state === "on" && (
                                 <>
-                                    <button onClick={sendTest} className="flex items-center gap-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-sos-main text-sm font-bold px-4 py-2 transition-colors">
+                                    <button onClick={sendTest} className="flex items-center gap-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold px-4 py-2 transition-colors">
                                         <Send size={14} aria-hidden="true" /> Send test
                                     </button>
-                                    <button onClick={disable} className="rounded-xl bg-white/5 hover:bg-white/10 text-sos-main text-sm font-bold px-4 py-2 transition-colors">
+                                    <button onClick={disable} className="rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold px-4 py-2 transition-colors">
                                         Disable
                                     </button>
                                 </>
                             )}
-                            {state === "busy" && <span className="text-sm text-sos-dim py-2">Working…</span>}
+                            {state === "busy" && <span className="text-sm text-slate-400 py-2">Working…</span>}
                         </div>
-                        {note && <p className="text-xs text-sos-dim mt-2">{note}</p>}
+                        {note && <p className="text-xs text-slate-500 mt-2">{note}</p>}
                     </div>
                 </div>
             </div>
