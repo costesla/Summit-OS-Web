@@ -94,7 +94,18 @@ export default function HomeMap({
     const live = mode === "live" && !!position;
 
     return (
-        <APIProvider apiKey={apiKey}>
+        /* libraries={["places"]} is NOT for this map — it needs no Places.
+           It exists because the site loads Google Maps from TWO libraries:
+           this page uses @vis.gl/react-google-maps, while /book (BookingEngine,
+           RouteMap) uses @react-google-maps/api WITH places for address
+           autocomplete. Google Maps can only be loaded once per document, so
+           whichever page loads first wins. When this map loaded first WITHOUT
+           places, client-side navigation to /book threw:
+             "Invariant Violation: You need to provide libraries={['places']}
+              prop to <LoadScript /> component"
+           …taking down the booking page for anyone arriving via the homepage.
+           Loading places here makes the single shared script satisfy both. */
+        <APIProvider apiKey={apiKey} libraries={["places"]}>
             {/* key remounts the map when the operational state flips, so the
                 camera + gesture settings reset cleanly rather than needing a
                 fully controlled camera. State changes are rare (per trip). */}
