@@ -31,6 +31,26 @@ az webapp auth show --name summitos-api -g rg-summitos-prod --query enabled -o t
 
 `/cabin` authenticates with a per-booking `?token=` code (backend-issued, stored in `create_cabin_token`), not Easy Auth. The B3 owner "lock" on the tokenless entry path is a **visibility gate only** (hides the code form behind `/.auth/me`); the token remains the real authorization. Retirement path to role-based auth is in `identity-spec.md`.
 
+### 2a. The cabin allow-list is NOT comfort-only — it includes `open_trunk`
+
+**Corrected 2026-07-15.** Earlier notes in this repo (including a previous version of this file) claimed the cabin was "comfort-only — no drive, unlock, trunk, or horn." **That was wrong and was never verified against the code.** The actual server-side allow-list (`backend/api/cabin.py`) is:
+
+```python
+ALLOWED_COMMANDS = {
+    "seat_heater", "vent_windows", "close_windows",
+    "start_climate", "stop_climate", "set_temp",
+    "open_trunk",          # <-- physical access, not comfort
+}
+```
+
+`open_trunk` calls Tessie's `activate_rear_trunk`. So **anyone holding a cabin link can open the vehicle's rear trunk**, and the token remains valid until roughly 6 hours after the trip start — i.e. after the passenger has left, while the car may be parked elsewhere carrying someone else's luggage. Links can be forwarded or screenshotted.
+
+This may well be **deliberate** (a passenger loading bags needs the trunk), so it is documented, not removed. But treat it accurately:
+
+- The cabin token is a **bearer capability granting physical cargo access**, not merely climate control.
+- Doors, frunk, drive, and horn are genuinely **not** exposed (`open_frunk` exists in `services/tessie.py` but is absent from `ALLOWED_COMMANDS`).
+- If trunk access should be time-boxed more tightly than comfort controls, that is a backend change to `cabin.py` — split the allow-list, or gate `open_trunk` on the active trip window (`services/trip_window.py`) rather than the 6h token.
+
 ## 3. Secrets never live in the repo
 
 VAPID private key, function keys, connection strings, client secrets → Function App settings / Key Vault only. The OneDrive project root is **not** a git repo (the repo is the `Summit-OS-Web-master/` subfolder), but do not rely on that as a safety net — keep generated secret files out of the tree and delete them once vaulted.
