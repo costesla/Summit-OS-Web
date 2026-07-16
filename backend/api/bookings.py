@@ -443,12 +443,16 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
             db_early = DatabaseClient()
             from datetime import timedelta
             
-            # Use 24h from now as fallback if no pickup time, otherwise 6h after pickup
+            # Cabin code lifetime = CABIN_TOKEN_HOURS after the scheduled pickup.
+            # If there is no pickup time, create_cabin_token falls back to the
+            # same constant (it used to fall back to 24h). This window grants
+            # trunk access — see docs/security-notes.md §2a.
+            from services.database import CABIN_TOKEN_HOURS
             token_expiry = None
             if raw_time:
                 try:
                     dt_utc = normalize_to_utc(raw_time)
-                    token_expiry = dt_utc + timedelta(hours=6)
+                    token_expiry = dt_utc + timedelta(hours=CABIN_TOKEN_HOURS)
                 except:
                     pass
             

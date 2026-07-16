@@ -5,6 +5,14 @@ import datetime
 import json
 import uuid
 
+# How long a cabin access code stays valid, measured from the scheduled pickup.
+# This is a SECURITY parameter, not a convenience one: the cabin allow-list
+# includes `open_trunk` (see docs/security-notes.md §2a), so this is the window
+# in which a forwarded/screenshotted cabin link can open the vehicle's trunk.
+# Keep it as tight as the operation tolerates. Single source of truth — the
+# booking (bookings.py) and paid (finalize_service.py) flows both import it.
+CABIN_TOKEN_HOURS = 4
+
 # Client roster rule — single source of truth. Former clients whose invoices
 # are excluded from active receivables (handled separately, not collectable
 # through normal flows). New clients are active by default (denylist model).
@@ -948,8 +956,14 @@ class DatabaseClient:
             cur.close()
             conn.close()
 
-    def create_cabin_token(self, booking_id: str, valid_hours: int = 24, expires_at=None) -> str:
-        """Generate a 6-digit cabin access code for a booking, store it in DB."""
+    def create_cabin_token(self, booking_id: str, valid_hours: int = CABIN_TOKEN_HOURS, expires_at=None) -> str:
+        """Generate a 6-digit cabin access code for a booking, store it in DB.
+
+        `valid_hours` is only used when `expires_at` is None (i.e. a booking with
+        no pickup time). It used to default to 24h — far longer than the window
+        callers actually intend, and this token grants trunk access, so the
+        fallback now matches CABIN_TOKEN_HOURS like every other path.
+        """
         import secrets
         # Generate a 6-digit code (100000-999999) for easier manual entry
         token = str(secrets.randbelow(900000) + 100000)

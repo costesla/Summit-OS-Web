@@ -383,9 +383,12 @@ def _send_paid_receipt(session, meta):
     cabin_block = ""
     try:
         from datetime import timedelta
+        from services.database import CABIN_TOKEN_HOURS
+        # Same window as the unpaid flow — see docs/security-notes.md §2a
+        # (this token grants trunk access, so keep it tight).
         token_expiry = None
         if raw_time:
-            token_expiry = normalize_to_utc(raw_time) + timedelta(hours=6)
+            token_expiry = normalize_to_utc(raw_time) + timedelta(hours=CABIN_TOKEN_HOURS)
         cabin_token = DatabaseClient().create_cabin_token(session.id, expires_at=token_expiry)
         site_url = os.environ.get("SITE_URL", "https://www.costesla.com")
         cabin_block = f"""
