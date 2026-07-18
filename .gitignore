@@ -28,6 +28,13 @@ auth_code*.txt
 ropc_*.txt
 token.pickle
 
+# Android / Play signing — IRREPLACEABLE, NEVER COMMIT (repo is PUBLIC)
+*.keystore
+*.jks
+signing-key-info.txt
+*.aab
+*.apk
+
 # ========================
 # BUILD ARTIFACTS
 # ========================
