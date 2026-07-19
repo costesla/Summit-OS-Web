@@ -103,6 +103,10 @@ export default function FlightTracker() {
                 </button>
             </div>
 
+            <p className="mb-2 text-[11px] text-[var(--color-text-muted)]">
+                Powered by FlightAware
+            </p>
+
             {loading && (
                 <p className="mt-4 text-sm text-[var(--color-text-muted)] animate-pulse">
                     Checking schedules and live position…
