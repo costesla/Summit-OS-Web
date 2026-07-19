@@ -268,3 +268,30 @@ class FlightAwareClient:
                          params, cache_ttl=cache_ttl)
         rows = data.get("scheduled_arrivals") if isinstance(data, dict) else None
         return rows if isinstance(rows, list) else []
+
+    def flight_info(self, ident: str, cache_ttl: Optional[int] = None) -> Optional[dict]:
+        """GET /flights/{ident} -> the most relevant flight instance, or None.
+
+        Picks the in-progress flight if any, else the next not-yet-departed
+        scheduled flight, else the most recent. Never raises to the caller
+        (returns None on failure) so callers can degrade gracefully.
+        """
+        ident = (ident or "").strip().upper()
+        if not ident:
+            return None
+        try:
+            data = self._get(f"/flights/{ident}", {"max_pages": 1}, cache_ttl=cache_ttl)
+        except FlightAwareApiError as e:
+            logging.warning(f"FlightAware flight_info error for {ident}: {e.message}")
+            return None
+        flights = data.get("flights") if isinstance(data, dict) else None
+        if not isinstance(flights, list) or not flights:
+            return None
+        for f in flights:  # 1) in progress
+            pct = f.get("progress_percent")
+            if isinstance(pct, (int, float)) and 0 < pct < 100 and not f.get("cancelled"):
+                return f
+        for f in flights:  # 2) next scheduled, not yet departed
+            if not f.get("actual_out") and not f.get("cancelled"):
+                return f
+        return flights[-1]  # 3) most recent

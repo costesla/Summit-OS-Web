@@ -8,7 +8,7 @@ from dateutil import parser
 from services.calendar import generate_time_slots_for_day, calculate_buffers, time_ranges_overlap
 from services.graph import GraphClient
 from services.database import DatabaseClient
-from services.flight import AviationStackClient
+from services.flight import FlightStatusService
 from services.datetime_utils import normalize_to_utc, utc_to_local
 from services.invoice import create_stripe_payment_link, build_invoice_id
 from services.auth_guard import cors_headers as _get_cors
@@ -204,16 +204,20 @@ def calendar_book(req: func.HttpRequest) -> func.HttpResponse:
 @bp.route(route="flight-status", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
 def flight_status(req: func.HttpRequest) -> func.HttpResponse:
     try:
-        fn = req.get_json().get('flightNumber')
-        client = AviationStackClient()
-        data = client.get_flight_status(fn)
+        fn = (req.get_json() or {}).get('flightNumber')
+        data = FlightStatusService().get_flight_status(fn)
         return func.HttpResponse(
-            json.dumps({"success": True, "data": data}),
+            json.dumps({"success": True, "found": bool(data), "data": data}),
             status_code=200,
             mimetype="application/json"
-        ) if data else func.HttpResponse("Not found", status_code=404)
+        )
     except Exception as e:
-        return func.HttpResponse(str(e), status_code=500)
+        logging.error(f"flight-status failed: {e}")
+        return func.HttpResponse(
+            json.dumps({"success": False, "error": "Flight lookup failed."}),
+            status_code=500,
+            mimetype="application/json"
+        )
 
 @bp.route(route="log-private-trip", methods=["POST"], auth_level=func.AuthLevel.FUNCTION)
 def log_private_trip(req: func.HttpRequest) -> func.HttpResponse:
