@@ -47,6 +47,7 @@ blueprints = [
     "api.payments",
     "api.timer_payment_sync",
     "api.mcp_tools",
+    "api.flightradar24",
     "api.feedback",
     "api.push",
 ]
