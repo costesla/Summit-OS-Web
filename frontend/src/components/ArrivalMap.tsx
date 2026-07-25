@@ -19,54 +19,25 @@ import { APIProvider, Map, AdvancedMarker, useMap } from "@vis.gl/react-google-m
  * fade. It only ever claims a driver ETA the vehicle feed actually reports.
  */
 
-export interface LatLng { lat: number; lng: number }
+/* The mode rules live in ./arrivalMode so they can be tested as plain
+   functions, without React or the Maps SDK. Re-exported here so existing
+   imports of this component keep working. */
+import {
+    ARRIVAL_SWITCH_DELAY_MIN, LANDED_CARD_MS, deriveMode, minutesSinceLanding,
+} from "./arrivalMode";
+import type {
+    ArrivalMode, DriverLike, FlightLike, LatLng, VehicleLike,
+} from "./arrivalMode";
 
-export interface FlightLike {
-    flight_number?: string;
-    status?: string | null;
-    destination?: { code?: string | null; city?: string | null };
-    origin?: { code?: string | null; city?: string | null };
-    cancelled?: boolean;
-    diverted?: boolean;
-    on_ground?: boolean;
-    /** ISO touchdown timestamp — the hand-off is timed from this, not page load. */
-    on_ground_since?: string | null;
-    landed_at?: string | null;
-    estimated_arrival_mt?: string | null;
-    live?: {
-        latitude?: number; longitude?: number; heading_deg?: number;
-        path?: LatLng[];
-    } | null;
-}
-
-/** Privacy-safe driver summary from /api/cabin/state. Minutes and booleans
- *  only — the car's nav destination never reaches the client. */
-export interface DriverLike {
-    dispatched?: boolean;
-    eta_minutes?: number | null;
-    heading_to_expected?: boolean | null;
-    moving?: boolean;
-}
-
-export interface VehicleLike {
-    latitude?: number | null;
-    longitude?: number | null;
-    heading?: number | null;
-}
-
-export type ArrivalMode = "FLIGHT" | "LANDED" | "VEHICLE";
+export {
+    ARRIVAL_SWITCH_DELAY_MIN, LANDED_CARD_MS, deriveMode, minutesSinceLanding,
+};
+export type { ArrivalMode, DriverLike, FlightLike, LatLng, VehicleLike };
 
 const BRAND_COBALT = "#2563eb";
 const BRAND_COBALT_GLOW = "#60a5fa";
+/** Zoom used when there is a single point to show rather than a route to frame. */
 const SOLO_ZOOM = 9;
-/** How long the hand-off card stays up before dissolving, in ms. */
-export const LANDED_CARD_MS = 5000;
-
-/** How long after touchdown to keep showing the flight before handing over to
- *  the driver. Deplaning plus baggage claim means the passenger isn't looking
- *  for the car yet — switching at the gate is premature, and any ETA quoted
- *  then is stale by the time they actually reach the curb. */
-export const ARRIVAL_SWITCH_DELAY_MIN = 15;
 
 /* ── shared map pieces ──────────────────────────────────────────────────── */
 
@@ -138,63 +109,6 @@ function LandedCard({ visible, headline, detail }: {
             <p className="mt-0.5 text-xs text-slate-300">{detail}</p>
         </div>
     );
-}
-
-/* ── mode derivation ────────────────────────────────────────────────────── */
-
-function sameAirport(a?: string | null, b?: string | null) {
-    if (!a || !b) return false;
-    return a.trim().toUpperCase() === b.trim().toUpperCase();
-}
-
-/** Pure so it can be unit-tested without a map. Exported for tests.
- *
- *  `now` is injectable so the timing can be tested deterministically. */
-export function deriveMode({ flight, tripBound, expectedDestination, cardDone, now }: {
-    flight?: FlightLike | null;
-    tripBound?: boolean;
-    expectedDestination?: string | null;
-    cardDone: boolean;
-    now?: number;
-}): ArrivalMode {
-    const onGround = !!flight?.on_ground;
-
-    // Still flying (or no flight at all on a vehicle-only surface).
-    if (flight && !onGround && !flight.cancelled) return "FLIGHT";
-
-    if (onGround) {
-        // A diversion must never trigger the driver hand-off: the passenger is
-        // at a different airport and the pickup no longer holds.
-        const expected = expectedDestination || null;
-        const arrivedWhereExpected = expected
-            ? sameAirport(flight?.landed_at, expected)
-            : true;
-        const diverted = !!flight?.diverted || (expected ? !arrivedWhereExpected : false);
-
-        if (!tripBound || diverted) return "FLIGHT";   // show landed status, no card/driver
-
-        // Hold the flight view through deplaning and baggage claim. At the gate
-        // the passenger is thinking about getting off and finding their bags,
-        // not about the car — showing the driver then is noise, and an ETA
-        // quoted at that moment is wrong by the time they reach the curb.
-        if (minutesSinceLanding(flight, now) < ARRIVAL_SWITCH_DELAY_MIN) return "FLIGHT";
-
-        return cardDone ? "VEHICLE" : "LANDED";
-    }
-
-    return tripBound ? "VEHICLE" : "FLIGHT";
-}
-
-/** Minutes since wheels-down. Measured from the aircraft's real touchdown
- *  timestamp, NOT from page load, so reopening the app can't restart the wait.
- *  Returns Infinity when the timestamp is missing so a landed flight without
- *  one still hands over rather than getting stuck on the flight view. */
-export function minutesSinceLanding(flight?: FlightLike | null, now?: number): number {
-    const stamp = flight?.on_ground_since;
-    if (!stamp) return Number.POSITIVE_INFINITY;
-    const t = Date.parse(stamp);
-    if (Number.isNaN(t)) return Number.POSITIVE_INFINITY;
-    return ((now ?? Date.now()) - t) / 60000;
 }
 
 /* ── component ──────────────────────────────────────────────────────────── */
