@@ -27,8 +27,26 @@ _FAIL_WINDOW_SEC = int(os.environ.get("CABIN_FAIL_WINDOW_SEC", "300"))
 
 
 def _client_ip(req: func.HttpRequest) -> str:
+    """Caller identity for the lockout counter.
+
+    Azure App Service writes X-Forwarded-For as "<ip>:<source-port>", and the
+    source port changes on every connection. Taking the header verbatim
+    therefore gives each request its own bucket and the lockout never trips —
+    verified against production, where 14 consecutive bad codes all returned
+    401 and never a 429. The port must be stripped so attempts accumulate
+    against the actual client.
+    """
     xff = req.headers.get("X-Forwarded-For") or req.headers.get("X-Client-IP") or ""
-    return (xff.split(",")[0].strip() if xff else "") or "unknown"
+    first = (xff.split(",")[0].strip() if xff else "")
+    if not first:
+        return "unknown"
+    if first.startswith("["):
+        # Bracketed IPv6, optionally "[::1]:1234"
+        return first.split("]")[0].lstrip("[") or "unknown"
+    if first.count(":") == 1:
+        # IPv4 with a port. (Bare IPv6 has multiple colons and is left alone.)
+        return first.split(":")[0] or "unknown"
+    return first
 
 
 def _locked_out(ip: str) -> bool:
