@@ -177,6 +177,25 @@ def test_unknown_ident_returns_none():
     assert c.flight_info("SWA250", expected_destination="DAL") is None
 
 
+# ── live position (powers the flight map) ────────────────────────────────────
+def test_last_position_normalizes_altitude_to_feet():
+    c = _client_with([])
+    c._get = lambda path, params, cache_ttl=None: {"last_position": {
+        "latitude": 3.31, "longitude": -14.24, "altitude": 370,
+        "groundspeed": 494, "heading": 128, "timestamp": "2026-07-25T11:24:29Z"}}
+    p = c.last_position("DAL200-x")
+    assert p["latitude"] == 3.31 and p["longitude"] == -14.24
+    assert p["altitude_ft"] == 37000        # flight level 370 -> feet
+    assert p["heading_deg"] == 128 and p["ground_speed_kts"] == 494
+
+
+def test_last_position_none_without_fix():
+    c = _client_with([])
+    c._get = lambda path, params, cache_ttl=None: {"fa_flight_id": "x"}  # no last_position
+    assert c.last_position("x") is None
+    assert c.last_position("") is None       # empty id short-circuits
+
+
 if __name__ == "__main__":
     import pytest
     raise SystemExit(pytest.main([__file__, "-v"]))

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Plane, Search, ArrowRight, Clock, AlertCircle, Navigation, Gauge } from "lucide-react";
+import FlightMap from "./FlightMap";
 
 const API = "https://summitos-api.azurewebsites.net/api/flight-status";
 
@@ -228,6 +229,16 @@ export default function FlightTracker() {
                                     </span>
                                 )}
                             </div>
+                        )}
+
+                        {/* Live map (only when airborne with a position fix) */}
+                        {airborne && flightData.live
+                            && typeof flightData.live.latitude === "number"
+                            && typeof flightData.live.longitude === "number" && (
+                            <FlightMap
+                                position={{ lat: flightData.live.latitude, lng: flightData.live.longitude }}
+                                heading={flightData.live.heading_deg}
+                            />
                         )}
 
                         <p className="text-[10px] text-[var(--color-text-muted)] text-right">

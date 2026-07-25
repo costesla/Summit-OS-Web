@@ -355,6 +355,36 @@ class FlightAwareClient:
             return self._nearest(active, now)
         return self._nearest(candidates, now)
 
+    def last_position(self, fa_flight_id: str, cache_ttl: Optional[int] = None) -> Optional[dict]:
+        """GET /flights/{fa_flight_id}/position -> normalized live position, or None.
+
+        Powers the flight map. AeroAPI reports altitude as a flight level
+        (hundreds of feet) and groundspeed in knots; we convert altitude to feet
+        and keep the field names the frontend already consumes. Returns None for
+        grounded flights (no position) or on any error — never raises.
+        """
+        fa_flight_id = (fa_flight_id or "").strip()
+        if not fa_flight_id:
+            return None
+        try:
+            data = self._get(f"/flights/{fa_flight_id}/position", {}, cache_ttl=cache_ttl)
+        except FlightAwareApiError as e:
+            logging.warning(f"FlightAware position error for {fa_flight_id}: {e.message}")
+            return None
+        lp = (data.get("last_position") or data) if isinstance(data, dict) else {}
+        lat, lon = lp.get("latitude"), lp.get("longitude")
+        if not isinstance(lat, (int, float)) or not isinstance(lon, (int, float)):
+            return None
+        alt = lp.get("altitude")
+        return {
+            "latitude": lat,
+            "longitude": lon,
+            "altitude_ft": int(alt * 100) if isinstance(alt, (int, float)) else None,
+            "ground_speed_kts": lp.get("groundspeed"),
+            "heading_deg": lp.get("heading"),
+            "timestamp": lp.get("timestamp"),
+        }
+
     @staticmethod
     def _nearest(flights: list, target_epoch: float) -> dict:
         """The leg whose scheduled departure is closest to target_epoch."""
