@@ -1026,6 +1026,106 @@ class DatabaseClient:
         finally:
             conn.close()
 
+    # ── Cabin brute-force counters (shared across Function App instances) ────
+    # The in-process counter in api/cabin.py only sees one worker. This app runs
+    # on the Dynamic (Consumption) plan, which scales out, so an attacker who
+    # doesn't reuse connections is spread across instances and never trips any
+    # single one — confirmed against production. These counters live in SQL so
+    # every instance counts against the same tally.
+
+    def _ensure_cabin_attempts_table(self, cursor):
+        cursor.execute("""
+            IF NOT EXISTS (SELECT * FROM sys.tables t JOIN sys.schemas s ON t.schema_id = s.schema_id WHERE s.name = 'Rides' AND t.name = 'CabinAttempts')
+            BEGIN
+                CREATE TABLE Rides.CabinAttempts (
+                    Id BIGINT IDENTITY(1,1) PRIMARY KEY,
+                    ClientKey NVARCHAR(64) NOT NULL,
+                    AttemptAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
+                );
+                CREATE INDEX IX_CabinAttempts_Client ON Rides.CabinAttempts (ClientKey, AttemptAt);
+            END
+        """)
+
+    def record_cabin_failure(self, client_key: str, window_sec: int = 300):
+        """Log one failed cabin-code attempt and return the count in the window.
+
+        Returns None if the DB is unreachable so the caller can fall back to its
+        in-process counter rather than treating the attacker as clean.
+        """
+        if not client_key:
+            return None
+        conn = self.get_connection()
+        if not conn:
+            return None
+        try:
+            cur = conn.cursor()
+            self._ensure_cabin_attempts_table(cur)
+            cur.execute(
+                "INSERT INTO Rides.CabinAttempts (ClientKey) VALUES (?)", (client_key,)
+            )
+            # Opportunistic prune so the table can't grow without bound. Bounded
+            # to this client's own stale rows to keep the delete cheap.
+            cur.execute(
+                "DELETE FROM Rides.CabinAttempts WHERE ClientKey = ? "
+                "AND AttemptAt < DATEADD(second, ?, SYSUTCDATETIME())",
+                (client_key, -abs(int(window_sec)) * 4),
+            )
+            cur.execute(
+                "SELECT COUNT(*) FROM Rides.CabinAttempts WHERE ClientKey = ? "
+                "AND AttemptAt > DATEADD(second, ?, SYSUTCDATETIME())",
+                (client_key, -abs(int(window_sec))),
+            )
+            row = cur.fetchone()
+            conn.commit()
+            return int(row[0]) if row else 0
+        except Exception as e:
+            logging.error(f"record_cabin_failure error: {e}")
+            return None
+        finally:
+            conn.close()
+
+    def count_cabin_failures(self, client_key: str, window_sec: int = 300):
+        """Failed attempts for this client inside the window, or None on error."""
+        if not client_key:
+            return None
+        conn = self.get_connection()
+        if not conn:
+            return None
+        try:
+            cur = conn.cursor()
+            self._ensure_cabin_attempts_table(cur)
+            cur.execute(
+                "SELECT COUNT(*) FROM Rides.CabinAttempts WHERE ClientKey = ? "
+                "AND AttemptAt > DATEADD(second, ?, SYSUTCDATETIME())",
+                (client_key, -abs(int(window_sec))),
+            )
+            row = cur.fetchone()
+            conn.commit()
+            return int(row[0]) if row else 0
+        except Exception as e:
+            logging.error(f"count_cabin_failures error: {e}")
+            return None
+        finally:
+            conn.close()
+
+    def clear_cabin_failures(self, client_key: str) -> None:
+        """Wipe a client's failures after a successful auth, so a passenger who
+        mistyped their code a few times keeps a full allowance."""
+        if not client_key:
+            return
+        conn = self.get_connection()
+        if not conn:
+            return
+        try:
+            cur = conn.cursor()
+            self._ensure_cabin_attempts_table(cur)
+            cur.execute("DELETE FROM Rides.CabinAttempts WHERE ClientKey = ?", (client_key,))
+            conn.commit()
+        except Exception as e:
+            logging.error(f"clear_cabin_failures error: {e}")
+        finally:
+            conn.close()
+
     def execute_query_params(self, query, params):
         conn = self.get_connection()
         if not conn: return []

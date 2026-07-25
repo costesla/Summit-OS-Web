@@ -57,7 +57,8 @@ def _locked_out(ip: str) -> bool:
         return len(hits) >= _FAIL_MAX
 
 
-def _record_failure(ip: str) -> None:
+def _record_failure(ip: str) -> int:
+    """Record a failure on this worker and return its running count."""
     now = time.time()
     with _RL_LOCK:
         hits = [t for t in _FAILED_ATTEMPTS.get(ip, []) if now - t < _FAIL_WINDOW_SEC]
@@ -70,27 +71,95 @@ def _record_failure(ip: str) -> None:
                 f"Cabin code lockout: {len(hits)} failed attempts from {ip} "
                 f"in {_FAIL_WINDOW_SEC}s"
             )
+        return len(hits)
 
 
-def _clear_failures(ip: str) -> None:
+def _clear_failures(ip: str) -> bool:
+    """Drop this worker's counter. True if there was anything to clear."""
     with _RL_LOCK:
-        _FAILED_ATTEMPTS.pop(ip, None)
+        return _FAILED_ATTEMPTS.pop(ip, None) is not None
+
+
+def _shared_failures(ip: str, record: bool):
+    """Failed-attempt count for this client across ALL instances, or None if the
+    DB is unreachable (caller then relies on the in-process counter alone).
+
+    Lives in SQL because this app runs on the Dynamic (Consumption) plan and
+    scales out: an in-process counter only ever sees its own worker, so an
+    attacker who doesn't reuse connections is spread across instances and never
+    trips any single one. Confirmed against production before this was added.
+    """
+    try:
+        from services.database import DatabaseClient
+        db = DatabaseClient()
+        if record:
+            return db.record_cabin_failure(ip, _FAIL_WINDOW_SEC)
+        return db.count_cabin_failures(ip, _FAIL_WINDOW_SEC)
+    except Exception as e:
+        logging.error(f"Cabin shared counter error: {e}")
+        return None
 
 
 def _guard(req: func.HttpRequest, token):
     """Shared auth gate: lockout check, then token validation.
 
     Returns an HttpResponse to short-circuit with, or None when allowed.
+
+    Ordering is deliberate. The in-process check runs first as a free fast path,
+    then the shared counter is consulted — but ONLY for requests that are about
+    to be rejected anyway, so a passenger's polling never pays for a second
+    query. An attacker pays on every guess.
     """
     ip = _client_ip(req)
+    too_many = _json_response(
+        {"error": "Too many invalid codes. Try again shortly."}, 429
+    )
+
+    # Fast path: this worker already knows this client is locked out.
     if _locked_out(ip):
-        return _json_response(
-            {"error": "Too many invalid codes. Try again shortly."}, 429
-        )
+        return too_many
+
+    # Shared check, BEFORE validation. This costs one indexed COUNT per request,
+    # which an earlier draft tried to avoid by only consulting the DB on failed
+    # attempts — but that left the hole this control exists to close: a
+    # locked-out attacker who finally guesses correctly would land on a fresh
+    # worker with an empty local counter and be let straight in. The lockout has
+    # to beat a valid code, so the tally must be read before the code is judged.
+    # The cost is irrelevant here — the cabin console serves one passenger.
+    # `>=` mirrors _locked_out: _FAIL_MAX recorded failures means the client is
+    # already locked, so the next request is refused whatever code it carries.
+    shared_now = _shared_failures(ip, record=False)
+    if shared_now is not None and shared_now >= _FAIL_MAX:
+        return too_many
+
     if not _validate_token(token):
-        _record_failure(ip)
+        local = _record_failure(ip)
+        shared = _shared_failures(ip, record=True)
+        # Either counter EXCEEDING the allowance locks the client out. Strictly
+        # greater, so _FAIL_MAX attempts are genuinely allowed before the door
+        # shuts — matching the fast-path check above, which sees the count
+        # before this attempt was recorded. The shared tally is authoritative;
+        # the local one still applies when the DB is unreachable.
+        if (shared is not None and shared > _FAIL_MAX) or local > _FAIL_MAX:
+            if shared is not None and shared > _FAIL_MAX:
+                logging.warning(
+                    f"Cabin code lockout (shared): {shared} failed attempts "
+                    f"from {ip} in {_FAIL_WINDOW_SEC}s"
+                )
+            return too_many
         return _json_response({"error": "Unauthorized"}, 401)
-    _clear_failures(ip)
+
+    # Valid code. Clear the local counter always (free), and the shared one only
+    # when this worker actually saw failures — otherwise every poll of a healthy
+    # session would issue a pointless DELETE. Any failures recorded on another
+    # instance simply age out of the window.
+    had_local = _clear_failures(ip)
+    if had_local:
+        try:
+            from services.database import DatabaseClient
+            DatabaseClient().clear_cabin_failures(ip)
+        except Exception as e:
+            logging.warning(f"Cabin counter clear failed: {e}")
     return None
 
 def _cors_headers():
