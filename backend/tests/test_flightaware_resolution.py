@@ -196,6 +196,36 @@ def test_last_position_none_without_fix():
     assert c.last_position("") is None       # empty id short-circuits
 
 
+def test_last_position_decodes_waypoints_and_bounds():
+    c = _client_with([])
+    c._get = lambda path, params, cache_ttl=None: {
+        "last_position": {"latitude": 38.0, "longitude": -104.0, "altitude": 300},
+        # FLAT [lat, lon, lat, lon, ...] array, as AeroAPI returns it.
+        "waypoints": [38.81, -104.7, 38.82, -104.69, 38.9, -104.66],
+        "bounding_box": [38.84967, -104.70087, 35.37956, -100.52882],
+    }
+    p = c.last_position("x")
+    assert p["path"] == [
+        {"lat": 38.81, "lng": -104.7},
+        {"lat": 38.82, "lng": -104.69},
+        {"lat": 38.9, "lng": -104.66},
+    ]
+    assert p["bounds"] == {"south": 35.37956, "north": 38.84967,
+                           "west": -104.70087, "east": -100.52882}
+
+
+def test_waypoints_tolerate_bad_input():
+    c = _client_with([])
+    c._get = lambda path, params, cache_ttl=None: {
+        "last_position": {"latitude": 1.0, "longitude": 2.0},
+        "waypoints": [38.8, -104.7, 38.9, -104.6, 99.9],   # odd trailing value
+        "bounding_box": "nonsense",
+    }
+    p = c.last_position("x")
+    assert p["path"] == [{"lat": 38.8, "lng": -104.7}, {"lat": 38.9, "lng": -104.6}]
+    assert p["bounds"] is None
+
+
 if __name__ == "__main__":
     import pytest
     raise SystemExit(pytest.main([__file__, "-v"]))

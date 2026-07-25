@@ -4,13 +4,16 @@ import { useEffect } from "react";
 import { APIProvider, Map, AdvancedMarker, useMap } from "@vis.gl/react-google-maps";
 
 /*
- * FlightMap — live aircraft position for the public FlightTracker.
+ * FlightMap — live aircraft position + flown route for the public FlightTracker.
  *
- * Renders the plane where it is right now (FR24 live position from the
- * /flight-status response) with the icon rotated to its heading. Only shown
- * when the flight is airborne; scheduled/arrived flights have no live position.
+ * Everything here comes from AeroAPI's GET /flights/{fa_flight_id}/position via
+ * the /flight-status response:
+ *   last_position -> the marker (rotated to the aircraft's heading)
+ *   waypoints     -> `path`, the track actually flown so far
+ *   bounding_box  -> `bounds`, used to frame the whole route
  *
- * Uses the same Google config as HomeMap / the /cabin console
+ * Only rendered when the flight is airborne; scheduled/arrived flights have no
+ * position. Uses the same Google config as HomeMap / the /cabin console
  * (NEXT_PUBLIC_GMAPS_API_KEY + the SummitOS Map ID) so the map loads from the
  * single shared @vis.gl/react-google-maps script. libraries={["places"]}
  * mirrors HomeMap so client-side navigation to /book (which needs Places)
@@ -22,14 +25,52 @@ export interface LatLng {
     lng: number;
 }
 
-const DEFAULT_ZOOM = 7;
+export interface Bounds {
+    south: number;
+    west: number;
+    north: number;
+    east: number;
+}
 
-/** Keeps the aircraft centred as its position updates between lookups. */
-function FollowAircraft({ position }: { position: LatLng }) {
+const SOLO_ZOOM = 7; // used when there's a fix but no route to frame
+
+/** Draws the flown track. @vis.gl has no Polyline component, so this manages a
+ *  google.maps.Polyline imperatively and cleans it up on change/unmount. */
+function FlightPath({ path }: { path: LatLng[] }) {
     const map = useMap();
     useEffect(() => {
-        if (map) map.panTo(position);
-    }, [map, position.lat, position.lng]); // eslint-disable-line react-hooks/exhaustive-deps
+        if (!map || path.length < 2) return;
+        const line = new google.maps.Polyline({
+            path,
+            map,
+            geodesic: true,
+            strokeColor: "#2563eb",
+            strokeOpacity: 0.85,
+            strokeWeight: 3,
+        });
+        return () => line.setMap(null);
+    }, [map, path]);
+    return null;
+}
+
+/** Frames the whole route once the map is ready. */
+function FitToRoute({ bounds, fallback }: { bounds?: Bounds | null; fallback: LatLng }) {
+    const map = useMap();
+    useEffect(() => {
+        if (!map) return;
+        if (bounds) {
+            map.fitBounds(
+                new google.maps.LatLngBounds(
+                    { lat: bounds.south, lng: bounds.west },
+                    { lat: bounds.north, lng: bounds.east }
+                ),
+                32 // padding so the marker isn't flush against the edge
+            );
+        } else {
+            map.setCenter(fallback);
+            map.setZoom(SOLO_ZOOM);
+        }
+    }, [map, bounds, fallback.lat, fallback.lng]); // eslint-disable-line react-hooks/exhaustive-deps
     return null;
 }
 
@@ -61,9 +102,13 @@ function AircraftMarker({ position, heading }: { position: LatLng; heading?: num
 export default function FlightMap({
     position,
     heading,
+    path = [],
+    bounds,
 }: {
     position: LatLng;
     heading?: number;
+    path?: LatLng[];
+    bounds?: Bounds | null;
 }) {
     const apiKey = process.env.NEXT_PUBLIC_GMAPS_API_KEY;
     const mapId = process.env.NEXT_PUBLIC_GMAPS_MAP_ID;
@@ -81,12 +126,13 @@ export default function FlightMap({
                     colorScheme="LIGHT"
                     style={{ width: "100%", height: "100%" }}
                     defaultCenter={position}
-                    defaultZoom={DEFAULT_ZOOM}
+                    defaultZoom={SOLO_ZOOM}
                     disableDefaultUI={true}
                     gestureHandling="greedy"
                     clickableIcons={false}
                 >
-                    <FollowAircraft position={position} />
+                    <FitToRoute bounds={bounds} fallback={position} />
+                    <FlightPath path={path} />
                     <AircraftMarker position={position} heading={heading} />
                 </Map>
             </APIProvider>

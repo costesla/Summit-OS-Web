@@ -383,6 +383,9 @@ class FlightAwareClient:
             "ground_speed_kts": lp.get("groundspeed"),
             "heading_deg": lp.get("heading"),
             "timestamp": lp.get("timestamp"),
+            # The track actually flown so far, for drawing the route on the map.
+            "path": _decode_waypoints(data.get("waypoints")),
+            "bounds": _decode_bounding_box(data.get("bounding_box")),
         }
 
     @staticmethod
@@ -425,6 +428,39 @@ def _airport_matches(airport: Optional[dict], expected: str) -> bool:
     codes = {str(airport.get(k)).strip().upper()
              for k in ("code_iata", "code_icao", "code_lid", "code") if airport.get(k)}
     return expected in codes
+
+
+def _decode_waypoints(waypoints) -> list:
+    """AeroAPI returns waypoints as a FLAT [lat, lon, lat, lon, ...] array.
+
+    Decode to [{"lat": .., "lng": ..}] for the map polyline. Tolerates an odd
+    trailing value and non-numeric entries rather than failing the lookup.
+    """
+    if not isinstance(waypoints, list) or len(waypoints) < 4:
+        return []
+    pts = []
+    for i in range(0, len(waypoints) - 1, 2):
+        lat, lon = waypoints[i], waypoints[i + 1]
+        if isinstance(lat, (int, float)) and isinstance(lon, (int, float)):
+            pts.append({"lat": lat, "lng": lon})
+    return pts
+
+
+def _decode_bounding_box(bbox) -> Optional[dict]:
+    """AeroAPI bounding_box is [lat1, lon1, lat2, lon2] (two opposite corners).
+
+    Return normalized south/west/north/east so the map can frame the whole
+    route without recomputing it client-side.
+    """
+    if not isinstance(bbox, list) or len(bbox) < 4:
+        return None
+    try:
+        lat1, lon1, lat2, lon2 = (float(bbox[0]), float(bbox[1]),
+                                  float(bbox[2]), float(bbox[3]))
+    except (TypeError, ValueError):
+        return None
+    return {"south": min(lat1, lat2), "north": max(lat1, lat2),
+            "west": min(lon1, lon2), "east": max(lon1, lon2)}
 
 
 def _is_arrived(f: dict) -> bool:

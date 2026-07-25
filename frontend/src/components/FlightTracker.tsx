@@ -10,6 +10,9 @@ type Airport = { code?: string | null; city?: string | null };
 type Live = {
     latitude?: number; longitude?: number; altitude_ft?: number;
     ground_speed_kts?: number; heading_deg?: number;
+    /* Route actually flown so far + its bounding box (AeroAPI waypoints). */
+    path?: { lat: number; lng: number }[];
+    bounds?: { south: number; west: number; north: number; east: number } | null;
 } | null;
 type FlightData = {
     flight_number: string;
@@ -238,6 +241,8 @@ export default function FlightTracker() {
                             <FlightMap
                                 position={{ lat: flightData.live.latitude, lng: flightData.live.longitude }}
                                 heading={flightData.live.heading_deg}
+                                path={flightData.live.path}
+                                bounds={flightData.live.bounds}
                             />
                         )}
 
