@@ -98,6 +98,7 @@ class FlightAwareClient:
     BACKOFF_CAP_SEC = 8.0
     TIMEOUT_SEC = 20
     DEFAULT_CACHE_TTL_SEC = 60  # scheduled boards move slowly; protects credits
+    CANONICAL_CACHE_TTL_SEC = 86400  # IATA->ICAO mapping is stable; cache a day
 
     _throttle_lock = threading.Lock()
     _last_request_at = 0.0
@@ -269,29 +270,205 @@ class FlightAwareClient:
         rows = data.get("scheduled_arrivals") if isinstance(data, dict) else None
         return rows if isinstance(rows, list) else []
 
-    def flight_info(self, ident: str, cache_ttl: Optional[int] = None) -> Optional[dict]:
-        """GET /flights/{ident} -> the most relevant flight instance, or None.
+    def canonical_ident(self, ident: str, country_code: Optional[str] = None,
+                        cache_ttl: Optional[int] = None) -> str:
+        """GET /flights/{ident}/canonical -> single canonical designator.
 
-        Picks the in-progress flight if any, else the next not-yet-departed
-        scheduled flight, else the most recent. Never raises to the caller
-        (returns None on failure) so callers can degrade gracefully.
+        Maps an IATA designator (e.g. WN250) to its ICAO canonical form
+        (SWA250) and collapses codeshare/alternate idents, so the /flights
+        lookup keys off one designator instead of matching several. Passing the
+        booking's origin/destination country_code (ISO 3166-1 alpha-2) narrows
+        the mapping. Degrades to the input ident on any failure — never raises.
+        (Canonical requires the AeroAPI Standard tier or above.)
         """
         ident = (ident or "").strip().upper()
         if not ident:
+            return ident
+        params = {"ident_type": "designator"}
+        if country_code:
+            params["country_code"] = str(country_code).strip().upper()
+        ttl = self.CANONICAL_CACHE_TTL_SEC if cache_ttl is None else cache_ttl
+        try:
+            data = self._get(f"/flights/{ident}/canonical", params, cache_ttl=ttl)
+        except FlightAwareApiError as e:
+            logging.warning(f"FlightAware canonical lookup failed for {ident}: {e.message}")
+            return ident
+        idents = (data or {}).get("idents") or []
+        if idents and idents[0].get("ident"):
+            return str(idents[0]["ident"]).strip().upper()
+        return ident
+
+    def flight_info(self, ident: str, cache_ttl: Optional[int] = None, *,
+                    expected_destination: Optional[str] = None,
+                    when=None, dest_country: Optional[str] = None) -> Optional[dict]:
+        """GET /flights/{ident} -> the most relevant flight instance, or None.
+
+        AeroAPI returns an ARRAY of legs for a flight number — multiple days AND
+        multiple destinations (e.g. SWA250 flies COS->DAL and also AUS->AMA).
+        This:
+          1) resolves the ident to its canonical designator first (IATA->ICAO),
+          2) applies a DESTINATION GUARD when expected_destination is supplied —
+             keeps only legs arriving there and returns None if none match
+             (never a guessed flight), and
+          3) among the candidates prefers an in-progress leg, else the leg whose
+             scheduled departure is nearest `when` (or now), else the nearest of
+             whatever remains.
+
+        `when` is an ISO-8601 string or epoch (the booking/pickup time). Never
+        raises to the caller (returns None on failure) so callers degrade
+        gracefully.
+        """
+        canonical = self.canonical_ident(ident, country_code=dest_country)
+        if not canonical:
             return None
         try:
-            data = self._get(f"/flights/{ident}", {"max_pages": 1}, cache_ttl=cache_ttl)
+            data = self._get(f"/flights/{canonical}", {"max_pages": 1}, cache_ttl=cache_ttl)
         except FlightAwareApiError as e:
-            logging.warning(f"FlightAware flight_info error for {ident}: {e.message}")
+            logging.warning(f"FlightAware flight_info error for {canonical}: {e.message}")
             return None
         flights = data.get("flights") if isinstance(data, dict) else None
         if not isinstance(flights, list) or not flights:
             return None
-        for f in flights:  # 1) in progress
-            pct = f.get("progress_percent")
-            if isinstance(pct, (int, float)) and 0 < pct < 100 and not f.get("cancelled"):
-                return f
-        for f in flights:  # 2) next scheduled, not yet departed
-            if not f.get("actual_out") and not f.get("cancelled"):
-                return f
-        return flights[-1]  # 3) most recent
+
+        candidates = [f for f in flights if not f.get("cancelled")] or flights
+        if expected_destination:
+            exp = str(expected_destination).strip().upper()
+            candidates = [f for f in candidates if _airport_matches(f.get("destination"), exp)]
+            if not candidates:  # destination guard — refuse a mismatched flight
+                logging.info(f"FlightAware: no {canonical} leg arrives at {exp}; rejecting.")
+                return None
+
+        # An explicit booking/pickup time selects the leg scheduled nearest it.
+        target = _coerce_epoch(when)
+        if target is not None:
+            return self._nearest(candidates, target)
+
+        # Bare "track this flight" lookup: prefer the leg that is active RIGHT
+        # NOW — departed but not yet arrived (airborne or taxiing) — since a
+        # flight number reused across the week has one leg operating at a time.
+        # A just-departed leg (actual_out set, progress still 0) must win over a
+        # not-yet-departed leg days in the future. Else pick the leg whose
+        # scheduled departure is nearest to now.
+        now = time.time()
+        active = [f for f in candidates if f.get("actual_out") and not _is_arrived(f)]
+        if active:
+            return self._nearest(active, now)
+        return self._nearest(candidates, now)
+
+    def last_position(self, fa_flight_id: str, cache_ttl: Optional[int] = None) -> Optional[dict]:
+        """GET /flights/{fa_flight_id}/position -> normalized live position, or None.
+
+        Powers the flight map. AeroAPI reports altitude as a flight level
+        (hundreds of feet) and groundspeed in knots; we convert altitude to feet
+        and keep the field names the frontend already consumes. Returns None for
+        grounded flights (no position) or on any error — never raises.
+        """
+        fa_flight_id = (fa_flight_id or "").strip()
+        if not fa_flight_id:
+            return None
+        try:
+            data = self._get(f"/flights/{fa_flight_id}/position", {}, cache_ttl=cache_ttl)
+        except FlightAwareApiError as e:
+            logging.warning(f"FlightAware position error for {fa_flight_id}: {e.message}")
+            return None
+        lp = (data.get("last_position") or data) if isinstance(data, dict) else {}
+        lat, lon = lp.get("latitude"), lp.get("longitude")
+        if not isinstance(lat, (int, float)) or not isinstance(lon, (int, float)):
+            return None
+        alt = lp.get("altitude")
+        return {
+            "latitude": lat,
+            "longitude": lon,
+            "altitude_ft": int(alt * 100) if isinstance(alt, (int, float)) else None,
+            "ground_speed_kts": lp.get("groundspeed"),
+            "heading_deg": lp.get("heading"),
+            "timestamp": lp.get("timestamp"),
+            # The track actually flown so far, for drawing the route on the map.
+            "path": _decode_waypoints(data.get("waypoints")),
+            "bounds": _decode_bounding_box(data.get("bounding_box")),
+        }
+
+    @staticmethod
+    def _nearest(flights: list, target_epoch: float) -> dict:
+        """The leg whose scheduled departure is closest to target_epoch."""
+        def delta(f):
+            ep = _coerce_epoch(f.get("scheduled_out") or f.get("estimated_out"))
+            return abs(ep - target_epoch) if ep is not None else float("inf")
+        return min(flights, key=delta)
+
+
+# ── module-level pure helpers (destination guard + time selection) ───────────
+def _coerce_epoch(value) -> Optional[float]:
+    """ISO-8601 string or epoch number -> POSIX seconds (UTC), or None."""
+    if value in (None, ""):
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    try:
+        dt = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except (ValueError, TypeError):
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.timestamp()
+
+
+def _airport_code(airport: Optional[dict]) -> Optional[str]:
+    """Preferred display code for an AeroAPI airport object."""
+    if not airport:
+        return None
+    return (airport.get("code_iata") or airport.get("code_lid")
+            or airport.get("code_icao") or airport.get("code"))
+
+
+def _airport_matches(airport: Optional[dict], expected: str) -> bool:
+    """True if any of the airport's codes equals the expected code (IATA/ICAO/LID)."""
+    if not airport or not expected:
+        return False
+    codes = {str(airport.get(k)).strip().upper()
+             for k in ("code_iata", "code_icao", "code_lid", "code") if airport.get(k)}
+    return expected in codes
+
+
+def _decode_waypoints(waypoints) -> list:
+    """AeroAPI returns waypoints as a FLAT [lat, lon, lat, lon, ...] array.
+
+    Decode to [{"lat": .., "lng": ..}] for the map polyline. Tolerates an odd
+    trailing value and non-numeric entries rather than failing the lookup.
+    """
+    if not isinstance(waypoints, list) or len(waypoints) < 4:
+        return []
+    pts = []
+    for i in range(0, len(waypoints) - 1, 2):
+        lat, lon = waypoints[i], waypoints[i + 1]
+        if isinstance(lat, (int, float)) and isinstance(lon, (int, float)):
+            pts.append({"lat": lat, "lng": lon})
+    return pts
+
+
+def _decode_bounding_box(bbox) -> Optional[dict]:
+    """AeroAPI bounding_box is [lat1, lon1, lat2, lon2] (two opposite corners).
+
+    Return normalized south/west/north/east so the map can frame the whole
+    route without recomputing it client-side.
+    """
+    if not isinstance(bbox, list) or len(bbox) < 4:
+        return None
+    try:
+        lat1, lon1, lat2, lon2 = (float(bbox[0]), float(bbox[1]),
+                                  float(bbox[2]), float(bbox[3]))
+    except (TypeError, ValueError):
+        return None
+    return {"south": min(lat1, lat2), "north": max(lat1, lat2),
+            "west": min(lon1, lon2), "east": max(lon1, lon2)}
+
+
+def _is_arrived(f: dict) -> bool:
+    """True if a leg has already arrived, so it isn't the 'current' flight."""
+    pct = f.get("progress_percent")
+    if isinstance(pct, (int, float)) and pct >= 100:
+        return True
+    if f.get("actual_in") or f.get("actual_on"):
+        return True
+    status = (f.get("status") or "").lower()
+    return "arriv" in status or "landed" in status

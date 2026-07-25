@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Plane, Search, ArrowRight, Clock, AlertCircle, Navigation, Gauge } from "lucide-react";
+import FlightMap from "./FlightMap";
 
 const API = "https://summitos-api.azurewebsites.net/api/flight-status";
 
@@ -9,6 +10,9 @@ type Airport = { code?: string | null; city?: string | null };
 type Live = {
     latitude?: number; longitude?: number; altitude_ft?: number;
     ground_speed_kts?: number; heading_deg?: number;
+    /* Route actually flown so far + its bounding box (AeroAPI waypoints). */
+    path?: { lat: number; lng: number }[];
+    bounds?: { south: number; west: number; north: number; east: number } | null;
 } | null;
 type FlightData = {
     flight_number: string;
@@ -44,6 +48,7 @@ function badge(d: FlightData, airborne: boolean) {
 
 export default function FlightTracker() {
     const [flightNum, setFlightNum] = useState("");
+    const [dest, setDest] = useState("");
     const [flightData, setFlightData] = useState<FlightData | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -53,17 +58,25 @@ export default function FlightTracker() {
         setLoading(true);
         setError("");
         setFlightData(null);
+        const destCode = dest.trim().toUpperCase();
         try {
             const res = await fetch(API, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ flightNumber: flightNum }),
+                // expectedDestination pins the exact leg when a flight number is
+                // reused for several routes in a day (e.g. WN250). Optional.
+                body: JSON.stringify({
+                    flightNumber: flightNum,
+                    ...(destCode ? { expectedDestination: destCode } : {}),
+                }),
             });
             const data = await res.json();
             if (res.ok && data.success && data.found) {
                 setFlightData(data.data);
             } else if (res.ok && data.success && !data.found) {
-                setError("No flight found for that number right now. Double-check the flight number (e.g. UA123) and try again.");
+                setError(destCode
+                    ? `No ${flightNum} flight arriving at ${destCode} right now. Check the flight number and arrival airport, then try again.`
+                    : "No flight found for that number right now. Double-check the flight number (e.g. UA123) and try again.");
             } else {
                 setError(data.error || "Flight lookup failed. Please try again.");
             }
@@ -103,8 +116,19 @@ export default function FlightTracker() {
                 </button>
             </div>
 
+            <input
+                type="text"
+                placeholder="Arriving at (optional) — e.g. DAL, DEN"
+                value={dest}
+                onChange={(e) => setDest(e.target.value.toUpperCase())}
+                onKeyDown={(e) => e.key === "Enter" && checkFlight()}
+                aria-label="Arrival airport (optional)"
+                className="w-full mb-2"
+                style={{ marginBottom: "0.5rem" }}
+            />
+
             <p className="mb-2 text-[11px] text-[var(--color-text-muted)]">
-                Powered by FlightAware
+                Same flight number can fly several routes a day — add the arrival airport to pin the exact one. Powered by FlightAware
             </p>
 
             {loading && (
@@ -208,6 +232,18 @@ export default function FlightTracker() {
                                     </span>
                                 )}
                             </div>
+                        )}
+
+                        {/* Live map (only when airborne with a position fix) */}
+                        {airborne && flightData.live
+                            && typeof flightData.live.latitude === "number"
+                            && typeof flightData.live.longitude === "number" && (
+                            <FlightMap
+                                position={{ lat: flightData.live.latitude, lng: flightData.live.longitude }}
+                                heading={flightData.live.heading_deg}
+                                path={flightData.live.path}
+                                bounds={flightData.live.bounds}
+                            />
                         )}
 
                         <p className="text-[10px] text-[var(--color-text-muted)] text-right">

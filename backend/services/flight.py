@@ -43,47 +43,84 @@ def _airport(obj) -> dict:
     }
 
 
+def _leg_airborne(f: dict) -> bool:
+    """True if the selected leg is currently in the air (has departed, not yet
+    arrived) — the only time a position lookup is worthwhile."""
+    if not f.get("actual_out"):
+        return False
+    pct = f.get("progress_percent")
+    if isinstance(pct, (int, float)) and pct >= 100:
+        return False
+    if f.get("actual_in") or f.get("actual_on"):
+        return False
+    status = (f.get("status") or "").lower()
+    return "arriv" not in status and "landed" not in status
+
+
 class FlightStatusService:
     """Resolve a flight number to a merged FlightAware + FR24 status object."""
 
-    def get_flight_status(self, flight_number: str) -> Optional[dict]:
+    def get_flight_status(self, flight_number: str, expected_destination: Optional[str] = None,
+                          when=None, dest_country: Optional[str] = None) -> Optional[dict]:
+        """Resolve a flight number to the merged status object, or None.
+
+        expected_destination / when / dest_country are optional booking context:
+        when supplied, FlightAware canonical-resolves the ident and applies the
+        destination guard so a multi-leg flight number (e.g. SWA250) can't
+        resolve to the wrong leg. A bare public lookup passes none of them and
+        keeps the prior behaviour (now with canonical IATA->ICAO resolution).
+        """
         flight_number = (str(flight_number or "")).strip().upper()
         if not flight_number:
             return None
 
         tz = get_timezone()
         fr = Flightradar24Client()
+        fa = FlightAwareClient()
 
         # ── FlightAware: schedule / status / delay (works before takeoff) ────
-        info = FlightAwareClient().flight_info(flight_number)
+        info = fa.flight_info(
+            flight_number, expected_destination=expected_destination,
+            when=when, dest_country=dest_country)
 
-        # ── FR24: live position (only while airborne) ────────────────────────
-        pos = None
-        try:
-            positions = fr.live_flight_positions(flights=flight_number, cache_ttl=0)
-            pos = positions[0] if positions else None
-        except Exception as e:
-            logging.warning(f"FR24 live position error for {flight_number}: {e}")
-
-        if not info and not pos:
-            return None
-
+        # ── Live position (only while airborne) ──────────────────────────────
+        # Primary source is AeroAPI (GET /flights/{id}/position) for the exact
+        # leg we selected — reliable for in-air flights and already paid for.
+        # FR24 is a fallback (its plan can return empty). Powers the flight map.
         live = None
-        if pos:
-            live = {
-                "latitude": pos.get("lat"),
-                "longitude": pos.get("lon"),
-                "altitude_ft": pos.get("alt"),
-                "ground_speed_kts": pos.get("gspeed"),
-                "heading_deg": pos.get("track"),
-            }
+        live_source = None
+        if info and info.get("fa_flight_id") and _leg_airborne(info):
+            aero_pos = fa.last_position(info["fa_flight_id"], cache_ttl=30)
+            if aero_pos:
+                live = aero_pos
+                live_source = "FlightAware"
+
+        pos = None
+        if live is None:
+            try:
+                positions = fr.live_flight_positions(flights=flight_number, cache_ttl=0)
+                pos = positions[0] if positions else None
+            except Exception as e:
+                logging.warning(f"FR24 live position error for {flight_number}: {e}")
+            if pos:
+                live = {
+                    "latitude": pos.get("lat"),
+                    "longitude": pos.get("lon"),
+                    "altitude_ft": pos.get("alt"),
+                    "ground_speed_kts": pos.get("gspeed"),
+                    "heading_deg": pos.get("track"),
+                }
+                live_source = "FlightRadar24"
+
+        if not info and live is None:
+            return None
 
         result = {
             "flight_number": flight_number,
             "live": live,
             "sources": {
                 "schedule": "FlightAware" if info else None,
-                "live": "FlightRadar24" if live else None,
+                "live": live_source,
             },
         }
 
