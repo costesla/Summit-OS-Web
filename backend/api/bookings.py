@@ -204,8 +204,18 @@ def calendar_book(req: func.HttpRequest) -> func.HttpResponse:
 @bp.route(route="flight-status", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
 def flight_status(req: func.HttpRequest) -> func.HttpResponse:
     try:
-        fn = (req.get_json() or {}).get('flightNumber')
-        data = FlightStatusService().get_flight_status(fn)
+        body = req.get_json() or {}
+        fn = body.get('flightNumber')
+        # Optional booking context. When the caller (booking flow) supplies an
+        # expected destination, FlightAware canonical-resolves the ident and
+        # applies the destination guard so SWA250 can't resolve to the wrong
+        # leg. A bare public lookup omits these and keeps prior behaviour.
+        data = FlightStatusService().get_flight_status(
+            fn,
+            expected_destination=body.get('expectedDestination'),
+            when=body.get('date') or body.get('pickupTime'),
+            dest_country=body.get('destCountry'),
+        )
         return func.HttpResponse(
             json.dumps({"success": True, "found": bool(data), "data": data}),
             status_code=200,

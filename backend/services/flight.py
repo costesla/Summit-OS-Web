@@ -46,7 +46,16 @@ def _airport(obj) -> dict:
 class FlightStatusService:
     """Resolve a flight number to a merged FlightAware + FR24 status object."""
 
-    def get_flight_status(self, flight_number: str) -> Optional[dict]:
+    def get_flight_status(self, flight_number: str, expected_destination: Optional[str] = None,
+                          when=None, dest_country: Optional[str] = None) -> Optional[dict]:
+        """Resolve a flight number to the merged status object, or None.
+
+        expected_destination / when / dest_country are optional booking context:
+        when supplied, FlightAware canonical-resolves the ident and applies the
+        destination guard so a multi-leg flight number (e.g. SWA250) can't
+        resolve to the wrong leg. A bare public lookup passes none of them and
+        keeps the prior behaviour (now with canonical IATA->ICAO resolution).
+        """
         flight_number = (str(flight_number or "")).strip().upper()
         if not flight_number:
             return None
@@ -55,7 +64,9 @@ class FlightStatusService:
         fr = Flightradar24Client()
 
         # ── FlightAware: schedule / status / delay (works before takeoff) ────
-        info = FlightAwareClient().flight_info(flight_number)
+        info = FlightAwareClient().flight_info(
+            flight_number, expected_destination=expected_destination,
+            when=when, dest_country=dest_country)
 
         # ── FR24: live position (only while airborne) ────────────────────────
         pos = None
