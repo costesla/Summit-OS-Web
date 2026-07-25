@@ -2,10 +2,78 @@ import logging
 import azure.functions as func
 import json
 import os
+import time
+import threading
 from services.tessie import TessieClient
 from services.secret_manager import SecretManager
 
 bp = func.Blueprint()
+
+# ── Brute-force protection ───────────────────────────────────────────────────
+# The cabin code is 6 digits (~900k values) so it can be read out or typed by a
+# passenger. That keyspace is small enough to exhaust against an unthrottled
+# anonymous endpoint, and a valid code opens the trunk — so failed attempts are
+# counted per IP and locked out. Expiry (ExpiresAt > GETDATE()) is enforced in
+# SQL and is NOT a substitute for this: every live booking's code is a valid
+# guess, so more concurrent trips make guessing easier, not harder.
+#
+# Best-effort across Function App instances (in-process, like the FR24/AeroAPI
+# throttles). It raises the cost of a distributed attack without a DB round-trip
+# on every request; a shared-state limiter would be the next step up.
+_RL_LOCK = threading.Lock()
+_FAILED_ATTEMPTS: "dict[str, list]" = {}
+_FAIL_MAX = int(os.environ.get("CABIN_FAIL_MAX", "10"))
+_FAIL_WINDOW_SEC = int(os.environ.get("CABIN_FAIL_WINDOW_SEC", "300"))
+
+
+def _client_ip(req: func.HttpRequest) -> str:
+    xff = req.headers.get("X-Forwarded-For") or req.headers.get("X-Client-IP") or ""
+    return (xff.split(",")[0].strip() if xff else "") or "unknown"
+
+
+def _locked_out(ip: str) -> bool:
+    now = time.time()
+    with _RL_LOCK:
+        hits = [t for t in _FAILED_ATTEMPTS.get(ip, []) if now - t < _FAIL_WINDOW_SEC]
+        _FAILED_ATTEMPTS[ip] = hits
+        return len(hits) >= _FAIL_MAX
+
+
+def _record_failure(ip: str) -> None:
+    now = time.time()
+    with _RL_LOCK:
+        hits = [t for t in _FAILED_ATTEMPTS.get(ip, []) if now - t < _FAIL_WINDOW_SEC]
+        hits.append(now)
+        _FAILED_ATTEMPTS[ip] = hits
+        if len(hits) >= _FAIL_MAX:
+            # Repeated bad codes from one source is the signature of a guessing
+            # attack, not a passenger fat-fingering their code.
+            logging.warning(
+                f"Cabin code lockout: {len(hits)} failed attempts from {ip} "
+                f"in {_FAIL_WINDOW_SEC}s"
+            )
+
+
+def _clear_failures(ip: str) -> None:
+    with _RL_LOCK:
+        _FAILED_ATTEMPTS.pop(ip, None)
+
+
+def _guard(req: func.HttpRequest, token):
+    """Shared auth gate: lockout check, then token validation.
+
+    Returns an HttpResponse to short-circuit with, or None when allowed.
+    """
+    ip = _client_ip(req)
+    if _locked_out(ip):
+        return _json_response(
+            {"error": "Too many invalid codes. Try again shortly."}, 429
+        )
+    if not _validate_token(token):
+        _record_failure(ip)
+        return _json_response({"error": "Unauthorized"}, 401)
+    _clear_failures(ip)
+    return None
 
 def _cors_headers():
     return {
@@ -55,8 +123,9 @@ def cabin_state(req: func.HttpRequest) -> func.HttpResponse:
     logging.info("Cabin state requested")
 
     token = req.params.get("token")
-    if not _validate_token(token):
-        return _json_response({"error": "Unauthorized"}, 401)
+    blocked = _guard(req, token)
+    if blocked:
+        return blocked
 
     try:
         import requests
@@ -190,8 +259,9 @@ def cabin_command(req: func.HttpRequest) -> func.HttpResponse:
         return _json_response({"error": "Invalid JSON"}, 400)
 
     token = body.get("token")
-    if not _validate_token(token):
-        return _json_response({"error": "Unauthorized"}, 401)
+    blocked = _guard(req, token)
+    if blocked:
+        return blocked
 
     command = body.get("command")
     if not command:
