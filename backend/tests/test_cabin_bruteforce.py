@@ -35,6 +35,39 @@ def _allow_all():
     cabin._validate_token = lambda t: True
 
 
+def test_client_ip_strips_the_azure_source_port():
+    """Azure sends "<ip>:<port>" and the port changes every connection. If it
+    isn't stripped, every request lands in its own bucket and the lockout never
+    fires — which is exactly what happened in production."""
+    class R:
+        def __init__(self, v):
+            self.headers = {"X-Forwarded-For": v}
+
+    assert cabin._client_ip(R("203.0.113.9:52431")) == "203.0.113.9"
+    assert cabin._client_ip(R("203.0.113.9:1")) == "203.0.113.9"
+    assert cabin._client_ip(R("203.0.113.9")) == "203.0.113.9"
+    # Proxy chain: the client is the first entry.
+    assert cabin._client_ip(R("203.0.113.9:52431, 70.0.0.1:80")) == "203.0.113.9"
+    # IPv6 forms must survive intact.
+    assert cabin._client_ip(R("[2001:db8::1]:443")) == "2001:db8::1"
+    assert cabin._client_ip(R("2001:db8::1")) == "2001:db8::1"
+    assert cabin._client_ip(R("")) == "unknown"
+
+
+def test_consecutive_requests_from_one_client_share_a_bucket():
+    """The regression that let the attack through: differing source ports must
+    still count as one attacker."""
+    class R:
+        def __init__(self, v):
+            self.headers = {"X-Forwarded-For": v}
+
+    _deny_all()
+    for port in range(50000, 50000 + cabin._FAIL_MAX):
+        cabin._guard(R(f"198.51.100.4:{port}"), "000000")
+    # A fresh port from the same client must now be locked out.
+    assert cabin._guard(R("198.51.100.4:60999"), "000000").status_code == 429
+
+
 def test_bad_code_is_rejected():
     _deny_all()
     resp = cabin._guard(_Req(), "123456")
