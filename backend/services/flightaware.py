@@ -338,17 +338,22 @@ class FlightAwareClient:
                 logging.info(f"FlightAware: no {canonical} leg arrives at {exp}; rejecting.")
                 return None
 
-        target = _coerce_epoch(when) or time.time()
+        # An explicit booking/pickup time selects the leg scheduled nearest it.
+        target = _coerce_epoch(when)
+        if target is not None:
+            return self._nearest(candidates, target)
 
-        in_progress = [f for f in candidates
-                       if isinstance(f.get("progress_percent"), (int, float))
-                       and 0 < f["progress_percent"] < 100]
-        if in_progress:
-            return self._nearest(in_progress, target)
-        not_departed = [f for f in candidates if not f.get("actual_out")]
-        if not_departed:
-            return self._nearest(not_departed, target)
-        return self._nearest(candidates, target)
+        # Bare "track this flight" lookup: prefer the leg that is active RIGHT
+        # NOW — departed but not yet arrived (airborne or taxiing) — since a
+        # flight number reused across the week has one leg operating at a time.
+        # A just-departed leg (actual_out set, progress still 0) must win over a
+        # not-yet-departed leg days in the future. Else pick the leg whose
+        # scheduled departure is nearest to now.
+        now = time.time()
+        active = [f for f in candidates if f.get("actual_out") and not _is_arrived(f)]
+        if active:
+            return self._nearest(active, now)
+        return self._nearest(candidates, now)
 
     @staticmethod
     def _nearest(flights: list, target_epoch: float) -> dict:
@@ -390,3 +395,14 @@ def _airport_matches(airport: Optional[dict], expected: str) -> bool:
     codes = {str(airport.get(k)).strip().upper()
              for k in ("code_iata", "code_icao", "code_lid", "code") if airport.get(k)}
     return expected in codes
+
+
+def _is_arrived(f: dict) -> bool:
+    """True if a leg has already arrived, so it isn't the 'current' flight."""
+    pct = f.get("progress_percent")
+    if isinstance(pct, (int, float)) and pct >= 100:
+        return True
+    if f.get("actual_in") or f.get("actual_on"):
+        return True
+    status = (f.get("status") or "").lower()
+    return "arriv" in status or "landed" in status
