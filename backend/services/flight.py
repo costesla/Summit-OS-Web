@@ -149,6 +149,20 @@ class FlightStatusService:
                 "aircraft_type": info.get("aircraft_type"),
                 "progress_percent": info.get("progress_percent"),
                 "cancelled": bool(info.get("cancelled")),
+                # Wheels-down signal that drives the arrival hand-off. actual_on
+                # is the runway touchdown; actual_in is gate arrival. Either
+                # means the aircraft is down. `landed_at` is the airport it
+                # actually reached — compare it against the expected airport to
+                # detect a diversion rather than assuming the booked field.
+                "on_ground": bool(info.get("actual_on") or info.get("actual_in")),
+                # WHEN the aircraft touched down, so the arrival hand-off can be
+                # timed from the real event rather than from whenever the page
+                # happened to load — reopening the app must not restart the
+                # wait. actual_on is touchdown; actual_in is the gate.
+                "on_ground_since": info.get("actual_on") or info.get("actual_in"),
+                "landed_at": (_airport(info.get("destination")) or {}).get("code")
+                if (info.get("actual_on") or info.get("actual_in")) else None,
+                "diverted": bool(info.get("diverted")),
             })
         else:
             # Airborne but FlightAware had nothing — fall back to live-only.
