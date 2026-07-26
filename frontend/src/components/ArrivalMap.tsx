@@ -201,7 +201,9 @@ export default function ArrivalMap({
     if (!points.length) {
         return (
             <div className={`flex items-center justify-center rounded-2xl border border-blue-200/60 bg-slate-900/90 ${className || ""}`}
-                style={{ height: 260 }}>
+                /* Callers that size their own container (the cabin console wraps
+               this in a fixed-height panel) pass className and own the height. */
+            style={className ? undefined : { height: 260 }}>
                 <p className="px-6 text-center text-xs font-medium uppercase tracking-widest text-slate-400">
                     {mode === "FLIGHT" ? "Awaiting live flight position…" : "Driver being dispatched…"}
                 </p>
@@ -211,7 +213,9 @@ export default function ArrivalMap({
 
     return (
         <div className={`relative overflow-hidden rounded-2xl border border-blue-200/60 shadow-sm ${className || ""}`}
-            style={{ height: 260 }}>
+            /* Callers that size their own container (the cabin console wraps
+               this in a fixed-height panel) pass className and own the height. */
+            style={className ? undefined : { height: 260 }}>
             <APIProvider apiKey={apiKey} libraries={["places"]}>
                 <Map
                     mapId={mapId}

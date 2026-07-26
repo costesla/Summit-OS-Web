@@ -4,6 +4,8 @@
 import { useEffect, useState, useCallback, Suspense, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { AirshowMap } from "./AirshowMap";
+import ArrivalMap from "@/components/ArrivalMap";
+import type { DriverLike, FlightLike } from "@/components/arrivalMode";
 import {
     Wind,
     Thermometer,
@@ -39,6 +41,9 @@ interface CabinState {
     battery_level: number | null;
     battery_range_mi: number | null;
     charging_state: string | null;
+    /* Driver ETA from the car's own navigation route. Minutes and booleans
+       only — the nav destination is a customer address and stays server-side. */
+    driver?: DriverLike | null;
 }
 
 // SWA linked backend confirmed — /api/* on costesla.com proxies to summitos-api automatically
@@ -60,6 +65,7 @@ const INITIAL_STATE: CabinState = {
     battery_level: null,
     battery_range_mi: null,
     charging_state: null,
+    driver: null,
 };
 
 // ─── Heat level helper ───────────────────────────────────────────────
@@ -202,6 +208,46 @@ function CabinContent() {
         const interval = setInterval(fetchState, 6000);
         return () => clearInterval(interval);
     }, [token, fetchState]);
+
+    // ── Inbound flight (airport pickups) ─────────────────────────────
+    // The flight number arrives on the cabin link (?flight=DL4089), since a
+    // booking doesn't yet carry one. When the booking↔flight linkage lands this
+    // can come from the server instead and the rest of this stays as-is.
+    const flightNumber = searchParams.get("flight");
+    const expectedDest = (searchParams.get("dest") || "COS").toUpperCase();
+    const [flight, setFlight] = useState<FlightLike | null>(null);
+    const flightOnGround = !!flight?.on_ground;
+
+    useEffect(() => {
+        // Don't poll when there's no flight to track, and stop the moment the
+        // aircraft is down — the schedule can't change after that, and every
+        // lookup costs an AeroAPI query.
+        if (!token || !flightNumber || flightOnGround) return;
+        let cancelled = false;
+
+        const fetchFlight = async () => {
+            try {
+                const res = await fetch(`${API_BASE}/api/flight-status`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    // expectedDestination drives the destination guard, so a
+                    // reused flight number can't resolve to the wrong leg.
+                    body: JSON.stringify({
+                        flightNumber,
+                        expectedDestination: expectedDest,
+                    }),
+                });
+                const data = await res.json();
+                if (!cancelled && data?.success && data.found) setFlight(data.data);
+            } catch {
+                /* leave the last known flight state on screen */
+            }
+        };
+
+        fetchFlight();
+        const id = setInterval(fetchFlight, 90000); // 90s while airborne
+        return () => { cancelled = true; clearInterval(id); };
+    }, [token, flightNumber, expectedDest, flightOnGround]);
 
     // Keep the temp ref in sync with whatever the panel currently shows.
     useEffect(() => {
@@ -441,13 +487,32 @@ function CabinContent() {
             <main className="pt-24 pb-12 px-5 max-w-md mx-auto space-y-5">
                 {/* ─── Airshow Map ──────────────────────────────────────────────── */}
                 <div className="rounded-3xl overflow-hidden border border-white/[.06] bg-white/[.02] relative h-64 shadow-lg shadow-black/50">
-                    <AirshowMap 
-                        latitude={state.latitude} 
-                        longitude={state.longitude} 
-                        heading={state.heading} 
-                        speed={state.speed} 
-                        isStandby={!positionEverReceived.current && (state.latitude === null || state.longitude === null)}
-                    />
+                    {flightNumber ? (
+                        /* Airport pickup: one map that follows the inbound
+                           flight, holds through baggage claim, then hands over
+                           to the car. tripBound because the cabin link is
+                           already scoped to this passenger's booking. */
+                        <ArrivalMap
+                            flight={flight}
+                            vehicle={{
+                                latitude: state.latitude,
+                                longitude: state.longitude,
+                                heading: state.heading ?? null,
+                            }}
+                            driver={state.driver}
+                            tripBound
+                            expectedDestination={expectedDest}
+                            className="h-full w-full"
+                        />
+                    ) : (
+                        <AirshowMap
+                            latitude={state.latitude}
+                            longitude={state.longitude}
+                            heading={state.heading}
+                            speed={state.speed}
+                            isStandby={!positionEverReceived.current && (state.latitude === null || state.longitude === null)}
+                        />
+                    )}
                 </div>
 
                 {/* ─── Vehicle Status & Telemetry ─────────────────────────── */}
