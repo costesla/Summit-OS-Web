@@ -1,0 +1,27 @@
+# TEMPORARY — generates a package-lock.json on CI's own platform (Linux, Node 20)
+# so `npm ci` can resolve it. Deleted once the lock is committed.
+name: Temp Lockfile Generator
+
+on:
+  workflow_dispatch:
+
+jobs:
+  lockgen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Regenerate lock on this platform
+        working-directory: frontend
+        run: |
+          rm -f package-lock.json
+          npm install --package-lock-only --no-audit --no-fund
+      - name: Prove npm ci can resolve it
+        working-directory: frontend
+        run: npm ci --no-audit --no-fund
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package-lock
+          path: frontend/package-lock.json
