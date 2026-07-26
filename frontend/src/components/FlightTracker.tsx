@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Plane, Search, ArrowRight, Clock, AlertCircle, Navigation, Gauge } from "lucide-react";
-import FlightMap from "./FlightMap";
+import ArrivalMap from "./ArrivalMap";
 
 const API = "https://summitos-api.azurewebsites.net/api/flight-status";
 
@@ -234,16 +234,15 @@ export default function FlightTracker() {
                             </div>
                         )}
 
-                        {/* Live map (only when airborne with a position fix) */}
+                        {/* Live map. tripBound={false} because a public lookup has
+                            no booking behind it: the map shows the flight and then
+                            its landed state, and never advances to the hand-off
+                            card or the driver. That branch belongs to the cabin
+                            console, which is scoped to a passenger's own trip. */}
                         {airborne && flightData.live
                             && typeof flightData.live.latitude === "number"
                             && typeof flightData.live.longitude === "number" && (
-                            <FlightMap
-                                position={{ lat: flightData.live.latitude, lng: flightData.live.longitude }}
-                                heading={flightData.live.heading_deg}
-                                path={flightData.live.path}
-                                bounds={flightData.live.bounds}
-                            />
+                            <ArrivalMap flight={flightData} tripBound={false} />
                         )}
 
                         <p className="text-[10px] text-[var(--color-text-muted)] text-right">
