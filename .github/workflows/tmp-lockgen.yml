@@ -4,6 +4,9 @@ name: Temp Lockfile Generator
 
 on:
   workflow_dispatch:
+  push:
+    branches: [feat/arrival-handoff]
+    paths: ['.github/workflows/tmp-lockgen.yml']
 
 jobs:
   lockgen:
