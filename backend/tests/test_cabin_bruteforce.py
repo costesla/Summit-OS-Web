@@ -25,6 +25,9 @@ class _Req:
 
 def setup_function():
     cabin._FAILED_ATTEMPTS.clear()
+    # Default: pretend the shared (SQL) counter is unreachable, so these tests
+    # exercise the in-process fallback. The shared-counter tests override it.
+    cabin._shared_failures = lambda ip, record: None
 
 
 def _deny_all(monkey_token=None):
@@ -132,6 +135,71 @@ def test_attempts_age_out_of_the_window():
     cabin._FAILED_ATTEMPTS[ip] = [t - (cabin._FAIL_WINDOW_SEC + 1)
                                   for t in cabin._FAILED_ATTEMPTS[ip]]
     assert cabin._guard(req, "000000").status_code == 401   # locked out no more
+
+
+class _SharedCounter:
+    """Stand-in for the SQL counter, shared by every simulated instance."""
+    def __init__(self):
+        self.counts = {}
+
+    def __call__(self, ip, record):
+        if record:
+            self.counts[ip] = self.counts.get(ip, 0) + 1
+        return self.counts.get(ip, 0)
+
+
+def test_shared_counter_locks_out_across_instances():
+    """The production failure this exists for: on the Consumption plan requests
+    spread across workers, so an in-process counter alone never trips. Each
+    request below simulates landing on a FRESH instance (local counter empty),
+    which is exactly how the real attack slipped through."""
+    _deny_all()
+    cabin._shared_failures = _SharedCounter()
+    req = _Req("198.51.100.30")
+
+    for _ in range(cabin._FAIL_MAX):
+        cabin._FAILED_ATTEMPTS.clear()          # a brand-new worker every time
+        assert cabin._guard(req, "000000").status_code == 401
+
+    cabin._FAILED_ATTEMPTS.clear()              # still a fresh worker...
+    # ...and it must STILL be locked out, because the tally is shared.
+    assert cabin._guard(req, "000000").status_code == 429
+
+
+def test_shared_lockout_blocks_a_valid_code_too():
+    _deny_all()
+    cabin._shared_failures = _SharedCounter()
+    req = _Req("198.51.100.31")
+    for _ in range(cabin._FAIL_MAX):
+        cabin._FAILED_ATTEMPTS.clear()
+        cabin._guard(req, "000000")
+    _allow_all()
+    cabin._FAILED_ATTEMPTS.clear()
+    assert cabin._guard(req, "999999").status_code == 429
+
+
+def test_falls_back_to_local_counter_when_db_is_down():
+    """A DB outage must not silently disable the lockout."""
+    _deny_all()
+    cabin._shared_failures = lambda ip, record: None   # DB unreachable
+    req = _Req("198.51.100.32")
+    for _ in range(cabin._FAIL_MAX):
+        assert cabin._guard(req, "000000").status_code == 401
+    assert cabin._guard(req, "000000").status_code == 429
+
+
+def test_shared_counter_is_per_client():
+    _deny_all()
+    cabin._shared_failures = _SharedCounter()
+    attacker = _Req("198.51.100.33")
+    for _ in range(cabin._FAIL_MAX):
+        cabin._FAILED_ATTEMPTS.clear()
+        cabin._guard(attacker, "000000")
+    cabin._FAILED_ATTEMPTS.clear()
+    assert cabin._guard(attacker, "000000").status_code == 429
+    # An unrelated passenger is untouched.
+    cabin._FAILED_ATTEMPTS.clear()
+    assert cabin._guard(_Req("203.0.113.200"), "000000").status_code == 401
 
 
 if __name__ == "__main__":
