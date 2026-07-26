@@ -6,6 +6,12 @@ from math import radians, cos, sin, asin, sqrt
 from services.secret_manager import SecretManager
 
 
+# How close the car's nav destination must be to the expected pickup point
+# before we treat the driver as dispatched *for that pickup*. Airport property
+# is large, and nav often targets a terminal door rather than the field centre.
+DISPATCH_MATCH_RADIUS_MI = 3.0
+
+
 def _haversine_mi(lat1, lon1, lat2, lon2):
     """Great-circle distance in miles."""
     R = 3959.87433
@@ -449,6 +455,60 @@ class TessieClient:
                 now_mt := import_dt.datetime.now(import_dt.timezone.utc).astimezone(mt_tz),
                 now_mt.isoformat()
             )[-1])()
+        }
+
+    def get_driver_dispatch(self, vin, near_lat=None, near_lon=None,
+                            radius_mi=DISPATCH_MATCH_RADIUS_MI):
+        """Privacy-safe driver ETA / dispatch summary for the arrival hand-off.
+
+        Tesla's drive_state carries the car's active navigation route, which
+        gives us a real traffic-aware ETA without any routing API call:
+          active_route_minutes_to_arrival, active_route_traffic_minutes_delay,
+          active_route_destination, active_route_latitude/longitude.
+
+        PRIVACY: the destination NAME and COORDINATES identify a customer's
+        drop-off address (e.g. "Emerson - Private 1"). They must never leave
+        this process. This method returns ONLY minutes and booleans; the
+        airport comparison is done here, server-side, so the caller never sees
+        the coordinates. Callers must not add the raw fields back in, and this
+        must not be surfaced on the anonymous /api/vehicle-location route —
+        it is for the token-gated cabin endpoint.
+
+        near_lat/near_lon: the expected pickup point (e.g. the arrival
+        airport). When supplied, `heading_to_expected` reports whether the
+        car's nav destination is within radius_mi of it.
+
+        Returns None if the vehicle is unreachable.
+        """
+        state = self.get_vehicle_state(vin)
+        if not state:
+            return None
+
+        drive = state.get("drive_state") or {}
+        eta = drive.get("active_route_minutes_to_arrival")
+        dest_lat = drive.get("active_route_latitude")
+        dest_lon = drive.get("active_route_longitude")
+        delay = drive.get("active_route_traffic_minutes_delay")
+
+        # A route is active only when the car reports both an ETA and a target.
+        dispatched = isinstance(eta, (int, float)) and dest_lat is not None and dest_lon is not None
+
+        heading_to_expected = None
+        if dispatched and near_lat is not None and near_lon is not None:
+            try:
+                heading_to_expected = _haversine_mi(
+                    float(dest_lat), float(dest_lon), float(near_lat), float(near_lon)
+                ) <= radius_mi
+            except (TypeError, ValueError):
+                heading_to_expected = None
+
+        return {
+            "dispatched": bool(dispatched),
+            # Rounded to a whole minute: a decimal ETA reads as false precision.
+            "eta_minutes": int(round(eta)) if dispatched else None,
+            "traffic_delay_minutes": int(round(delay)) if isinstance(delay, (int, float)) else None,
+            "heading_to_expected": heading_to_expected,
+            "moving": drive.get("shift_state") in ("D", "R"),
         }
 
     def get_live_charging_state(self, vin):

@@ -297,12 +297,35 @@ def cabin_state(req: func.HttpRequest) -> func.HttpResponse:
             except Exception as e:
                 logging.warning(f"Weather fetch failed: {e}")
 
+        # ── Driver ETA for the arrival hand-off ─────────────────────────────
+        # Derived from the car's own active navigation route (traffic-aware, no
+        # routing API call). PRIVACY: minutes and booleans ONLY — the nav
+        # destination's name and coordinates are a customer's drop-off address
+        # and stay server-side. This route is token-gated; never mirror these
+        # fields onto the anonymous /api/vehicle-location route.
+        dispatch = {"dispatched": False, "eta_minutes": None,
+                    "traffic_delay_minutes": None, "heading_to_expected": None,
+                    "moving": False}
+        try:
+            eta_lat = req.params.get("pickupLat")
+            eta_lon = req.params.get("pickupLon")
+            d = tessie.get_driver_dispatch(
+                vin,
+                near_lat=float(eta_lat) if eta_lat else None,
+                near_lon=float(eta_lon) if eta_lon else None,
+            )
+            if d:
+                dispatch = d
+        except Exception as e:
+            logging.warning(f"Driver dispatch lookup failed: {e}")
+
         payload = {
             "latitude": drive.get("latitude"),
             "longitude": drive.get("longitude"),
             "speed": drive.get("speed") or 0,
             "elevation": elevation_ft or 0,
             "heading": drive.get("heading"),
+            "driver": dispatch,
             "inside_temp_f": round(inside_c * 9/5 + 32) if inside_c is not None else None,
             "outside_temp_f": outside_f,
             "condition_text": condition_text,
