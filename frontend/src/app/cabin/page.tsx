@@ -44,6 +44,9 @@ interface CabinState {
     /* Driver ETA from the car's own navigation route. Minutes and booleans
        only — the nav destination is a customer address and stays server-side. */
     driver?: DriverLike | null;
+    /* Airport-pickup context recorded against this booking's cabin token. */
+    flight_number?: string | null;
+    expected_dest?: string | null;
 }
 
 // SWA linked backend confirmed — /api/* on costesla.com proxies to summitos-api automatically
@@ -213,8 +216,11 @@ function CabinContent() {
     // The flight number arrives on the cabin link (?flight=DL4089), since a
     // booking doesn't yet carry one. When the booking↔flight linkage lands this
     // can come from the server instead and the rest of this stays as-is.
-    const flightNumber = searchParams.get("flight");
-    const expectedDest = (searchParams.get("dest") || "COS").toUpperCase();
+    // Server value wins: the flight recorded against this booking's cabin token.
+    // The ?flight= parameter stays as a fallback so a link can still be built by
+    // hand for a booking made before the flight was captured, or to correct one.
+    const flightNumber = state.flight_number || searchParams.get("flight");
+    const expectedDest = (state.expected_dest || searchParams.get("dest") || "COS").toUpperCase();
     const [flight, setFlight] = useState<FlightLike | null>(null);
     const flightOnGround = !!flight?.on_ground;
 
