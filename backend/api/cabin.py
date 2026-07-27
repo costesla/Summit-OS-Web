@@ -319,7 +319,21 @@ def cabin_state(req: func.HttpRequest) -> func.HttpResponse:
         except Exception as e:
             logging.warning(f"Driver dispatch lookup failed: {e}")
 
+        # ── Airport-pickup context ──────────────────────────────────────────
+        # The flight tied to this booking, so the console doesn't depend on a
+        # hand-appended ?flight= parameter. Absent for non-airport trips, and
+        # never fatal — a lookup failure just leaves the console on its
+        # URL-parameter fallback.
+        trip = None
+        try:
+            from services.database import DatabaseClient
+            trip = DatabaseClient().get_cabin_trip(token)
+        except Exception as e:
+            logging.warning(f"Cabin trip lookup failed: {e}")
+
         payload = {
+            "flight_number": (trip or {}).get("flight_number"),
+            "expected_dest": (trip or {}).get("expected_dest"),
             "latitude": drive.get("latitude"),
             "longitude": drive.get("longitude"),
             "speed": drive.get("speed") or 0,

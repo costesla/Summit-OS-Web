@@ -956,13 +956,25 @@ class DatabaseClient:
             cur.close()
             conn.close()
 
-    def create_cabin_token(self, booking_id: str, valid_hours: int = CABIN_TOKEN_HOURS, expires_at=None) -> str:
+    def create_cabin_token(self, booking_id: str, valid_hours: int = CABIN_TOKEN_HOURS,
+                           expires_at=None, flight_number: str = None,
+                           expected_dest: str = None) -> str:
         """Generate a 6-digit cabin access code for a booking, store it in DB.
 
         `valid_hours` is only used when `expires_at` is None (i.e. a booking with
         no pickup time). It used to default to 24h — far longer than the window
         callers actually intend, and this token grants trunk access, so the
         fallback now matches CABIN_TOKEN_HOURS like every other path.
+
+        flight_number / expected_dest are optional airport-pickup context. They
+        are written in the SAME INSERT as the token rather than a follow-up
+        UPDATE, so a booking can never end up with a token that exists but has
+        lost its flight. The token is the trip's identity — there is no bookings
+        table — so this is where the flight belongs.
+
+        Both are stored exactly as given: an unrecognised or mistyped flight
+        number must still persist, because the console falls back to whatever is
+        in the column and a human can read it.
         """
         import secrets
         # Generate a 6-digit code (100000-999999) for easier manual entry
@@ -984,17 +996,33 @@ class DatabaseClient:
                 )
             """)
             
+            # Airport-pickup columns, added idempotently so existing deployments
+            # upgrade in place without a migration step.
+            cursor.execute("""
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Rides.CabinTokens') AND name = 'FlightNumber')
+                    ALTER TABLE Rides.CabinTokens ADD FlightNumber NVARCHAR(16) NULL;
+            """)
+            cursor.execute("""
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Rides.CabinTokens') AND name = 'ExpectedDest')
+                    ALTER TABLE Rides.CabinTokens ADD ExpectedDest NVARCHAR(8) NULL;
+            """)
+
+            fn = (str(flight_number).strip().upper()[:16] or None) if flight_number else None
+            dest = (str(expected_dest).strip().upper()[:8] or None) if expected_dest else None
+
             if expires_at:
                 # Use provided expiry time
                 cursor.execute(
-                    "INSERT INTO Rides.CabinTokens (Token, BookingID, ExpiresAt) VALUES (?, ?, ?)",
-                    (token, booking_id, expires_at)
+                    "INSERT INTO Rides.CabinTokens (Token, BookingID, ExpiresAt, FlightNumber, ExpectedDest) "
+                    "VALUES (?, ?, ?, ?, ?)",
+                    (token, booking_id, expires_at, fn, dest)
                 )
             else:
                 # Default to current time + hours
                 cursor.execute(
-                    "INSERT INTO Rides.CabinTokens (Token, BookingID, ExpiresAt) VALUES (?, ?, DATEADD(hour, ?, GETDATE()))",
-                    (token, booking_id, valid_hours)
+                    "INSERT INTO Rides.CabinTokens (Token, BookingID, ExpiresAt, FlightNumber, ExpectedDest) "
+                    "VALUES (?, ?, DATEADD(hour, ?, GETDATE()), ?, ?)",
+                    (token, booking_id, valid_hours, fn, dest)
                 )
             conn.commit()
             logging.info(f"Cabin code {token} created for booking {booking_id}")
@@ -1023,6 +1051,39 @@ class DatabaseClient:
         except Exception as e:
             logging.error(f"validate_cabin_token error: {e}")
             return None # Signal error
+        finally:
+            conn.close()
+
+    def get_cabin_trip(self, token: str):
+        """Airport-pickup context for a cabin token: {flight_number, expected_dest}.
+
+        Returns None when the token is unknown, expired, has no flight, or the
+        DB is unreachable — every one of those means "no server-side flight", and
+        the console then falls back to its ?flight= URL parameter. Deliberately
+        never raises: a lookup failure must not break the cabin state response.
+        """
+        if not token:
+            return None
+        conn = self.get_connection()
+        if not conn:
+            return None
+        try:
+            cur = conn.cursor()
+            # Same expiry rule as validate_cabin_token — an expired token must
+            # not keep handing out trip details.
+            cur.execute(
+                "SELECT FlightNumber, ExpectedDest FROM Rides.CabinTokens "
+                "WHERE Token = ? AND ExpiresAt > GETDATE()",
+                (token,),
+            )
+            row = cur.fetchone()
+            if not row or not row[0]:
+                return None
+            return {"flight_number": row[0], "expected_dest": row[1]}
+        except Exception as e:
+            # Includes the pre-upgrade case where the columns don't exist yet.
+            logging.warning(f"get_cabin_trip unavailable: {e}")
+            return None
         finally:
             conn.close()
 
