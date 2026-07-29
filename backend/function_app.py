@@ -52,6 +52,7 @@ blueprints = [
     "api.feedback",
     "api.push",
     "api.return_trip",
+    "api.return_trip_public",
 ]
 
 registration_logs = []

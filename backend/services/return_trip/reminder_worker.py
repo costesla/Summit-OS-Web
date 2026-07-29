@@ -40,6 +40,11 @@ def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _default_tokens():
+    from .tokens import TokenService
+    return TokenService()
+
+
 def _release(store: ReturnTripStore, workflow, reason: str) -> None:
     """Hand a claimed workflow back so a later tick can retry it.
 
@@ -63,7 +68,7 @@ def _release(store: ReturnTripStore, workflow, reason: str) -> None:
             "the release transition itself failed")
 
 
-def dispatch_one(workflow_id: str, *, store: ReturnTripStore) -> bool:
+def dispatch_one(workflow_id: str, *, store: ReturnTripStore, tokens=None) -> bool:
     """Queue the reminder for one claimed workflow. True if it was queued.
 
     Returns rather than raises on the ordinary failures, so `run_once` can
@@ -101,7 +106,21 @@ def dispatch_one(workflow_id: str, *, store: ReturnTripStore) -> bool:
             logging.exception(f"Could not mark workflow {workflow_id} failed")
         return False
 
+    # Mint the link token now, not at confirm time — it IS the reminder. Issued
+    # before the enqueue so a token that cannot be created never becomes an
+    # email promising a link that does not work. `issue` revokes any previous
+    # live token, so a re-sent reminder never leaves two working links.
+    try:
+        link_token = (tokens or _default_tokens()).issue(workflow.workflow_id)
+    except Exception as exc:
+        logging.exception(f"Could not issue link token for workflow {workflow_id}")
+        _release(store, workflow, f"token issue failed: {exc}")
+        return False
+
     payload: Dict[str, Any] = {
+        # The raw token exists only here and in the email. It is not stored,
+        # not logged, and not recoverable — only its hash is persisted.
+        "linkToken": link_token,
         "workflowId": workflow.workflow_id,
         "outboundBookingId": workflow.outbound_booking_id,
         "passengerEmail": workflow.passenger_email,
@@ -141,7 +160,7 @@ def dispatch_one(workflow_id: str, *, store: ReturnTripStore) -> bool:
 
 
 def run_once(*, store: ReturnTripStore, now: Optional[datetime] = None,
-             limit: int = REMINDER_BATCH_SIZE) -> Dict[str, int]:
+             limit: int = REMINDER_BATCH_SIZE, tokens=None) -> Dict[str, int]:
     """One pass: claim what's due, queue each, report what happened.
 
     The returned counts are the run's only observable output, so they
@@ -152,7 +171,7 @@ def run_once(*, store: ReturnTripStore, now: Optional[datetime] = None,
     result = {"claimed": len(claimed), "queued": 0, "failed": 0}
     for workflow_id in claimed:
         try:
-            if dispatch_one(workflow_id, store=store):
+            if dispatch_one(workflow_id, store=store, tokens=tokens):
                 result["queued"] += 1
             else:
                 result["failed"] += 1
