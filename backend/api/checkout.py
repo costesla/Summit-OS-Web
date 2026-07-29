@@ -38,6 +38,12 @@ def create_checkout_session(req: func.HttpRequest) -> func.HttpResponse:
         trip_duration = req_body.get("tripDuration", "N/A")
         duration = req_body.get("duration", 60)
         return_start = req_body.get("returnStart") or ""
+        # Airport-pickup context. Stripe metadata values are capped at 500
+        # chars; a flight number and an airport code are far inside that, so
+        # they ride along as their own keys rather than needing packing.
+        # Empty strings when absent — Stripe metadata has no null.
+        flight_number = (req_body.get("flightNumber") or "").strip().upper()
+        arrival_airport = (req_body.get("arrivalAirport") or "").strip().upper()
         success_url = req_body.get("successUrl")
         cancel_url = req_body.get("cancelUrl")
         
@@ -80,7 +86,9 @@ def create_checkout_session(req: func.HttpRequest) -> func.HttpResponse:
                 'tripDuration': trip_duration,
                 'duration': str(duration),
                 'returnStart': return_start,
-                'fareString': str(price)
+                'fareString': str(price),
+                'flightNumber': flight_number,
+                'arrivalAirport': arrival_airport
             }
         )
         

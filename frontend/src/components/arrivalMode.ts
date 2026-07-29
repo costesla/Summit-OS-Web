@@ -108,3 +108,49 @@ export function deriveMode({ flight, tripBound, expectedDestination, cardDone, n
 
     return tripBound ? "VEHICLE" : "FLIGHT";
 }
+
+/* ── passenger override ──────────────────────────────────────────────────────
+ *
+ * deriveMode above is deterministic and deliberately conservative — it holds
+ * the flight view through baggage claim because an ETA quoted at the gate is
+ * stale by the time anyone reaches the curb. That is the right DEFAULT, but it
+ * is not always right: a passenger who is already standing outside knows more
+ * about where they are than the state machine does.
+ *
+ * So the derived mode stays in charge until the passenger says otherwise, and
+ * from then on their choice holds. The one rule that matters: when the machine
+ * wants the driver and the passenger has pinned the flight, we OFFER the switch
+ * rather than taking it. Yanking the view out from under someone who explicitly
+ * asked for it is worse than showing them a stale flight they chose to watch.
+ */
+
+export type ViewChoice = "AUTO" | "FLIGHT" | "VEHICLE";
+
+export interface ResolvedView {
+    /** What the map should actually render. */
+    mode: ArrivalMode;
+    /** Auto wants the driver, but the passenger has pinned the flight view.
+     *  Surface an offer — never switch on their behalf. */
+    driverSuggested: boolean;
+    /** The passenger has overridden the automatic behaviour, so the way back
+     *  to it has to be visible. */
+    overridden: boolean;
+}
+
+export function resolveView({ auto, choice }: {
+    auto: ArrivalMode;
+    choice: ViewChoice;
+}): ResolvedView {
+    if (choice === "FLIGHT") {
+        return {
+            mode: "FLIGHT",
+            // LANDED is the hand-off card, i.e. auto is on its way to VEHICLE.
+            driverSuggested: auto === "VEHICLE" || auto === "LANDED",
+            overridden: true,
+        };
+    }
+    if (choice === "VEHICLE") {
+        return { mode: "VEHICLE", driverSuggested: false, overridden: true };
+    }
+    return { mode: auto, driverSuggested: false, overridden: false };
+}

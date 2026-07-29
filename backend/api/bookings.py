@@ -327,7 +327,14 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
         dropoff = data.get('dropoff', "N/A")
         price = data.get('price', "$0.00")
         phone = data.get('phone') or data.get('customerPhone') or "N/A"
-        
+
+        # Airport-pickup context. Both optional — absent, every downstream write
+        # is unchanged and the cabin console keeps its vehicle-only map.
+        # Normalised here so the two booking paths (this one and the Stripe
+        # finalize path) can't drift in how they store the same values.
+        flight_number = (data.get('flightNumber') or '').strip().upper() or None
+        arrival_airport = (data.get('arrivalAirport') or '').strip().upper() or None
+
         # Handle Pickup Time formatting
         from services.datetime_utils import format_local_time, normalize_to_utc
         from datetime import datetime, timedelta
@@ -383,6 +390,14 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
         except (TypeError, ValueError):
             duration_minutes = 60
 
+        # Flight rides along in the calendar note so dispatch sees it on the
+        # appointment without opening anything else.
+        flight_note = ""
+        if flight_number:
+            flight_note = f" | Flight: {flight_number}"
+            if arrival_airport:
+                flight_note += f" arriving {arrival_airport}"
+
         if payment_method in ["Invoice", "Venmo", "Cash"] and raw_time:
             try:
                 from services.bookings import BookingsClient
@@ -397,7 +412,7 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
                         'phone': phone,
                         'pickup': pickup,
                         'dropoff': dropoff,
-                        'notes': f"Payment Method: {payment_method}"
+                        'notes': f"Payment Method: {payment_method}{flight_note}"
                     },
                     start_dt=dt_utc,
                     end_dt=dt_utc + timedelta(minutes=duration_minutes),
@@ -470,7 +485,12 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
                 except:
                     pass
             
-            cabin_token = db_early.create_cabin_token(booking_id, expires_at=token_expiry)
+            cabin_token = db_early.create_cabin_token(
+                booking_id,
+                expires_at=token_expiry,
+                flight_number=flight_number,
+                expected_dest=arrival_airport,
+            )
         except Exception as e:
             logging.warning(f"Failed to create persistent cabin token: {e}")
             import secrets

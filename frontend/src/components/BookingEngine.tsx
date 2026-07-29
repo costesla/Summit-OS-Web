@@ -33,6 +33,20 @@ export default function BookingEngine() {
     const [stopCount, setStopCount] = useState(0);
     const [stopAddresses, setStopAddresses] = useState<string[]>([]);
 
+    // ── Airport pickup (optional) ────────────────────────────────────────
+    // Only the PICKUP matters here: the flight we track is the one the
+    // passenger arrives on, which is what the cabin console's arrival
+    // hand-off is built around. A drop-off at an airport has no inbound
+    // flight to follow, so it doesn't open this section by itself.
+    //
+    // `airportPickup` is set automatically when Google says the pickup Place
+    // is an airport, but stays user-overridable — an FBO or private terminal
+    // often isn't typed as one, and the passenger knows better than we do.
+    const [airportPickup, setAirportPickup] = useState(false);
+    const [airportAutoDetected, setAirportAutoDetected] = useState(false);
+    const [flightNumber, setFlightNumber] = useState("");
+    const [arrivalAirport, setArrivalAirport] = useState("");
+
     // Toast notification state
     const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -142,6 +156,22 @@ export default function BookingEngine() {
         setStopAddresses(prev => { const a = [...prev]; a[idx] = val; return a; });
     };
 
+    // Google types an airport Place as "airport". Opening the flight section on
+    // that signal costs nothing (the Place is already fetched for the address)
+    // and covers the common case; the manual toggle covers the rest.
+    const placeIsAirport = (place?: google.maps.places.PlaceResult | null) =>
+        !!place?.types?.includes("airport");
+
+    // Auto-open the flight section for an airport pickup, but never auto-CLOSE
+    // it: a passenger who opened it by hand and then corrected their address
+    // shouldn't lose what they typed.
+    const handlePickupPlace = (place: google.maps.places.PlaceResult) => {
+        if (placeIsAirport(place)) {
+            setAirportPickup(true);
+            setAirportAutoDetected(true);
+        }
+    };
+
     // Validation: Check if address is outside Colorado
     const validateLocation = (address: string) => {
         const lower = address.toLowerCase();
@@ -156,7 +186,9 @@ export default function BookingEngine() {
     // Autocomplete configuration options
     const autocompleteOptions = {
         componentRestrictions: { country: "us" },
-        fields: ["formatted_address", "geometry", "name"],
+        // `types` is what tells us a Place is an airport — without it the
+        // airport section could only ever be opened by hand.
+        fields: ["formatted_address", "geometry", "name", "types"],
         // Soft bias toward Colorado Springs (not strict bounds)
         locationBias: {
             center: { lat: 38.8339, lng: -104.8214 }, // Colorado Springs
@@ -202,6 +234,7 @@ export default function BookingEngine() {
                                         const address = place.formatted_address || place.name || "";
                                         setPickup(address);
                                         validateLocation(address);
+                                        handlePickupPlace(place);
                                     }
                                 }}
                                 options={autocompleteOptions}
@@ -318,6 +351,78 @@ export default function BookingEngine() {
                                 className="w-full bg-white/5 border border-white/10 rounded-xl p-4 !text-white focus:outline-none focus:border-cyan-500 transition-colors text-lg"
                                 style={{ color: '#ffffff', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderColor: 'rgba(255, 255, 255, 0.1)' }}
                             />
+                        )}
+                    </div>
+
+                    {/* --- AIRPORT PICKUP (optional) --- */}
+                    {/* Both fields are optional. Left blank, the booking behaves
+                        exactly as it does today and the cabin console keeps the
+                        vehicle-only map. */}
+                    <div className="pt-2">
+                        <label className="flex items-center gap-3 cursor-pointer select-none">
+                            <input
+                                type="checkbox"
+                                checked={airportPickup}
+                                onChange={e => {
+                                    setAirportPickup(e.target.checked);
+                                    if (!e.target.checked) {
+                                        setFlightNumber("");
+                                        setArrivalAirport("");
+                                        setAirportAutoDetected(false);
+                                    }
+                                }}
+                                className="w-4 h-4 rounded border-white/20 bg-white/5 text-cyan-500 focus:ring-cyan-500/50 focus:ring-offset-0"
+                            />
+                            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                                I&apos;m arriving on a flight
+                            </span>
+                        </label>
+
+                        {airportPickup && (
+                            <div className="mt-4 bg-white/[0.03] border border-white/10 rounded-2xl p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <p className="text-[11px] text-gray-500 leading-relaxed">
+                                    {airportAutoDetected
+                                        ? "Looks like an airport pickup. "
+                                        : ""}
+                                    Add your flight and we&apos;ll track it — your cabin
+                                    console follows the plane in, then switches to your
+                                    driver. Optional, and never blocks your booking.
+                                </p>
+                                <div className="flex gap-2">
+                                    <div className="flex-1">
+                                        <label className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1 block">
+                                            Flight Number
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={flightNumber}
+                                            onChange={e => setFlightNumber(e.target.value.toUpperCase())}
+                                            placeholder="e.g. UA1234"
+                                            maxLength={16}
+                                            className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm !text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 transition-colors"
+                                            style={{ color: '#ffffff', backgroundColor: 'rgba(0,0,0,0.2)' }}
+                                        />
+                                    </div>
+                                    <div className="w-28">
+                                        <label className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1 block">
+                                            Arriving At
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={arrivalAirport}
+                                            onChange={e => setArrivalAirport(e.target.value.toUpperCase())}
+                                            placeholder="COS"
+                                            maxLength={8}
+                                            className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm !text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 transition-colors"
+                                            style={{ color: '#ffffff', backgroundColor: 'rgba(0,0,0,0.2)' }}
+                                        />
+                                    </div>
+                                </div>
+                                <p className="text-[10px] text-gray-600">
+                                    The same flight number can fly several routes a day —
+                                    the arrival airport pins the right one.
+                                </p>
+                            </div>
                         )}
                     </div>
 
@@ -486,6 +591,8 @@ export default function BookingEngine() {
                                     price={quote ? `$${quote.total.toFixed(2)}` : '$0.00'}
                                     tripDistance={quote?.distance?.toFixed(1) || undefined}
                                     tripDuration={quote?.time?.toString() || undefined}
+                                    flightNumber={airportPickup ? flightNumber.trim() || undefined : undefined}
+                                    arrivalAirport={airportPickup ? arrivalAirport.trim() || undefined : undefined}
                                     onBookingComplete={(eventId) => {
                                         console.log('✅ Booking complete:', eventId);
                                         setBookingComplete(true);

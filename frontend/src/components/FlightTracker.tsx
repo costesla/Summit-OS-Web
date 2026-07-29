@@ -1,50 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { Plane, Search, ArrowRight, Clock, AlertCircle, Navigation, Gauge } from "lucide-react";
+import { Plane, Search, AlertCircle } from "lucide-react";
 import ArrivalMap from "./ArrivalMap";
+/* The read-out itself lives in FlightStatusPanel so the cabin console renders
+   exactly the same fields from exactly the same payload — one implementation,
+   two palettes. This page keeps the search box, the errors, and the map. */
+import FlightStatusPanel, { isAirborne } from "./FlightStatusPanel";
+import type { FlightPanelData } from "./FlightStatusPanel";
 
 const API = "https://summitos-api.azurewebsites.net/api/flight-status";
 
-type Airport = { code?: string | null; city?: string | null };
-type Live = {
-    latitude?: number; longitude?: number; altitude_ft?: number;
-    ground_speed_kts?: number; heading_deg?: number;
-    /* Route actually flown so far + its bounding box (AeroAPI waypoints). */
-    path?: { lat: number; lng: number }[];
-    bounds?: { south: number; west: number; north: number; east: number } | null;
-} | null;
-type FlightData = {
-    flight_number: string;
-    airline?: string | null;
-    airline_code?: string | null;
-    status?: string | null;
-    origin?: Airport;
-    destination?: Airport;
-    scheduled_arrival_mt?: string | null;
-    estimated_arrival_mt?: string | null;
-    delay_minutes?: number | null;
-    aircraft_type?: string | null;
-    progress_percent?: number | null;
-    cancelled?: boolean;
-    live?: Live;
-    sources?: { schedule?: string | null; live?: string | null };
+type FlightData = FlightPanelData & {
+    live?: (FlightPanelData["live"] & {
+        latitude?: number; longitude?: number; heading_deg?: number;
+        /* Route actually flown so far + its bounding box (AeroAPI waypoints). */
+        path?: { lat: number; lng: number }[];
+        bounds?: { south: number; west: number; north: number; east: number } | null;
+    }) | null;
 };
-
-function isAirborne(d: FlightData): boolean {
-    return !!d.live && typeof d.live.altitude_ft === "number" && d.live.altitude_ft > 0;
-}
-
-function badge(d: FlightData, airborne: boolean) {
-    if (d.cancelled) return { label: "Cancelled", cls: "bg-red-100 text-red-700" };
-    if (typeof d.delay_minutes === "number" && d.delay_minutes >= 15)
-        return { label: `Delayed ${d.delay_minutes} min`, cls: "bg-amber-100 text-amber-700" };
-    if (airborne) return { label: "In the air", cls: "bg-blue-100 text-blue-700" };
-    const s = (d.status || "").toLowerCase();
-    if (s.includes("arriv") || s.includes("landed")) return { label: d.status || "Arrived", cls: "bg-emerald-100 text-emerald-700" };
-    if (s.includes("en route") || s.includes("airborne")) return { label: d.status || "En route", cls: "bg-blue-100 text-blue-700" };
-    return { label: d.status || "Scheduled", cls: "bg-slate-100 text-slate-600" };
-}
 
 export default function FlightTracker() {
     const [flightNum, setFlightNum] = useState("");
@@ -143,115 +117,22 @@ export default function FlightTracker() {
                 </p>
             )}
 
-            {flightData && (() => {
-                const airborne = isAirborne(flightData);
-                const b = badge(flightData, airborne);
-                const delayed = typeof flightData.delay_minutes === "number" && flightData.delay_minutes >= 15;
-                return (
-                    <div className="mt-6 space-y-5">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-lg font-bold text-[var(--color-text-main)] leading-tight">
-                                    {flightData.airline || flightData.airline_code || "Flight"}
-                                </p>
-                                <p className="text-xs text-[var(--color-text-muted)]">
-                                    {flightData.flight_number}
-                                    {flightData.aircraft_type ? ` · ${flightData.aircraft_type}` : ""}
-                                </p>
-                            </div>
-                            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${b.cls}`}>
-                                {b.label}
-                            </span>
-                        </div>
+            {flightData && (
+                <div className="mt-6 space-y-5">
+                    <FlightStatusPanel flight={flightData} variant="light" />
 
-                        {/* Route */}
-                        <div className="flex items-center justify-between rounded-2xl bg-white/60 border border-white/70 px-5 py-4">
-                            <div className="text-center min-w-0">
-                                <span className="block text-2xl font-bold text-[var(--color-text-main)]">
-                                    {flightData.origin?.code || "—"}
-                                </span>
-                                <span className="block text-xs text-[var(--color-text-muted)] truncate max-w-[9rem]">
-                                    {flightData.origin?.city || "Origin"}
-                                </span>
-                            </div>
-                            <ArrowRight className="text-blue-500 shrink-0" size={22} />
-                            <div className="text-center min-w-0">
-                                <span className="block text-2xl font-bold text-blue-600">
-                                    {flightData.destination?.code || "—"}
-                                </span>
-                                <span className="block text-xs text-[var(--color-text-muted)] truncate max-w-[9rem]">
-                                    {flightData.destination?.city || "Destination"}
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Arrival timing */}
-                        <div className="rounded-2xl bg-white/60 border border-white/70 px-5 py-4">
-                            <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] mb-2">
-                                <Clock size={14} /> <span>Arrival (Mountain Time)</span>
-                            </div>
-                            <div className="flex items-baseline gap-3">
-                                <span className={`text-2xl font-bold ${delayed ? "text-amber-600" : "text-[var(--color-text-main)]"}`}>
-                                    {flightData.estimated_arrival_mt || flightData.scheduled_arrival_mt || "—"}
-                                </span>
-                                {delayed && flightData.scheduled_arrival_mt && (
-                                    <span className="text-sm text-[var(--color-text-muted)] line-through">
-                                        {flightData.scheduled_arrival_mt}
-                                    </span>
-                                )}
-                            </div>
-                            {typeof flightData.delay_minutes === "number" && (
-                                <p className={`mt-1 text-xs ${flightData.delay_minutes >= 15 ? "text-amber-600" : flightData.delay_minutes <= -5 ? "text-emerald-600" : "text-[var(--color-text-muted)]"}`}>
-                                    {flightData.delay_minutes >= 15
-                                        ? `${flightData.delay_minutes} min behind schedule`
-                                        : flightData.delay_minutes <= -5
-                                            ? `${Math.abs(flightData.delay_minutes)} min early`
-                                            : "On time"}
-                                </p>
-                            )}
-                        </div>
-
-                        {/* Live telemetry (only when airborne) */}
-                        {airborne && flightData.live && (
-                            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-2xl bg-blue-50/70 border border-blue-100 px-5 py-3 text-sm">
-                                <span className="flex items-center gap-1.5 text-blue-700 font-medium">
-                                    <span className="relative flex h-2 w-2">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600" />
-                                    </span>
-                                    Live
-                                </span>
-                                {typeof flightData.live.altitude_ft === "number" && (
-                                    <span className="flex items-center gap-1.5 text-[var(--color-text-muted)]">
-                                        <Navigation size={14} /> {flightData.live.altitude_ft.toLocaleString()} ft
-                                    </span>
-                                )}
-                                {typeof flightData.live.ground_speed_kts === "number" && (
-                                    <span className="flex items-center gap-1.5 text-[var(--color-text-muted)]">
-                                        <Gauge size={14} /> {flightData.live.ground_speed_kts} kts
-                                    </span>
-                                )}
-                            </div>
-                        )}
-
-                        {/* Live map. tripBound={false} because a public lookup has
-                            no booking behind it: the map shows the flight and then
-                            its landed state, and never advances to the hand-off
-                            card or the driver. That branch belongs to the cabin
-                            console, which is scoped to a passenger's own trip. */}
-                        {airborne && flightData.live
-                            && typeof flightData.live.latitude === "number"
-                            && typeof flightData.live.longitude === "number" && (
-                            <ArrivalMap flight={flightData} tripBound={false} />
-                        )}
-
-                        <p className="text-[10px] text-[var(--color-text-muted)] text-right">
-                            {flightData.sources?.schedule ? `Schedule: ${flightData.sources.schedule}` : ""}
-                            {flightData.sources?.live && airborne ? ` · Live: ${flightData.sources.live}` : ""}
-                        </p>
-                    </div>
-                );
-            })()}
+                    {/* Live map. tripBound={false} because a public lookup has
+                        no booking behind it: the map shows the flight and then
+                        its landed state, and never advances to the hand-off
+                        card or the driver. That branch belongs to the cabin
+                        console, which is scoped to a passenger's own trip. */}
+                    {isAirborne(flightData) && flightData.live
+                        && typeof flightData.live.latitude === "number"
+                        && typeof flightData.live.longitude === "number" && (
+                        <ArrivalMap flight={flightData} tripBound={false} />
+                    )}
+                </div>
+            )}
 
             {!flightData && !loading && !error && (
                 <p className="mt-4 text-sm text-[var(--color-text-muted)]">
