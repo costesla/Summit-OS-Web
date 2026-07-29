@@ -118,6 +118,66 @@ export const reassignLuisPayment = (paymentId: string, targetDate: string) =>
     { payment_id: paymentId, target_date: targetDate },
   )
 
+// ── Manual Ledger (Jackie & Luis) ────────────────────────────────────────────
+// Amounts are strings end-to-end: a JSON number would be parsed as a float and
+// could round a cent before the server ever sees it.
+
+export type ManualPersonKey = 'JACKIE' | 'LUIS'
+export type ManualEntryType = 'Charge' | 'Payment' | 'Credit'
+
+export interface ManualLedgerEntry {
+  entryId: string
+  personKey: ManualPersonKey
+  entryType: ManualEntryType
+  amount: string
+  effectiveDate: string
+  note: string | null
+  voided: boolean
+  revisionNumber: number
+}
+
+export interface ManualLedgerPerson {
+  personKey: ManualPersonKey
+  activated: boolean
+  openingBalance: string
+  balance: string
+  entries: ManualLedgerEntry[]
+}
+
+export interface ManualLedgerResponse {
+  people: Record<string, ManualLedgerPerson>
+}
+
+export interface ManualEntryInput {
+  personKey: ManualPersonKey
+  entryType: ManualEntryType
+  amount: string
+  effectiveDate: string
+  note?: string | null
+  idempotencyKey?: string
+}
+
+export const fetchManualLedger = () =>
+  apiGet<ManualLedgerResponse>('/financials/manual-ledger')
+
+export const createManualEntry = (input: ManualEntryInput) =>
+  apiPost<{ success: boolean; entry: ManualLedgerEntry; balance: string }>(
+    '/financials/manual-ledger/entry',
+    input,
+  )
+
+export const editManualEntry = (entryId: string, input: ManualEntryInput) =>
+  apiPost<{ success: boolean; entry_id: string; balance: string }>(
+    `/financials/manual-ledger/entry/${encodeURIComponent(entryId)}/edit`,
+    input,
+  )
+
+export const voidManualEntry = (entryId: string, personKey: ManualPersonKey, reason?: string) =>
+  apiPost<{ success: boolean; voided: boolean; balance?: string }>(
+    `/financials/manual-ledger/entry/${encodeURIComponent(entryId)}/void`,
+    { personKey, reason },
+  )
+
 export const transactionsExportUrl = (params: TransactionFilters) => {
   const search = toSearchParams(params)
   // A plain <a href> download can't send headers, so the function key goes

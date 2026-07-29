@@ -1467,18 +1467,28 @@ class DatabaseClient:
             conn.close()
 
     def get_global_deferred_total(self) -> float:
-        """Sum of all outstanding Deferred invoices across all clients."""
+        """Sum of outstanding Deferred invoices for ACTIVE receivables only.
+
+        People under manual-ledger-only control (Jackie, Luis) are excluded here
+        — their current amount due lives in Finance.ManualLedgerEntry, not in
+        invoice rows. Excluding them at the query, rather than in a UI card,
+        keeps this total consistent with the dashboards, exports and summaries
+        that read it. Their invoice rows remain untouched and queryable as
+        history via the unfiltered paths.
+        """
+        from .manual_ledger import manual_only_invoice_predicate
         conn = self.get_connection()
         if not conn:
             return 0.0
         try:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(f"""
                 SELECT SUM(Fare)
                 FROM Rides.Rides
                 WHERE PaymentStatus = 'Deferred'
                   AND DeletedAt IS NULL
                   AND (IsTest IS NULL OR IsTest = 0)
+                  AND {manual_only_invoice_predicate()}
             """)
             row = cursor.fetchone()
             return float(row[0] or 0.0) if row else 0.0
@@ -1591,6 +1601,107 @@ class DatabaseClient:
                 WHERE name = 'UX_LuisPayments_ServiceDate' AND object_id = OBJECT_ID('Finance.LuisPayments')
             )
             CREATE UNIQUE INDEX UX_LuisPayments_ServiceDate ON Finance.LuisPayments (ServiceDate)
+        """)
+        # ── Manual Ledger (Jackie & Luis) ──────────────────────────────────
+        # Manual-entry-only ledger, structurally isolated from every automatic
+        # source (LuisBalanceLog accrual, Rides.Rides invoices, calendar).
+        #
+        # Isolation is by FOREIGN KEY, not by date: a displayed balance is the
+        # active baseline's OpeningBalance plus the net of entries carrying that
+        # BaselineID. A legacy row has no BaselineID and therefore cannot enter
+        # the balance under any clock skew, replay, or back-dated insert.
+        #
+        # DDL here is idempotent and safe to run; it does NOT seed/activate a
+        # baseline. Activation is a deliberate migration step (see
+        # scripts/sql/2026_07_28_manual_ledger.sql) so restarting the app can
+        # never silently switch a person to ManualOnly in production.
+        cursor.execute("""
+            IF OBJECT_ID('Finance.ManualLedgerBaseline', 'U') IS NULL
+            CREATE TABLE Finance.ManualLedgerBaseline (
+                BaselineID      UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+                PersonKey       VARCHAR(20)   NOT NULL,
+                OpeningBalance  DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                Mode            VARCHAR(20)   NOT NULL DEFAULT 'ManualOnly',
+                IsActive        BIT           NOT NULL DEFAULT 1,
+                ActivatedAtUtc  DATETIME2     NOT NULL DEFAULT SYSUTCDATETIME(),
+                ActivatedBy     VARCHAR(100)  NOT NULL DEFAULT 'migration',
+                LegacyCutoffRef VARCHAR(200)  NULL,
+                RowVersion      ROWVERSION,
+                CONSTRAINT CK_MLBaseline_PersonKey CHECK (PersonKey IN ('JACKIE','LUIS')),
+                CONSTRAINT CK_MLBaseline_Mode      CHECK (Mode IN ('ManualOnly','Legacy'))
+            )
+        """)
+        # At most one ACTIVE baseline per person (filtered unique index).
+        cursor.execute("""
+            IF NOT EXISTS (
+                SELECT * FROM sys.indexes
+                WHERE name = 'UX_MLBaseline_ActivePerson' AND object_id = OBJECT_ID('Finance.ManualLedgerBaseline')
+            )
+            CREATE UNIQUE INDEX UX_MLBaseline_ActivePerson
+            ON Finance.ManualLedgerBaseline (PersonKey) WHERE IsActive = 1
+        """)
+        # Append-only revisions: an edit inserts a new row superseding the old.
+        # Only IsCurrent = 1 AND VoidedAtUtc IS NULL rows drive the balance.
+        cursor.execute("""
+            IF OBJECT_ID('Finance.ManualLedgerEntry', 'U') IS NULL
+            CREATE TABLE Finance.ManualLedgerEntry (
+                EntryID        UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+                BaselineID     UNIQUEIDENTIFIER NOT NULL,
+                PersonKey      VARCHAR(20)   NOT NULL,
+                EntryType      VARCHAR(20)   NOT NULL,
+                Amount         DECIMAL(10,2) NOT NULL,
+                EffectiveDate  DATE          NOT NULL,
+                Note           NVARCHAR(500) NULL,
+                Source         VARCHAR(50)   NOT NULL DEFAULT 'Manual Ledger',
+                RootEntryID    UNIQUEIDENTIFIER NULL,
+                RevisionNumber INT           NOT NULL DEFAULT 1,
+                IsCurrent      BIT           NOT NULL DEFAULT 1,
+                VoidedAtUtc    DATETIME2     NULL,
+                VoidedBy       VARCHAR(100)  NULL,
+                IdempotencyKey VARCHAR(120)  NULL,
+                CreatedAtUtc   DATETIME2     NOT NULL DEFAULT SYSUTCDATETIME(),
+                CreatedBy      VARCHAR(100)  NOT NULL DEFAULT 'unknown',
+                UpdatedAtUtc   DATETIME2     NOT NULL DEFAULT SYSUTCDATETIME(),
+                RowVersion     ROWVERSION,
+                CONSTRAINT FK_MLEntry_Baseline FOREIGN KEY (BaselineID)
+                    REFERENCES Finance.ManualLedgerBaseline (BaselineID),
+                CONSTRAINT CK_MLEntry_PersonKey CHECK (PersonKey IN ('JACKIE','LUIS')),
+                CONSTRAINT CK_MLEntry_EntryType CHECK (EntryType IN ('Charge','Payment','Credit')),
+                CONSTRAINT CK_MLEntry_Amount    CHECK (Amount > 0)
+            )
+        """)
+        cursor.execute("""
+            IF NOT EXISTS (
+                SELECT * FROM sys.indexes
+                WHERE name = 'IX_MLEntry_Baseline_Current' AND object_id = OBJECT_ID('Finance.ManualLedgerEntry')
+            )
+            CREATE INDEX IX_MLEntry_Baseline_Current
+            ON Finance.ManualLedgerEntry (BaselineID, IsCurrent, VoidedAtUtc)
+        """)
+        # DB-backed idempotency: a replayed create collapses to one entry.
+        cursor.execute("""
+            IF NOT EXISTS (
+                SELECT * FROM sys.indexes
+                WHERE name = 'UX_MLEntry_Idempotency' AND object_id = OBJECT_ID('Finance.ManualLedgerEntry')
+            )
+            CREATE UNIQUE INDEX UX_MLEntry_Idempotency
+            ON Finance.ManualLedgerEntry (IdempotencyKey) WHERE IdempotencyKey IS NOT NULL
+        """)
+        # Immutable audit trail for create/edit/void.
+        cursor.execute("""
+            IF OBJECT_ID('Finance.ManualLedgerAudit', 'U') IS NULL
+            CREATE TABLE Finance.ManualLedgerAudit (
+                AuditID        UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+                EntryID        UNIQUEIDENTIFIER NOT NULL,
+                EventType      VARCHAR(20)   NOT NULL,
+                PreviousValues NVARCHAR(MAX) NULL,
+                NewValues      NVARCHAR(MAX) NULL,
+                Actor          VARCHAR(100)  NOT NULL DEFAULT 'unknown',
+                CorrelationID  VARCHAR(120)  NULL,
+                Reason         NVARCHAR(500) NULL,
+                AtUtc          DATETIME2     NOT NULL DEFAULT SYSUTCDATETIME(),
+                CONSTRAINT CK_MLAudit_EventType CHECK (EventType IN ('Create','Edit','Void','Activate'))
+            )
         """)
 
     def ensure_finance_tables(self):
@@ -2020,7 +2131,19 @@ class DatabaseClient:
             conn.close()
 
     def save_luis_log(self, date, amount_sent, tier, deferred_amount, running_balance, notes=None):
-        """Upserts the LuisBalanceLog row for `date` (one row per day)."""
+        """Upserts the LuisBalanceLog row for `date` (one row per day).
+
+        Defense in depth: `_recompute_luis_chain` already short-circuits while
+        Luis is manual-ledger-only, but this is the only write path into the
+        accrual table, so it refuses too. A future caller added upstream cannot
+        reintroduce automatic accrual by accident.
+        """
+        from .manual_ledger import PersonKey, is_manual_only
+        if is_manual_only(PersonKey.LUIS):
+            logging.info(
+                "[ManualLedger] save_luis_log refused — Luis is manual-ledger-only"
+            )
+            return
         conn = self.get_connection()
         if not conn:
             return

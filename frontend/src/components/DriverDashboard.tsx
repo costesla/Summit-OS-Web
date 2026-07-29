@@ -3056,11 +3056,10 @@ const DriverDashboard = () => {
                         <StatCard label="Collected" value={`$${((stats.uberEarnings || 0) + (stats.privateTotal || 0) + (stats.privateCollected || 0)).toFixed(2)}`}
                             sub={`Uber $${(stats.uberEarnings || 0).toFixed(2)} · Private $${((stats.privateTotal || 0) + (stats.privateCollected || 0)).toFixed(2)}`}
                             icon={<DollarSign className="text-emerald-600 w-5 h-5" />} highlight />
-                        {(stats.privateDeferred || 0) > 0 && (
-                            <StatCard label="Receivables" value={`$${(stats.privateDeferred || 0).toFixed(2)}`}
-                                sub="Deferred — owed, not yet collected"
-                                icon={<Receipt className="text-amber-600 w-5 h-5" />} />
-                        )}
+                        {/* Receivables card removed: the only deferred private invoices belong to
+                            people who are now manual-ledger-only (Jackie, Luis). Their current
+                            amount due lives in "Manual Ledger — Jackie & Luis" on the dashboard
+                            app; the underlying invoice rows are preserved as history. */}
                         <StatCard label="Uber Earnings" value={`$${(stats.uberEarnings || 0).toFixed(2)}`}
                             sub={`${stats.uberCount || 0} OCR trips`}
                             icon={<Receipt className="text-blue-600 w-5 h-5" />} />
@@ -3177,7 +3176,7 @@ const DriverDashboard = () => {
                     </div>
 
                     {/* ── Earnings Summary Strip ───────────────────────── */}
-                    {(uberStats.earnings > 0 || uberStats.privateCollected > 0 || uberStats.privateDeferred > 0) && (
+                    {(uberStats.earnings > 0 || uberStats.privateCollected > 0) && (
                         <div className="grid grid-cols-2 gap-4 rounded-2xl border border-slate-200/80 bg-white/60 shadow-sm backdrop-blur-md p-4">
                             <div className="flex items-center gap-3">
                                 <div className="w-2 h-10 rounded-full bg-violet-400 shrink-0" />
@@ -3191,10 +3190,9 @@ const DriverDashboard = () => {
                                 <div className="w-2 h-10 rounded-full bg-amber-400 shrink-0" />
                                 <div>
                                     <p className="text-[10px] font-mono uppercase tracking-widest text-slate-400">Private Income</p>
-                                    <p className="text-2xl font-black text-amber-700 tabular-nums">${((uberStats.privateCollected || 0) + (uberStats.privateDeferred || 0)).toFixed(2)}</p>
-                                    {(uberStats.privateDeferred || 0) > 0 && (
-                                        <p className="text-[10px] text-amber-500 font-mono">${(uberStats.privateDeferred || 0).toFixed(2)} deferred</p>
-                                    )}
+                                    {/* Collected only — deferred amounts for manual-ledger-only
+                                        people are no longer surfaced as a current amount due. */}
+                                    <p className="text-2xl font-black text-amber-700 tabular-nums">${(uberStats.privateCollected || 0).toFixed(2)}</p>
                                 </div>
                             </div>
                         </div>
