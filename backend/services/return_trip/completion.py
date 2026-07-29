@@ -48,6 +48,20 @@ SAFETY_NET_HOURS = 4
 # let the next tick take the rest.
 SWEEP_BATCH_SIZE = 50
 
+# How long after the outbound trip we ask "when are you coming back?".
+#
+# We do not know the return date — that is the entire question the reminder
+# asks — so PENDING_RETURN_ESTIMATE cannot wait for one to arrive from
+# anywhere. Arming therefore schedules against this default immediately.
+# Three days: soon enough to reach the passenger inside a typical trip and
+# well inside the 14-day link expiry, late enough not to land while they are
+# still travelling out.
+REMINDER_DELAY_DAYS = 3
+
+# The workflow stops being worth chasing after this. Matches the link TTL, so
+# a reminder cannot point at a token that expires before the passenger acts.
+WORKFLOW_EXPIRY_DAYS = 14
+
 
 class CompletionOutcome:
     """Why a completion attempt did or did not arm a workflow.
@@ -59,6 +73,10 @@ class CompletionOutcome:
     ("why didn't my customer get a return reminder?") that a bare False hides.
     """
     ARMED = "Armed"
+    # Workflow created but the schedule transition failed. Distinct from ARMED
+    # because it needs an operator: the row holds the claim, so nothing will
+    # retry it, and it will never send.
+    ARMED_NOT_SCHEDULED = "ArmedNotScheduled"
     ALREADY_ACTIVE = "AlreadyActive"
     NOT_A_DEPARTURE = "NotADeparture"
     UNKNOWN_BOOKING = "UnknownBooking"
@@ -124,13 +142,35 @@ def _arm(booking_id: str, *, store: ReturnTripStore, connection_factory,
     # Only fields the store actually persists. `create_workflow` reads its
     # **fields by snake_case name and silently ignores anything else, so an
     # invented key here would not raise — it would just quietly not be stored.
+    now = _utcnow()
     workflow = store.create_workflow(
         outbound_booking_id=booking_id,
         status=WorkflowState.PENDING_RETURN_ESTIMATE,
         correlation_id=correlation_id,
+        reminder_dispatch_at_utc=now + timedelta(days=REMINDER_DELAY_DAYS),
+        expiration_at_utc=now + timedelta(days=WORKFLOW_EXPIRY_DAYS),
     )
     if workflow is None:
         return CompletionOutcome.ALREADY_ACTIVE
+
+    # Arming and scheduling are separate states, and the workflow must reach
+    # the second one or nothing will ever send. `claim_due_reminders` only sees
+    # REMINDER_SCHEDULED rows with a dispatch time, so a workflow left in
+    # PENDING_RETURN_ESTIMATE is invisible to the worker forever — armed,
+    # audited, and silently inert.
+    if not store.transition(
+            workflow.workflow_id, expected_version=workflow.version,
+            from_state=WorkflowState.PENDING_RETURN_ESTIMATE,
+            to_state=WorkflowState.REMINDER_SCHEDULED,
+            correlation_id=correlation_id):
+        # The row exists and holds the claim, so a retry cannot re-arm it.
+        # Loud, because the return is now stranded and only an operator can
+        # move it.
+        logging.error(
+            f"Armed workflow {workflow.workflow_id} for outbound {booking_id} but "
+            "could not schedule its reminder; it will not send until moved to "
+            "ReminderScheduled")
+        return CompletionOutcome.ARMED_NOT_SCHEDULED
 
     # The outbound flight number is history, not state: the return is a
     # different flight the passenger tells us in Stage 4. It belongs in the
@@ -191,7 +231,8 @@ def sweep_unconfirmed(*, store: ReturnTripStore, connection_factory,
     would rediscover the same bad row on the next tick and stall again.
     """
     counts = {CompletionOutcome.ARMED: 0, CompletionOutcome.ALREADY_ACTIVE: 0,
-              CompletionOutcome.NOT_A_DEPARTURE: 0, "Errors": 0}
+              CompletionOutcome.NOT_A_DEPARTURE: 0,
+              CompletionOutcome.ARMED_NOT_SCHEDULED: 0, "Errors": 0}
     for booking_id in find_unconfirmed(connection_factory, now=now):
         try:
             outcome = _arm(booking_id, store=store,

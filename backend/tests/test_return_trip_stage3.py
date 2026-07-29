@@ -120,6 +120,20 @@ class _FakeStore:
         return True
 
 
+class _FakeTokens:
+    """Stands in for the Stage 4 TokenService the worker mints links with."""
+
+    def __init__(self, raises=None):
+        self._raises = raises
+        self.issued = []
+
+    def issue(self, workflow_id, **kw):
+        if self._raises:
+            raise self._raises
+        self.issued.append(workflow_id)
+        return "raw-link-token"
+
+
 def _workflow(**kw):
     base = dict(workflow_id="wf-1", outbound_booking_id="bk-1",
                 status=WorkflowState.REMINDER_DISPATCHING, version=3,
@@ -227,7 +241,46 @@ class TestCompleteOutboundTrip:
         store = _FakeStore()
         complete_outbound_trip("bk-1", store=store, connection_factory=lambda: None)
         assert set(store.created[0]) <= {
-            "outbound_booking_id", "status", "correlation_id"}
+            "outbound_booking_id", "status", "correlation_id",
+            "reminder_dispatch_at_utc", "expiration_at_utc"}
+
+    def test_arming_also_schedules_the_reminder(self, monkeypatch):
+        """Creating the workflow is not enough — it must reach ReminderScheduled.
+
+        `claim_due_reminders` only sees REMINDER_SCHEDULED rows with a dispatch
+        time. A workflow left in PENDING_RETURN_ESTIMATE is invisible to the
+        worker forever: armed, audited, and silently never sent. This is the
+        seam between the trigger and the worker, and unit tests of either half
+        alone cannot see it.
+        """
+        monkeypatch.setattr(completion_mod, "departure_metadata",
+                            lambda b, f: {"flight_number": "UA123"})
+        store = _FakeStore()
+        outcome = complete_outbound_trip("bk-1", store=store,
+                                         connection_factory=lambda: None)
+        assert outcome == CompletionOutcome.ARMED
+        assert len(store.transitions) == 1
+        _, kw = store.transitions[0]
+        assert kw["from_state"] is WorkflowState.PENDING_RETURN_ESTIMATE
+        assert kw["to_state"] is WorkflowState.REMINDER_SCHEDULED
+
+    def test_dispatch_time_is_set_or_the_claim_query_skips_it(self, monkeypatch):
+        """A null ReminderDispatchAtUtc is excluded by the claim query."""
+        monkeypatch.setattr(completion_mod, "departure_metadata",
+                            lambda b, f: {"flight_number": "UA123"})
+        store = _FakeStore()
+        complete_outbound_trip("bk-1", store=store, connection_factory=lambda: None)
+        assert store.created[0]["reminder_dispatch_at_utc"] is not None
+
+    def test_failed_schedule_is_reported_distinctly(self, monkeypatch):
+        """The row holds the claim, so nothing retries it — it needs an operator
+        and must not be counted as a healthy arm."""
+        monkeypatch.setattr(completion_mod, "departure_metadata",
+                            lambda b, f: {"flight_number": "UA123"})
+        store = _FakeStore(transition_ok=False)
+        outcome = complete_outbound_trip("bk-1", store=store,
+                                         connection_factory=lambda: None)
+        assert outcome == CompletionOutcome.ARMED_NOT_SCHEDULED
 
     def test_outbound_flight_goes_to_the_audit_trail(self, monkeypatch):
         monkeypatch.setattr(completion_mod, "departure_metadata",
@@ -304,7 +357,7 @@ class TestSafetyNet:
 class TestReminderWorker:
     def test_queues_and_advances_in_one_call(self):
         store = _FakeStore(workflow=_workflow())
-        assert dispatch_one("wf-1", store=store) is True
+        assert dispatch_one("wf-1", store=store, tokens=_FakeTokens()) is True
         assert len(store.enqueued) == 1
         call = store.enqueued[0]
         assert call["event_type"] == REMINDER_EVENT
@@ -315,12 +368,12 @@ class TestReminderWorker:
         """Advancing without the claimed version lets a concurrent writer's
         change be overwritten silently."""
         store = _FakeStore(workflow=_workflow(version=9))
-        dispatch_one("wf-1", store=store)
+        dispatch_one("wf-1", store=store, tokens=_FakeTokens())
         assert store.enqueued[0]["expected_version"] == 9
 
     def test_payload_reverses_the_journey(self):
         store = _FakeStore(workflow=_workflow())
-        dispatch_one("wf-1", store=store)
+        dispatch_one("wf-1", store=store, tokens=_FakeTokens())
         payload = store.enqueued[0]["payload"]
         assert payload["returnPickupAirport"] == "COS"
         assert payload["returnDropoffText"] == "123 Main St"
@@ -329,14 +382,14 @@ class TestReminderWorker:
         """A claimed row nobody releases is a reminder nothing will ever retry."""
         store = _FakeStore(workflow=_workflow(),
                            enqueue_raises=RuntimeError("db down"))
-        assert dispatch_one("wf-1", store=store) is False
+        assert dispatch_one("wf-1", store=store, tokens=_FakeTokens()) is False
         assert len(store.transitions) == 1
         _, kw = store.transitions[0]
         assert kw["to_state"] is WorkflowState.REMINDER_SCHEDULED
 
     def test_missing_email_fails_rather_than_silently_skipping(self):
         store = _FakeStore(workflow=_workflow(passenger_email=None))
-        assert dispatch_one("wf-1", store=store) is False
+        assert dispatch_one("wf-1", store=store, tokens=_FakeTokens()) is False
         _, kw = store.transitions[0]
         assert kw["to_state"] is WorkflowState.FAILED
         assert store.enqueued == []
@@ -344,30 +397,30 @@ class TestReminderWorker:
     def test_row_moved_by_someone_else_is_left_alone(self):
         """Not ours to send, and not ours to release."""
         store = _FakeStore(workflow=_workflow(status=WorkflowState.CANCELED))
-        assert dispatch_one("wf-1", store=store) is False
+        assert dispatch_one("wf-1", store=store, tokens=_FakeTokens()) is False
         assert store.transitions == []
         assert store.enqueued == []
 
     def test_vanished_workflow_is_not_an_exception(self):
         store = _FakeStore(workflow=None)
-        assert dispatch_one("wf-1", store=store) is False
+        assert dispatch_one("wf-1", store=store, tokens=_FakeTokens()) is False
 
     def test_run_once_reports_queued_and_failed_separately(self):
         """A pass that claimed rows and queued none must not look like a quiet
         pass — the counts are the run's only observable output."""
         store = _FakeStore(workflow=_workflow(passenger_email=None),
                            claimed=["wf-1", "wf-2"])
-        result = run_once(store=store)
+        result = run_once(store=store, tokens=_FakeTokens())
         assert result == {"claimed": 2, "queued": 0, "failed": 2}
 
     def test_run_once_counts_successes(self):
         store = _FakeStore(workflow=_workflow(), claimed=["wf-1"])
-        assert run_once(store=store) == {"claimed": 1, "queued": 1, "failed": 0}
+        assert run_once(store=store, tokens=_FakeTokens()) == {"claimed": 1, "queued": 1, "failed": 0}
 
     def test_unexpected_raise_does_not_abandon_the_batch(self, monkeypatch):
         calls = {"n": 0}
 
-        def _boom(workflow_id, *, store):
+        def _boom(workflow_id, *, store, tokens=None):
             calls["n"] += 1
             if calls["n"] == 1:
                 raise RuntimeError("unexpected")
@@ -375,5 +428,5 @@ class TestReminderWorker:
 
         monkeypatch.setattr(worker_mod, "dispatch_one", _boom)
         store = _FakeStore(claimed=["wf-1", "wf-2"])
-        result = run_once(store=store)
+        result = run_once(store=store, tokens=_FakeTokens())
         assert result == {"claimed": 2, "queued": 1, "failed": 1}

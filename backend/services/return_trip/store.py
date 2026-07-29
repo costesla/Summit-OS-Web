@@ -260,7 +260,19 @@ class ReturnTripStore:
         the version guard, the audit row and the claim release are the parts
         that must happen on every transition, and duplicating them once would
         be enough for one copy to quietly lose the claim cleanup.
+
+        The legality check lives HERE rather than only in the public callers.
+        It used to sit in `transition` and `enqueue_and_transition` alone,
+        which left `confirm_return_trip` — the one caller that reaches this
+        helper directly — able to write moves the state machine forbids. A
+        replayed confirm walked a CONFIRMED workflow back to FlightVerified
+        that way, and the only thing that stopped it committing was the
+        already-consumed verification further down: luck, not design. The
+        `WHERE WorkflowStatus = ?` guard cannot catch it, because the row
+        genuinely IS in the from-state; what is wrong is the edge itself.
         """
+        assert_transition(from_state, to_state)     # raises on an illegal move
+
         sets, params = ["WorkflowStatus = ?", "Version = Version + 1",
                         "UpdatedAtUtc = ?"], [to_state.value, _utcnow()]
         for column, value in _updatable(updates or {}):
@@ -474,6 +486,103 @@ class ReturnTripStore:
              TelemetryState.PENDING.value, next_check_at_utc, now, now),
         )
         return binding_id
+
+    def confirm_return_trip(self, *, workflow_id: str, expected_version: int,
+                            from_state: WorkflowState, verification_id: str,
+                            provider: str, provider_flight_id: str,
+                            idempotency_key: Optional[str] = None,
+                            first_check_minutes: int = 60
+                            ) -> Optional[Dict[str, Any]]:
+        """Bind the flight, arm telemetry and queue the calendar — atomically.
+
+        Everything here commits together or not at all. A binding without its
+        outbox event is a return trip that never reaches the calendar; an
+        outbox event without its binding puts a trip on the calendar that
+        nothing is monitoring. Both are silent.
+
+        The workflow walks its real states rather than jumping to CONFIRMED, so
+        the audit trail shows verification actually happened. Each transition
+        bumps Version, hence the local counter.
+
+        Replay protection is the UNIQUE on ReturnBookingId: we use the workflow
+        id as the return booking id, so a second confirm for the same workflow
+        is a key violation rather than a second binding — the same shape as the
+        active-claim guard on create_workflow.
+        """
+        conn = self._connect()
+        if not conn:
+            raise RuntimeError("Database unavailable")
+        cur = conn.cursor()
+        now = _utcnow()
+        version = expected_version
+        try:
+            self.ensure_schema(cur)
+
+            # PENDING → VERIFIED → PROCESSING, one step at a time so an
+            # illegal jump raises here rather than silently writing a status.
+            if from_state is not WorkflowState.FLIGHT_VERIFIED:
+                if not self._apply_transition(
+                        cur, workflow_id, expected_version=version,
+                        from_state=from_state,
+                        to_state=WorkflowState.FLIGHT_VERIFIED):
+                    conn.rollback()
+                    return None
+                version += 1
+
+            if not self._apply_transition(
+                    cur, workflow_id, expected_version=version,
+                    from_state=WorkflowState.FLIGHT_VERIFIED,
+                    to_state=WorkflowState.CONFIRMATION_PROCESSING):
+                conn.rollback()
+                return None
+            version += 1
+
+            # Consume the verification so it cannot be replayed against a
+            # second confirm attempt with a different outcome.
+            cur.execute(
+                f"UPDATE {SCHEMA}.ReturnFlightVerification SET ConsumedAtUtc = ? "
+                "WHERE VerificationId = ? AND WorkflowId = ? "
+                "AND ConsumedAtUtc IS NULL",
+                (now, verification_id, workflow_id))
+            if (cur.rowcount or 0) == 0:
+                conn.rollback()
+                return None
+
+            try:
+                binding_id = self.create_binding(
+                    cur, return_booking_id=workflow_id, workflow_id=workflow_id,
+                    provider=provider, provider_flight_id=provider_flight_id,
+                    next_check_at_utc=now + timedelta(minutes=first_check_minutes))
+            except _integrity_errors():
+                conn.rollback()
+                logging.info(
+                    f"Return trip {workflow_id} already bound; treating confirm "
+                    "as a replay")
+                return None
+
+            self.enqueue(cur, event_type="ReturnTripConfirmed",
+                         aggregate_id=workflow_id,
+                         payload={"workflowId": workflow_id,
+                                  "bindingId": binding_id,
+                                  "provider": provider,
+                                  "providerFlightId": provider_flight_id,
+                                  "idempotencyKey": idempotency_key})
+
+            if not self._apply_transition(
+                    cur, workflow_id, expected_version=version,
+                    from_state=WorkflowState.CONFIRMATION_PROCESSING,
+                    to_state=WorkflowState.CONFIRMED):
+                conn.rollback()
+                return None
+
+            conn.commit()
+            return {"binding_id": binding_id, "workflow_id": workflow_id}
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            cur.close()
+            conn.close()
 
     def record_snapshot(self, *, binding_id: str, telemetry: FlightTelemetry,
                         previous: Optional[FlightTelemetry] = None,
