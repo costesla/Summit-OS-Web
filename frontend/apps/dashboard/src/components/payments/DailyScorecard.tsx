@@ -2,14 +2,8 @@ import { useEffect, useState, useCallback } from 'react'
 import { RefreshCw, Zap, Utensils, DollarSign, Loader2 } from 'lucide-react'
 import { fetchScorecard, triggerSync, type Scorecard } from './api'
 
-const TIER_COLOR: Record<string, string> = {
-  Full: 'text-emerald-400',
-  Rough: 'text-amber-400',
-  Missed: 'text-[var(--accent-red)]',
-  Underpayment: 'text-[var(--accent-red)]',
-  Review: 'text-amber-400',
-  Pending: 'text-[var(--text-muted)]',
-}
+// TIER_COLOR removed with the Luis tier row — it styled the automatic tier
+// values only, which are no longer displayed.
 
 function ProgressBar({ label, actual, target, invert, icon: Icon }: {
   label: string
@@ -101,12 +95,10 @@ function DailyScorecard({ selectedDate }: { selectedDate: string }) {
           <ProgressBar label="Supercharging" actual={data.supercharging.actual} target={data.supercharging.target} invert icon={Zap} />
           <ProgressBar label="Food & Dining" actual={data.food_dining.actual} target={data.food_dining.target} invert icon={Utensils} />
 
-          <div className="pt-3 border-t border-white/5 flex justify-between items-center">
-            <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Luis Canales — Today</span>
-            <span className={`text-xs font-black uppercase ${TIER_COLOR[data.luis_tier] || 'text-white'}`}>
-              {data.luis_tier}
-            </span>
-          </div>
+          {/* The automatic "Luis Canales — Today" tier was removed here: Luis is
+              manual-ledger-only, so the accrual that produced this tier no longer
+              runs and the value would be frozen at its last automatic state. His
+              current balance lives in "Manual Ledger — Jackie & Luis". */}
         </div>
       ) : null}
 

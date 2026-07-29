@@ -7,6 +7,7 @@ import {
 import { isBackgroundableError, devDebugError, getAsyncExecutionLogs, pollJobStatus } from '../../../../src/lib/intelligenceUtils';
 import { apiGet, apiPost } from '../lib/apiClient';
 import PaymentTrackerPanel from './payments/PaymentTrackerPanel';
+import ManualLedgerPanel from './payments/ManualLedgerPanel';
 
 const AZURE_BASE = import.meta.env.VITE_PUBLIC_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://summitos-api.azurewebsites.net/api';
 const VERSION = "2.0.0";
@@ -780,7 +781,10 @@ const DriverDashboard: React.FC = () => {
     const uberEarnings = summary?.uber_earnings ?? 0;
     const privateIncome = summary?.private_income ?? 0;
     const netProfit = summary?.net_profit ?? (grossEarnings - (summary?.opex_expenses ?? 0));
-    const deferredTotal = summary?.deferred_total ?? 0;
+    // `deferred_total` is no longer surfaced: the only deferred invoices belong
+    // to manual-ledger-only people, whose current balance now comes from the
+    // Manual Ledger. (This binding was already unused and failing the build on
+    // master with TS6133; removing it is part of retiring the deferred display.)
 
     // Use all loading states to satisfy TS
     const isAnyLoading = loadingSummary || loadingPreShift || loadingTrips;
@@ -1198,6 +1202,9 @@ const DriverDashboard: React.FC = () => {
                                                     Log Manual Expense
                                                 </button>
                                             </form>
+
+                                            {/* Manual Ledger — Jackie & Luis (manual-entry-only balances) */}
+                                            <ManualLedgerPanel />
 
                                             {/* Dual Ledger Tab Switcher */}
                                             <div className="space-y-3">

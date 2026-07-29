@@ -320,3 +320,160 @@ def payments_luis_reassign(req: func.HttpRequest) -> func.HttpResponse:
     except Exception as e:
         logging.error(f"payments_luis_reassign error: {e}")
         return _json_response({"error": "Internal server error"}, req, 500)
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# Manual Ledger — Jackie & Luis
+#
+# Manual-entry-only current balances. Amounts cross the wire as STRINGS so a
+# JSON float can never round a cent; the server parses them with Decimal.
+# Every route requires the same function key as the rest of /financials.
+# There is deliberately no delete route — entries are voided.
+# ═════════════════════════════════════════════════════════════════════════════
+
+def _actor(req: func.HttpRequest) -> str:
+    """Best-effort caller identity for the audit trail (never a secret)."""
+    principal = req.headers.get("x-ms-client-principal-name")
+    return (principal or "dashboard")[:100]
+
+
+def _correlation_id(req: func.HttpRequest) -> str | None:
+    return (req.headers.get("x-correlation-id") or req.headers.get("x-request-id") or None)
+
+
+def _serialize_entry(entry: dict) -> dict:
+    effective = entry.get("effective_date")
+    return {
+        "entryId": entry.get("entry_id"),
+        "personKey": entry.get("person_key"),
+        "entryType": entry.get("entry_type"),
+        "amount": str(entry.get("amount")),
+        "effectiveDate": effective.isoformat() if hasattr(effective, "isoformat") else effective,
+        "note": entry.get("note"),
+        "voided": entry.get("voided_at_utc") is not None,
+        "revisionNumber": entry.get("revision_number"),
+    }
+
+
+@bp.route(route="financials/manual-ledger", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+def manual_ledger_get(req: func.HttpRequest) -> func.HttpResponse:
+    """Balance + recent entries for one person, or both when `person` is omitted."""
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=_cors(req))
+    guard = require_function_key(req)
+    if guard:
+        return guard
+
+    from services.manual_ledger import (
+        ManualLedgerService, PersonKey, ValidationError, parse_person_key,
+    )
+    try:
+        service = ManualLedgerService()
+        requested = req.params.get("person")
+        people = [parse_person_key(requested)] if requested else [PersonKey.JACKIE, PersonKey.LUIS]
+
+        payload = {}
+        for person_key in people:
+            baseline = service.get_active_baseline(person_key)
+            payload[person_key] = {
+                "personKey": person_key,
+                "activated": baseline is not None,
+                "openingBalance": str(baseline["opening_balance"]) if baseline else "0.00",
+                "balance": str(service.get_balance(person_key)),
+                "entries": [_serialize_entry(e) for e in service.list_entries(person_key)],
+            }
+        return _json_response({"people": payload}, req)
+    except ValidationError as ve:
+        return _json_response({"error": str(ve)}, req, 400)
+    except Exception as e:
+        logging.error(f"manual_ledger_get error: {e}")
+        return _json_response({"error": "Internal server error"}, req, 500)
+
+
+@bp.route(route="financials/manual-ledger/entry", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+def manual_ledger_create(req: func.HttpRequest) -> func.HttpResponse:
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=_cors(req))
+    guard = require_function_key(req)
+    if guard:
+        return guard
+
+    from services.manual_ledger import ManualLedgerService, ValidationError
+    try:
+        body = req.get_json()
+    except ValueError:
+        return _json_response({"error": "Invalid JSON body"}, req, 400)
+
+    try:
+        service = ManualLedgerService()
+        entry = service.create_entry(body, actor=_actor(req), correlation_id=_correlation_id(req))
+        balance = service.get_balance(entry["person_key"])
+        return _json_response(
+            {"success": True, "entry": _serialize_entry(entry), "balance": str(balance)}, req, 201
+        )
+    except ValidationError as ve:
+        return _json_response({"error": str(ve)}, req, 400)
+    except Exception as e:
+        logging.error(f"manual_ledger_create error: {e}")
+        return _json_response({"error": "Internal server error"}, req, 500)
+
+
+@bp.route(route="financials/manual-ledger/entry/{entry_id}/edit", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+def manual_ledger_edit(req: func.HttpRequest) -> func.HttpResponse:
+    """Appends a new revision. The prior revision is superseded, never overwritten."""
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=_cors(req))
+    guard = require_function_key(req)
+    if guard:
+        return guard
+
+    from services.manual_ledger import ManualLedgerService, ValidationError
+    try:
+        body = req.get_json()
+    except ValueError:
+        return _json_response({"error": "Invalid JSON body"}, req, 400)
+
+    entry_id = req.route_params.get("entry_id")
+    try:
+        service = ManualLedgerService()
+        result = service.edit_entry(entry_id, body, actor=_actor(req),
+                                    correlation_id=_correlation_id(req))
+        balance = service.get_balance(body.get("personKey"))
+        return _json_response({"success": True, **result, "balance": str(balance)}, req)
+    except ValidationError as ve:
+        return _json_response({"error": str(ve)}, req, 400)
+    except Exception as e:
+        logging.error(f"manual_ledger_edit error: {e}")
+        return _json_response({"error": "Internal server error"}, req, 500)
+
+
+@bp.route(route="financials/manual-ledger/entry/{entry_id}/void", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+def manual_ledger_void(req: func.HttpRequest) -> func.HttpResponse:
+    """Voids an entry (state transition). Repeat calls are safe no-ops."""
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=_cors(req))
+    guard = require_function_key(req)
+    if guard:
+        return guard
+
+    from services.manual_ledger import ManualLedgerService, ValidationError, parse_person_key
+    try:
+        body = req.get_json()
+    except ValueError:
+        body = {}
+
+    entry_id = req.route_params.get("entry_id")
+    try:
+        service = ManualLedgerService()
+        result = service.void_entry(entry_id, actor=_actor(req),
+                                    reason=(body or {}).get("reason"),
+                                    correlation_id=_correlation_id(req))
+        person = (body or {}).get("personKey")
+        if person:
+            result["balance"] = str(service.get_balance(parse_person_key(person)))
+        return _json_response({"success": True, **result}, req)
+    except ValidationError as ve:
+        return _json_response({"error": str(ve)}, req, 400)
+    except Exception as e:
+        logging.error(f"manual_ledger_void error: {e}")
+        return _json_response({"error": "Internal server error"}, req, 500)

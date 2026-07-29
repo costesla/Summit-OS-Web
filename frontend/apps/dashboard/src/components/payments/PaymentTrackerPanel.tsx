@@ -1,5 +1,4 @@
 import DailyScorecard from './DailyScorecard'
-import LuisSimpleCard from './LuisSimpleCard'
 import BillCalendar from './BillCalendar'
 import AnomalyPanel from './AnomalyPanel'
 import TransactionTable from './TransactionTable'
@@ -9,12 +8,16 @@ interface PaymentTrackerPanelProps {
   onAnomalyCountChange?: (count: number) => void
 }
 
+// LuisSimpleCard was removed here: Luis is manual-ledger-only, so his current
+// balance comes from "Manual Ledger — Jackie & Luis" in the Expenses & Capital
+// Ledger. The automatic Good/Bad day tally must not present an amount due.
+// The remaining cards (scorecard, bills, anomalies, transactions) are not
+// Luis-specific and are unaffected.
 function PaymentTrackerPanel({ selectedDate, onAnomalyCountChange }: PaymentTrackerPanelProps) {
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4">
         <DailyScorecard selectedDate={selectedDate} />
-        <LuisSimpleCard />
       </div>
       <BillCalendar />
       <AnomalyPanel onCountChange={onAnomalyCountChange} />

@@ -26,6 +26,7 @@ from .payment_categorizer import (
     should_flag_missing_emerson,
     find_transfer_pairs,
 )
+from .manual_ledger import PersonKey, is_manual_only
 
 DAILY_TARGETS = {
     "gross_earnings": 300.00,
@@ -177,7 +178,21 @@ class PaymentTrackerService:
         Reads each day's real amount sent from Finance.Payments rather than
         an in-memory total, so it reflects whatever's actually on record —
         including edits made after the original sync.
+
+        ManualOnly short-circuit: this is the single chokepoint every automatic
+        Luis producer flows through (daily sync, payment reassignment, backfill
+        and repair paths all call this). While Luis is manual-ledger-only it
+        returns before reading or writing any accrual row, so no new
+        LuisBalanceLog/LuisPayments record is ever created. Existing history is
+        left exactly as-is for audit.
         """
+        if is_manual_only(PersonKey.LUIS):
+            logging.info(
+                f"[ManualLedger] Luis accrual recompute skipped from {start_date} "
+                "— manual-ledger-only"
+            )
+            return
+
         prior_balance = self.db.get_luis_balance_before(start_date)
         current = datetime.date.fromisoformat(start_date)
         end = max(current, datetime.date.today())
