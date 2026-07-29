@@ -298,6 +298,41 @@ class FlightAwareClient:
             return str(idents[0]["ident"]).strip().upper()
         return ident
 
+    def flight_candidates(self, ident: str, cache_ttl: Optional[int] = None, *,
+                          expected_destination: Optional[str] = None,
+                          dest_country: Optional[str] = None) -> list:
+        """GET /flights/{ident} -> EVERY plausible leg, after guarding.
+
+        Same canonical resolution and destination guard as flight_info, but
+        without collapsing to one leg. Callers that must not guess — the
+        return-trip flow, which asks the passenger when a flight number
+        operates several routes on their date — need to see the alternatives.
+
+        Returns the raw AeroAPI leg objects; mapping to domain types is the
+        return_trip provider adapter's job. Empty list on any failure, so
+        callers degrade gracefully rather than handling exceptions.
+        """
+        canonical = self.canonical_ident(ident, country_code=dest_country)
+        if not canonical:
+            return []
+        try:
+            data = self._get(f"/flights/{canonical}", {"max_pages": 1}, cache_ttl=cache_ttl)
+        except FlightAwareApiError as e:
+            logging.warning(f"FlightAware flight lookup error for {canonical}: {e.message}")
+            return []
+        flights = data.get("flights") if isinstance(data, dict) else None
+        if not isinstance(flights, list) or not flights:
+            return []
+
+        candidates = [f for f in flights if not f.get("cancelled")] or flights
+        if expected_destination:
+            exp = str(expected_destination).strip().upper()
+            candidates = [f for f in candidates if _airport_matches(f.get("destination"), exp)]
+            if not candidates:  # destination guard — refuse a mismatched flight
+                logging.info(f"FlightAware: no {canonical} leg arrives at {exp}; rejecting.")
+                return []
+        return candidates
+
     def flight_info(self, ident: str, cache_ttl: Optional[int] = None, *,
                     expected_destination: Optional[str] = None,
                     when=None, dest_country: Optional[str] = None) -> Optional[dict]:
@@ -314,29 +349,17 @@ class FlightAwareClient:
              scheduled departure is nearest `when` (or now), else the nearest of
              whatever remains.
 
+        Steps 1-2 live in flight_candidates; this method is the SELECTION half.
+
         `when` is an ISO-8601 string or epoch (the booking/pickup time). Never
         raises to the caller (returns None on failure) so callers degrade
         gracefully.
         """
-        canonical = self.canonical_ident(ident, country_code=dest_country)
-        if not canonical:
+        candidates = self.flight_candidates(
+            ident, cache_ttl=cache_ttl,
+            expected_destination=expected_destination, dest_country=dest_country)
+        if not candidates:
             return None
-        try:
-            data = self._get(f"/flights/{canonical}", {"max_pages": 1}, cache_ttl=cache_ttl)
-        except FlightAwareApiError as e:
-            logging.warning(f"FlightAware flight_info error for {canonical}: {e.message}")
-            return None
-        flights = data.get("flights") if isinstance(data, dict) else None
-        if not isinstance(flights, list) or not flights:
-            return None
-
-        candidates = [f for f in flights if not f.get("cancelled")] or flights
-        if expected_destination:
-            exp = str(expected_destination).strip().upper()
-            candidates = [f for f in candidates if _airport_matches(f.get("destination"), exp)]
-            if not candidates:  # destination guard — refuse a mismatched flight
-                logging.info(f"FlightAware: no {canonical} leg arrives at {exp}; rejecting.")
-                return None
 
         # An explicit booking/pickup time selects the leg scheduled nearest it.
         target = _coerce_epoch(when)
@@ -354,6 +377,31 @@ class FlightAwareClient:
         if active:
             return self._nearest(active, now)
         return self._nearest(candidates, now)
+
+    def flight_by_fa_id(self, fa_flight_id: str,
+                        cache_ttl: Optional[int] = None) -> Optional[dict]:
+        """GET /flights/{fa_flight_id} -> that exact leg, or None.
+
+        The ONE lookup that can't resolve to the wrong flight: fa_flight_id
+        names a specific dated operation, so telemetry polling uses this rather
+        than re-resolving an ident it would have to disambiguate again (and pay
+        for). Never raises.
+        """
+        fa_flight_id = (fa_flight_id or "").strip()
+        if not fa_flight_id:
+            return None
+        try:
+            data = self._get(f"/flights/{fa_flight_id}", {}, cache_ttl=cache_ttl)
+        except FlightAwareApiError as e:
+            logging.warning(f"FlightAware lookup error for {fa_flight_id}: {e.message}")
+            return None
+        if not isinstance(data, dict):
+            return None
+        # AeroAPI answers either with the object itself or a single-item array.
+        flights = data.get("flights")
+        if isinstance(flights, list) and flights:
+            return flights[0]
+        return data if data.get("fa_flight_id") else None
 
     def last_position(self, fa_flight_id: str, cache_ttl: Optional[int] = None) -> Optional[dict]:
         """GET /flights/{fa_flight_id}/position -> normalized live position, or None.
