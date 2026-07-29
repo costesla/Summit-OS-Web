@@ -140,9 +140,13 @@ class TestCreateWorkflow:
                                    passenger_email="a@example.com")
 
         assert wf is not None and wf.version == 1
-        claim = _sql(cur, "ReturnTripActiveClaim")
-        row = _sql(cur, "INSERT INTO Bookings.ReturnTripWorkflow")
-        assert claim and row
+        claim = _inserts(cur, "ReturnTripActiveClaim")
+        row = _inserts(cur, "ReturnTripWorkflow")
+        # EXACTLY one of each, not merely "at least one". A truthiness check
+        # here would pass a double-insert — the very bug this table exists to
+        # make impossible.
+        assert len(claim) == 1, "the claim must be taken exactly once"
+        assert len(row) == 1, "the workflow must be written by exactly one INSERT"
         # Order matters: the claim must be attempted first, or a duplicate
         # completion event writes a workflow row before being rejected.
         assert cur.executed.index(claim[0]) < cur.executed.index(row[0])
@@ -162,7 +166,8 @@ class TestCreateWorkflow:
         store, _ = _store(cur, monkeypatch)
         store.create_workflow(outbound_booking_id="BK-1")
         audit = _inserts(cur, "ReturnWorkflowAuditEvent")
-        assert audit and "ReturnWorkflowCreated" in str(audit[0][1])
+        assert len(audit) == 1, "creation must be audited exactly once"
+        assert "ReturnWorkflowCreated" in str(audit[0][1])
 
     def test_the_airport_code_is_normalised(self, monkeypatch):
         cur = _Cursor()
@@ -465,6 +470,30 @@ class TestOutbox:
         store.claim_outbox(now=NOW)
         sql = _sql(cur, "UPDATE TOP (?) Bookings.OutboxEvent")[0][0]
         assert "WHERE Status = 'Pending' AND NextAttemptAtUtc <= ?" in sql
+
+    def test_each_claimed_row_keeps_its_own_identity_and_payload(self, monkeypatch):
+        # "Claimed exactly one" and "acted on the right one" are separate
+        # guarantees. If OUTPUT columns were reordered or the rows zipped
+        # wrongly, a calendar hold would be written against another booking —
+        # and every count-based assertion would still pass.
+        cur = _Cursor(rows=[
+            ("O-1", "CalendarHold", "RB-1", '{"bookingId": "RB-1"}', 1),
+            ("O-2", "CalendarHold", "RB-2", '{"bookingId": "RB-2"}', 3),
+        ])
+        store, _ = _store(cur, monkeypatch)
+        claimed = store.claim_outbox(now=NOW)
+
+        assert [c["outbox_id"] for c in claimed] == ["O-1", "O-2"]
+        for c in claimed:
+            assert c["payload"]["bookingId"] == c["aggregate_id"]
+        # AttemptCount travels with its own row — the backoff schedule depends
+        # on it, so a mismatch would dead-letter the wrong event.
+        assert [c["attempt"] for c in claimed] == [1, 3]
+
+    def test_claimed_reminders_keep_their_identity(self, monkeypatch):
+        cur = _Cursor(rows=[("W-1",), ("W-2",), ("W-3",)])
+        store, _ = _store(cur, monkeypatch)
+        assert store.claim_due_reminders(now=NOW) == ["W-1", "W-2", "W-3"]
 
     def test_failures_back_off_then_dead_letter(self, monkeypatch):
         cur = _Cursor()
