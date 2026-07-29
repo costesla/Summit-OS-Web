@@ -211,6 +211,11 @@ def finalize_stripe_session(session_id: str) -> dict:
         except (TypeError, ValueError):
             duration_minutes = 60
         buffers = calculate_buffers(start_time, duration_minutes)
+        # Flight rides along in the calendar note so dispatch sees it on the
+        # appointment — mirrors the unpaid path in api/bookings.py.
+        _fn = (meta.get("flightNumber") or "").strip().upper()
+        _dest = (meta.get("arrivalAirport") or "").strip().upper()
+        flight_note = f" | Flight: {_fn}{f' arriving {_dest}' if _dest else ''}" if _fn else ""
         appointment = BookingsClient().create_appointment(
             customer_data={
                 "name": meta.get("customerName"),
@@ -218,7 +223,7 @@ def finalize_stripe_session(session_id: str) -> dict:
                 "phone": meta.get("customerPhone"),
                 "pickup": meta.get("pickup"),
                 "dropoff": meta.get("dropoff"),
-                "notes": "Payment Method: Stripe (paid)",
+                "notes": f"Payment Method: Stripe (paid){flight_note}",
             },
             start_dt=buffers["buffer_start"],
             end_dt=buffers["buffer_end"],
@@ -389,7 +394,15 @@ def _send_paid_receipt(session, meta):
         token_expiry = None
         if raw_time:
             token_expiry = normalize_to_utc(raw_time) + timedelta(hours=CABIN_TOKEN_HOURS)
-        cabin_token = DatabaseClient().create_cabin_token(session.id, expires_at=token_expiry)
+        # Airport-pickup context, carried through Stripe metadata. Normalised
+        # the same way as the unpaid path in api/bookings.py so the two write
+        # identical values for the same booking.
+        cabin_token = DatabaseClient().create_cabin_token(
+            session.id,
+            expires_at=token_expiry,
+            flight_number=(meta.get("flightNumber") or "").strip().upper() or None,
+            expected_dest=(meta.get("arrivalAirport") or "").strip().upper() or None,
+        )
         site_url = os.environ.get("SITE_URL", "https://www.costesla.com")
         cabin_block = f"""
         <div style="background: #000000; padding: 20px; border-radius: 8px; margin: 0 0 25px; text-align: center;">

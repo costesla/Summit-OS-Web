@@ -5,7 +5,9 @@ import { useEffect, useState, useCallback, Suspense, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { AirshowMap } from "./AirshowMap";
 import ArrivalMap from "@/components/ArrivalMap";
-import type { DriverLike, FlightLike } from "@/components/arrivalMode";
+import FlightStatusPanel from "@/components/FlightStatusPanel";
+import type { FlightPanelData } from "@/components/FlightStatusPanel";
+import type { ArrivalMode, DriverLike, FlightLike } from "@/components/arrivalMode";
 import {
     Wind,
     Thermometer,
@@ -221,8 +223,17 @@ function CabinContent() {
     // hand for a booking made before the flight was captured, or to correct one.
     const flightNumber = state.flight_number || searchParams.get("flight");
     const expectedDest = (state.expected_dest || searchParams.get("dest") || "COS").toUpperCase();
-    const [flight, setFlight] = useState<FlightLike | null>(null);
+    /* One payload, two consumers: the map reads the position/hand-off fields
+       (FlightLike), the read-out reads the schedule fields (FlightPanelData).
+       Typing the state as both keeps a single fetch feeding both without a
+       cast that would paper over a real mismatch. */
+    const [flight, setFlight] = useState<(FlightLike & FlightPanelData) | null>(null);
     const flightOnGround = !!flight?.on_ground;
+    /* Which view ArrivalMap settled on — automatic or the passenger's choice.
+       Drives whether the flight read-out sits below the map. `setArrivalView`
+       is a stable setState, so passing it straight down can't loop the effect
+       that reports the mode up. */
+    const [arrivalView, setArrivalView] = useState<ArrivalMode>("FLIGHT");
 
     useEffect(() => {
         // Don't poll when there's no flight to track, and stop the moment the
@@ -509,6 +520,16 @@ function CabinContent() {
                             tripBound
                             expectedDestination={expectedDest}
                             className="h-full w-full"
+                            /* The passenger's Flight/Driver control, and the
+                               vehicle read-outs AirshowMap would otherwise
+                               have been showing in this slot. */
+                            showViewToggle
+                            vehicleSpeed={state.speed}
+                            vehicleStandby={
+                                !positionEverReceived.current
+                                && (state.latitude === null || state.longitude === null)
+                            }
+                            onViewChange={setArrivalView}
                         />
                     ) : (
                         <AirshowMap
@@ -520,6 +541,18 @@ function CabinContent() {
                         />
                     )}
                 </div>
+
+                {/* ─── Flight read-out ──────────────────────────────────────── */}
+                {/* Same payload the map is already polling — no second request.
+                    Shown only in the flight view, so the driver view stays about
+                    the car. Rendering is failure-tolerant: every field on this
+                    panel is optional, and a bad flight response must never take
+                    the cabin controls down with it. */}
+                {flightNumber && flight && arrivalView === "FLIGHT" && (
+                    <div className="rounded-3xl border border-white/[.06] bg-white/[.02] p-4 shadow-lg shadow-black/50">
+                        <FlightStatusPanel flight={flight} variant="dark" compact />
+                    </div>
+                )}
 
                 {/* ─── Vehicle Status & Telemetry ─────────────────────────── */}
                 <section className="space-y-3">
