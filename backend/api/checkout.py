@@ -44,6 +44,10 @@ def create_checkout_session(req: func.HttpRequest) -> func.HttpResponse:
         # Empty strings when absent — Stripe metadata has no null.
         flight_number = (req_body.get("flightNumber") or "").strip().upper()
         arrival_airport = (req_body.get("arrivalAirport") or "").strip().upper()
+        # Ordered stops as numbered keys — see encode_route_metadata for why
+        # they can't share one value.
+        from services.bookings import encode_route_metadata
+        route_metadata = encode_route_metadata(req_body.get("stops"))
         success_url = req_body.get("successUrl")
         cancel_url = req_body.get("cancelUrl")
         
@@ -88,7 +92,8 @@ def create_checkout_session(req: func.HttpRequest) -> func.HttpResponse:
                 'returnStart': return_start,
                 'fareString': str(price),
                 'flightNumber': flight_number,
-                'arrivalAirport': arrival_airport
+                'arrivalAirport': arrival_airport,
+                **route_metadata
             }
         )
         

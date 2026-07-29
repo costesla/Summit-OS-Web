@@ -201,7 +201,7 @@ def finalize_stripe_session(session_id: str) -> dict:
     # until the platform kills it.) If it fails, release the claim so a
     # Stripe redelivery or page refresh can retry cleanly.
     try:
-        from services.bookings import BookingsClient
+        from services.bookings import BookingsClient, decode_route_metadata
         from services.calendar import calculate_buffers
         from services.datetime_utils import normalize_to_utc
 
@@ -223,6 +223,7 @@ def finalize_stripe_session(session_id: str) -> dict:
                 "phone": meta.get("customerPhone"),
                 "pickup": meta.get("pickup"),
                 "dropoff": meta.get("dropoff"),
+                "stops": decode_route_metadata(meta),
                 "notes": f"Payment Method: Stripe (paid){flight_note}",
             },
             start_dt=buffers["buffer_start"],
@@ -256,6 +257,9 @@ def finalize_stripe_session(session_id: str) -> dict:
                     "phone": meta.get("customerPhone"),
                     "pickup": meta.get("dropoff"),
                     "dropoff": meta.get("pickup"),
+                    # Reversed: the way back visits the stops in the opposite
+                    # order, and reusing the outbound list would zig-zag.
+                    "stops": list(reversed(decode_route_metadata(meta))),
                     "notes": "Return leg — Payment Method: Stripe (paid)",
                 },
                 start_dt=ret_buffers["buffer_start"],
@@ -363,6 +367,10 @@ def _send_paid_receipt(session, meta):
     amount_paid = (session.amount_total or 0) / 100.0
     pickup = meta.get("pickup", "N/A")
     dropoff = meta.get("dropoff", "N/A")
+    # Same renderer the unpaid path uses — a receipt that lists stops in a
+    # different order from the driver's calendar is worse than no receipt.
+    from services.bookings import decode_route_metadata, render_route_rows
+    route_rows = render_route_rows(pickup, decode_route_metadata(meta), dropoff)
     phone = meta.get("customerPhone", "N/A")
 
     pickup_time = "To be scheduled"
@@ -452,10 +460,7 @@ def _send_paid_receipt(session, meta):
                                     <td style="padding: 6px 0; font-size: 14px; color: #333333; text-align: right; font-weight: 600;">{pickup_time}</td>
                                 </tr>
                                 {return_row}
-                                <tr><td colspan="2" style="padding: 15px 0 6px; font-size: 14px; color: #666666;">Pickup Location</td></tr>
-                                <tr><td colspan="2" style="padding: 0 0 6px; font-size: 14px; color: #333333; font-weight: 600;">{pickup}</td></tr>
-                                <tr><td colspan="2" style="padding: 15px 0 6px; font-size: 14px; color: #666666;">Dropoff Location</td></tr>
-                                <tr><td colspan="2" style="padding: 0 0 6px; font-size: 14px; color: #333333; font-weight: 600;">{dropoff}</td></tr>
+                                {route_rows}
                                 <tr>
                                     <td style="padding: 20px 0 0; font-size: 18px; font-weight: bold; color: #000000; border-top: 2px solid #000000;">Total Paid</td>
                                     <td style="padding: 20px 0 0; font-size: 18px; font-weight: bold; color: #000000; text-align: right; border-top: 2px solid #000000;">${amount_paid:,.2f}</td>

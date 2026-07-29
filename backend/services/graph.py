@@ -94,7 +94,7 @@ class GraphClient:
         data = resp.json()
         return data.get("value", [])
 
-    def create_calendar_event(self, subject, body, start_dt, end_dt, location, attendee_email, transaction_id=None):
+    def create_calendar_event(self, subject, body, start_dt, end_dt, location, attendee_email, transaction_id=None, locations=None):
         token = self._get_token()
         url = f"https://graph.microsoft.com/v1.0/users/{self.user_email}/calendar/events"
         
@@ -146,6 +146,15 @@ class GraphClient:
         # the caller's SQL or retry logic does.
         if transaction_id:
             payload["transactionId"] = transaction_id
+
+        # Multi-stop route. `locations` is Graph's ORDERED array; sending it
+        # preserves the sequence as structured data rather than leaving it to
+        # be re-read out of the body prose. Order is load-bearing: the list is
+        # written exactly as given, never sorted.
+        if locations:
+            payload["locations"] = [
+                {"displayName": str(leg)} for leg in locations if leg
+            ]
         
         # Only add attendee if email is provided (prevents duplicate calendar invites to customer)
         if attendee_email:

@@ -2,13 +2,18 @@
 
 /// <reference types="@types/google.maps" />
 
-import { useState, useEffect, useRef } from "react";
-import { Minus, Plus, Clock, ChevronRight, AlertCircle, X } from "lucide-react";
-import styles from "./BookingForm.module.css"; // Reuse existing clean styles
+import { useState, useEffect, useRef, useMemo } from "react";
+import { Plus, Trash2, Clock, ChevronRight, AlertCircle, X, MapPin } from "lucide-react";
 import { PriceBreakdown } from "../utils/pricing";
 import dynamic from "next/dynamic";
 import { useJsApiLoader, Autocomplete } from "@react-google-maps/api";
 import CalendarBooking from "./CalendarBooking";
+import {
+    MAX_STOPS, addStop, airportDirection, canAddStop, createRoute, isComplete,
+    labelFor, missingLabels, quoteIsBookable, removeStop, roleAt, setPoint,
+    stopCount, toQuoteRequest,
+} from "./route";
+import type { RoutePoint } from "./route";
 
 const RouteMap = dynamic(() => import("./RouteMap"), {
     ssr: false,
@@ -18,6 +23,13 @@ const RouteMap = dynamic(() => import("./RouteMap"), {
 // Libraries for Google Maps - MUST be defined outside component to prevent re-initialization
 const libraries: ("places" | "geometry" | "drawing" | "visualization")[] = ["places"];
 
+/* Google Directions is billed per request. The old form fired one every 500ms
+   of typing, so a single address could cost a dozen calls. Quotes now run off
+   COMMITTED addresses only — a Place chosen from autocomplete, or a field the
+   passenger has finished with — and this short debounce just coalesces the
+   burst when several legs commit at once (paste, tab-through). */
+const QUOTE_COALESCE_MS = 350;
+
 export default function BookingEngine() {
     // Load Google Maps with Places library
     const { isLoaded } = useJsApiLoader({
@@ -26,75 +38,112 @@ export default function BookingEngine() {
         libraries
     });
 
+    /* The trip, in travel order: [pickup, ...stops, finalDropoff]. Replaces the
+       old pickup/dropoff pair plus a stop COUNT, where stop addresses were
+       optional, never reached the map, and were dropped before booking. */
+    const [route, setRoute] = useState<RoutePoint[]>(createRoute);
 
-    const [pickup, setPickup] = useState("");
-    const [dropoff, setDropoff] = useState("");
-    // Stop counters — $5 per stop
-    const [stopCount, setStopCount] = useState(0);
-    const [stopAddresses, setStopAddresses] = useState<string[]>([]);
+    /* Addresses the passenger has actually committed to. Typing changes `route`
+       and nothing else; only a commit moves this, and only this triggers a
+       priced lookup. */
+    const [committed, setCommitted] = useState<string[]>([]);
+    const committedKey = committed.join("");
 
-    // ── Airport pickup (optional) ────────────────────────────────────────
-    // Only the PICKUP matters here: the flight we track is the one the
-    // passenger arrives on, which is what the cabin console's arrival
-    // hand-off is built around. A drop-off at an airport has no inbound
-    // flight to follow, so it doesn't open this section by itself.
-    //
-    // `airportPickup` is set automatically when Google says the pickup Place
-    // is an airport, but stays user-overridable — an FBO or private terminal
-    // often isn't typed as one, and the passenger knows better than we do.
-    const [airportPickup, setAirportPickup] = useState(false);
-    const [airportAutoDetected, setAirportAutoDetected] = useState(false);
+    // One Autocomplete instance per leg, keyed by point id so adding or
+    // removing a stop can't leave a ref pointing at the wrong field.
+    const autocompleteRefs = useRef<Record<string, google.maps.places.Autocomplete>>({});
+
+    // ── Flight (optional) ────────────────────────────────────────────────
+    // Which airport workflow applies is derived from the ROUTE, not stored:
+    // an airport at the start means we're collecting someone off an inbound
+    // flight; an airport at the end means we're delivering them to one.
+    const direction = airportDirection(route);
+    const [flightOverride, setFlightOverride] = useState(false);
     const [flightNumber, setFlightNumber] = useState("");
     const [arrivalAirport, setArrivalAirport] = useState("");
+    // Shown whenever the route implies a flight, or the passenger asks for it —
+    // an FBO or private terminal often isn't typed as an airport by Google.
+    const showFlightSection = direction !== null || flightOverride;
 
     // Toast notification state
     const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-    // Autocomplete refs
-    const pickupAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
-    const dropoffAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
     // Driver Wait Time
     const [waitTimeHours, setWaitTimeHours] = useState(0);
 
     const [quote, setQuote] = useState<PriceBreakdown | null>(null);
     const [loading, setLoading] = useState(false);
+    /* Set when a recalculation fails. A quote that could not be recomputed
+       must never be the number a passenger agrees to, so this blocks the
+       continue button rather than leaving a stale total on screen. */
+    const [quoteError, setQuoteError] = useState<string | null>(null);
 
     // Contact Form State (Visible after Quote)
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [phone, setPhone] = useState("");
     const [passengers, setPassengers] = useState(1);
-    const [submitting, setSubmitting] = useState(false);
     const [showCalendar, setShowCalendar] = useState(false);
     const [bookingComplete, setBookingComplete] = useState(false);
-    const [checkoutLoading, setCheckoutLoading] = useState(false);
-    const [checkoutError, setCheckoutError] = useState('');
 
-    // Auto-Calculate Quote when inputs change
+    const routeComplete = isComplete(route);
+    const stops = stopCount(route);
+
+    /* Any edit invalidates the current price immediately. The old form kept the
+       previous quote through a failed recalculation "to prevent map flashing",
+       which meant a stale total could survive a route change and follow the
+       passenger to checkout. A blank price is honest; a wrong one is not. */
+    const routeSignature = route.map((p) => p.address.trim()).join("");
     useEffect(() => {
-        if (!pickup || !dropoff || pickup.length < 10 || dropoff.length < 10) {
-            setQuote(null);
-            return;
-        }
+        setQuote(null);
+        setQuoteError(null);
+    }, [routeSignature, waitTimeHours]);
+
+    // Commit a leg: this is what actually costs a Directions call.
+    const commitRoute = (next: RoutePoint[]) => {
+        setCommitted(next.map((p) => p.address.trim()));
+    };
+
+    const handlePlaceChanged = (id: string) => {
+        const auto = autocompleteRefs.current[id];
+        if (!auto) return;
+        const place = auto.getPlace();
+        const address = place.formatted_address || place.name || "";
+        const next = setPoint(route, id, {
+            address,
+            isAirport: !!place.types?.includes("airport"),
+        });
+        setRoute(next);
+        commitRoute(next);
+        validateLocation(address);
+    };
+
+    // Typing alone never prices. Leaving a field with something in it does —
+    // it covers the passenger who types an address and tabs on without
+    // choosing from the dropdown.
+    const handleBlur = () => {
+        if (route.some((p) => p.address.trim())) commitRoute(route);
+    };
+
+    useEffect(() => {
+        const addresses = committed;
+        if (addresses.length < 2 || addresses.some((a) => !a)) return;
 
         const fetchQuote = async () => {
             setLoading(true);
-            setToastMessage(null); // Clear previous errors
+            setToastMessage(null);
             try {
-
                 // Route through SWA linked backend proxy (function key stays in Azure)
                 const res = await fetch('/api/quote', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         // Round trips were removed from the UI; always price as one-way.
                         tripType: 'one-way',
-                        pickup,
-                        dropoff,
-                        stops: stopAddresses.length > 0 ? stopAddresses : Array(stopCount).fill(''),
+                        // Waypoint ORDER is the trip. The backend passes these to
+                        // Google Directions without optimize_waypoints, so the
+                        // sequence sent is the sequence priced and driven.
+                        ...toQuoteRequest(route),
                         returnStops: [],
                         layoverHours: 0,
                         waitTimeHours: parseFloat(waitTimeHours.toString()) || 0
@@ -102,92 +151,71 @@ export default function BookingEngine() {
                 });
                 if (!res.ok) {
                     console.error("Quote API Error:", res.status, res.statusText);
-                    // Don't show toast for 404s (API deploying) to avoid spamming user while typing
-                    if (res.status !== 404) {
-                        setToastMessage(`Pricing Engine Unavailable (${res.status})`);
-                    }
                     setQuote(null);
+                    setQuoteError(res.status === 404
+                        ? "Pricing is temporarily unavailable. Please try again in a moment."
+                        : `Pricing is unavailable right now (${res.status}).`);
                     return;
                 }
 
                 const data = await res.json();
-                if (data.success) {
+                if (data.success && quoteIsBookable(data.quote)) {
                     setQuote(data.quote);
+                    setQuoteError(null);
                 } else {
-                    console.error("Quote Logic Error:", data.error);
-
-                    // Only show logic error toasts if the address looks like it could be real
-                    // (prevents toast spam while typing "2" or "23")
-                    const isPartialAddress = (pickup.length < 10 || dropoff.length < 10) && data.error === "NOT_FOUND";
-
-                    if (!isPartialAddress) {
-                        setToastMessage(data.error || "Failed to calculate pricing");
-                    }
-
-                    // We keep the old quote if it's just a partial address error to prevent map flashing
-                    if (!isPartialAddress) {
-                        setQuote(null);
-                    }
+                    // Either the engine reported a problem, or it returned a
+                    // total we will not put in front of a customer ($0, NaN,
+                    // a missing component). Both are a failure to price.
+                    console.error("Quote rejected:", data.error || data.quote);
+                    setQuote(null);
+                    setQuoteError(data.error === "NOT_FOUND"
+                        ? "We couldn't find a driving route between those addresses. Check each stop."
+                        : (data.error || "We couldn't calculate a price for this route."));
                 }
-            } catch (e: any) {
+            } catch (e: unknown) {
                 console.error("Fetch Error:", e);
-                setToastMessage(`Connection Error: ${e.message}`);
+                setQuote(null);
+                setQuoteError("We couldn't reach the pricing service. Please try again.");
             } finally {
                 setLoading(false);
             }
         };
 
-        const timeout = setTimeout(fetchQuote, 500); // Debounce
+        const timeout = setTimeout(fetchQuote, QUOTE_COALESCE_MS);
         return () => clearTimeout(timeout);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [committedKey, waitTimeHours]);
 
-    }, [pickup, dropoff, stopCount, stopAddresses, waitTimeHours]);
-
-    // Stop address helpers — keep arrays in sync with counts
-    const handleStopCountChange = (newCount: number) => {
-        const clamped = Math.max(0, Math.min(5, newCount));
-        setStopCount(clamped);
-        setStopAddresses(prev => {
-            const next = [...prev];
-            while (next.length < clamped) next.push('');
-            return next.slice(0, clamped);
+    // ── Route editing ────────────────────────────────────────────────────
+    const handleAddStop = () => setRoute((r) => addStop(r));
+    const handleRemoveStop = (id: string) => {
+        setRoute((r) => {
+            const next = removeStop(r, id);
+            delete autocompleteRefs.current[id];
+            // Removing a leg changes the route, so re-price against what's left
+            // rather than leaving the old total up.
+            if (next.every((p) => p.address.trim())) {
+                setCommitted(next.map((p) => p.address.trim()));
+            }
+            return next;
         });
-    };
-    const updateStopAddress = (idx: number, val: string) => {
-        setStopAddresses(prev => { const a = [...prev]; a[idx] = val; return a; });
-    };
-
-    // Google types an airport Place as "airport". Opening the flight section on
-    // that signal costs nothing (the Place is already fetched for the address)
-    // and covers the common case; the manual toggle covers the rest.
-    const placeIsAirport = (place?: google.maps.places.PlaceResult | null) =>
-        !!place?.types?.includes("airport");
-
-    // Auto-open the flight section for an airport pickup, but never auto-CLOSE
-    // it: a passenger who opened it by hand and then corrected their address
-    // shouldn't lose what they typed.
-    const handlePickupPlace = (place: google.maps.places.PlaceResult) => {
-        if (placeIsAirport(place)) {
-            setAirportPickup(true);
-            setAirportAutoDetected(true);
-        }
     };
 
     // Validation: Check if address is outside Colorado
     const validateLocation = (address: string) => {
         const lower = address.toLowerCase();
         const isColorado = lower.includes('colorado') || lower.includes(', co');
-
         if (!isColorado) {
             setToastMessage('Note: You are booking a trip outside of our primary service area');
-            setTimeout(() => setToastMessage(null), 5000); // Auto-dismiss after 5 seconds
+            setTimeout(() => setToastMessage(null), 5000);
         }
     };
 
     // Autocomplete configuration options
     const autocompleteOptions = {
         componentRestrictions: { country: "us" },
-        // `types` is what tells us a Place is an airport — without it the
-        // airport section could only ever be opened by hand.
+        // `types` is what tells us a leg is an airport — without it the flight
+        // section could only ever be opened by hand.
         fields: ["formatted_address", "geometry", "name", "types"],
         // Soft bias toward Colorado Springs (not strict bounds)
         locationBias: {
@@ -196,10 +224,23 @@ export default function BookingEngine() {
         }
     };
 
+    const quoteRequest = useMemo(() => toQuoteRequest(route), [routeSignature]); // eslint-disable-line react-hooks/exhaustive-deps
+    const bookable = quoteIsBookable(quote);
+    const contactComplete = !!(name && email && phone);
+    const canContinue = routeComplete && bookable && contactComplete;
+
+    /* Only an ARRIVING flight gets an expected arrival airport. That single
+       field is what switches the cabin console into the arrival workflow, so a
+       departure deliberately sends the flight number WITHOUT one: dispatch can
+       still see the flight, but there is no inbound aircraft to track and no
+       landing to hand over from. No extra column, no direction flag. */
+    const flightForBooking = showFlightSection && flightNumber.trim()
+        ? flightNumber.trim() : undefined;
+    const arrivalForBooking = direction === "ARRIVING" && arrivalAirport.trim()
+        ? arrivalAirport.trim() : undefined;
+
     return (
         <div className="w-full text-left font-sans">
-            {/* Engine Logic */}
-
             {/* 1. Header */}
             <div className="flex justify-between items-center mb-8 border-b border-white/10 pb-6">
                 <div>
@@ -215,178 +256,131 @@ export default function BookingEngine() {
                 </p>
             </div>
 
-
-
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
 
-                {/* LEFT: Inputs */}
+                {/* LEFT: the route, in travel order */}
                 <div className="space-y-6">
-
-                    {/* --- LEG 1 --- */}
-                    <div className="relative group">
-                        <label className="text-xs font-bold text-gray-500 tracking-widest uppercase mb-2 block">Origin</label>
-                        {isLoaded ? (
-                            <Autocomplete
-                                onLoad={(autocomplete: google.maps.places.Autocomplete) => { pickupAutocompleteRef.current = autocomplete; }}
-                                onPlaceChanged={() => {
-                                    if (pickupAutocompleteRef.current) {
-                                        const place = pickupAutocompleteRef.current.getPlace();
-                                        const address = place.formatted_address || place.name || "";
-                                        setPickup(address);
-                                        validateLocation(address);
-                                        handlePickupPlace(place);
-                                    }
-                                }}
-                                options={autocompleteOptions}
-                            >
-                                <input
-                                    type="text"
-                                    value={pickup}
-                                    onChange={e => setPickup(e.target.value)}
-                                    placeholder="e.g., 1 Lake Ave, Colorado Springs"
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 !text-white focus:outline-none focus:border-cyan-500 transition-colors text-lg"
-                                    style={{ color: '#ffffff', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderColor: 'rgba(255, 255, 255, 0.1)' }}
-                                />
-                            </Autocomplete>
-                        ) : (
-                            <input
-                                type="text"
-                                value={pickup}
-                                onChange={e => setPickup(e.target.value)}
-                                placeholder="e.g., 1194 Magnolia St"
-                                className="w-full bg-white/5 border border-white/10 rounded-xl p-4 !text-white focus:outline-none focus:border-cyan-500 transition-colors text-lg"
-                                style={{ color: '#ffffff', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderColor: 'rgba(255, 255, 255, 0.1)' }}
-                            />
-                        )}
-                    </div>
-
-
-
-                    {/* Stop Counter */}
-                    <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 space-y-4">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Extra Stops</p>
-                                <p className="text-[11px] text-gray-500 mt-0.5">$5.00 per stop</p>
-                            </div>
-                            {stopCount > 0 && (
-                                <span className="text-xs font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-2 py-1 rounded-lg">
-                                    +${(stopCount * 5).toFixed(2)}
-                                </span>
-                            )}
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <button
-                                onClick={() => handleStopCountChange(stopCount - 1)}
-                                disabled={stopCount === 0}
-                                className="w-10 h-10 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center text-gray-300 hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                            >
-                                <Minus size={16} />
-                            </button>
-                            <div className="flex-1 text-center">
-                                <span className="text-3xl font-bold text-white tabular-nums">{stopCount}</span>
-                                <span className="text-gray-500 text-sm ml-2">{stopCount === 1 ? 'stop' : 'stops'}</span>
-                            </div>
-                            <button
-                                onClick={() => handleStopCountChange(stopCount + 1)}
-                                disabled={stopCount === 5}
-                                className="w-10 h-10 rounded-xl border border-cyan-500/30 bg-cyan-500/10 flex items-center justify-center text-cyan-400 hover:bg-cyan-500/20 hover:text-cyan-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                            >
-                                <Plus size={16} />
-                            </button>
-                        </div>
-                        {/* Optional address fields — animate in when stops > 0 */}
-                        {stopCount > 0 && (
-                            <div className="space-y-2 pt-2 border-t border-white/5 animate-in fade-in slide-in-from-top-2 duration-300">
-                                <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Stop Addresses <span className="normal-case font-normal">(optional)</span></p>
-                                {Array.from({ length: stopCount }).map((_, idx) => (
-                                    <div key={idx} className="flex items-center gap-2">
-                                        <span className="text-[10px] font-bold text-cyan-500/60 w-5 text-center">{idx + 1}</span>
+                    <div className="space-y-3">
+                        {route.map((leg, index) => {
+                            const role = roleAt(index, route.length);
+                            const label = labelFor(index, route.length);
+                            const accent = role === "STOP" ? "text-cyan-500/70" : "text-gray-500";
+                            return (
+                                <div key={leg.id} className="relative group">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className={`text-xs font-bold tracking-widest uppercase flex items-center gap-2 ${accent}`}>
+                                            <MapPin size={12} />
+                                            {label}
+                                        </label>
+                                        {role === "STOP" && (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveStop(leg.id)}
+                                                aria-label={`Remove ${label}`}
+                                                className="text-gray-500 hover:text-red-400 transition-colors p-1"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        )}
+                                    </div>
+                                    {isLoaded ? (
+                                        <Autocomplete
+                                            onLoad={(a: google.maps.places.Autocomplete) => {
+                                                autocompleteRefs.current[leg.id] = a;
+                                            }}
+                                            onPlaceChanged={() => handlePlaceChanged(leg.id)}
+                                            options={autocompleteOptions}
+                                        >
+                                            <input
+                                                type="text"
+                                                value={leg.address}
+                                                onChange={e => setRoute(r => setPoint(r, leg.id, { address: e.target.value }))}
+                                                onBlur={handleBlur}
+                                                placeholder={role === "STOP"
+                                                    ? "Where should we stop?"
+                                                    : "e.g., 1 Lake Ave, Colorado Springs"}
+                                                aria-label={label}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl p-4 !text-white focus:outline-none focus:border-cyan-500 transition-colors text-lg"
+                                                style={{ color: '#ffffff', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderColor: 'rgba(255, 255, 255, 0.1)' }}
+                                            />
+                                        </Autocomplete>
+                                    ) : (
                                         <input
                                             type="text"
-                                            value={stopAddresses[idx] || ''}
-                                            onChange={e => updateStopAddress(idx, e.target.value)}
-                                            placeholder={`Stop ${idx + 1} address (optional)`}
-                                            className="flex-1 bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm !text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 transition-colors"
-                                            style={{ color: '#ffffff', backgroundColor: 'rgba(0,0,0,0.2)' }}
+                                            value={leg.address}
+                                            onChange={e => setRoute(r => setPoint(r, leg.id, { address: e.target.value }))}
+                                            onBlur={handleBlur}
+                                            placeholder="e.g., 1194 Magnolia St"
+                                            aria-label={label}
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl p-4 !text-white focus:outline-none focus:border-cyan-500 transition-colors text-lg"
+                                            style={{ color: '#ffffff', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderColor: 'rgba(255, 255, 255, 0.1)' }}
                                         />
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
 
-                    <div className="relative group pt-2">
-                        <label className="text-xs font-bold text-gray-500 tracking-widest uppercase mb-2 block">
-                            Destination
-                        </label>
-                        {isLoaded ? (
-                            <Autocomplete
-                                onLoad={(autocomplete: google.maps.places.Autocomplete) => { dropoffAutocompleteRef.current = autocomplete; }}
-                                onPlaceChanged={() => {
-                                    if (dropoffAutocompleteRef.current) {
-                                        const place = dropoffAutocompleteRef.current.getPlace();
-                                        const address = place.formatted_address || place.name || "";
-                                        setDropoff(address);
-                                        validateLocation(address);
-                                    }
-                                }}
-                                options={autocompleteOptions}
+                    {/* Add Stop — inserts before the final drop-off, never after. */}
+                    <div className="flex items-center justify-between bg-white/[0.03] border border-white/10 rounded-2xl p-4">
+                        <div>
+                            <button
+                                type="button"
+                                onClick={handleAddStop}
+                                disabled={!canAddStop(route)}
+                                className="flex items-center gap-2 text-sm font-bold text-cyan-400 hover:text-cyan-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                             >
-                                <input
-                                    type="text"
-                                    value={dropoff}
-                                    onChange={e => setDropoff(e.target.value)}
-                                    placeholder="e.g., 1 Lake Ave, Colorado Springs"
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 !text-white focus:outline-none focus:border-cyan-500 transition-colors text-lg"
-                                    style={{ color: '#ffffff', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderColor: 'rgba(255, 255, 255, 0.1)' }}
-                                />
-                            </Autocomplete>
-                        ) : (
-                            <input
-                                type="text"
-                                value={dropoff}
-                                onChange={e => setDropoff(e.target.value)}
-                                placeholder="e.g., 1194 Magnolia St"
-                                className="w-full bg-white/5 border border-white/10 rounded-xl p-4 !text-white focus:outline-none focus:border-cyan-500 transition-colors text-lg"
-                                style={{ color: '#ffffff', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderColor: 'rgba(255, 255, 255, 0.1)' }}
-                            />
+                                <Plus size={16} /> Add a stop
+                            </button>
+                            <p className="text-[11px] text-gray-500 mt-1">
+                                $5.00 per stop · up to {MAX_STOPS}
+                            </p>
+                        </div>
+                        {stops > 0 && (
+                            <span className="text-xs font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-2 py-1 rounded-lg">
+                                {stops} {stops === 1 ? 'stop' : 'stops'} · +${(stops * 5).toFixed(2)}
+                            </span>
                         )}
                     </div>
 
-                    {/* --- AIRPORT PICKUP (optional) --- */}
-                    {/* Both fields are optional. Left blank, the booking behaves
-                        exactly as it does today and the cabin console keeps the
-                        vehicle-only map. */}
+                    {/* --- FLIGHT (optional) --- */}
                     <div className="pt-2">
-                        <label className="flex items-center gap-3 cursor-pointer select-none">
-                            <input
-                                type="checkbox"
-                                checked={airportPickup}
-                                onChange={e => {
-                                    setAirportPickup(e.target.checked);
-                                    if (!e.target.checked) {
-                                        setFlightNumber("");
-                                        setArrivalAirport("");
-                                        setAirportAutoDetected(false);
-                                    }
-                                }}
-                                className="w-4 h-4 rounded border-white/20 bg-white/5 text-cyan-500 focus:ring-cyan-500/50 focus:ring-offset-0"
-                            />
-                            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-                                I&apos;m arriving on a flight
-                            </span>
-                        </label>
+                        {direction === null && (
+                            <label className="flex items-center gap-3 cursor-pointer select-none">
+                                <input
+                                    type="checkbox"
+                                    checked={flightOverride}
+                                    onChange={e => {
+                                        setFlightOverride(e.target.checked);
+                                        if (!e.target.checked) {
+                                            setFlightNumber("");
+                                            setArrivalAirport("");
+                                        }
+                                    }}
+                                    className="w-4 h-4 rounded border-white/20 bg-white/5 text-cyan-500 focus:ring-cyan-500/50 focus:ring-offset-0"
+                                />
+                                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                                    This trip involves a flight
+                                </span>
+                            </label>
+                        )}
 
-                        {airportPickup && (
+                        {showFlightSection && (
                             <div className="mt-4 bg-white/[0.03] border border-white/10 rounded-2xl p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
                                 <p className="text-[11px] text-gray-500 leading-relaxed">
-                                    {airportAutoDetected
-                                        ? "Looks like an airport pickup. "
-                                        : ""}
-                                    Add your flight and we&apos;ll track it — your cabin
-                                    console follows the plane in, then switches to your
-                                    driver. Optional, and never blocks your booking.
+                                    {direction === "ARRIVING" && (
+                                        <>Looks like an airport pickup. Add your flight and we&apos;ll
+                                            track it — your cabin console follows the plane in, then
+                                            switches to your driver.</>
+                                    )}
+                                    {direction === "DEPARTING" && (
+                                        <>Heading to the airport. Your flight number helps us plan
+                                            your pickup time — we don&apos;t track outbound flights.</>
+                                    )}
+                                    {direction === null && (
+                                        <>Add your flight number so we can plan around it.</>
+                                    )}
+                                    {" "}Optional, and never blocks your booking.
                                 </p>
                                 <div className="flex gap-2">
                                     <div className="flex-1">
@@ -403,25 +397,30 @@ export default function BookingEngine() {
                                             style={{ color: '#ffffff', backgroundColor: 'rgba(0,0,0,0.2)' }}
                                         />
                                     </div>
-                                    <div className="w-28">
-                                        <label className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1 block">
-                                            Arriving At
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={arrivalAirport}
-                                            onChange={e => setArrivalAirport(e.target.value.toUpperCase())}
-                                            placeholder="COS"
-                                            maxLength={8}
-                                            className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm !text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 transition-colors"
-                                            style={{ color: '#ffffff', backgroundColor: 'rgba(0,0,0,0.2)' }}
-                                        />
-                                    </div>
+                                    {/* Only an arrival has an airport we wait at. */}
+                                    {direction === "ARRIVING" && (
+                                        <div className="w-28">
+                                            <label className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1 block">
+                                                Arriving At
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={arrivalAirport}
+                                                onChange={e => setArrivalAirport(e.target.value.toUpperCase())}
+                                                placeholder="COS"
+                                                maxLength={8}
+                                                className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm !text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 transition-colors"
+                                                style={{ color: '#ffffff', backgroundColor: 'rgba(0,0,0,0.2)' }}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
-                                <p className="text-[10px] text-gray-600">
-                                    The same flight number can fly several routes a day —
-                                    the arrival airport pins the right one.
-                                </p>
+                                {direction === "ARRIVING" && (
+                                    <p className="text-[10px] text-gray-600">
+                                        The same flight number can fly several routes a day —
+                                        the arrival airport pins the right one.
+                                    </p>
+                                )}
                             </div>
                         )}
                     </div>
@@ -454,12 +453,12 @@ export default function BookingEngine() {
                 <div className="flex flex-col h-full">
                     {/* LIVE MAP INTEGRATION */}
                     <div className="w-full h-48 rounded-2xl border border-white/10 mb-6 overflow-hidden shadow-2xl relative z-0">
-                        {/* Only load map if we have inputs */}
-                        {(pickup || dropoff) ? (
+                        {(quoteRequest.pickup || quoteRequest.dropoff) ? (
                             <RouteMap
-                                pickupAddress={quote?.debug?.origin || pickup} // Use Validated if available
-                                dropoffAddress={quote?.debug?.destination || dropoff} // Use Validated if available
-                                stops={[]} // Stops are now count-only; no addresses to display
+                                pickupAddress={quote?.debug?.origin || quoteRequest.pickup}
+                                dropoffAddress={quote?.debug?.destination || quoteRequest.dropoff}
+                                /* The stops finally reach the map, in order. */
+                                stops={quoteRequest.stops}
                             />
                         ) : (
                             <div className="w-full h-full bg-gradient-to-br from-gray-900 to-black flex items-center justify-center">
@@ -467,10 +466,10 @@ export default function BookingEngine() {
                             </div>
                         )}
 
-                        {/* Open in Google Maps Button */}
-                        {(pickup || dropoff) && (
+                        {/* Open in Google Maps — waypoints in travel order. */}
+                        {(quoteRequest.pickup || quoteRequest.dropoff) && (
                             <a
-                                href={`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(pickup)}&destination=${encodeURIComponent(dropoff)}`}
+                                href={`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(quoteRequest.pickup)}&destination=${encodeURIComponent(quoteRequest.dropoff)}${quoteRequest.stops.filter(Boolean).length ? `&waypoints=${quoteRequest.stops.filter(Boolean).map(encodeURIComponent).join('%7C')}` : ''}`}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="absolute top-2 right-2 bg-white/10 hover:bg-white/20 hover:text-white backdrop-blur-md text-gray-300 p-2 rounded-lg transition-all z-10 border border-white/10 shadow-lg"
@@ -506,7 +505,7 @@ export default function BookingEngine() {
                                     )}
                                     {quote.stopFee > 0 && (
                                         <div className="flex justify-between text-sm text-gray-300">
-                                            <span>Extra Stops ({stopCount}×)</span>
+                                            <span>Stops ({stops}×)</span>
                                             <span>${quote.stopFee.toFixed(2)}</span>
                                         </div>
                                     )}
@@ -523,9 +522,19 @@ export default function BookingEngine() {
                                         </div>
                                     )}
                                 </div>
+                            ) : quoteError ? (
+                                <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-100">
+                                    {quoteError}
+                                </div>
+                            ) : !routeComplete ? (
+                                <div className="text-center text-gray-500 py-8 italic">
+                                    {missingLabels(route).length
+                                        ? `Add an address for: ${missingLabels(route).join(', ')}`
+                                        : 'Enter route to calculate...'}
+                                </div>
                             ) : (
                                 <div className="text-center text-gray-500 py-8 italic">
-                                    Enter route to calculate...
+                                    Calculating...
                                 </div>
                             )}
                         </div>
@@ -534,12 +543,14 @@ export default function BookingEngine() {
                             <div className="flex justify-between items-end mb-6">
                                 <span className="text-gray-400">Total Estimate</span>
                                 <span className="text-4xl font-bold text-white">
-                                    {loading ? <span className="animate-pulse">...</span> : (quote ? `$${quote.total.toFixed(2)}` : "$0.00")}
+                                    {loading
+                                        ? <span className="animate-pulse">...</span>
+                                        : (bookable ? `$${quote!.total.toFixed(2)}` : "—")}
                                 </span>
                             </div>
 
-                            {/* Contact Form (Visible after Quote) */}
-                            {quote && (
+                            {/* Contact Form — only once there is a real price. */}
+                            {bookable && (
                                 <div className="space-y-3 mb-6 animate-in fade-in slide-in-from-top-4 duration-300">
                                     <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Contact Information</h4>
                                     <input
@@ -586,46 +597,48 @@ export default function BookingEngine() {
                                     customerEmail={email}
                                     customerPhone={phone}
                                     passengers={passengers}
-                                    pickup={quote?.debug?.origin || pickup}
-                                    dropoff={quote?.debug?.destination || dropoff}
+                                    pickup={quote?.debug?.origin || quoteRequest.pickup}
+                                    dropoff={quote?.debug?.destination || quoteRequest.dropoff}
+                                    stops={quoteRequest.stops}
                                     price={quote ? `$${quote.total.toFixed(2)}` : '$0.00'}
                                     tripDistance={quote?.distance?.toFixed(1) || undefined}
                                     tripDuration={quote?.time?.toString() || undefined}
-                                    flightNumber={airportPickup ? flightNumber.trim() || undefined : undefined}
-                                    arrivalAirport={airportPickup ? arrivalAirport.trim() || undefined : undefined}
-                                    onBookingComplete={(eventId) => {
-                                        console.log('✅ Booking complete:', eventId);
-                                        setBookingComplete(true);
-                                    }}
+                                    flightNumber={flightForBooking}
+                                    arrivalAirport={arrivalForBooking}
+                                    onBookingComplete={() => setBookingComplete(true)}
                                 />
                             ) : bookingComplete ? (
                                 <div className="text-center py-8 bg-green-500/10 rounded-xl border border-green-500/30">
                                     <div className="text-4xl mb-2">✅</div>
                                     <h4 className="text-xl font-bold text-white mb-2">Booking Confirmed!</h4>
-                                    <p className="text-sm text-gray-300">You'll receive a confirmation email shortly.</p>
+                                    <p className="text-sm text-gray-300">You&apos;ll receive a confirmation email shortly.</p>
                                 </div>
                             ) : (
-                                // --- Continue to Calendar ---
-                                <button
-                                    onClick={() => {
-                                        if (!name || !email || !phone) {
-                                            alert('Please fill in all contact information');
-                                            return;
-                                        }
-                                        setShowCalendar(true);
-                                    }}
-                                    disabled={!name || !email || !phone}
-                                    className={`w-full bg-cyan-600 text-white font-bold py-4 rounded-xl hover:bg-cyan-700 shadow-lg shadow-cyan-500/20 flex justify-center items-center gap-2 text-lg transition-all ${(!name || !email || !phone) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                >
-                                    Continue to Date Selection <ChevronRight />
-                                </button>
+                                <>
+                                    <button
+                                        onClick={() => setShowCalendar(true)}
+                                        disabled={!canContinue}
+                                        className={`w-full bg-cyan-600 text-white font-bold py-4 rounded-xl hover:bg-cyan-700 shadow-lg shadow-cyan-500/20 flex justify-center items-center gap-2 text-lg transition-all ${!canContinue ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    >
+                                        Continue to Date Selection <ChevronRight />
+                                    </button>
+                                    {/* Say WHY it's disabled. A dead button with no
+                                        explanation is how a booking gets abandoned. */}
+                                    {!canContinue && (
+                                        <p className="mt-3 text-center text-xs text-gray-500">
+                                            {!routeComplete
+                                                ? `Add an address for: ${missingLabels(route).join(', ')}`
+                                                : !bookable
+                                                    ? "We need a valid price before you can continue."
+                                                    : "Add your contact details to continue."}
+                                        </p>
+                                    )}
+                                </>
                             )}
                         </div>
                     </div>
                 </div>
             </div>
-
-
 
             {/* Toast Notification */}
             {toastMessage && (
@@ -646,7 +659,6 @@ export default function BookingEngine() {
                     </div>
                 </div>
             )}
-
         </div>
     );
 }
