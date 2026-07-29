@@ -12,6 +12,9 @@ interface CalendarBookingProps {
     passengers: number;
     pickup: string;
     dropoff: string;
+    /* Intermediate stops IN TRAVEL ORDER. The array's order is the trip —
+       everything downstream preserves it rather than sorting or de-duplicating. */
+    stops?: string[];
     price: string;
     quoteType?: string;
     tripDistance?: string;
@@ -61,6 +64,7 @@ export default function CalendarBooking({
     passengers,
     pickup,
     dropoff,
+    stops,
     price,
     quoteType = 'single',
     tripDistance,
@@ -225,10 +229,20 @@ export default function CalendarBooking({
     const airportFields = flightNumber?.trim()
         ? {
             flightNumber: flightNumber.trim().toUpperCase(),
+            // Present ONLY for an arrival. Its absence is what tells the cabin
+            // console not to run the arrival workflow for a departure — no
+            // separate direction flag, no extra column.
             ...(arrivalAirport?.trim()
                 ? { arrivalAirport: arrivalAirport.trim().toUpperCase() }
                 : {}),
         }
+        : {};
+
+    /* Ordered intermediate stops, shared by both booking paths. Blank entries
+       are dropped rather than sent: a gap in an ordered route is an unknown
+       place, not a shorter trip. */
+    const routeFields = stops?.some(s => s?.trim())
+        ? { stops: stops.filter(s => s?.trim()).map(s => s.trim()) }
         : {};
 
     const handleBooking = async (method: 'stripe' | 'invoice' | 'cash') => {
@@ -260,6 +274,7 @@ export default function CalendarBooking({
                         quoteType,
                         paymentMethod: method === 'invoice' ? "Invoice" : (method === 'cash' ? "Cash" : "Venmo"),
                         ...airportFields,
+                        ...routeFields,
                     }),
                 });
                 const data = await res.json();
@@ -298,6 +313,7 @@ export default function CalendarBooking({
                     returnStart: returnScheduled ? returnTime : undefined,
                     quoteType,
                     ...airportFields,
+                    ...routeFields,
                     successUrl: `${window.location.origin}/book/success?session_id={CHECKOUT_SESSION_ID}`,
                     cancelUrl: `${window.location.origin}/book?payment_cancelled=true`
                 }),

@@ -335,6 +335,11 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
         flight_number = (data.get('flightNumber') or '').strip().upper() or None
         arrival_airport = (data.get('arrivalAirport') or '').strip().upper() or None
 
+        # Intermediate stops IN TRAVEL ORDER. Blanks are dropped; the surviving
+        # sequence is never sorted or de-duplicated, because the order is the
+        # trip and revisiting an address is a legitimate itinerary.
+        stops = [str(s).strip() for s in (data.get('stops') or []) if s and str(s).strip()]
+
         # Handle Pickup Time formatting
         from services.datetime_utils import format_local_time, normalize_to_utc
         from datetime import datetime, timedelta
@@ -412,6 +417,7 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
                         'phone': phone,
                         'pickup': pickup,
                         'dropoff': dropoff,
+                        'stops': stops,
                         'notes': f"Payment Method: {payment_method}{flight_note}"
                     },
                     start_dt=dt_utc,
@@ -441,6 +447,11 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
                         'phone': phone,
                         'pickup': dropoff,
                         'dropoff': pickup,
+                        # The return retraces the outbound, so the stops run in
+                        # the opposite order. Reversing here rather than
+                        # reusing the outbound list is the difference between
+                        # a sensible route back and a zig-zag.
+                        'stops': list(reversed(stops)),
                         'notes': f"Return leg — Payment Method: {payment_method}"
                     },
                     start_dt=ret_utc,
@@ -496,6 +507,9 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
             import secrets
             cabin_token = str(secrets.randbelow(900000) + 100000)  # fallback: 6-digit code
 
+        # Same renderer the paid path uses — the two receipts must agree.
+        from services.bookings import render_route_rows
+        route_rows = render_route_rows(pickup, stops, dropoff)
         site_url = os.environ.get("SITE_URL", "https://www.costesla.com")
         cabin_url = f"{site_url}/cabin?token={cabin_token}"
         html = f"""
@@ -549,18 +563,7 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
                                             <td style="padding: 6px 0; font-size: 14px; color: #333333; text-align: right; font-weight: 600;">{pickup_time}</td>
                                         </tr>
                                         {f'<tr><td style="padding: 6px 0; font-size: 14px; color: #666666;">Return Pickup</td><td style="padding: 6px 0; font-size: 14px; color: #333333; text-align: right; font-weight: 600;">{return_time_fmt}</td></tr>' if return_time_fmt else ''}
-                                        <tr>
-                                            <td colspan="2" style="padding: 15px 0 6px; font-size: 14px; color: #666666;">Pickup Location</td>
-                                        </tr>
-                                        <tr>
-                                            <td colspan="2" style="padding: 0 0 6px; font-size: 14px; color: #333333; font-weight: 600;">{pickup}</td>
-                                        </tr>
-                                        <tr>
-                                            <td colspan="2" style="padding: 15px 0 6px; font-size: 14px; color: #666666;">Dropoff Location</td>
-                                        </tr>
-                                        <tr>
-                                            <td colspan="2" style="padding: 0 0 6px; font-size: 14px; color: #333333; font-weight: 600;">{dropoff}</td>
-                                        </tr>
+                                        {route_rows}
                                         <tr>
                                             <td style="padding: 20px 0 0; font-size: 18px; font-weight: bold; color: #000000; border-top: 2px solid #000000;">Total</td>
                                             <td style="padding: 20px 0 0; font-size: 18px; font-weight: bold; color: #000000; text-align: right; border-top: 2px solid #000000;">{price}</td>
