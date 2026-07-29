@@ -1112,9 +1112,40 @@ const PrivateTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count
     const [trips, setTrips] = useState<PrivateTrip[]>([]);
     const [loading, setLoading] = useState(true);
     const [totalEarnings, setTotalEarnings] = useState(0);
+    // Per-trip completion state. 'armed' means a return workflow was opened;
+    // 'noReturn' means the trip completed fine but wasn't an airport departure,
+    // which is a normal outcome and must not read as a failure to the driver.
+    const [completing, setCompleting] = useState<Record<string, 'pending' | 'armed' | 'noReturn' | 'error'>>({});
 
     const onTripsLoadedRef = useRef(onTripsLoaded);
     onTripsLoadedRef.current = onTripsLoaded;
+
+    const handleCompleteTrip = async (trip: PrivateTrip) => {
+        const id = trip.trip_id;
+        setCompleting((s) => ({ ...s, [id]: 'pending' }));
+        try {
+            const resp = await fetch(`${AZURE_BASE}/return-trip/complete`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                // Easy Auth cookie rides along; the endpoint reads the
+                // SWA-forwarded principal. No key is sent — this repo is public.
+                credentials: 'include',
+                body: JSON.stringify({ bookingId: id }),
+                signal: AbortSignal.timeout(12_000),
+            });
+            if (!resp.ok) {
+                setCompleting((s) => ({ ...s, [id]: 'error' }));
+                return;
+            }
+            const data = await resp.json();
+            // Trust the server's outcome rather than assuming success armed a
+            // return: a non-departure is a 200 that armed nothing, and showing
+            // "return scheduled" there would be a lie the driver acts on.
+            setCompleting((s) => ({ ...s, [id]: data.returnArmed ? 'armed' : 'noReturn' }));
+        } catch {
+            setCompleting((s) => ({ ...s, [id]: 'error' }));
+        }
+    };
 
     const handleDeleteTrip = async (rideId: string) => {
         const confirmed = window.confirm(`Permanently delete this private booking record? This cannot be undone.`);
@@ -1255,6 +1286,29 @@ const PrivateTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count
                                     <p className="text-base font-black text-emerald-600 tabular-nums">${trip.tip.toFixed(2)}</p>
                                 </div>
                             )}
+                            <div className="min-w-[7.5rem]">
+                                {completing[trip.trip_id] === 'armed' ? (
+                                    <span className="text-[10px] font-bold px-2 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 font-mono uppercase whitespace-nowrap">
+                                        ✓ Return armed
+                                    </span>
+                                ) : completing[trip.trip_id] === 'noReturn' ? (
+                                    <span className="text-[10px] font-bold px-2 py-1 rounded-full border border-slate-200 bg-slate-50 text-slate-600 font-mono uppercase whitespace-nowrap"
+                                        title="Trip marked complete. No return reminder — this wasn't an airport departure.">
+                                        ✓ Complete
+                                    </span>
+                                ) : completing[trip.trip_id] === 'error' ? (
+                                    <button onClick={() => handleCompleteTrip(trip)}
+                                        className="text-[10px] font-bold px-2 py-1 rounded-full border border-rose-200 bg-rose-50 text-rose-700 font-mono uppercase whitespace-nowrap hover:bg-rose-100 transition-colors">
+                                        ⚠ Retry
+                                    </button>
+                                ) : (
+                                    <button onClick={() => handleCompleteTrip(trip)}
+                                        disabled={completing[trip.trip_id] === 'pending'}
+                                        className="text-[10px] font-bold px-2 py-1 rounded-full border border-amber-300 bg-white text-amber-700 font-mono uppercase whitespace-nowrap hover:bg-amber-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                                        {completing[trip.trip_id] === 'pending' ? 'Saving…' : 'Trip complete'}
+                                    </button>
+                                )}
+                            </div>
                         </div>
                         <div className="flex items-center justify-center shrink-0 ml-auto md:ml-0 pl-2">
                             <button

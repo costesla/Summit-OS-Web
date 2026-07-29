@@ -229,38 +229,100 @@ class ReturnTripStore:
         """
         assert_transition(from_state, to_state)     # raises on an illegal move
 
-        sets, params = ["WorkflowStatus = ?", "Version = Version + 1",
-                        "UpdatedAtUtc = ?"], [to_state.value, _utcnow()]
-        for column, value in _updatable(updates):
-            sets.append(f"{column} = ?")
-            params.append(value)
-        params.extend([workflow_id, expected_version, from_state.value])
-
         conn = self._connect()
         if not conn:
             raise RuntimeError("Database unavailable")
         cur = conn.cursor()
         try:
-            cur.execute(
-                f"UPDATE {SCHEMA}.ReturnTripWorkflow SET {', '.join(sets)} "
-                "WHERE WorkflowId = ? AND Version = ? AND WorkflowStatus = ? "
-                "AND VoidedAtUtc IS NULL",
-                tuple(params),
-            )
-            if (cur.rowcount or 0) == 0:
+            if not self._apply_transition(cur, workflow_id,
+                                          expected_version=expected_version,
+                                          from_state=from_state, to_state=to_state,
+                                          correlation_id=correlation_id,
+                                          updates=updates):
                 conn.rollback()
-                logging.info(f"Workflow {workflow_id} transition {from_state.value}->"
-                             f"{to_state.value} lost a concurrency race")
                 return False
-            self._audit(cur, workflow_id, f"ReturnWorkflow{to_state.value}",
-                        from_state=from_state, to_state=to_state,
-                        correlation_id=correlation_id)
-            # A workflow that reaches a dead end releases its claim, so the
-            # passenger can be offered a return again later.
-            if to_state in (WorkflowState.CANCELED, WorkflowState.EXPIRED):
-                cur.execute(
-                    f"DELETE FROM {SCHEMA}.ReturnTripActiveClaim WHERE WorkflowId = ?",
-                    (workflow_id,))
+            conn.commit()
+            return True
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            cur.close()
+            conn.close()
+
+    def _apply_transition(self, cursor, workflow_id: str, *, expected_version: int,
+                          from_state: WorkflowState, to_state: WorkflowState,
+                          correlation_id: Optional[str] = None,
+                          updates: Optional[Dict[str, Any]] = None) -> bool:
+        """The move itself, on the caller's cursor and without committing.
+
+        Factored out so `transition` and `enqueue_and_transition` cannot drift:
+        the version guard, the audit row and the claim release are the parts
+        that must happen on every transition, and duplicating them once would
+        be enough for one copy to quietly lose the claim cleanup.
+        """
+        sets, params = ["WorkflowStatus = ?", "Version = Version + 1",
+                        "UpdatedAtUtc = ?"], [to_state.value, _utcnow()]
+        for column, value in _updatable(updates or {}):
+            sets.append(f"{column} = ?")
+            params.append(value)
+        params.extend([workflow_id, expected_version, from_state.value])
+
+        cursor.execute(
+            f"UPDATE {SCHEMA}.ReturnTripWorkflow SET {', '.join(sets)} "
+            "WHERE WorkflowId = ? AND Version = ? AND WorkflowStatus = ? "
+            "AND VoidedAtUtc IS NULL",
+            tuple(params),
+        )
+        if (cursor.rowcount or 0) == 0:
+            logging.info(f"Workflow {workflow_id} transition {from_state.value}->"
+                         f"{to_state.value} lost a concurrency race")
+            return False
+        self._audit(cursor, workflow_id, f"ReturnWorkflow{to_state.value}",
+                    from_state=from_state, to_state=to_state,
+                    correlation_id=correlation_id)
+        # A workflow that reaches a dead end releases its claim, so the
+        # passenger can be offered a return again later.
+        if to_state in (WorkflowState.CANCELED, WorkflowState.EXPIRED):
+            cursor.execute(
+                f"DELETE FROM {SCHEMA}.ReturnTripActiveClaim WHERE WorkflowId = ?",
+                (workflow_id,))
+        return True
+
+    def enqueue_and_transition(self, *, event_type: str, aggregate_id: str,
+                               payload: Dict[str, Any], workflow_id: str,
+                               expected_version: int, from_state: WorkflowState,
+                               to_state: WorkflowState,
+                               correlation_id: Optional[str] = None,
+                               **updates) -> bool:
+        """Queue a side effect and advance the workflow in ONE transaction.
+
+        Split into two commits, a crash in the gap gives you either a workflow
+        marked Sent whose reminder was never queued (silent no-send), or a
+        queued reminder against a workflow still marked Dispatching, which the
+        next claim re-sends. Committing them together is the entire reason the
+        outbox exists rather than sending inline.
+
+        Transition first: if it loses the version race the row belongs to
+        another writer, and enqueuing anyway would post a side effect for work
+        we did not do.
+        """
+        assert_transition(from_state, to_state)
+        conn = self._connect()
+        if not conn:
+            raise RuntimeError("Database unavailable")
+        cur = conn.cursor()
+        try:
+            self.ensure_schema(cur)
+            if not self._apply_transition(cur, workflow_id,
+                                          expected_version=expected_version,
+                                          from_state=from_state, to_state=to_state,
+                                          correlation_id=correlation_id,
+                                          updates=updates):
+                conn.rollback()
+                return False
+            self.enqueue(cur, event_type=event_type, aggregate_id=aggregate_id,
+                         payload=payload)
             conn.commit()
             return True
         except Exception:

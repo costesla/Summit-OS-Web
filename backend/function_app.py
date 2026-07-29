@@ -51,6 +51,7 @@ blueprints = [
     "api.flightaware",
     "api.feedback",
     "api.push",
+    "api.return_trip",
 ]
 
 registration_logs = []
