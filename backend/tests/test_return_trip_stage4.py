@@ -25,6 +25,9 @@ from services.return_trip.errors import (  # noqa: E402
     AmbiguousFlightOccurrence, FlightNotFound, InvalidOrExpiredToken,
     RateLimitExceeded, ReturnBookingAlreadyExists,
 )
+from services.return_trip.flight_types import (  # noqa: E402
+    Airport, FlightOccurrence,
+)
 from services.return_trip.states import WorkflowState  # noqa: E402
 from services.return_trip.store import Workflow  # noqa: E402
 from services.return_trip.tokens import (  # noqa: E402
@@ -205,20 +208,21 @@ class _FakeStore:
         return self._confirm_result
 
 
-class _Airport:
-    def __init__(self, iata):
-        self.iata = iata
+def _Occurrence(number="123", provider_flight_id="fa-1"):
+    """A REAL FlightOccurrence, not a stand-in.
 
-
-class _Occurrence:
-    def __init__(self, ident="UA123"):
-        self.ident = ident
-        self.departure = _Airport("SFO")
-        self.arrival = _Airport("COS")
-        self.scheduled_arrival_utc = NOW
-        self.estimated_arrival_utc = NOW
-        self.provider = "aeroapi"
-        self.provider_flight_id = "fa-1"
+    An earlier version of this file used a hand-rolled fake with an `ident`
+    attribute the real dataclass does not have. Every test passed and
+    `resolve_flight` would have raised AttributeError on its first successful
+    lookup in production. Using the real type is what stops a fake drifting
+    away from the thing it stands for.
+    """
+    return FlightOccurrence(
+        provider="aeroapi", provider_flight_id=provider_flight_id,
+        marketing_carrier="UA", marketing_number=number,
+        departure=Airport(iata="SFO"), arrival=Airport(iata="COS"),
+        scheduled_arrival_utc=NOW, estimated_arrival_utc=NOW,
+    )
 
 
 class _Provider:

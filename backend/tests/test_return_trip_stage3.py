@@ -241,7 +241,46 @@ class TestCompleteOutboundTrip:
         store = _FakeStore()
         complete_outbound_trip("bk-1", store=store, connection_factory=lambda: None)
         assert set(store.created[0]) <= {
-            "outbound_booking_id", "status", "correlation_id"}
+            "outbound_booking_id", "status", "correlation_id",
+            "reminder_dispatch_at_utc", "expiration_at_utc"}
+
+    def test_arming_also_schedules_the_reminder(self, monkeypatch):
+        """Creating the workflow is not enough — it must reach ReminderScheduled.
+
+        `claim_due_reminders` only sees REMINDER_SCHEDULED rows with a dispatch
+        time. A workflow left in PENDING_RETURN_ESTIMATE is invisible to the
+        worker forever: armed, audited, and silently never sent. This is the
+        seam between the trigger and the worker, and unit tests of either half
+        alone cannot see it.
+        """
+        monkeypatch.setattr(completion_mod, "departure_metadata",
+                            lambda b, f: {"flight_number": "UA123"})
+        store = _FakeStore()
+        outcome = complete_outbound_trip("bk-1", store=store,
+                                         connection_factory=lambda: None)
+        assert outcome == CompletionOutcome.ARMED
+        assert len(store.transitions) == 1
+        _, kw = store.transitions[0]
+        assert kw["from_state"] is WorkflowState.PENDING_RETURN_ESTIMATE
+        assert kw["to_state"] is WorkflowState.REMINDER_SCHEDULED
+
+    def test_dispatch_time_is_set_or_the_claim_query_skips_it(self, monkeypatch):
+        """A null ReminderDispatchAtUtc is excluded by the claim query."""
+        monkeypatch.setattr(completion_mod, "departure_metadata",
+                            lambda b, f: {"flight_number": "UA123"})
+        store = _FakeStore()
+        complete_outbound_trip("bk-1", store=store, connection_factory=lambda: None)
+        assert store.created[0]["reminder_dispatch_at_utc"] is not None
+
+    def test_failed_schedule_is_reported_distinctly(self, monkeypatch):
+        """The row holds the claim, so nothing retries it — it needs an operator
+        and must not be counted as a healthy arm."""
+        monkeypatch.setattr(completion_mod, "departure_metadata",
+                            lambda b, f: {"flight_number": "UA123"})
+        store = _FakeStore(transition_ok=False)
+        outcome = complete_outbound_trip("bk-1", store=store,
+                                         connection_factory=lambda: None)
+        assert outcome == CompletionOutcome.ARMED_NOT_SCHEDULED
 
     def test_outbound_flight_goes_to_the_audit_trail(self, monkeypatch):
         monkeypatch.setattr(completion_mod, "departure_metadata",

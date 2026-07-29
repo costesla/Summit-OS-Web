@@ -260,7 +260,19 @@ class ReturnTripStore:
         the version guard, the audit row and the claim release are the parts
         that must happen on every transition, and duplicating them once would
         be enough for one copy to quietly lose the claim cleanup.
+
+        The legality check lives HERE rather than only in the public callers.
+        It used to sit in `transition` and `enqueue_and_transition` alone,
+        which left `confirm_return_trip` — the one caller that reaches this
+        helper directly — able to write moves the state machine forbids. A
+        replayed confirm walked a CONFIRMED workflow back to FlightVerified
+        that way, and the only thing that stopped it committing was the
+        already-consumed verification further down: luck, not design. The
+        `WHERE WorkflowStatus = ?` guard cannot catch it, because the row
+        genuinely IS in the from-state; what is wrong is the edge itself.
         """
+        assert_transition(from_state, to_state)     # raises on an illegal move
+
         sets, params = ["WorkflowStatus = ?", "Version = Version + 1",
                         "UpdatedAtUtc = ?"], [to_state.value, _utcnow()]
         for column, value in _updatable(updates or {}):

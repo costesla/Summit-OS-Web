@@ -123,15 +123,22 @@ class ReturnTripBookingService:
 
     @staticmethod
     def _candidate(occurrence) -> Dict[str, Any]:
-        """Passenger-facing view of an occurrence. No provider ids, no PII."""
+        """Passenger-facing view of an occurrence. No provider ids, no PII.
+
+        `flight_number` is the marketing number — the one printed on their
+        ticket — which is what someone disambiguating between two legs will
+        recognise. `best_arrival_utc` prefers actual over estimated over
+        scheduled and never invents a time.
+        """
         return {
-            "ident": occurrence.ident,
+            "flightNumber": occurrence.flight_number,
             "departureAirport": occurrence.departure.iata,
             "arrivalAirport": occurrence.arrival.iata,
+            "isCodeshare": occurrence.is_codeshare,
             "scheduledArrivalUtc": (occurrence.scheduled_arrival_utc.isoformat()
                                     if occurrence.scheduled_arrival_utc else None),
-            "estimatedArrivalUtc": (occurrence.estimated_arrival_utc.isoformat()
-                                    if occurrence.estimated_arrival_utc else None),
+            "bestArrivalUtc": (occurrence.best_arrival_utc.isoformat()
+                               if occurrence.best_arrival_utc else None),
         }
 
     # ── confirm ──────────────────────────────────────────────────────────────
