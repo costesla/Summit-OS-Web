@@ -60,10 +60,45 @@ def create_stripe_payment_link(customer_name: str, customer_email: str, amount_u
         }
         if invoice_id:
             metadata["invoiceId"] = invoice_id
-        link = stripe.PaymentLink.create(
-            line_items=[{"price": price.id, "quantity": 1}],
-            metadata=metadata,
-        )
+
+        link_params = {
+            "line_items": [{"price": price.id, "quantity": 1}],
+            "metadata": metadata,
+            # Without this, Stripe drops the payer on stripe.com after paying —
+            # they never came back to our site and never saw a confirmation.
+            "after_completion": {
+                "type": "redirect",
+                "redirect": {
+                    "url": "https://www.costesla.com/invoice/success/"
+                           "?session_id={CHECKOUT_SESSION_ID}",
+                },
+            },
+            # Produces a real invoice (hosted page + PDF) instead of a bare
+            # charge. Payment Links accept neither customer_email nor
+            # receipt_email — verified against the API reference — so this,
+            # plus customer_creation below, is how the payer actually gets
+            # emailed: Stripe creates a Customer from the address confirmed on
+            # the hosted page (prefilled below) and mails the invoice to it.
+            "invoice_creation": {"enabled": True},
+            "customer_creation": "always",
+        }
+        if invoice_id:
+            link_params["invoice_creation"]["invoice_data"] = {
+                "custom_fields": [{"name": "Invoice #", "value": invoice_id}],
+            }
+
+        try:
+            link = stripe.PaymentLink.create(**link_params)
+        except Exception as param_err:
+            # customer_creation is redundant when invoice_creation already forces
+            # a Customer, and Stripe rejects the pair on some API versions. Drop
+            # it and retry rather than losing the link — and therefore the whole
+            # card-payment option — over a redundant parameter.
+            if "customer_creation" not in str(param_err):
+                raise
+            logging.warning(f"Retrying payment link without customer_creation: {param_err}")
+            link_params.pop("customer_creation", None)
+            link = stripe.PaymentLink.create(**link_params)
         url = link.url
         # Prefill the email field on the hosted page (Payment Links can't
         # take customer_email at creation time the way Sessions can).

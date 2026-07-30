@@ -273,8 +273,14 @@ def finalize_stripe_session(session_id: str) -> dict:
     #    already exists in the calendar, so a failed email doesn't warrant
     #    releasing the claim. (Previously posted to /api/book, which sent
     #    paid customers the legacy invoice template with payment options.)
+    # Whether the passenger's receipt actually left the building. The send stays
+    # non-fatal — the booking is paid and on the calendar either way — but the
+    # confirmation page must not claim a delivery we never observed. During the
+    # 7/27 Graph outage that claim was shown to every passenger while nothing
+    # was actually sent.
+    receipt_emailed = False
     try:
-        _send_paid_receipt(session, meta)
+        receipt_emailed = bool(_send_paid_receipt(session, meta))
     except Exception as email_err:
         logging.warning(f"Receipt email failed (non-fatal): {email_err}")
     try:
@@ -311,22 +317,48 @@ def finalize_stripe_session(session_id: str) -> dict:
         "duplicate": False,
         "customerEmail": customer_email,
         "amount": amount_usd,
+        "receiptEmailed": receipt_emailed,
+        "invoiceNumber": canonical_invoice_id(session, meta),
     }
 
 
 OWNER_EMAIL = "peter.teehan@costesla.com"
 
 
+def canonical_invoice_id(session, meta) -> str:
+    """The single INV- number for a booking.
+
+    The same string has to appear on the Stripe invoice PDF, the confirmation
+    page, the receipt email, and the Rides.Rides row — otherwise a passenger
+    quoting their invoice number can't be matched to their trip.
+
+    Checkout mints this *before* creating the session and passes it through
+    metadata, because Stripe does not allow invoice_creation.invoice_data to be
+    updated after Session.create: the number must be known up front to reach the
+    PDF at all, and the old session-derived form can't be known that early.
+
+    Sessions created before that change — and any where minting failed — fall
+    back to the original derivation, so in-flight and historical sessions
+    resolve to exactly the id they have always had.
+    """
+    minted = (meta.get("invoiceId") or "").strip()
+    if minted:
+        return minted
+    import re
+    raw_name = (meta.get("customerName") or "").strip() or "Guest"
+    first_name = re.sub(r'[^A-Za-z0-9]', '', raw_name.split()[0]).capitalize() or "Guest"
+    return f"INV-{first_name}-{session.id[-8:].upper()}"
+
+
 def _log_trip(session, meta):
     import time
     import re
     from services.datetime_utils import normalize_to_utc
-    
-    booking_id = session.id[-8:].upper()
+
     customer_name = meta.get("customerName", "Guest")
     first_name = re.sub(r'[^A-Za-z0-9]', '', customer_name.split()[0]).capitalize()
-    ride_id = f"INV-{first_name}-{booking_id}"
-    
+    ride_id = canonical_invoice_id(session, meta)
+
     raw_time = meta.get("appointmentStart")
     timestamp_epoch = time.time()
     if raw_time:
@@ -362,7 +394,7 @@ def _send_paid_receipt(session, meta):
     email = meta.get("customerEmail")
     if not email:
         logging.warning(f"No customer email on session {session.id} — skipping receipt")
-        return
+        return False
 
     amount_paid = (session.amount_total or 0) / 100.0
     pickup = meta.get("pickup", "N/A")
@@ -390,7 +422,7 @@ def _send_paid_receipt(session, meta):
             return_fmt = raw_return
         return_row = f'<tr><td style="padding: 6px 0; font-size: 14px; color: #666666;">Return Pickup</td><td style="padding: 6px 0; font-size: 14px; color: #333333; text-align: right; font-weight: 600;">{return_fmt}</td></tr>'
 
-    booking_id = session.id[-8:].upper()
+    booking_id = canonical_invoice_id(session, meta)
 
     # Cabin-access token (same behavior as the invoice flow)
     cabin_block = ""
@@ -488,6 +520,13 @@ def _send_paid_receipt(session, meta):
 
     graph = GraphClient()
     graph.send_mail(email, f"Receipt & Booking Confirmation: {booking_id}", html)
-    graph.send_mail(OWNER_EMAIL, f"New PAID Booking: {name} - ${amount_paid:,.2f}", html)
+    # The passenger copy above is what receiptEmailed reports on. A failure of
+    # the owner's copy must not make us tell the passenger their receipt didn't
+    # send, so it gets its own guard.
+    try:
+        graph.send_mail(OWNER_EMAIL, f"New PAID Booking: {name} - ${amount_paid:,.2f}", html)
+    except Exception as owner_err:
+        logging.warning(f"Owner booking copy failed (non-fatal): {owner_err}")
     logging.info(f"Paid receipt sent to {email} for session {session.id}")
+    return True
 
