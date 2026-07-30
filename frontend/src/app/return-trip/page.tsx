@@ -178,8 +178,12 @@ export default function ReturnTripPage() {
         setError("Please confirm the date for that flight and check again.");
     };
 
+    // pt-20 clears the site's fixed nav button (top-4, 44px tall, so its bottom
+    // edge is y=60). At the previous py-12 the h1 started at y=48 and the button
+    // overlapped it on mobile — invisible to geometry checks, because nothing
+    // about the layout is actually invalid; only the screenshot showed it.
     return (
-        <main className="min-h-screen bg-gray-950 text-white font-sans px-5 py-12">
+        <main className="min-h-screen bg-gray-950 text-white font-sans px-5 pt-20 pb-12">
             <div className="max-w-lg mx-auto">
                 <header className="mb-8 border-b border-white/10 pb-6">
                     <h1 className="text-3xl font-bold tracking-tight">Your return trip</h1>
