@@ -53,11 +53,19 @@ interface Props {
 function Logo() {
     return (
         <div className="flex justify-center mb-8">
+            {/* logo.png is a fully opaque near-black square (verified: no
+                transparent pixels), so on this light background it has to be
+                clipped into a tile or it reads as a raw black rectangle. Same
+                treatment AppShell, Navbar and Footer already give it. Drop in a
+                transparent version later and this still renders correctly — it
+                simply stops looking like a tile. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
                 src="/logo.png"
                 alt="COS Tesla"
-                className="w-[140px] max-w-[45vw] h-auto"
+                width={128}
+                height={126}
+                className="w-32 max-w-[40vw] h-auto rounded-2xl shadow-sm"
             />
         </div>
     );
