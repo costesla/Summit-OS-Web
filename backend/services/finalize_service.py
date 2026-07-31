@@ -386,8 +386,12 @@ def _log_trip(session, meta):
 
 
 def _send_paid_receipt(session, meta):
-    """Paid receipt for a Stripe checkout booking — no payment options, no
-    'pick a slot' instructions (the legacy /api/book template is for invoices)."""
+    """Trip confirmation + cabin access for a Stripe checkout booking.
+
+    No longer a receipt, despite the function name: Stripe's invoice and receipt
+    are now the money artifacts. This email exists for what Stripe cannot send —
+    the trip details and the cabin access token. No payment options, no 'pick a
+    slot' instructions (the legacy /api/book template is for invoices)."""
     from services.datetime_utils import format_local_time, normalize_to_utc
 
     name = meta.get("customerName", "Customer")
@@ -472,10 +476,11 @@ def _send_paid_receipt(session, meta):
                     </tr>
                     <tr>
                         <td style="padding: 30px 20px;">
-                            <p style="margin: 0 0 8px; font-size: 18px; font-weight: bold; color: #16a34a;">✓ Payment received — booking confirmed</p>
+                            <p style="margin: 0 0 8px; font-size: 18px; font-weight: bold; color: #16a34a;">✓ Your trip is confirmed</p>
                             <p style="margin: 0 0 20px; font-size: 16px; color: #333333;">Hello {name},</p>
                             <p style="margin: 0 0 25px; font-size: 14px; color: #666666; line-height: 1.5;">
-                                Thank you for choosing COS Tesla. Your card payment of <strong>${amount_paid:,.2f}</strong> was processed successfully and your trip is booked. No further action is needed.
+                                Thank you for choosing COS Tesla. Your trip is booked and your cabin access details are below — no further action is needed.
+                                Your invoice and payment receipt arrive in a separate email from Stripe, who process our payments.
                             </p>
                             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 0 0 25px; border-bottom: 1px solid #eeeeee; padding-bottom: 20px;">
                                 <tr><td colspan="2" style="padding: 0 0 15px; font-size: 18px; font-weight: bold; color: #000000;">Trip Details</td></tr>
@@ -494,7 +499,7 @@ def _send_paid_receipt(session, meta):
                                 {return_row}
                                 {route_rows}
                                 <tr>
-                                    <td style="padding: 20px 0 0; font-size: 18px; font-weight: bold; color: #000000; border-top: 2px solid #000000;">Total Paid</td>
+                                    <td style="padding: 20px 0 0; font-size: 18px; font-weight: bold; color: #000000; border-top: 2px solid #000000;">Fare</td>
                                     <td style="padding: 20px 0 0; font-size: 18px; font-weight: bold; color: #000000; text-align: right; border-top: 2px solid #000000;">${amount_paid:,.2f}</td>
                                 </tr>
                             </table>
@@ -519,7 +524,11 @@ def _send_paid_receipt(session, meta):
     """
 
     graph = GraphClient()
-    graph.send_mail(email, f"Receipt & Booking Confirmation: {booking_id}", html)
+    # Deliberately NOT a receipt. Stripe now issues the invoice and receipt as
+    # the durable money artifacts; this email's job is the trip and the cabin
+    # access token, which Stripe knows nothing about. Two emails, two distinct
+    # jobs — neither pretending to be the other.
+    graph.send_mail(email, f"Your trip is confirmed — {booking_id}", html)
     # The passenger copy above is what receiptEmailed reports on. A failure of
     # the owner's copy must not make us tell the passenger their receipt didn't
     # send, so it gets its own guard.
