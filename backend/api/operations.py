@@ -835,7 +835,48 @@ def delete_trip(req: func.HttpRequest) -> func.HttpResponse:
             )
             
         tessie_drive_id = row[0]
-        
+
+        # Soft delete (?soft=true): flag the row instead of removing it.
+        # Every consumer that matters already filters DeletedAt IS NULL — the
+        # dashboard trips view (get_trips_for_date), unpaid invoices
+        # (get_unpaid_trips), the auto-collect open-invoice set
+        # (get_open_client_invoices) and the nightly private-booking pairing
+        # (sync_private_bookings_for_date) — so this pulls a bad row out of
+        # circulation everywhere at once, and reversibly.
+        #
+        # Two deliberate choices:
+        #  - Tessie_DriveID is left intact. Releasing the drive back to
+        #    'Untagged' is the hard delete's job below, and preserving the link
+        #    is exactly what lets it still do that afterwards.
+        #  - Classification is preserved. scan_day_trips stamps
+        #    'Duplicate_Removed' when it soft-deletes TRIP- rows, but that
+        #    discards the original value for no functional gain: nothing filters
+        #    on it outside that one re-scan guard, and DeletedAt already records
+        #    the fact. Keeping it is what makes this genuinely undoable.
+        soft = (req.params.get("soft") or "").strip().lower() in ("1", "true", "yes")
+        if soft:
+            cursor.execute("""
+                UPDATE Rides.Rides
+                SET DeletedAt   = GETUTCDATE(),
+                    LastUpdated = GETUTCDATE()
+                WHERE RideID = ? AND DeletedAt IS NULL
+            """, (ride_id,))
+            already = cursor.rowcount == 0
+            conn.commit()
+            cursor.close()
+            conn.close()
+            return func.HttpResponse(
+                json.dumps({
+                    "success": True,
+                    "rideId": ride_id,
+                    "mode": "soft",
+                    "alreadyDeleted": already,
+                    "message": (f"Trip {ride_id} was already soft-deleted" if already
+                                else f"Soft-deleted trip {ride_id}"),
+                }),
+                status_code=200, headers=_cors(req), mimetype="application/json"
+            )
+
         # Delete the trip record
         cursor.execute("DELETE FROM Rides.Rides WHERE RideID = ?", (ride_id,))
         rows_deleted = cursor.rowcount
