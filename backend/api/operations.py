@@ -800,6 +800,122 @@ def screenshot_url(req: func.HttpRequest) -> func.HttpResponse:
             status_code=500, headers=_cors(req), mimetype="application/json"
         )
 
+def _client_token_from_ride_id(ride_id: str) -> str:
+    """'INV-TERRANCE-Monday,A-1102' -> 'Terrance'.
+
+    Same position-1 convention get_open_client_invoices() parses. Only used to
+    re-tag a drive on restore; the nightly pairing is authoritative and will
+    correct it on the next run if this guess is off.
+    """
+    parts = (ride_id or "").split("-")
+    return parts[1].capitalize() if len(parts) >= 2 and parts[1] else "Untagged"
+
+
+def _release_drive_if_orphaned(cursor, tessie_drive_id: str, ride_id: str) -> bool:
+    """Reset a Tessie drive to 'Untagged' when no other live booking claims it.
+
+    A drive keeps the passenger's name in Classification, so a removed booking
+    whose drive is left tagged still renders on the timeline as a pickup that
+    happened. Only live rows count as claims — a soft-deleted booking is not a
+    reason to keep the drive attributed.
+    """
+    if not tessie_drive_id:
+        return False
+    cursor.execute(
+        """SELECT COUNT(*) FROM Rides.Rides
+           WHERE Tessie_DriveID = ? AND RideID <> ? AND DeletedAt IS NULL""",
+        (tessie_drive_id, ride_id),
+    )
+    if cursor.fetchone()[0]:
+        return False
+    cursor.execute("""
+        UPDATE Rides.Rides
+        SET TripType = NULL, Classification = 'Untagged', LastUpdated = GETUTCDATE()
+        WHERE RideID = ?
+    """, (tessie_drive_id,))
+    return cursor.rowcount > 0
+
+
+@bp.route(route="operations/restore-trip/{ride_id}", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+def restore_trip(req: func.HttpRequest) -> func.HttpResponse:
+    """Undo a soft delete: clear DeletedAt and re-attach the paired drive.
+
+    This is what makes the dashboard's delete safe to offer without a
+    confirmation modal — the row comes back with one click. Restoring a row
+    that was never soft-deleted is a no-op, not an error.
+    """
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=_cors(req))
+
+    ride_id = req.route_params.get("ride_id")
+    if not ride_id:
+        return func.HttpResponse(
+            json.dumps({"success": False, "error": "ride_id is required"}),
+            status_code=400, headers=_cors(req), mimetype="application/json"
+        )
+
+    try:
+        from services.database import DatabaseClient
+        conn = DatabaseClient().get_connection()
+        if not conn:
+            return func.HttpResponse(
+                json.dumps({"success": False, "error": "Database connection failed"}),
+                status_code=500, headers=_cors(req), mimetype="application/json"
+            )
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT Tessie_DriveID, DeletedAt FROM Rides.Rides WHERE RideID = ?", (ride_id,))
+        row = cursor.fetchone()
+        if not row:
+            cursor.close()
+            conn.close()
+            return func.HttpResponse(
+                json.dumps({"success": False, "error": "Trip not found"}),
+                status_code=404, headers=_cors(req), mimetype="application/json"
+            )
+        tessie_drive_id, deleted_at = row[0], row[1]
+
+        cursor.execute("""
+            UPDATE Rides.Rides
+            SET DeletedAt = NULL, LastUpdated = GETUTCDATE()
+            WHERE RideID = ? AND DeletedAt IS NOT NULL
+        """, (ride_id,))
+        restored = cursor.rowcount > 0
+
+        # Re-tag the drive only if it is still sitting untagged — if something
+        # else has claimed it since, that claim is newer and wins.
+        drive_retagged = False
+        if restored and tessie_drive_id:
+            cursor.execute("""
+                UPDATE Rides.Rides
+                SET TripType = 'Private', Classification = ?, LastUpdated = GETUTCDATE()
+                WHERE RideID = ? AND Classification = 'Untagged'
+            """, (_client_token_from_ride_id(ride_id), tessie_drive_id))
+            drive_retagged = cursor.rowcount > 0
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return func.HttpResponse(
+            json.dumps({
+                "success": True,
+                "rideId": ride_id,
+                "restored": restored,
+                "driveRetagged": drive_retagged,
+                "message": (f"Restored trip {ride_id}" if restored
+                            else f"Trip {ride_id} was not deleted — nothing to restore"),
+            }),
+            status_code=200, headers=_cors(req), mimetype="application/json"
+        )
+    except Exception as e:
+        logging.error(f"Restore Trip Error: {e}")
+        return func.HttpResponse(
+            json.dumps({"success": False, "error": str(e)}),
+            status_code=500, headers=_cors(req), mimetype="application/json"
+        )
+
+
 @bp.route(route="operations/delete-trip/{ride_id}", methods=["DELETE", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def delete_trip(req: func.HttpRequest) -> func.HttpResponse:
     if req.method == "OPTIONS":
@@ -845,11 +961,10 @@ def delete_trip(req: func.HttpRequest) -> func.HttpResponse:
         # circulation everywhere at once, and reversibly.
         #
         # Two deliberate choices:
-        #  - Tessie_DriveID is left intact. Releasing the drive back to
-        #    'Untagged' is the hard delete's job below, and preserving the link
-        #    is exactly what lets it still do that afterwards.
-        #  - Classification is preserved. scan_day_trips stamps
-        #    'Duplicate_Removed' when it soft-deletes TRIP- rows, but that
+        #  - Tessie_DriveID on the booking row is left intact, so restore-trip
+        #    can find the drive again and re-attach it.
+        #  - Classification on the booking row is preserved. scan_day_trips
+        #    stamps 'Duplicate_Removed' when it soft-deletes TRIP- rows, but that
         #    discards the original value for no functional gain: nothing filters
         #    on it outside that one re-scan guard, and DeletedAt already records
         #    the fact. Keeping it is what makes this genuinely undoable.
@@ -862,6 +977,14 @@ def delete_trip(req: func.HttpRequest) -> func.HttpResponse:
                 WHERE RideID = ? AND DeletedAt IS NULL
             """, (ride_id,))
             already = cursor.rowcount == 0
+
+            # Release the paired drive as well. Removing only the booking left
+            # the drive still classified with the passenger's name, so the
+            # timeline kept showing a pickup that had just been cancelled —
+            # observed in production 2026-08-04. The drive is a separate row, so
+            # taking the booking out of circulation cannot implicitly fix it.
+            released = _release_drive_if_orphaned(cursor, tessie_drive_id, ride_id) if not already else False
+
             conn.commit()
             cursor.close()
             conn.close()
@@ -871,6 +994,8 @@ def delete_trip(req: func.HttpRequest) -> func.HttpResponse:
                     "rideId": ride_id,
                     "mode": "soft",
                     "alreadyDeleted": already,
+                    "driveReleased": released,
+                    "tessieDriveId": tessie_drive_id,
                     "message": (f"Trip {ride_id} was already soft-deleted" if already
                                 else f"Soft-deleted trip {ride_id}"),
                 }),
@@ -880,25 +1005,11 @@ def delete_trip(req: func.HttpRequest) -> func.HttpResponse:
         # Delete the trip record
         cursor.execute("DELETE FROM Rides.Rides WHERE RideID = ?", (ride_id,))
         rows_deleted = cursor.rowcount
-        
-        # If there was a Tessie_DriveID, check if there are other trips mapped to it
-        if tessie_drive_id:
-            cursor.execute(
-                "SELECT COUNT(*) FROM Rides.Rides WHERE Tessie_DriveID = ? AND RideID <> ?",
-                (tessie_drive_id, ride_id)
-            )
-            other_trips_count = cursor.fetchone()[0]
-            
-            # If no other trips are mapped, reset the Tessie drive's classification back to Untagged
-            if other_trips_count == 0:
-                cursor.execute("""
-                    UPDATE Rides.Rides
-                    SET TripType = NULL,
-                        Classification = 'Untagged',
-                        LastUpdated = GETUTCDATE()
-                    WHERE RideID = ?
-                """, (tessie_drive_id,))
-                
+
+        # Release the paired drive if nothing else claims it. Shared with the
+        # soft path so both routes leave the drive in the same state.
+        _release_drive_if_orphaned(cursor, tessie_drive_id, ride_id)
+
         conn.commit()
         cursor.close()
         conn.close()
