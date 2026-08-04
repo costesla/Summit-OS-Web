@@ -110,6 +110,22 @@ class FlightAwareClient:
         self._key = self.secrets.get_secret("FLIGHTAWARE_API_KEY")
         self.base_url = AEROAPI_BASE_URL
         self._session = requests.Session()
+        # The degrade-gracefully methods below (canonical_ident, flight_info,
+        # flight_candidates, last_position) deliberately never raise, so a
+        # provider outage is otherwise indistinguishable from "no such flight".
+        # Callers that must tell those apart read last_error. Instance state,
+        # and callers build a client per request, so there is no cross-request
+        # bleed. A method that succeeds does NOT clear it: one good call in a
+        # chain must not erase an earlier failure that already cost us data.
+        #
+        # last_error means "a call that should have RETURNED DATA failed".
+        # A canonical-resolution failure is tracked separately because it is
+        # not fatal by itself — canonical_ident degrades to the input ident and
+        # the /flights lookup still runs. Conflating the two would report an
+        # outage when a transient canonical blip is followed by a healthy
+        # lookup whose legs the destination guard then legitimately rejects.
+        self.last_error: Optional[FlightAwareApiError] = None
+        self.last_canonical_error: Optional[FlightAwareApiError] = None
         if self._key:
             self._session.headers.update({
                 "x-apikey": self._key,
@@ -292,6 +308,7 @@ class FlightAwareClient:
             data = self._get(f"/flights/{ident}/canonical", params, cache_ttl=ttl)
         except FlightAwareApiError as e:
             logging.warning(f"FlightAware canonical lookup failed for {ident}: {e.message}")
+            self.last_canonical_error = e
             return ident
         idents = (data or {}).get("idents") or []
         if idents and idents[0].get("ident"):
@@ -319,6 +336,7 @@ class FlightAwareClient:
             data = self._get(f"/flights/{canonical}", {"max_pages": 1}, cache_ttl=cache_ttl)
         except FlightAwareApiError as e:
             logging.warning(f"FlightAware flight lookup error for {canonical}: {e.message}")
+            self.last_error = e
             return []
         flights = data.get("flights") if isinstance(data, dict) else None
         if not isinstance(flights, list) or not flights:
@@ -394,6 +412,7 @@ class FlightAwareClient:
             data = self._get(f"/flights/{fa_flight_id}", {}, cache_ttl=cache_ttl)
         except FlightAwareApiError as e:
             logging.warning(f"FlightAware lookup error for {fa_flight_id}: {e.message}")
+            self.last_error = e
             return None
         if not isinstance(data, dict):
             return None
@@ -418,6 +437,7 @@ class FlightAwareClient:
             data = self._get(f"/flights/{fa_flight_id}/position", {}, cache_ttl=cache_ttl)
         except FlightAwareApiError as e:
             logging.warning(f"FlightAware position error for {fa_flight_id}: {e.message}")
+            self.last_error = e
             return None
         lp = (data.get("last_position") or data) if isinstance(data, dict) else {}
         lat, lon = lp.get("latitude"), lp.get("longitude")

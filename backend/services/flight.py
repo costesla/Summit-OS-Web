@@ -24,6 +24,20 @@ from services.flightaware import FlightAwareClient
 from services.flightradar24 import Flightradar24Client
 
 
+class FlightDataUnavailable(Exception):
+    """Every flight-data provider failed, so we cannot say whether the flight exists.
+
+    Distinct from get_flight_status returning None, which means the providers
+    ANSWERED and the flight genuinely isn't there. Callers must not collapse
+    the two: reporting an outage as "no flight found" tells the passenger to
+    check a flight number that was correct all along.
+    """
+
+    def __init__(self, message: str = "Flight tracking is temporarily unavailable."):
+        super().__init__(message)
+        self.message = message
+
+
 def _mt(iso, tz) -> Optional[str]:
     """ISO-UTC timestamp -> readable Mountain-Time clock string (e.g. '7:11 PM')."""
     if not iso:
@@ -64,6 +78,10 @@ class FlightStatusService:
                           when=None, dest_country: Optional[str] = None) -> Optional[dict]:
         """Resolve a flight number to the merged status object, or None.
 
+        None means the providers ANSWERED and the flight isn't there. If they
+        FAILED, this raises FlightDataUnavailable instead — the caller must not
+        turn a provider outage into "no such flight" (see that class docstring).
+
         expected_destination / when / dest_country are optional booking context:
         when supplied, FlightAware canonical-resolves the ident and applies the
         destination guard so a multi-leg flight number (e.g. SWA250) can't
@@ -96,12 +114,14 @@ class FlightStatusService:
                 live_source = "FlightAware"
 
         pos = None
+        fr_error = None
         if live is None:
             try:
                 positions = fr.live_flight_positions(flights=flight_number, cache_ttl=0)
                 pos = positions[0] if positions else None
             except Exception as e:
                 logging.warning(f"FR24 live position error for {flight_number}: {e}")
+                fr_error = e
             if pos:
                 live = {
                     "latitude": pos.get("lat"),
@@ -113,6 +133,29 @@ class FlightStatusService:
                 live_source = "FlightRadar24"
 
         if not info and live is None:
+            # Nothing to report — but WHY decides what the passenger is told.
+            #
+            # FlightAware is the only source that can speak to a flight in any
+            # state (scheduled, airborne, landed). FR24 sees only aircraft that
+            # are airborne right now, so a healthy FR24 finding nothing proves
+            # nothing about a flight that hasn't pushed back or already landed
+            # — its silence is not evidence of absence, and must never on its
+            # own be reported as "no such flight".
+            #
+            # So: if the schedule provider failed, we genuinely do not know
+            # whether this flight exists. Say that, rather than blaming the
+            # passenger's typing. If it ANSWERED and had nothing, the flight
+            # really isn't there (or the destination guard rejected every leg,
+            # which is also a legitimate "not found") — return None as before.
+            if fa.last_error is not None:
+                # Operator detail goes to the log; the exception message is
+                # customer-facing and must not leak provider/key state.
+                logging.error(
+                    f"Flight lookup for {flight_number} could not be resolved: "
+                    f"FlightAware unavailable ({fa.last_error.message})"
+                    + (f"; FR24 also failed ({fr_error})" if fr_error else "")
+                )
+                raise FlightDataUnavailable()
             return None
 
         result = {
