@@ -945,6 +945,73 @@ interface UberTrip {
     payment_status?: string | null;  // 'Paid' | 'Deferred' | 'Credit' | 'Comped' | 'Partial' | 'Pending'
 }
 
+/**
+ * Soft-delete a row with a ten-second undo window.
+ *
+ * The delete used to be a hard DELETE behind a "this cannot be undone" confirm.
+ * A modal on every delete just trains you to click through it, and the warning
+ * was accurate — one accidental hard delete cost two days of trip data in
+ * production. Soft delete plus a visible Undo is the better trade: the row
+ * leaves every view at once and one click brings it back, so the modal is no
+ * longer earning its friction.
+ */
+function useUndoableDelete(refresh: () => void) {
+    const [pending, setPending] = useState<{ rideId: string; label: string } | null>(null);
+    const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+
+    const remove = async (rideId: string, label?: string) => {
+        const name = label || rideId;
+        try {
+            const resp = await fetch(
+                `${AZURE_BASE}/operations/delete-trip/${encodeURIComponent(rideId)}?soft=true`,
+                { method: 'DELETE' }
+            );
+            const data = await resp.json().catch(() => ({}));
+            if (!resp.ok || !data.success) throw new Error(data.error || 'Delete failed');
+            setPending({ rideId, label: name });
+            if (timer.current) clearTimeout(timer.current);
+            timer.current = setTimeout(() => setPending(null), 10_000);
+            refresh();
+        } catch (e: any) {
+            alert(`Could not remove ${name}: ${e.message}`);
+        }
+    };
+
+    const undo = async () => {
+        if (!pending) return;
+        const { rideId, label } = pending;
+        setPending(null);
+        if (timer.current) clearTimeout(timer.current);
+        try {
+            const resp = await fetch(
+                `${AZURE_BASE}/operations/restore-trip/${encodeURIComponent(rideId)}`,
+                { method: 'POST' }
+            );
+            const data = await resp.json().catch(() => ({}));
+            if (!resp.ok || !data.success) throw new Error(data.error || 'Restore failed');
+            refresh();
+        } catch (e: any) {
+            alert(`Could not restore ${label}: ${e.message}`);
+        }
+    };
+
+    const banner = pending ? (
+        <div className="mx-5 mt-3 flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white/80 px-3 py-2">
+            <span className="text-xs text-slate-600">
+                Removed <span className="font-mono font-semibold text-slate-700">{pending.label}</span>
+            </span>
+            <button onClick={undo}
+                className="text-xs font-bold text-blue-600 hover:text-blue-700 underline underline-offset-2">
+                Undo
+            </button>
+        </div>
+    ) : null;
+
+    return { remove, banner };
+}
+
 const UberTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count: number, earnings: number) => void }> = ({ selectedDate, onTripsLoaded }) => {
     const [trips, setTrips] = useState<UberTrip[]>([]);
     const [loading, setLoading] = useState(true);
@@ -952,25 +1019,6 @@ const UberTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count: n
 
     const onTripsLoadedRef = useRef(onTripsLoaded);
     onTripsLoadedRef.current = onTripsLoaded;
-
-    const handleDeleteTrip = async (rideId: string) => {
-        const confirmed = window.confirm(`Permanently delete this trip record? This cannot be undone.`);
-        if (!confirmed) return;
-        
-        try {
-            const resp = await fetch(`${AZURE_BASE}/operations/delete-trip/${rideId}`, {
-                method: 'DELETE'
-            });
-            if (resp.ok) {
-                fetchTrips();
-            } else {
-                const err = await resp.json();
-                alert(`Error deleting trip: ${err.error || 'Unknown error'}`);
-            }
-        } catch (e: any) {
-            alert(`Error connecting to server: ${e.message}`);
-        }
-    };
 
     const fetchTrips = useCallback(async () => {
         setLoading(true);
@@ -997,6 +1045,8 @@ const UberTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count: n
 
     useEffect(() => { fetchTrips(); }, [fetchTrips]);
 
+    const { remove: handleDeleteTrip, banner: undoBanner } = useUndoableDelete(fetchTrips);
+
     return (
         <div className="rounded-2xl border border-violet-200/80 overflow-hidden bg-violet-50/30 shadow-sm"
             style={{ backdropFilter: 'blur(16px)' }}>
@@ -1019,6 +1069,8 @@ const UberTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count: n
                     </button>
                 </div>
             </div>
+
+            {undoBanner}
 
             <div className="divide-y divide-violet-100/50">
                 {loading && (
@@ -1089,8 +1141,8 @@ const UberTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count: n
                         <div className="flex items-center justify-center shrink-0 ml-auto md:ml-0 pl-2">
                             <button
                                 onClick={() => handleDeleteTrip(trip.trip_id)}
-                                className="text-slate-400 dark:text-slate-500 hover:text-rose-500 hover:bg-rose-500/10 opacity-0 group-hover:opacity-100 transition-all duration-200 p-2 rounded-xl active:scale-95"
-                                title="Delete Trip"
+                                className="text-slate-400 dark:text-slate-500 hover:text-rose-500 hover:bg-rose-500/10 opacity-60 hover:opacity-100 transition-all duration-200 p-2 rounded-xl active:scale-95"
+                                title="Remove — undoable for 10s"
                             >
                                 <Trash2 className="w-4 h-4" />
                             </button>
@@ -1147,25 +1199,6 @@ const PrivateTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count
         }
     };
 
-    const handleDeleteTrip = async (rideId: string) => {
-        const confirmed = window.confirm(`Permanently delete this private booking record? This cannot be undone.`);
-        if (!confirmed) return;
-        
-        try {
-            const resp = await fetch(`${AZURE_BASE}/operations/delete-trip/${rideId}`, {
-                method: 'DELETE'
-            });
-            if (resp.ok) {
-                fetchTrips();
-            } else {
-                const err = await resp.json();
-                alert(`Error deleting trip: ${err.error || 'Unknown error'}`);
-            }
-        } catch (e: any) {
-            alert(`Error connecting to server: ${e.message}`);
-        }
-    };
-
     const fetchTrips = useCallback(async () => {
         setLoading(true);
         try {
@@ -1200,6 +1233,8 @@ const PrivateTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count
 
     useEffect(() => { fetchTrips(); }, [fetchTrips]);
 
+    const { remove: handleDeleteTrip, banner: undoBanner } = useUndoableDelete(fetchTrips);
+
     return (
         <div className="rounded-2xl border border-amber-200/80 overflow-hidden bg-amber-50/30 shadow-sm"
             style={{ backdropFilter: 'blur(16px)' }}>
@@ -1222,6 +1257,8 @@ const PrivateTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count
                     </button>
                 </div>
             </div>
+
+            {undoBanner}
 
             <div className="divide-y divide-amber-100/50">
                 {loading && (
@@ -1313,8 +1350,8 @@ const PrivateTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count
                         <div className="flex items-center justify-center shrink-0 ml-auto md:ml-0 pl-2">
                             <button
                                 onClick={() => handleDeleteTrip(trip.trip_id)}
-                                className="text-slate-400 dark:text-slate-500 hover:text-rose-500 hover:bg-rose-500/10 opacity-0 group-hover:opacity-100 transition-all duration-200 p-2 rounded-xl active:scale-95"
-                                title="Delete Trip"
+                                className="text-slate-400 dark:text-slate-500 hover:text-rose-500 hover:bg-rose-500/10 opacity-60 hover:opacity-100 transition-all duration-200 p-2 rounded-xl active:scale-95"
+                                title="Remove — undoable for 10s"
                             >
                                 <Trash2 className="w-4 h-4" />
                             </button>
