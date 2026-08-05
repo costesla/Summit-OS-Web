@@ -396,9 +396,15 @@ def _log_trip(session, meta, event_id=None):
     # Only one leg exists on this path — the Stripe flow books a single
     # appointment — so return_attempted stays False and a captured id yields
     # 'captured' rather than 'partial'.
+    #
+    # outbound_attempted is unconditionally True: an appointment is ALWAYS
+    # intended here (finalize treats a missing eventId as a failed booking and
+    # says so at line ~241). Deriving it from bool(event_id) would record
+    # 'none-expected' when Graph failed — telling the sweep to skip exactly the
+    # rows that need retrying.
     try:
         db.set_appointment_link(ride_id, outbound_id=event_id,
-                                outbound_attempted=bool(event_id))
+                                outbound_attempted=True)
     except Exception as link_err:
         logging.warning(f"Appointment link not recorded for {ride_id} (non-fatal): {link_err}")
 

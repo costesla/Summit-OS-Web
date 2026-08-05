@@ -86,25 +86,31 @@ class DatabaseClient:
         the reconciliation sweep its ability to adjudicate this one row and
         nothing else. Callers wrap it anyway — belt and braces on purpose.
 
-        AppointmentSyncStatus separates two facts that a NULL id alone cannot:
+        AppointmentSyncStatus is always written, so that NULL means exactly one
+        thing. Four explicit values, three of which a bare NULL would conflate:
 
-          'captured'  every leg we tried to create came back with an id
-          'partial'   at least one leg has an id, another we tried does not
-          'failed'    we tried to create appointment(s) and got no id at all —
-                      Graph was down, or returned something unreadable
-          NULL        never written: a legacy row, or a booking that was never
-                      meant to have an appointment (a paid Stripe flow books
-                      its calendar elsewhere)
+          'captured'      every leg we tried to create came back with an id
+          'partial'       at least one leg has an id, another we tried does not
+          'failed'        we tried to create appointment(s) and got no id at
+                          all — Graph was down, or returned something
+                          unreadable. RETRYABLE: the appointment may well
+                          exist, we just never learned its id.
+          'none-expected' no appointment was ever meant to exist for this row
+                          (e.g. a payment method that books no calendar entry).
+                          Nothing to reconcile, and nothing wrong.
 
-        The sweep must treat only NULL as unverifiable-forever. 'failed' is
-        retryable — the appointment may well exist, we just never learned
-        its id.
+        NULL is reserved for rows written before this column existed — stamped
+        'legacy' by the backfill migration. After that migration, a booking row
+        with a NULL status is a BUG: it means the write below never ran, most
+        likely a crash between save_trip's commit and this one. That is
+        precisely the case the old design hid inside 'legacy', and the reason
+        this returns a value rather than leaving the column unset.
         """
         got = [i for i in (outbound_id, return_id) if i]
         tried = sum((bool(outbound_attempted), bool(return_attempted)))
         if not tried:
-            return False
-        if not got:
+            status = "none-expected"
+        elif not got:
             status = "failed"
         elif len(got) == tried:
             status = "captured"
@@ -1250,6 +1256,15 @@ class DatabaseClient:
             conn.close()
 
     def execute_query_params(self, query, params):
+        """Run a parameterised SELECT and return rows as dicts.
+
+        READ ONLY. This never commits, so an INSERT/UPDATE/DELETE passed here
+        is silently rolled back on close and returns [] — indistinguishable
+        from a successful write that matched no rows. Every current call site
+        is a SELECT (audited 2026-08-05); keep it that way. For writes use a
+        method that owns its own commit, e.g. set_payment_status or
+        set_appointment_link.
+        """
         conn = self.get_connection()
         if not conn: return []
         cursor = conn.cursor()
