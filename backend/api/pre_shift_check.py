@@ -324,18 +324,26 @@ async def _src_onedrive_expense_count(date_str: str) -> int:
 
 async def _src_bank_trip_count(date_str: str) -> int:
     """Placeholder: Teller bank transactions for Uber deposits on date."""
-    teller_token = os.environ.get("TELLER_ACCESS_TOKEN", "")
+    # The app setting is TELLER_TOKEN — timer_payment_sync has been reading it
+    # and populating Finance.Payments all along. This check looked for
+    # TELLER_ACCESS_TOKEN, which has never existed, so the bank tier reported
+    # "not configured" against working credentials.
+    teller_token = os.environ.get("TELLER_TOKEN", "")
     if not teller_token:
-        raise ValueError("TELLER_ACCESS_TOKEN not configured")
+        raise ValueError("TELLER_TOKEN not configured")
     # Teller integration placeholder — returns UNAVAILABLE when not wired
     raise NotImplementedError("Teller not configured")
 
 
 async def _src_bank_earnings(date_str: str) -> float:
     """Placeholder: Bank Uber deposits for date."""
-    teller_token = os.environ.get("TELLER_ACCESS_TOKEN", "")
+    # The app setting is TELLER_TOKEN — timer_payment_sync has been reading it
+    # and populating Finance.Payments all along. This check looked for
+    # TELLER_ACCESS_TOKEN, which has never existed, so the bank tier reported
+    # "not configured" against working credentials.
+    teller_token = os.environ.get("TELLER_TOKEN", "")
     if not teller_token:
-        raise ValueError("TELLER_ACCESS_TOKEN not configured")
+        raise ValueError("TELLER_TOKEN not configured")
     raise NotImplementedError("Teller not configured")
 
 
@@ -801,9 +809,16 @@ async def _graph_count_files(token: str, folder_path: str,
         loop = asyncio.get_running_loop()
         files = await loop.run_in_executor(None, _fetch_all)
     except Exception as e:
-        if "404" in str(e):
-            return 0
-        raise
+        # A 404 used to be reported as a count of 0, which made "I looked in the
+        # wrong place" indistinguishable from "the folder is empty". On
+        # 2026-08-04 this tier reported onedrive=0 for a day whose folder held
+        # 19 images, so an accidental scrub surfaced as FAIL with no usable
+        # reason instead of "the DB is empty but the source is not — rescan".
+        #
+        # safe_call() renders any exception as status UNAVAILABLE with a null
+        # value, which is the honest answer: the source could not be read. A
+        # missing folder is not evidence about how many files are in it.
+        raise ValueError(f"OneDrive folder could not be read ({folder_path}): {e}")
 
     count = 0
     for f in files:
