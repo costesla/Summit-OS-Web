@@ -369,13 +369,74 @@ def scrub_day(req: func.HttpRequest) -> func.HttpResponse:
         bookings_before = []
         bookings_after = []
 
-        # 1. Delete all TRIP- records for this date
+        # ── Dry run by default ────────────────────────────────────────────────
+        # This endpoint used to hard-DELETE on sight. On 2026-08-02 one
+        # accidental call wiped two days of Uber trips and their earnings; the
+        # data came back only because the source screenshots happened to still
+        # be in OneDrive. Nothing about that recovery was guaranteed.
+        #
+        # It now reports what it would touch and executes only when the caller
+        # echoes back the exact count it was shown, in `confirm`. The count is
+        # recomputed here rather than trusted from the dry run, so if a scan
+        # lands in between the numbers diverge and the run refuses — that
+        # refusal is the gate working, not a bug to design around. It means the
+        # day is no longer the one the caller was looking at.
         cursor.execute(
-            "DELETE FROM Rides.Rides WHERE RideID LIKE ?",
+            "SELECT RideID FROM Rides.Rides WHERE RideID LIKE ? AND DeletedAt IS NULL ORDER BY RideID",
             (f"TRIP-{date_compact}-%",)
         )
+        affected_ids = [r[0] for r in cursor.fetchall()]
+        affected = len(affected_ids)
+
+        confirm = data.get("confirm")
+        if confirm is None:
+            conn.close()
+            return func.HttpResponse(
+                json.dumps({
+                    "success": True,
+                    "dryRun": True,
+                    "date": date_str,
+                    "wouldRemove": affected,
+                    "rideIds": affected_ids,
+                    "message": (f"Dry run — {affected} TRIP record(s) would be removed for {date_str}. "
+                                f"Re-send with confirm={affected} to execute."),
+                }),
+                status_code=200, headers=_cors(req), mimetype="application/json"
+            )
+
+        try:
+            confirm_n = int(confirm)
+        except (TypeError, ValueError):
+            conn.close()
+            return func.HttpResponse(
+                json.dumps({"success": False, "error": "confirm must be a number"}),
+                status_code=400, headers=_cors(req), mimetype="application/json"
+            )
+
+        if confirm_n != affected:
+            conn.close()
+            return func.HttpResponse(
+                json.dumps({
+                    "success": False,
+                    "error": "confirm does not match the current record count — the day changed since you looked",
+                    "confirmSent": confirm_n,
+                    "actualNow": affected,
+                }),
+                status_code=409, headers=_cors(req), mimetype="application/json"
+            )
+
+        # 1. Soft-delete all TRIP- records for this date.
+        # scan_day_trips' MERGE sets DeletedAt = NULL when it re-inserts, so a
+        # rescan brings these back with fresh data exactly as the hard delete
+        # allowed — but a rescan that finds nothing (an empty OneDrive folder,
+        # or a Graph read that failed and looked empty) no longer costs the day.
+        cursor.execute("""
+            UPDATE Rides.Rides
+            SET DeletedAt = GETUTCDATE(), LastUpdated = GETUTCDATE()
+            WHERE RideID LIKE ? AND DeletedAt IS NULL
+        """, (f"TRIP-{date_compact}-%",))
         deleted_trips = cursor.rowcount
-        logs.append(f"SCRUB: Deleted {deleted_trips} TRIP-{date_compact}-* records")
+        logs.append(f"SCRUB: Soft-deleted {deleted_trips} TRIP-{date_compact}-* records (recoverable)")
 
         # 2. Reset Tessie drive classifications to Sidecar originals directly (idempotent)
         cursor.execute("""
@@ -667,8 +728,11 @@ def _execute_daily_sync(target_date_str: str = None) -> dict:
         logging.error(f"Tessie Sync Error: {te}")
         logs.append(f"[ERROR] Tessie Sync Error: {str(te)}")
 
-    # 3. Banking Sync — DISABLED (manual expense entry only)
-    logs.append(f"[SKIP] Banking Auto-Sync disabled — use manual expense entry on dashboard.")
+    # 3. Banking is not part of this pipeline — timer_payment_sync owns it and
+    #    runs separately at 06:30 and 12:30 UTC. This step used to log
+    #    "Banking Auto-Sync disabled", which read as a fault on the dashboard
+    #    even though Finance.Payments was current the whole time. A pipeline
+    #    that isn't responsible for something shouldn't report on it.
 
     # 4. Integrated Cloud Scan (Match screenshots to drives)
     try:
