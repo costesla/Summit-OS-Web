@@ -74,6 +74,68 @@ class DatabaseClient:
             "ALTER TABLE Rides.Rides ADD PaymentStatus NVARCHAR(20) NULL"
         )
 
+    def set_appointment_link(self, ride_id: str, outbound_id: str = None,
+                             return_id: str = None,
+                             outbound_attempted: bool = False,
+                             return_attempted: bool = False) -> bool:
+        """Record which Graph appointment(s) a booking created.
+
+        A deliberately separate UPDATE rather than columns bolted onto
+        save_trip's MERGE. Capturing these must never be able to fail a
+        booking, and the MERGE sits on the critical path; a failure here costs
+        the reconciliation sweep its ability to adjudicate this one row and
+        nothing else. Callers wrap it anyway — belt and braces on purpose.
+
+        AppointmentSyncStatus separates two facts that a NULL id alone cannot:
+
+          'captured'  every leg we tried to create came back with an id
+          'partial'   at least one leg has an id, another we tried does not
+          'failed'    we tried to create appointment(s) and got no id at all —
+                      Graph was down, or returned something unreadable
+          NULL        never written: a legacy row, or a booking that was never
+                      meant to have an appointment (a paid Stripe flow books
+                      its calendar elsewhere)
+
+        The sweep must treat only NULL as unverifiable-forever. 'failed' is
+        retryable — the appointment may well exist, we just never learned
+        its id.
+        """
+        got = [i for i in (outbound_id, return_id) if i]
+        tried = sum((bool(outbound_attempted), bool(return_attempted)))
+        if not tried:
+            return False
+        if not got:
+            status = "failed"
+        elif len(got) == tried:
+            status = "captured"
+        else:
+            status = "partial"
+
+        conn = self.get_connection()
+        if not conn:
+            return False
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                """UPDATE Rides.Rides
+                   SET AppointmentID         = ?,
+                       ReturnAppointmentID   = ?,
+                       AppointmentSyncStatus = ?,
+                       LastUpdated           = GETUTCDATE()
+                   WHERE RideID = ?""",
+                (outbound_id, return_id, status, ride_id),
+            )
+            updated = cursor.rowcount
+            conn.commit()
+            logging.info(f"Appointment link for {ride_id}: status={status} "
+                         f"outbound={'y' if outbound_id else 'n'} return={'y' if return_id else 'n'}")
+            return updated > 0
+        except Exception as e:
+            logging.error(f"set_appointment_link failed for {ride_id}: {e}")
+            return False
+        finally:
+            conn.close()
+
     def set_payment_status(self, ride_id: str, status: str) -> bool:
         """Set PaymentStatus ('Pending', 'Paid', ...) on a ride. Auto-creates the column."""
         conn = self.get_connection()

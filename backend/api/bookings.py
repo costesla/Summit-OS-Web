@@ -403,14 +403,26 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
             if arrival_airport:
                 flight_note += f" arriving {arrival_airport}"
 
+        # Appointment ids, captured for the reconciliation sweep. Both start as
+        # None and are only ever assigned inside the existing try blocks, so a
+        # Graph failure still lands in the same except it always did — the
+        # booking cannot fail because of this. 'attempted' records that we tried
+        # to create an appointment at all, which is what separates "Graph was
+        # down" from "no appointment was ever meant to exist" further down.
+        outbound_appt_id = None
+        return_appt_id = None
+        outbound_attempted = False
+        return_attempted = False
+
         if payment_method in ["Invoice", "Venmo", "Cash"] and raw_time:
+            outbound_attempted = True
             try:
                 from services.bookings import BookingsClient
                 bookings = BookingsClient()
                 dt_utc = normalize_to_utc(raw_time)
 
                 # Create appointment in calendar
-                bookings.create_appointment(
+                appointment = bookings.create_appointment(
                     customer_data={
                         'name': name,
                         'email': email,
@@ -424,6 +436,11 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
                     end_dt=dt_utc + timedelta(minutes=duration_minutes),
                     service_id=os.environ.get('MS_BOOKINGS_SERVICE_ID', 'dc16877c-160d-436e-b53b-52ae6f419604')
                 )
+                # .get on a possibly-non-dict return must not raise here — a
+                # created appointment we failed to read the id from is still a
+                # created appointment, and the customer is already booked.
+                if isinstance(appointment, dict):
+                    outbound_appt_id = appointment.get("id")
                 logging.info(f"Calendar event created for {payment_method} booking: {booking_id}")
             except Exception as cal_err:
                 logging.error(f"Failed to create calendar event for {payment_method} booking: {cal_err}")
@@ -437,10 +454,11 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
             except Exception:
                 return_time_fmt = str(return_start)
         if payment_method in ["Invoice", "Venmo", "Cash"] and return_start:
+            return_attempted = True
             try:
                 from services.bookings import BookingsClient
                 ret_utc = normalize_to_utc(return_start)
-                BookingsClient().create_appointment(
+                return_appointment = BookingsClient().create_appointment(
                     customer_data={
                         'name': name,
                         'email': email,
@@ -458,6 +476,8 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
                     end_dt=ret_utc + timedelta(minutes=duration_minutes),
                     service_id=os.environ.get('MS_BOOKINGS_SERVICE_ID', 'dc16877c-160d-436e-b53b-52ae6f419604')
                 )
+                if isinstance(return_appointment, dict):
+                    return_appt_id = return_appointment.get("id")
                 logging.info(f"Return-leg calendar event created for booking: {booking_id}")
             except Exception as cal_err:
                 logging.error(f"Failed to create return-leg calendar event for {booking_id}: {cal_err}")
@@ -720,6 +740,21 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
             db.set_payment_status(booking_id, "Pending")
         except Exception as db_err:
             logging.error(f"Failed to log booking to DB: {db_err}")
+
+        # Link the row to the appointment(s) it created, so a deletion in
+        # Outlook can be reconciled back to this booking. Its own try block on
+        # purpose: this runs after the booking is already durable, and losing
+        # the link costs the sweep one adjudicable row — never the booking.
+        try:
+            db.set_appointment_link(
+                booking_id,
+                outbound_id=outbound_appt_id,
+                return_id=return_appt_id,
+                outbound_attempted=outbound_attempted,
+                return_attempted=return_attempted,
+            )
+        except Exception as link_err:
+            logging.warning(f"Appointment link not recorded for {booking_id} (non-fatal): {link_err}")
             
         return func.HttpResponse(
             json.dumps({"success": True, "message": "Booking confirmed & Receipt Sent"}),
