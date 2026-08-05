@@ -74,6 +74,74 @@ class DatabaseClient:
             "ALTER TABLE Rides.Rides ADD PaymentStatus NVARCHAR(20) NULL"
         )
 
+    def set_appointment_link(self, ride_id: str, outbound_id: str = None,
+                             return_id: str = None,
+                             outbound_attempted: bool = False,
+                             return_attempted: bool = False) -> bool:
+        """Record which Graph appointment(s) a booking created.
+
+        A deliberately separate UPDATE rather than columns bolted onto
+        save_trip's MERGE. Capturing these must never be able to fail a
+        booking, and the MERGE sits on the critical path; a failure here costs
+        the reconciliation sweep its ability to adjudicate this one row and
+        nothing else. Callers wrap it anyway — belt and braces on purpose.
+
+        AppointmentSyncStatus is always written, so that NULL means exactly one
+        thing. Four explicit values, three of which a bare NULL would conflate:
+
+          'captured'      every leg we tried to create came back with an id
+          'partial'       at least one leg has an id, another we tried does not
+          'failed'        we tried to create appointment(s) and got no id at
+                          all — Graph was down, or returned something
+                          unreadable. RETRYABLE: the appointment may well
+                          exist, we just never learned its id.
+          'none-expected' no appointment was ever meant to exist for this row
+                          (e.g. a payment method that books no calendar entry).
+                          Nothing to reconcile, and nothing wrong.
+
+        NULL is reserved for rows written before this column existed — stamped
+        'legacy' by the backfill migration. After that migration, a booking row
+        with a NULL status is a BUG: it means the write below never ran, most
+        likely a crash between save_trip's commit and this one. That is
+        precisely the case the old design hid inside 'legacy', and the reason
+        this returns a value rather than leaving the column unset.
+        """
+        got = [i for i in (outbound_id, return_id) if i]
+        tried = sum((bool(outbound_attempted), bool(return_attempted)))
+        if not tried:
+            status = "none-expected"
+        elif not got:
+            status = "failed"
+        elif len(got) == tried:
+            status = "captured"
+        else:
+            status = "partial"
+
+        conn = self.get_connection()
+        if not conn:
+            return False
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                """UPDATE Rides.Rides
+                   SET AppointmentID         = ?,
+                       ReturnAppointmentID   = ?,
+                       AppointmentSyncStatus = ?,
+                       LastUpdated           = GETUTCDATE()
+                   WHERE RideID = ?""",
+                (outbound_id, return_id, status, ride_id),
+            )
+            updated = cursor.rowcount
+            conn.commit()
+            logging.info(f"Appointment link for {ride_id}: status={status} "
+                         f"outbound={'y' if outbound_id else 'n'} return={'y' if return_id else 'n'}")
+            return updated > 0
+        except Exception as e:
+            logging.error(f"set_appointment_link failed for {ride_id}: {e}")
+            return False
+        finally:
+            conn.close()
+
     def set_payment_status(self, ride_id: str, status: str) -> bool:
         """Set PaymentStatus ('Pending', 'Paid', ...) on a ride. Auto-creates the column."""
         conn = self.get_connection()
@@ -1188,6 +1256,15 @@ class DatabaseClient:
             conn.close()
 
     def execute_query_params(self, query, params):
+        """Run a parameterised SELECT and return rows as dicts.
+
+        READ ONLY. This never commits, so an INSERT/UPDATE/DELETE passed here
+        is silently rolled back on close and returns [] — indistinguishable
+        from a successful write that matched no rows. Every current call site
+        is a SELECT (audited 2026-08-05); keep it that way. For writes use a
+        method that owns its own commit, e.g. set_payment_status or
+        set_appointment_link.
+        """
         conn = self.get_connection()
         if not conn: return []
         cursor = conn.cursor()

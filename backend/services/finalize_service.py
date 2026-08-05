@@ -284,7 +284,7 @@ def finalize_stripe_session(session_id: str) -> dict:
     except Exception as email_err:
         logging.warning(f"Receipt email failed (non-fatal): {email_err}")
     try:
-        _log_trip(session, meta)
+        _log_trip(session, meta, event_id=event_id)
     except Exception as db_err:
         logging.warning(f"DB trip log failed (non-fatal): {db_err}")
 
@@ -350,7 +350,14 @@ def canonical_invoice_id(session, meta) -> str:
     return f"INV-{first_name}-{session.id[-8:].upper()}"
 
 
-def _log_trip(session, meta):
+def _log_trip(session, meta, event_id=None):
+    """Write the Rides row for a paid Stripe booking.
+
+    `event_id` is the Graph appointment this flow already created, captured so
+    the reconciliation sweep can adjudicate card bookings too. Without it the
+    sweep would be blind to every Stripe booking. Defaulted to None so the
+    signature stays backward-compatible with any caller that doesn't have one.
+    """
     import time
     import re
     from services.datetime_utils import normalize_to_utc
@@ -382,6 +389,24 @@ def _log_trip(session, meta):
     })
     # Card was charged before the webhook fired — this booking is settled
     db.set_payment_status(ride_id, "Paid")
+
+    # Link to the calendar appointment this flow created. Wrapped separately:
+    # the booking is already durable by here, and a missing link costs the
+    # sweep one adjudicable row, never the booking or the payment.
+    # Only one leg exists on this path — the Stripe flow books a single
+    # appointment — so return_attempted stays False and a captured id yields
+    # 'captured' rather than 'partial'.
+    #
+    # outbound_attempted is unconditionally True: an appointment is ALWAYS
+    # intended here (finalize treats a missing eventId as a failed booking and
+    # says so at line ~241). Deriving it from bool(event_id) would record
+    # 'none-expected' when Graph failed — telling the sweep to skip exactly the
+    # rows that need retrying.
+    try:
+        db.set_appointment_link(ride_id, outbound_id=event_id,
+                                outbound_attempted=True)
+    except Exception as link_err:
+        logging.warning(f"Appointment link not recorded for {ride_id} (non-fatal): {link_err}")
 
 
 
