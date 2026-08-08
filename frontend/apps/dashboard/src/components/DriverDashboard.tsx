@@ -40,16 +40,45 @@ const WEEKLY_TARGET  = Math.round(MONTHLY_TARGET / 4);
 const DAILY_TARGET   = Math.round(WEEKLY_TARGET / 7);
 
 // Helper: get payment status badge JSX
-const getPaymentStatusBadge = (status: string) => {
-    switch (status.toLowerCase()) {
+/** Renders a row's REAL payment state.
+ *
+ *  Accepts null/undefined because an absent status must render as UNKNOWN and
+ *  must never fall through to Paid. A badge that cannot fail is worse than no
+ *  badge: it looks like a check while confirming nothing. This panel is the
+ *  surface a human eyeballs to sanity-check receivables, so for as long as it
+ *  rendered a hardcoded "Paid" every visual check made against it was
+ *  structurally blind — confirmed 2026-08-05, when a genuinely unpaid $30
+ *  booking (Pending in SQL, zero Stripe sessions against its invoice id) was
+ *  displaying green here.
+ *
+ *  TESSIE- telemetry rows legitimately carry no payment state and arrive as
+ *  null; they must read "unknown", which is the honest answer, rather than
+ *  defaulting to anything.
+ */
+const getPaymentStatusBadge = (status: string | null | undefined) => {
+    const pill = (cls: string, label: string) => (
+        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase border ${cls}`}>{label}</span>
+    );
+    if (!status || !String(status).trim()) {
+        return pill("bg-white/5 text-[var(--text-muted)] border-white/10", "unknown");
+    }
+    switch (String(status).toLowerCase()) {
         case 'paid':
-            return <span className="px-2 py-0.5 rounded-full bg-[var(--accent-green)]/10 text-[var(--accent-green)] text-[9px] font-bold uppercase border border-[var(--accent-green)]/20">Paid</span>;
+            return pill("bg-[var(--accent-green)]/10 text-[var(--accent-green)] border-[var(--accent-green)]/20", "Paid");
+        case 'pending':
+            return pill("bg-sky-500/10 text-sky-400 border-sky-500/20", "Pending");
         case 'deferred':
-            return <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 text-[9px] font-bold uppercase border border-amber-500/20">Deferred</span>;
+            return pill("bg-amber-500/10 text-amber-400 border-amber-500/20", "Deferred");
         case 'credit':
-            return <span className="px-2 py-0.5 rounded-full bg-[var(--accent-purple)]/10 text-[var(--accent-purple)] text-[9px] font-bold uppercase border border-[var(--accent-purple)]/20">Credit</span>;
+            return pill("bg-[var(--accent-purple)]/10 text-[var(--accent-purple)] border-[var(--accent-purple)]/20", "Credit");
+        case 'comped':
+            return pill("bg-[var(--accent-purple)]/10 text-[var(--accent-purple)] border-[var(--accent-purple)]/20", "Comped");
+        case 'forgiven':
+            return pill("bg-white/5 text-slate-300 border-white/10", "Forgiven");
+        case 'nonchargeable':
+            return pill("bg-white/5 text-slate-300 border-white/10", "No Charge");
         default:
-            return <span className="px-2 py-0.5 rounded-full bg-white/5 text-[var(--text-muted)] text-[9px] font-bold uppercase border border-white/5">{status}</span>;
+            return pill("bg-white/5 text-[var(--text-muted)] border-white/5", String(status));
     }
 };
 
@@ -164,6 +193,12 @@ interface DatabaseTrip {
     dropoff_location: string | null;
     tessie_drive_id?: string | null;
     tessie_label?: string | null;
+    /** Real payment state from Rides.Rides, projected by /driver/sync as of
+     *  PR #28. Before that the field was absent from the payload entirely, which
+     *  is why the badge below rendered a literal. Optional and nullable because
+     *  TESSIE- telemetry rows carry no payment state — absent must render as
+     *  unknown, never as paid. */
+    payment_status?: string | null;
 }
 
 interface TessieDrive {
@@ -1000,7 +1035,10 @@ const DriverDashboard: React.FC = () => {
                                                             <div key={t.id} className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-1.5 hover:bg-white/[0.03] transition-colors">
                                                                 <div className="flex items-center justify-between">
                                                                     <span className="text-xs font-bold text-white">{clientName}</span>
-                                                                    {getPaymentStatusBadge("Paid")}
+                                                                    {/* Was the literal "Paid". Every private booking rendered green
+                                                                        regardless of its real state, so this panel could not fail and
+                                                                        any visual receivables check against it confirmed nothing. */}
+                                                                    {getPaymentStatusBadge(t.payment_status)}
                                                                 </div>
                                                                 <p className="text-[10px] text-[var(--text-muted)] font-mono truncate">{scrubAddress(t.pickup_location)} to {scrubAddress(t.dropoff_location)}</p>
                                                                 <div className="flex items-center justify-between pt-1 font-mono">
