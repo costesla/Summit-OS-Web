@@ -66,6 +66,17 @@ def client_token(customer_name: str) -> str:
     return parts[0].upper() if parts else ""
 
 
+def is_non_chargeable_token(token: str) -> bool:
+    """Token-side entry point, for callers holding a RideID rather than a name.
+
+    One definition of non-chargeable, two doorways: the booking path has the
+    customer's name, the nightly pairing has only 'INV-JACKIE-...'. Both must
+    resolve identically or the class means different things at write time and at
+    reconciliation time.
+    """
+    return (token or "").upper() in NON_CHARGEABLE_CLIENTS
+
+
 def is_non_chargeable(customer_name: str) -> bool:
     """Whether this client's rides generate no revenue by choice.
 

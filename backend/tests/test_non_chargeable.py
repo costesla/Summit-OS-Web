@@ -31,6 +31,7 @@ from services.database import (  # noqa: E402
     PAYMENT_STATUS_NON_CHARGEABLE,
     client_token,
     is_non_chargeable,
+    is_non_chargeable_token,
 )
 
 
@@ -91,6 +92,43 @@ class NonChargeableTests(unittest.TestCase):
         never chargeable never implied collection, so reusing it would record a
         false history."""
         self.assertNotEqual(PAYMENT_STATUS_NON_CHARGEABLE, "Forgiven")
+
+
+class TokenDoorwayTests(unittest.TestCase):
+    """The booking path holds a customer NAME; the nightly pairing holds only a
+    RideID. Both resolve non-chargeable through one definition — if they ever
+    disagree, the class means different things at write time and at
+    reconciliation time."""
+
+    def test_token_matches_directly(self):
+        self.assertTrue(is_non_chargeable_token("JACKIE"))
+
+    def test_token_is_case_insensitive(self):
+        for t in ("jackie", "Jackie", "JaCkIe"):
+            self.assertTrue(is_non_chargeable_token(t), t)
+
+    def test_other_tokens_do_not_match(self):
+        for t in ("EMERSON", "DANIEL", "ESMERALDA", "TERRANCE"):
+            self.assertFalse(is_non_chargeable_token(t), t)
+
+    def test_empty_token_never_matches(self):
+        for t in ("", None, "   "):
+            self.assertFalse(is_non_chargeable_token(t))
+
+    def test_rideid_derived_token_resolves(self):
+        """This is exactly how the nightly pairing derives it."""
+        for rid in ("INV-JACKIE-Friday,J-0332", "INV-JACKIE-Tuesday,-0146"):
+            self.assertTrue(is_non_chargeable_token(rid.split("-")[1]), rid)
+        self.assertFalse(is_non_chargeable_token("INV-EMERSON-Monday,J-2351".split("-")[1]))
+
+    def test_both_doorways_agree(self):
+        """The property that keeps one definition from becoming two."""
+        for name in ("Jackie Heslep", "Emerson Jean Baptiste", "Daniel Scheu", "", "  "):
+            self.assertEqual(
+                is_non_chargeable(name),
+                is_non_chargeable_token(client_token(name)),
+                name,
+            )
 
 
 class RosterSeparationTests(unittest.TestCase):
