@@ -686,8 +686,17 @@ class DatabaseClient:
             Format(Timestamp_Start, 'yyyy-MM-ddTHH:mm:ss') as timestamp,
             Classification AS classification,
             Pickup_Location AS pickup_location,
-            Dropoff_Location AS dropoff_location
-        FROM Rides.Rides 
+            Dropoff_Location AS dropoff_location,
+            -- The dashboard at www.dashboardcostesla.com reads its trips from
+            -- /driver/sync, which calls this. The column was never projected, so
+            -- that dashboard's Private Bookings panel had no payment state to
+            -- render and hardcoded the literal "Paid" on every row — a badge that
+            -- could not fail, on the one surface a human eyeballs to sanity-check
+            -- receivables. Projecting it is what lets that badge tell the truth.
+            -- NULL is left as NULL deliberately: the renderer must show "unknown"
+            -- rather than defaulting to paid.
+            PaymentStatus AS payment_status
+        FROM Rides.Rides
         WHERE Timestamp_Start >= DATEADD(hour, 4, CAST(? AS DATETIME2))
           AND Timestamp_Start < DATEADD(hour, 28, CAST(? AS DATETIME2))
           AND DeletedAt IS NULL
