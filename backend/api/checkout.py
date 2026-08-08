@@ -29,6 +29,33 @@ def create_checkout_session(req: func.HttpRequest) -> func.HttpResponse:
         customer_name = req_body.get("customerName", "")
         customer_email = req_body.get("customerEmail", "")
         customer_phone = req_body.get("customerPhone", "")
+
+        # A non-chargeable client reaching an upfront-payment flow is incoherent:
+        # this endpoint exists to take money from someone whose rides generate
+        # none. REFUSE rather than quietly rerouting to the invoice path.
+        #
+        # A silent redirect would take an impossible request and make it look
+        # handled — the same shape as every masked failure found in this codebase
+        # — and it would destroy the signal. If a non-chargeable client keeps
+        # arriving here, something upstream is routing them wrong and that is
+        # worth seeing. Suppressing the link in /api/book while leaving this door
+        # open would only move the payment request to a different surface.
+        from services.database import is_non_chargeable, client_token
+        if is_non_chargeable(customer_name):
+            logging.warning(
+                f"NON_CHARGEABLE client reached create-checkout-session: "
+                f"token={client_token(customer_name)} quoted={req_body.get('price')} — "
+                f"REFUSED. Upstream routing sent a no-revenue client to an "
+                f"upfront-payment flow; investigate rather than retry."
+            )
+            return func.HttpResponse(
+                json.dumps({
+                    "error": "This booking cannot be paid online. Please book without payment.",
+                    "code": "non_chargeable_client",
+                }),
+                status_code=409, headers=_cors_headers(), mimetype="application/json"
+            )
+
         pickup = req_body.get("pickup", "")
         dropoff = req_body.get("dropoff", "")
         appointment_start = req_body.get("appointmentStart", "")

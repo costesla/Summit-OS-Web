@@ -1713,7 +1713,43 @@ class CloudWatcherService:
                         # ── Jackie Heslep billing enforcement ──────────────────────────────
                         # For any Jackie booking, apply leg-based deferred billing rules
                         # AFTER the match is confirmed so we have the Tessie drive's label.
-                        if b_id.startswith("INV-JACKIE") or (booking.get("Classification") or "").lower() in ["jacquelyn heslep", "jacquelyn_heslep"]:
+                        from services.database import is_non_chargeable_token
+                        _billing_token = b_id.split("-")[1] if "-" in b_id else ""
+                        _is_billed_client = (
+                            b_id.startswith("INV-JACKIE")
+                            or (booking.get("Classification") or "").lower()
+                            in ["jacquelyn heslep", "jacquelyn_heslep"]
+                        )
+
+                        # A non-chargeable client never ENTERS the billing computation.
+                        #
+                        # Not "run the engine and suppress the write": an engine that
+                        # computes a result and relies on a downstream conditional to not
+                        # persist it is a landmine. The next write site, refactor or added
+                        # path reintroduces the write with nothing recording why it was
+                        # suppressed — the same runs-but-trusted-not-to-act shape behind
+                        # several failures already found in this codebase.
+                        #
+                        # Skipping wholesale costs nothing: jackie_legs_billed_today is
+                        # purely in-memory — initialised above, read only by the engine and
+                        # one log line, never persisted, and customer_pricing.py performs no
+                        # DB writes at all. No non-billing consumer exists.
+                        #
+                        # Fare and Driver_Earnings are gated by the SAME condition, not
+                        # separately. Suppressing only the status while letting the engine
+                        # recompute the fare under chargeable-client cap rules would produce
+                        # exactly the split-brain row this class exists to prevent: status
+                        # says no revenue, fare says otherwise.
+                        if _is_billed_client and is_non_chargeable_token(_billing_token):
+                            _skip = (f"JACKIE-BILLING: SKIPPED for non-chargeable client "
+                                     f"{_billing_token.upper()} ({b_id}) — status, Fare and "
+                                     f"Driver_Earnings left as the booking path set them")
+                            logs.append(_skip)
+                            # Logged, never silent: a job that quietly does nothing for
+                            # certain clients is indistinguishable from one that is broken
+                            # and does nothing. The skip has to announce itself.
+                            logging.info(_skip)
+                        elif _is_billed_client:
                             tessie_label = best_drive.get("Tessie_Label") or ""
                             tessie_cls   = best_drive.get("Classification") or ""
                             # Use the BOOKING's own pickup/dropoff for round-trip detection.
@@ -1736,6 +1772,17 @@ class CloudWatcherService:
                             legs_used  = billing["legs_consumed"]
                             reason     = billing["reason"]
 
+                            # A deliberate human decision outranks a nightly recompute.
+                            # 'Forgiven' and 'Comped' are terminal states written by a
+                            # person with a reason code and an effective date; re-pairing a
+                            # drive is not new information about whether the money is owed.
+                            #
+                            # Without this guard the job would re-bill a forgiven row AND
+                            # leave PriorPaymentStatus / StatusChangeReason /
+                            # StatusEffectiveDate pointing at the forgiveness — a row whose
+                            # status says re-billed and whose audit trail says forgiven.
+                            # That contradiction is worse than a clean overwrite, because it
+                            # makes every audit field in the table less trustworthy.
                             cursor.execute("""
                                 UPDATE Rides.Rides
                                 SET Fare = ?,
@@ -1743,7 +1790,13 @@ class CloudWatcherService:
                                     PaymentStatus = ?,
                                     LastUpdated = GETUTCDATE()
                                 WHERE RideID = ?
+                                  AND ISNULL(PaymentStatus, '') NOT IN ('Forgiven', 'Comped')
                             """, (new_fare, new_fare, new_status, b_id))
+                            if cursor.rowcount == 0:
+                                logs.append(
+                                    f"JACKIE-BILLING: {b_id} NOT re-billed — a terminal "
+                                    f"status set by hand was left intact"
+                                )
                             jackie_legs_billed_today += legs_used
                             logs.append(
                                 f"JACKIE-BILLING: {b_id} → ${new_fare:.2f} {new_status} "

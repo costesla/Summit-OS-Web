@@ -360,6 +360,27 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
         # Use centralized ID generation
         booking_id = build_invoice_id(name, pickup_time)
 
+        # Non-chargeable clients: their rides generate no revenue by choice.
+        # Resolved HERE, before the link is minted, because the link — not the
+        # PaymentStatus column — is the customer-facing surface. It is created
+        # below and embedded in an email that ships ~300 lines later, both well
+        # before set_payment_status runs, so no status value can retract a
+        # payment request already sitting in someone's inbox.
+        from services.database import is_non_chargeable, client_token, PAYMENT_STATUS_NON_CHARGEABLE
+        non_chargeable = is_non_chargeable(name)
+        if non_chargeable:
+            # MANDATORY, not diagnostic. The status assigned below drops this
+            # booking out of receivables by construction — which is the point for
+            # a real non-chargeable client, and a silent miss for a chargeable
+            # one who happens to share a first name. This line is the only trace
+            # such a false positive leaves at the moment it happens.
+            logging.warning(
+                f"NON_CHARGEABLE match: token={client_token(name)} booking={booking_id} "
+                f"quoted={price} — payment link SUPPRESSED, status will be "
+                f"{PAYMENT_STATUS_NON_CHARGEABLE}. If this client should have been "
+                f"billed, this line is the miss."
+            )
+
         # Generate Stripe Link for all flows to ensure it appears on the receipt
         stripe_url = None
         payment_method = data.get('paymentMethod', 'Venmo')
@@ -367,7 +388,10 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
             # Format price to float
             import re
             amount_num = float(re.sub(r'[^0-9.]', '', str(price)))
-            if amount_num > 0:
+            # Gated on client chargeability as well as amount. Fare is left at
+            # its quoted value on purpose: zeroing it would destroy what the ride
+            # was worth in order to encode a decision the status already carries.
+            if amount_num > 0 and not non_chargeable:
                 trip_label = f"{pickup} -> {dropoff} ({pickup_time})"
                 stripe_url = create_stripe_payment_link(name, email, amount_num, trip_label, invoice_id=booking_id)
         except Exception as se:
@@ -736,8 +760,18 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
                 "Timestamp_Offer": utc_to_local(dt_utc).strftime("%Y-%m-%d %H:%M:%S") if dt_utc else None
             })
             db.save_trip(db_data)
-            # Invoice/Cash/Venmo bookings start unpaid; cleared via Mark Paid on the dashboard
-            db.set_payment_status(booking_id, "Pending")
+            # Invoice/Cash/Venmo bookings start unpaid; cleared via Mark Paid on
+            # the dashboard. A non-chargeable client gets a TERMINAL status
+            # instead — its own value, not 'Forgiven': forgiveness asserts a debt
+            # that existed and was released, and a ride that was never chargeable
+            # never implied collection. Encoding it as forgiven would record a
+            # false history. Every PaymentStatus predicate in the backend is
+            # positive (equality or a positive IN list), so a new value leaves
+            # receivables and the auto-collect loop by construction.
+            db.set_payment_status(
+                booking_id,
+                PAYMENT_STATUS_NON_CHARGEABLE if non_chargeable else "Pending",
+            )
         except Exception as db_err:
             logging.error(f"Failed to log booking to DB: {db_err}")
 

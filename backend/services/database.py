@@ -28,6 +28,76 @@ def inactive_invoice_predicate(column: str = "RideID") -> str:
     )
 
 
+# ── Non-chargeable clients ───────────────────────────────────────────────────
+# Deliberately NOT part of INACTIVE_CLIENTS, for two independent reasons.
+#
+# Semantics: INACTIVE_CLIENTS means "former client, excluded from active
+# receivables". A non-chargeable client is CURRENT — they still ride, the
+# mileage and energy cost are real — the rides simply generate no revenue by
+# choice. Filing them as inactive encodes a false fact about someone who is
+# booking next week.
+#
+# Consumers: every INACTIVE_CLIENTS consumer sits on a READ path —
+# inactive_invoice_predicate in get_unpaid_trips, the roster set in
+# get_open_client_invoices, the auto-collect skip in payment_tracker, an MCP
+# agent check. None of them runs inside book(). That roster governs what
+# receivables REPORT, never what booking CREATES, which is exactly why a
+# non-chargeable client still received a Stripe payment link: the link is minted
+# ~370 lines and one send_mail BEFORE any status is written. This list is the
+# write-side counterpart and is consulted at booking time.
+NON_CHARGEABLE_CLIENTS = ("JACKIE",)
+
+PAYMENT_STATUS_NON_CHARGEABLE = "NonChargeable"
+
+
+def client_token(customer_name: str) -> str:
+    """First name, uppercased — the canonical client identity in this codebase.
+
+    Not a new convention: build_invoice_id derives the RideID segment this way,
+    get_open_client_invoices parses RideID.split("-")[1].upper() back out of it,
+    and payment_tracker matches that token against bank counterparty strings.
+    Introducing a second notion of client identity here would be the actual
+    design error, so this reuses the existing spine.
+
+    Email is deliberately NOT used: one client appears under nine distinct
+    address strings, several structurally invalid, so it cannot identify anyone.
+    """
+    parts = (customer_name or "").split()
+    return parts[0].upper() if parts else ""
+
+
+def is_non_chargeable_token(token: str) -> bool:
+    """Token-side entry point, for callers holding a RideID rather than a name.
+
+    One definition of non-chargeable, two doorways: the booking path has the
+    customer's name, the nightly pairing has only 'INV-JACKIE-...'. Both must
+    resolve identically or the class means different things at write time and at
+    reconciliation time.
+    """
+    return (token or "").upper() in NON_CHARGEABLE_CLIENTS
+
+
+def is_non_chargeable(customer_name: str) -> bool:
+    """Whether this client's rides generate no revenue by choice.
+
+    KNOWN LIMITATION — first-name matching, and the failure direction is
+    asymmetric. On the READ side a first-name collision merely excludes a
+    receivable from a report: visible, recoverable. Here on the WRITE side a
+    collision means a genuinely chargeable client with the same first name books,
+    gets no payment link, lands a terminal status, and is billed nothing — and
+    because that status drops out of receivables by construction, the miss is
+    invisible on precisely the report you would use to find it.
+
+    There is no stronger key available. Email is disqualified above, and there is
+    no client identity table to assert against. The mitigation is therefore not a
+    second factor but the caller's obligation: every match MUST be logged at
+    booking time, so a wrongly-matched real client leaves a trace at the moment
+    of the miss rather than only in a reconciliation this status is designed to
+    disappear from.
+    """
+    return client_token(customer_name) in NON_CHARGEABLE_CLIENTS
+
+
 class DatabaseClient:
     def __init__(self):
         self.connection_string = os.environ.get("SQL_CONNECTION_STRING")
