@@ -8,7 +8,7 @@ from dateutil import parser
 from services.calendar import generate_time_slots_for_day, calculate_buffers, time_ranges_overlap
 from services.graph import GraphClient
 from services.database import DatabaseClient
-from services.flight import FlightStatusService
+from services.flight import FlightStatusService, FlightDataUnavailable
 from services.datetime_utils import normalize_to_utc, utc_to_local
 from services.invoice import create_stripe_payment_link, build_invoice_id
 from services.auth_guard import cors_headers as _get_cors
@@ -219,6 +219,18 @@ def flight_status(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(
             json.dumps({"success": True, "found": bool(data), "data": data}),
             status_code=200,
+            mimetype="application/json"
+        )
+    except FlightDataUnavailable as e:
+        # The providers failed, so we do NOT know whether this flight exists.
+        # 503 (not 200 found:false) keeps a provider outage from masquerading
+        # as a bad flight number — the public tracker renders this message
+        # verbatim, and the cabin console holds its last known flight state.
+        logging.error(f"flight-status unavailable: {e.message}")
+        return func.HttpResponse(
+            json.dumps({"success": False, "error": e.message,
+                        "retryable": True}),
+            status_code=503,
             mimetype="application/json"
         )
     except Exception as e:
