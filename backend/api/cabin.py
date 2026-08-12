@@ -181,9 +181,16 @@ def _json_response(data, status_code=200):
     )
 
 def _validate_token(token):
-    """Validate token against Rides.CabinTokens — must exist and not be expired."""
+    """Validate token against Rides.CabinTokens or CABIN_ADMIN_TOKEN env var."""
     if not token:
         return False
+
+    # Master Admin Access Code for testing (CABIN_ADMIN_TOKEN or default 777999)
+    admin_token = os.environ.get("CABIN_ADMIN_TOKEN", "777999")
+    if str(token).strip() == str(admin_token).strip():
+        logging.info("Cabin access granted via Master Admin Access Code")
+        return True
+
     try:
         from services.database import DatabaseClient
         db = DatabaseClient()
@@ -368,7 +375,13 @@ def cabin_state(req: func.HttpRequest) -> func.HttpResponse:
         return _json_response({"error": str(e)}, 500)
 
 
-# ─── POST /cabin/command ──────────────────────────────────────────────
+# ─── POST /cabin/control & /cabin/command ─────────────────────────────
+@bp.route(route="cabin/control", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+def cabin_control(req: func.HttpRequest) -> func.HttpResponse:
+    """Dispatches cabin control commands from the passenger UI (primary proxy route)."""
+    return cabin_command(req)
+
+
 @bp.route(route="cabin/command", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def cabin_command(req: func.HttpRequest) -> func.HttpResponse:
     """Dispatches cabin control commands from the passenger UI."""

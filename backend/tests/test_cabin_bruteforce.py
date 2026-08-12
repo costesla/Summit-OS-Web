@@ -16,6 +16,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from api import cabin  # noqa: E402
 
+_ORIGINAL_VALIDATE_TOKEN = cabin._validate_token
+
 
 class _Req:
     """Minimal stand-in for func.HttpRequest (only what _guard touches)."""
@@ -25,6 +27,7 @@ class _Req:
 
 def setup_function():
     cabin._FAILED_ATTEMPTS.clear()
+    cabin._validate_token = _ORIGINAL_VALIDATE_TOKEN
     # Default: pretend the shared (SQL) counter is unreachable, so these tests
     # exercise the in-process fallback. The shared-counter tests override it.
     cabin._shared_failures = lambda ip, record: None
@@ -200,6 +203,14 @@ def test_shared_counter_is_per_client():
     # An unrelated passenger is untouched.
     cabin._FAILED_ATTEMPTS.clear()
     assert cabin._guard(_Req("203.0.113.200"), "000000").status_code == 401
+
+
+def test_master_admin_token_access():
+    """Master Admin Access Code (CABIN_ADMIN_TOKEN) bypasses DB and grants access."""
+    real_validate = cabin._validate_token
+    os.environ["CABIN_ADMIN_TOKEN"] = "777999"
+    assert real_validate("777999") is True
+    assert real_validate(" 777999 ") is True
 
 
 if __name__ == "__main__":

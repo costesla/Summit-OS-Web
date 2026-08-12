@@ -1,6 +1,7 @@
 {
   "navigationFallback": {
-    "rewrite": "/index.html"
+    "rewrite": "/index.html",
+    "exclude": ["/assets/*", "/*.css", "/*.js", "/*.png", "/*.jpg", "/*.svg", "/api/*"]
   },
   "globalHeaders": {
     "X-Content-Type-Options": "nosniff",
@@ -10,6 +11,54 @@
     ".json": "application/json"
   },
   "routes": [
+    {
+      "route": "/cabin",
+      "rewrite": "/cabin/index.html"
+    },
+    {
+      "route": "/book",
+      "rewrite": "/book/index.html"
+    },
+    {
+      "route": "/track",
+      "rewrite": "/track/index.html"
+    },
+    {
+      "route": "/receipt",
+      "rewrite": "/receipt/index.html"
+    },
+    {
+      "route": "/contact",
+      "rewrite": "/contact/index.html"
+    },
+    {
+      "route": "/services",
+      "rewrite": "/services/index.html"
+    },
+    {
+      "route": "/flights",
+      "rewrite": "/flights/index.html"
+    },
+    {
+      "route": "/weather",
+      "rewrite": "/weather/index.html"
+    },
+    {
+      "route": "/experience",
+      "rewrite": "/experience/index.html"
+    },
+    {
+      "route": "/fairness",
+      "rewrite": "/fairness/index.html"
+    },
+    {
+      "route": "/terms",
+      "rewrite": "/terms/index.html"
+    },
+    {
+      "route": "/privacy",
+      "rewrite": "/privacy/index.html"
+    },
     {
       "route": "/driver-dashboard*",
       "allowedRoles": ["authenticated"]

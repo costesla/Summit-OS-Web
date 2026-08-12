@@ -51,9 +51,7 @@ interface CabinState {
     expected_dest?: string | null;
 }
 
-// SWA linked backend confirmed — /api/* on costesla.com proxies to summitos-api automatically
-// Function key stays in Azure; browser never sees it.
-const API_BASE = "";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://summitos-api.azurewebsites.net";
 
 const INITIAL_STATE: CabinState = {
     latitude: null,

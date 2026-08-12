@@ -1,104 +1,119 @@
 {
-    "routes": [
-        {
-            "route": "/driver-login",
-            "redirect": "/.auth/login/aad?post_login_redirect_uri=/driver-dashboard/"
-        },
-        {
-            "route": "/driver-dashboard*",
-            "allowedRoles": [
-                "authenticated"
-            ]
-        },
-        {
-            "route": "/sw.js",
-            "headers": {
-                "Cache-Control": "no-cache"
-            }
-        },
-        {
-            "route": "/track",
-            "redirect": "/",
-            "statusCode": 301
-        },
-        {
-            "route": "/track/*",
-            "redirect": "/",
-            "statusCode": 301
-        }
-    ],
-    "responseOverrides": {
-        "401": {
-            "redirect": "/.auth/login/aad?post_login_redirect_uri=/driver-dashboard/",
-            "statusCode": 302
-        }
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/assets/*", "/*.css", "/*.js", "/*.png", "/*.jpg", "/*.svg", "/api/*"]
+  },
+  "globalHeaders": {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "SAMEORIGIN"
+  },
+  "mimeTypes": {
+    ".json": "application/json"
+  },
+  "routes": [
+    {
+      "route": "/cabin",
+      "rewrite": "/cabin/index.html"
     },
-    "rewrites": [
-        {
-            "route": "/api/dashboard-summary",
-            "rewrite": "https://summitos-api.azurewebsites.net/api/dashboard-summary"
-        },
-        {
-            "route": "/api/vehicle-location",
-            "rewrite": "https://summitos-api.azurewebsites.net/api/vehicle-location"
-        },
-        {
-            "route": "/api/quote",
-            "rewrite": "https://summitos-api.azurewebsites.net/api/quote"
-        },
-        {
-            "route": "/api/calendar-availability",
-            "rewrite": "https://summitos-api.azurewebsites.net/api/calendar-availability"
-        },
-        {
-            "route": "/api/calendar-book",
-            "rewrite": "https://summitos-api.azurewebsites.net/api/calendar-book"
-        },
-        {
-            "route": "/api/copilot/*",
-            "rewrite": "https://summitos-api.azurewebsites.net/api/copilot/*"
-        },
-        {
-            "route": "/api/book",
-            "rewrite": "https://summitos-api.azurewebsites.net/api/book"
-        },
-        {
-            "route": "/api/cabin/state",
-            "rewrite": "https://summitos-api.azurewebsites.net/api/cabin/state"
-        },
-        {
-            "route": "/api/cabin/command",
-            "rewrite": "https://summitos-api.azurewebsites.net/api/cabin/command"
-        },
-        {
-            "route": "/api/cabin/control",
-            "rewrite": "https://summitos-api.azurewebsites.net/api/cabin/command"
-        },
-        {
-            "route": "/api/cabin",
-            "rewrite": "https://summitos-api.azurewebsites.net/api/cabin/state"
-        },
-        {
-            "route": "/api/update-payment",
-            "rewrite": "https://summitsyncfuncus23436.azurewebsites.net/api/update-payment"
-        }
-    ],
-    "navigationFallback": {
-        "rewrite": "/index.html",
-        "exclude": [
-            "/_next/*",
-            "/driver-dashboard/*",
-            "/images/*",
-            "/.well-known/*",
-            "/*.{css,scss,js,json,png,gif,ico,jpg,svg,woff,woff2}"
-        ]
+    {
+      "route": "/book",
+      "rewrite": "/book/index.html"
     },
-    "mimeTypes": {
-        ".webmanifest": "application/manifest+json"
+    {
+      "route": "/track",
+      "rewrite": "/track/index.html"
     },
-    "globalHeaders": {
-        "X-Frame-Options": "SAMEORIGIN",
-        "X-Content-Type-Options": "nosniff",
-        "Referrer-Policy": "strict-origin-when-cross-origin"
+    {
+      "route": "/receipt",
+      "rewrite": "/receipt/index.html"
+    },
+    {
+      "route": "/contact",
+      "rewrite": "/contact/index.html"
+    },
+    {
+      "route": "/services",
+      "rewrite": "/services/index.html"
+    },
+    {
+      "route": "/flights",
+      "rewrite": "/flights/index.html"
+    },
+    {
+      "route": "/weather",
+      "rewrite": "/weather/index.html"
+    },
+    {
+      "route": "/experience",
+      "rewrite": "/experience/index.html"
+    },
+    {
+      "route": "/fairness",
+      "rewrite": "/fairness/index.html"
+    },
+    {
+      "route": "/terms",
+      "rewrite": "/terms/index.html"
+    },
+    {
+      "route": "/privacy",
+      "rewrite": "/privacy/index.html"
+    },
+    {
+      "route": "/driver-dashboard*",
+      "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/api/ops/*",
+      "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/.auth/login/github",
+      "statusCode": 404
+    },
+    {
+      "route": "/.auth/login/twitter",
+      "statusCode": 404
+    },
+    {
+      "route": "/assets/*",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "route": "/*.js",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "route": "/*.css",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "route": "/",
+      "headers": {
+        "Cache-Control": "no-cache, no-store, must-revalidate"
+      }
+    },
+    {
+      "route": "/*.html",
+      "headers": {
+        "Cache-Control": "no-cache, no-store, must-revalidate"
+      }
+    },
+    {
+      "route": "/index.html",
+      "headers": {
+        "Cache-Control": "no-cache, no-store, must-revalidate"
+      }
     }
+  ],
+  "responseOverrides": {},
+  "auth": {
+    "identityProviders": {}
+  }
 }
