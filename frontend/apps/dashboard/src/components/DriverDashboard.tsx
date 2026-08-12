@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import {
     LayoutDashboard, Route, Receipt, Zap, Wrench, TrendingUp,
     DollarSign, Car, ShieldAlert, CheckCircle, ExternalLink,
-    ChevronDown, ChevronUp, Plus, Loader2, MapPin, Gauge, Battery, Link2
+    ChevronDown, ChevronUp, Plus, Loader2, MapPin, Gauge, Battery, Link2, Trash2
 } from 'lucide-react';
 import { isBackgroundableError, devDebugError, getAsyncExecutionLogs, pollJobStatus } from '../../../../src/lib/intelligenceUtils';
 import { apiGet, apiPost } from '../lib/apiClient';
@@ -562,6 +562,24 @@ const DriverDashboard: React.FC = () => {
         }
     };
 
+    const handleDeletePrivateBooking = async (tripId: string, clientName: string) => {
+        if (!window.confirm(`Delete private booking for ${clientName}? This action cannot be undone.`)) return;
+        try {
+            const res = await fetch(`${AZURE_BASE}/operations/delete-trip/${encodeURIComponent(tripId)}`, {
+                method: 'DELETE',
+            });
+            const data = await res.json();
+            if (data.success) {
+                setTrips(prev => prev.filter(t => t.id !== tripId));
+                fetchAllData();
+            } else {
+                alert(`Error deleting booking: ${data.error || 'Unknown error'}`);
+            }
+        } catch (e) {
+            alert(`Error connecting to server: ${e instanceof Error ? e.message : String(e)}`);
+        }
+    };
+
     // ─── Actions: Save Day to Cloud ────────────────────────────────────────────────
     const runSaveDay = async () => {
         setStatus('running');
@@ -1032,13 +1050,19 @@ const DriverDashboard: React.FC = () => {
                                                         }
                                                         const clientName = getClientDisplayName(t);
                                                         return (
-                                                            <div key={t.id} className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-1.5 hover:bg-white/[0.03] transition-colors">
+                                                            <div key={t.id} className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-1.5 hover:bg-white/[0.03] transition-colors group">
                                                                 <div className="flex items-center justify-between">
                                                                     <span className="text-xs font-bold text-white">{clientName}</span>
-                                                                    {/* Was the literal "Paid". Every private booking rendered green
-                                                                        regardless of its real state, so this panel could not fail and
-                                                                        any visual receivables check against it confirmed nothing. */}
-                                                                    {getPaymentStatusBadge(t.payment_status)}
+                                                                    <div className="flex items-center gap-2">
+                                                                        {getPaymentStatusBadge(t.payment_status)}
+                                                                        <button
+                                                                            onClick={() => handleDeletePrivateBooking(t.id, clientName)}
+                                                                            title="Delete Booking"
+                                                                            className="p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all border-none bg-transparent"
+                                                                        >
+                                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                    </div>
                                                                 </div>
                                                                 <p className="text-[10px] text-[var(--text-muted)] font-mono truncate">{scrubAddress(t.pickup_location)} to {scrubAddress(t.dropoff_location)}</p>
                                                                 <div className="flex items-center justify-between pt-1 font-mono">

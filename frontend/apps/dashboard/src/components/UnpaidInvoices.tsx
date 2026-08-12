@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Receipt, RefreshCw, CheckCircle2, Loader2 } from 'lucide-react';
+import { Receipt, RefreshCw, CheckCircle2, Loader2, Trash2 } from 'lucide-react';
 
 const AZURE_BASE = import.meta.env.VITE_PUBLIC_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://summitos-api.azurewebsites.net/api';
 
@@ -45,6 +45,7 @@ const UnpaidInvoicesPanel: React.FC<{ selectedDate?: string }> = ({ selectedDate
     const [trips, setTrips] = useState<UnpaidTrip[]>([]);
     const [loading, setLoading] = useState(true);
     const [marking, setMarking] = useState<string | null>(null);
+    const [deleting, setDeleting] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     const fetchUnpaid = useCallback(async () => {
@@ -86,6 +87,27 @@ const UnpaidInvoicesPanel: React.FC<{ selectedDate?: string }> = ({ selectedDate
             setError(e instanceof Error ? e.message : 'Connection error');
         } finally {
             setMarking(null);
+        }
+    };
+
+    const deleteBooking = async (rideId: string) => {
+        if (!window.confirm(`Delete booking ${rideId}? This action cannot be undone.`)) return;
+        setDeleting(rideId);
+        setError(null);
+        try {
+            const res = await fetch(`${AZURE_BASE}/operations/delete-trip/${encodeURIComponent(rideId)}`, {
+                method: 'DELETE',
+            });
+            const data = await res.json();
+            if (data.success) {
+                setTrips(prev => prev.filter(t => t.rideId !== rideId));
+            } else {
+                setError(data.error || `Failed to delete booking ${rideId}`);
+            }
+        } catch (e) {
+            setError(e instanceof Error ? e.message : 'Connection error');
+        } finally {
+            setDeleting(null);
         }
     };
 
@@ -148,13 +170,22 @@ const UnpaidInvoicesPanel: React.FC<{ selectedDate?: string }> = ({ selectedDate
                                     <p className="text-[10px] text-slate-500 truncate">{fmtDate(t.start)} · {scrubAddress(t.pickup) || '?'} → {scrubAddress(t.dropoff) || '?'}</p>
                                     {hint && <p className="text-[10px] text-violet-600 font-semibold">{hint}</p>}
                                 </div>
-                                <button onClick={() => markPaid(t.rideId)} disabled={marking === t.rideId}
-                                    className="shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wide bg-emerald-500 text-white hover:bg-emerald-600 transition-all shadow-sm border-none disabled:opacity-60">
-                                    {marking === t.rideId
-                                        ? <Loader2 className="w-3 h-3 animate-spin" />
-                                        : <CheckCircle2 className="w-3 h-3" />}
-                                    Mark Paid
-                                </button>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                    <button onClick={() => markPaid(t.rideId)} disabled={marking === t.rideId || deleting === t.rideId}
+                                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wide bg-emerald-500 text-white hover:bg-emerald-600 transition-all shadow-sm border-none disabled:opacity-60">
+                                        {marking === t.rideId
+                                            ? <Loader2 className="w-3 h-3 animate-spin" />
+                                            : <CheckCircle2 className="w-3 h-3" />}
+                                        Mark Paid
+                                    </button>
+                                    <button onClick={() => deleteBooking(t.rideId)} disabled={marking === t.rideId || deleting === t.rideId}
+                                        title="Delete Booking"
+                                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-100/60 transition-all border-none bg-transparent disabled:opacity-60">
+                                        {deleting === t.rideId
+                                            ? <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-600" />
+                                            : <Trash2 className="w-3.5 h-3.5" />}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     );

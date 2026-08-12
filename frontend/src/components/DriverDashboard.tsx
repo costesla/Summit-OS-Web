@@ -1350,8 +1350,8 @@ const PrivateTripsPanel: React.FC<{ selectedDate: string; onTripsLoaded?: (count
                         <div className="flex items-center justify-center shrink-0 ml-auto md:ml-0 pl-2">
                             <button
                                 onClick={() => handleDeleteTrip(trip.trip_id)}
-                                className="text-slate-400 dark:text-slate-500 hover:text-rose-500 hover:bg-rose-500/10 opacity-60 hover:opacity-100 transition-all duration-200 p-2 rounded-xl active:scale-95"
-                                title="Remove — undoable for 10s"
+                                className="text-slate-400 dark:text-slate-500 hover:text-rose-500 hover:bg-rose-500/10 opacity-60 md:opacity-0 group-hover:opacity-100 transition-all duration-200 p-2 rounded-xl active:scale-95"
+                                title="Delete Trip"
                             >
                                 <Trash2 className="w-4 h-4" />
                             </button>

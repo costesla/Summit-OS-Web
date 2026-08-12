@@ -1003,8 +1003,8 @@ def delete_trip(req: func.HttpRequest) -> func.HttpResponse:
             )
         cursor = conn.cursor()
         
-        # Check if the trip exists and get its Tessie_DriveID
-        cursor.execute("SELECT Tessie_DriveID FROM Rides.Rides WHERE RideID = ?", (ride_id,))
+        # Check if the trip exists and get its Tessie_DriveID, Sidecar_Artifact_JSON
+        cursor.execute("SELECT Tessie_DriveID, Sidecar_Artifact_JSON FROM Rides.Rides WHERE RideID = ?", (ride_id,))
         row = cursor.fetchone()
         if not row:
             cursor.close()
@@ -1015,23 +1015,37 @@ def delete_trip(req: func.HttpRequest) -> func.HttpResponse:
             )
             
         tessie_drive_id = row[0]
+        sidecar_raw = row[1]
+        
+        # Check for calendar event ID to delete from Outlook calendar
+        calendar_event_id = req.params.get("calendar_event_id")
+        if not calendar_event_id and sidecar_raw:
+            try:
+                sidecar_data = json.loads(str(sidecar_raw))
+                calendar_event_id = sidecar_data.get("calendar_event_id") or sidecar_data.get("eventId")
+            except Exception:
+                pass
+                
+        if not calendar_event_id:
+            try:
+                cursor.execute(
+                    "SELECT EventId FROM Bookings.CalendarIdempotency WHERE IdempotencyKey = ?",
+                    (ride_id,)
+                )
+                cal_row = cursor.fetchone()
+                if cal_row and cal_row[0]:
+                    calendar_event_id = cal_row[0]
+            except Exception:
+                pass
+
+        if calendar_event_id:
+            try:
+                from services.graph import GraphClient
+                GraphClient().delete_calendar_event(calendar_event_id)
+            except Exception as graph_err:
+                logging.warning(f"Non-fatal: Failed to delete calendar event {calendar_event_id}: {graph_err}")
 
         # Soft delete (?soft=true): flag the row instead of removing it.
-        # Every consumer that matters already filters DeletedAt IS NULL — the
-        # dashboard trips view (get_trips_for_date), unpaid invoices
-        # (get_unpaid_trips), the auto-collect open-invoice set
-        # (get_open_client_invoices) and the nightly private-booking pairing
-        # (sync_private_bookings_for_date) — so this pulls a bad row out of
-        # circulation everywhere at once, and reversibly.
-        #
-        # Two deliberate choices:
-        #  - Tessie_DriveID on the booking row is left intact, so restore-trip
-        #    can find the drive again and re-attach it.
-        #  - Classification on the booking row is preserved. scan_day_trips
-        #    stamps 'Duplicate_Removed' when it soft-deletes TRIP- rows, but that
-        #    discards the original value for no functional gain: nothing filters
-        #    on it outside that one re-scan guard, and DeletedAt already records
-        #    the fact. Keeping it is what makes this genuinely undoable.
         soft = (req.params.get("soft") or "").strip().lower() in ("1", "true", "yes")
         if soft:
             cursor.execute("""
@@ -1042,11 +1056,6 @@ def delete_trip(req: func.HttpRequest) -> func.HttpResponse:
             """, (ride_id,))
             already = cursor.rowcount == 0
 
-            # Release the paired drive as well. Removing only the booking left
-            # the drive still classified with the passenger's name, so the
-            # timeline kept showing a pickup that had just been cancelled —
-            # observed in production 2026-08-04. The drive is a separate row, so
-            # taking the booking out of circulation cannot implicitly fix it.
             released = _release_drive_if_orphaned(cursor, tessie_drive_id, ride_id) if not already else False
 
             conn.commit()
@@ -1066,12 +1075,11 @@ def delete_trip(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=200, headers=_cors(req), mimetype="application/json"
             )
 
-        # Delete the trip record
+        # Hard Delete the trip record
         cursor.execute("DELETE FROM Rides.Rides WHERE RideID = ?", (ride_id,))
         rows_deleted = cursor.rowcount
 
-        # Release the paired drive if nothing else claims it. Shared with the
-        # soft path so both routes leave the drive in the same state.
+        # Release the paired drive if nothing else claims it.
         _release_drive_if_orphaned(cursor, tessie_drive_id, ride_id)
 
         conn.commit()

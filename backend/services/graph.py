@@ -189,6 +189,25 @@ class GraphClient:
             raise Exception(f"Graph Create Event Error: {resp.status_code} {resp.text}")
             
         return resp.json()
+
+    def delete_calendar_event(self, event_id: str) -> bool:
+        """Deletes a calendar event by ID via Microsoft Graph API."""
+        if not event_id:
+            return False
+        try:
+            token = self._get_token()
+            url = f"https://graph.microsoft.com/v1.0/users/{self.user_email}/calendar/events/{event_id}"
+            headers = {"Authorization": f"Bearer {token}"}
+            resp = requests.delete(url, headers=headers)
+            if not resp.ok and resp.status_code != 404:
+                logging.error(f"Graph Delete Event Error: {resp.status_code} {resp.text}")
+                return False
+            logging.info(f"Graph calendar event {event_id} deleted successfully.")
+            return True
+        except Exception as e:
+            logging.error(f"Failed to delete Graph calendar event {event_id}: {e}")
+            return False
+
     def send_mail(self, to_email, subject, body_html, from_email="peter.teehan@costesla.com"):
         token = self._get_token()
         url = f"https://graph.microsoft.com/v1.0/users/{from_email}/sendMail"
