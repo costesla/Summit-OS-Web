@@ -1083,3 +1083,150 @@ def record_private_payment(context) -> str:
     except Exception as e:
         logging.error(f"MCP record_private_payment failed: {e}")
         return json.dumps({"error": f"Payment recording failed: {e}"})
+
+
+# ═════════════════════════════════════════════════════════════════════
+# Charting + Visualization tool
+# ═════════════════════════════════════════════════════════════════════
+
+_GENERATE_CHART_PROPERTIES = json.dumps([
+    {
+        "propertyName": "metric",
+        "propertyType": "string",
+        "description": "What to plot: 'earnings' (Uber + private combined), 'tips', 'trips', 'miles', or 'hours'. Defaults to 'earnings'.",
+        "isRequired": False,
+    },
+    {
+        "propertyName": "days",
+        "propertyType": "number",
+        "description": "Number of days back from today to plot (1-90). Defaults to 7.",
+        "isRequired": False,
+    },
+    {
+        "propertyName": "start_date",
+        "propertyType": "string",
+        "description": "Start date (YYYY-MM-DD) in Mountain Time. Must be paired with end_date.",
+        "isRequired": False,
+    },
+    {
+        "propertyName": "end_date",
+        "propertyType": "string",
+        "description": "End date (YYYY-MM-DD) in Mountain Time. Must be paired with start_date.",
+        "isRequired": False,
+    },
+    {
+        "propertyName": "chart_type",
+        "propertyType": "string",
+        "description": "'bar' to compare buckets, 'line' for a trend. Defaults to 'bar'.",
+        "isRequired": False,
+    },
+    {
+        "propertyName": "group",
+        "propertyType": "string",
+        "description": "Bucket size: 'auto', 'day', or 'week'. Defaults to 'auto'.",
+        "isRequired": False,
+    },
+    {
+        "propertyName": "title",
+        "propertyType": "string",
+        "description": "Optional chart title override.",
+        "isRequired": False,
+    },
+])
+
+
+@bp.mcp_tool_trigger(
+    arg_name="context",
+    tool_name="generate_chart",
+    description=(
+        "Renders a data chart image and ready-to-send Teams Adaptive Card for "
+        "any Summit OS metric over time (earnings, tips, trips, miles, drive hours). "
+        "Use whenever the user asks to SEE data — 'show me a chart', 'graph my earnings', "
+        "'visualize last month', 'plot my trips'. Returns chartUrl, adaptiveCard payload, "
+        "one-line summary, and the plotted numbers."
+    ),
+    tool_properties=_GENERATE_CHART_PROPERTIES,
+)
+def generate_chart(context) -> str:
+    args = _parse_args(context)
+    try:
+        from api.copilot_charts import (
+            METRICS,
+            CHART_TYPES,
+            _resolve_range,
+            collect_series,
+            build_chart_config,
+            build_chart_url,
+            build_adaptive_card,
+            format_value,
+        )
+
+        metric_key = str(args.get("metric") or "earnings").strip().lower()
+        if metric_key not in METRICS:
+            return json.dumps({"error": f"Unknown metric '{metric_key}'. Choose one of: {', '.join(sorted(METRICS))}."})
+
+        chart_type = str(args.get("chart_type") or "bar").strip().lower()
+        if chart_type not in CHART_TYPES:
+            chart_type = "bar"
+
+        group = str(args.get("group") or "auto").strip().lower()
+        if group not in ("auto", "day", "week"):
+            group = "auto"
+
+        start, end, error = _resolve_range(args)
+        if error:
+            return json.dumps({"error": error})
+
+        db = DatabaseClient()
+        rows = db.get_daily_metrics(start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d"))
+
+        labels, values, grouping = collect_series(rows, start, end, metric_key, group)
+
+        series_label = METRICS[metric_key][1]
+        title = str(args.get("title") or "").strip() or f"{series_label} by {grouping}"
+        subtitle = f"{start.strftime('%b %d, %Y')} – {end.strftime('%b %d, %Y')} (Mountain Time)"
+
+        total = sum(values)
+        average = total / len(values) if values else 0.0
+        peak_index = max(range(len(values)), key=lambda i: values[i]) if values else None
+
+        facts = [
+            ("Total", format_value(total, metric_key)),
+            (f"Average per {grouping}", format_value(average, metric_key)),
+        ]
+        peak = None
+        if peak_index is not None and total > 0:
+            peak = {"label": labels[peak_index], "value": values[peak_index]}
+            facts.append((f"Best {grouping}", f"{peak['label']} — {format_value(peak['value'], metric_key)}"))
+
+        config = build_chart_config(chart_type, title, labels, values, metric_key)
+        chart_url = build_chart_url(config)
+
+        if total == 0:
+            summary = f"No {series_label.lower()} recorded between {start.isoformat()} and {end.isoformat()}."
+        else:
+            summary = f"{series_label} for {start.isoformat()} to {end.isoformat()}: {format_value(total, metric_key)} total, {format_value(average, metric_key)} per {grouping}."
+
+        return json.dumps({
+            "chartUrl": chart_url,
+            "adaptiveCard": build_adaptive_card(chart_url, title, subtitle, facts),
+            "summary": summary,
+            "chart": {
+                "metric": metric_key,
+                "chartType": chart_type,
+                "grouping": grouping,
+                "title": title,
+                "subtitle": subtitle,
+                "startDate": start.isoformat(),
+                "endDate": end.isoformat(),
+                "labels": labels,
+                "values": [round(v, 4) for v in values],
+                "total": round(total, 4),
+                "average": round(average, 4),
+                "peak": peak,
+                "hasData": total > 0,
+            },
+        }, default=str)
+    except Exception as e:
+        logging.error(f"MCP generate_chart failed: {e}")
+        return json.dumps({"error": f"Chart generation failed: {e}"})
