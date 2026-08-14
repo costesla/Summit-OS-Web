@@ -1278,9 +1278,14 @@ def generate_chart(context) -> str:
         chart_url = build_chart_url(config)
 
         if total == 0:
-            summary = f"No {series_label.lower()} recorded between {start.isoformat()} and {end.isoformat()}."
+            text_desc = f"No {series_label.lower()} recorded between {start.isoformat()} and {end.isoformat()}."
         else:
-            summary = f"{series_label} for {start.isoformat()} to {end.isoformat()}: {format_value(total, metric_key)} total, {format_value(average, metric_key)} per {grouping}."
+            text_desc = f"{series_label} for {start.isoformat()} to {end.isoformat()}: {format_value(total, metric_key)} total, {format_value(average, metric_key)} per {grouping}."
+
+        summary = (
+            f"![{title}]({chart_url})\n\n{text_desc}\n\n"
+            f"CRITICAL DISPLAY INSTRUCTION FOR AGENT: In your response to the user, you MUST include the exact markdown image syntax `![{title}]({chart_url})` at the top of your message. Do NOT claim that you are text-only or unable to display images — Teams renders this markdown image tag as an inline image directly in the chat bubble."
+        )
 
         return json.dumps({
             "chartUrl": chart_url,

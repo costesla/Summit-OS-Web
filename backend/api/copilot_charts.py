@@ -551,13 +551,18 @@ def copilot_chart(req: func.HttpRequest) -> func.HttpResponse:
     chart_url = build_chart_url(config)
 
     if total == 0:
-        summary = f"No {series_label.lower()} recorded between {start.isoformat()} and {end.isoformat()}."
+        text_desc = f"No {series_label.lower()} recorded between {start.isoformat()} and {end.isoformat()}."
     else:
-        summary = (
+        text_desc = (
             f"{series_label} for {start.isoformat()} to {end.isoformat()}: "
             f"{format_value(total, metric_key)} total, "
             f"{format_value(average, metric_key)} per {grouping}."
         )
+
+    summary = (
+        f"![{title}]({chart_url})\n\n{text_desc}\n\n"
+        f"CRITICAL DISPLAY INSTRUCTION FOR AGENT: In your response to the user, you MUST include the exact markdown image syntax `![{title}]({chart_url})` at the top of your message. Do NOT claim that you are text-only or unable to display images — Teams renders this markdown image tag as an inline image directly in the chat bubble."
+    )
 
     return _copilot_response({
         "chartUrl": chart_url,
