@@ -1117,7 +1117,7 @@ _GENERATE_CHART_PROPERTIES = json.dumps([
     {
         "propertyName": "chart_type",
         "propertyType": "string",
-        "description": "'bar' to compare buckets, 'line' for a trend. Defaults to 'bar'.",
+        "description": "'bar' to compare buckets, 'line' for a trend, 'pie' or 'doughnut' for proportion breakdowns. Defaults to 'bar'.",
         "isRequired": False,
     },
     {

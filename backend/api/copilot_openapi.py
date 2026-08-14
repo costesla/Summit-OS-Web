@@ -233,9 +233,9 @@ def copilot_openapi(req: func.HttpRequest) -> func.HttpResponse:
                         {
                             "name": "chart_type",
                             "in": "query",
-                            "description": "'bar' to compare days against each other, 'line' to show a trend.",
+                            "description": "'bar' to compare buckets, 'line' for a trend, 'pie' or 'doughnut' for slice proportion breakdowns.",
                             "required": False,
-                            "schema": {"type": "string", "default": "bar", "enum": ["bar", "line"]}
+                            "schema": {"type": "string", "default": "bar", "enum": ["bar", "line", "pie", "doughnut"]}
                         },
                         {
                             "name": "group",

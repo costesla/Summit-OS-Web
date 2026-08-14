@@ -60,7 +60,8 @@ METRICS = {
     "hours": ("DriveTime_Hours", "Drive hours", " hrs", "Hours", 2),
 }
 
-CHART_TYPES = ("bar", "line")
+CHART_TYPES = ("bar", "line", "pie", "doughnut")
+PALETTE = ["#2a78d6", "#34a853", "#fbbc05", "#ea4335", "#9c27b0", "#00bcd4", "#ff7043", "#7e57c2"]
 
 
 def _cors_headers():
@@ -179,10 +180,41 @@ def collect_series(rows, start, end, metric_key, group):
 def build_chart_config(chart_type, title, labels, values, metric_key):
     """Chart.js v4 config for QuickChart.
 
-    One series, so there is no legend to draw and no categorical palette to
-    assign — the title names the measure and the y-axis carries the numbers.
+    Bar and line charts use a single series without a legend. Pie and doughnut
+    charts render slice color palettes with a bottom legend.
     """
     _, series_label, _, axis_title, _ = METRICS[metric_key]
+
+    if chart_type in ("pie", "doughnut"):
+        count = len(values)
+        colors = (PALETTE * ((count // len(PALETTE)) + 1))[:count] if count > 0 else []
+        dataset = {
+            "label": series_label,
+            "data": [round(v, 4) for v in values],
+            "backgroundColor": colors,
+            "borderColor": SURFACE,
+            "borderWidth": 2,
+        }
+        return {
+            "type": chart_type,
+            "data": {"labels": labels, "datasets": [dataset]},
+            "options": {
+                "plugins": {
+                    "legend": {
+                        "display": True,
+                        "position": "bottom",
+                        "labels": {"color": INK_PRIMARY, "font": {"size": 12}},
+                    },
+                    "title": {
+                        "display": True,
+                        "text": title,
+                        "color": INK_PRIMARY,
+                        "font": {"size": 16, "weight": "bold"},
+                        "padding": {"bottom": 16},
+                    },
+                },
+            },
+        }
 
     dataset = {
         "label": series_label,

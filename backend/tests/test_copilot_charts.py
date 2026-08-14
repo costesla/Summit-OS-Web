@@ -331,3 +331,13 @@ def test_handler_says_so_plainly_when_the_range_is_empty(fake_db):
     assert body["chart"]["hasData"] is False
     assert body["chart"]["peak"] is None
     assert "No earnings recorded" in body["summary"]
+
+
+def test_pie_and_doughnut_charts_generate_valid_configs():
+    for c_type in ("pie", "doughnut"):
+        config = build_chart_config(c_type, "Earnings Breakdown", ["Aug 10", "Aug 11"], [100.0, 150.0], "earnings")
+        assert config["type"] == c_type
+        assert config["options"]["plugins"]["legend"]["display"] is True
+        assert config["options"]["plugins"]["legend"]["position"] == "bottom"
+        assert len(config["data"]["datasets"][0]["backgroundColor"]) == 2
+
