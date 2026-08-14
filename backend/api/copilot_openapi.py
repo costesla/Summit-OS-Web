@@ -201,12 +201,12 @@ def copilot_openapi(req: func.HttpRequest) -> func.HttpResponse:
                         {
                             "name": "metric",
                             "in": "query",
-                            "description": "What to plot: 'earnings', 'tips', 'trips', 'miles', 'hours', or 'breakdown' (Gross Earnings vs Charging Costs vs Other Expenses).",
+                            "description": "What to plot: 'earnings', 'tips', 'trips', 'miles', 'hours', 'breakdown', 'revenue_sources', 'fare_vs_tips', 'top_areas', or 'client_balances'.",
                             "required": False,
                             "schema": {
                                 "type": "string",
                                 "default": "earnings",
-                                "enum": ["earnings", "tips", "trips", "miles", "hours", "breakdown"]
+                                "enum": ["earnings", "tips", "trips", "miles", "hours", "breakdown", "revenue_sources", "fare_vs_tips", "top_areas", "client_balances"]
                             }
                         },
                         {

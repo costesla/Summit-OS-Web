@@ -348,14 +348,56 @@ def test_breakdown_metric_returns_earnings_charging_and_expenses(monkeypatch):
             "gross_earnings": 1000.0,
             "charging": 150.0,
             "expenses": 350.0,
+            "uber_earnings": 800.0,
+            "private_income": 200.0,
+            "uber_tips": 100.0,
         }
     monkeypatch.setattr(copilot_charts.DatabaseClient, "get_summary_metrics_for_range", fake_summary_metrics)
 
     body = _call(MockHttpRequest(params={"metric": "breakdown", "start_date": "2026-08-01", "end_date": "2026-08-07"}))
-
     assert body["success"] is True
     assert body["chart"]["chartType"] == "doughnut"
     assert body["chart"]["labels"] == ["Gross Earnings", "Charging Costs", "Other Expenses"]
     assert body["chart"]["values"] == [1000.0, 150.0, 200.0]
+
+    body_rev = _call(MockHttpRequest(params={"metric": "revenue_sources", "start_date": "2026-08-01", "end_date": "2026-08-07"}))
+    assert body_rev["success"] is True
+    assert body_rev["chart"]["labels"] == ["Uber Earnings", "Private Client Income"]
+    assert body_rev["chart"]["values"] == [800.0, 200.0]
+
+    body_tips = _call(MockHttpRequest(params={"metric": "fare_vs_tips", "start_date": "2026-08-01", "end_date": "2026-08-07"}))
+    assert body_tips["success"] is True
+    assert body_tips["chart"]["labels"] == ["Base Fares", "Tips"]
+    assert body_tips["chart"]["values"] == [700.0, 100.0]
+
+
+def test_top_areas_metric(monkeypatch):
+    def fake_area_activity(self, start, end):
+        return [
+            {"pickup": "5410 N Nevada Ave, Colorado Springs, CO 80918"},
+            {"pickup": "5410 N Nevada Ave, Colorado Springs, CO 80918"},
+            {"pickup": "777 E Pikes Peak Ave, Colorado Springs, CO 80903"},
+        ]
+    monkeypatch.setattr(copilot_charts.DatabaseClient, "get_area_activity", fake_area_activity)
+
+    body = _call(MockHttpRequest(params={"metric": "top_areas", "start_date": "2026-08-01", "end_date": "2026-08-07"}))
+    assert body["success"] is True
+    assert body["chart"]["labels"][0] == "Colorado Springs 80918"
+    assert body["chart"]["values"][0] == 2.0
+
+
+def test_client_balances_metric(monkeypatch):
+    def fake_balances(self, include_inactive=False):
+        return [
+            {"client": "Jackie", "balance": 150.0, "status": "active"},
+            {"client": "Emerson", "balance": 75.0, "status": "active"},
+        ]
+    monkeypatch.setattr(copilot_charts.DatabaseClient, "get_client_balances", fake_balances)
+
+    body = _call(MockHttpRequest(params={"metric": "client_balances"}))
+    assert body["success"] is True
+    assert body["chart"]["labels"] == ["Jackie", "Emerson"]
+    assert body["chart"]["values"] == [150.0, 75.0]
+
 
 

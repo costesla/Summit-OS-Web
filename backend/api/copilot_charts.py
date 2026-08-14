@@ -59,10 +59,25 @@ METRICS = {
     "miles": ("TotalMiles", "Miles", " mi", "Miles", 1),
     "hours": ("DriveTime_Hours", "Drive hours", " hrs", "Hours", 2),
     "breakdown": (None, "Financial Breakdown", "$", "Dollars ($)", 2),
+    "revenue_sources": (None, "Revenue Sources", "$", "Dollars ($)", 2),
+    "fare_vs_tips": (None, "Base Fares vs Tips", "$", "Dollars ($)", 2),
+    "top_areas": (None, "Top Pickup Areas", "", "Pickups", 0),
+    "client_balances": (None, "Client Balances", "$", "Dollars ($)", 2),
 }
 
 CHART_TYPES = ("bar", "line", "pie", "doughnut")
 PALETTE = ["#2a78d6", "#34a853", "#fbbc05", "#ea4335", "#9c27b0", "#00bcd4", "#ff7043", "#7e57c2"]
+
+
+def _parse_area(address: str) -> str:
+    """Extract city + zip or primary area from address string."""
+    import re
+    parts = [p.strip() for p in (address or "").split(",")]
+    if len(parts) >= 3:
+        city = parts[-2]
+        zip_match = re.search(r"\b(\d{5})\b", parts[-1])
+        return f"{city} {zip_match.group(1)}" if zip_match else city
+    return parts[0] if parts and parts[0] else "Unknown"
 
 
 def _cors_headers():
@@ -388,9 +403,17 @@ def copilot_chart(req: func.HttpRequest) -> func.HttpResponse:
             "error": f"Unknown metric '{metric_key}'. Choose one of: {', '.join(sorted(METRICS))}.",
         })
 
-    chart_type = str(params.get("chart_type") or ("doughnut" if metric_key == "breakdown" else "bar")).strip().lower()
+    default_types = {
+        "breakdown": "doughnut",
+        "revenue_sources": "doughnut",
+        "fare_vs_tips": "doughnut",
+        "client_balances": "pie",
+        "top_areas": "bar",
+    }
+    def_type = default_types.get(metric_key, "bar")
+    chart_type = str(params.get("chart_type") or def_type).strip().lower()
     if chart_type not in CHART_TYPES:
-        chart_type = "doughnut" if metric_key == "breakdown" else "bar"
+        chart_type = def_type
 
     group = str(params.get("group") or "auto").strip().lower()
     if group not in ("auto", "day", "week"):
@@ -415,6 +438,78 @@ def copilot_chart(req: func.HttpRequest) -> func.HttpResponse:
         except Exception as e:
             logging.error(f"copilot_chart breakdown error: {e}")
             labels, values, grouping = ["Gross Earnings", "Charging Costs", "Other Expenses"], [0.0, 0.0, 0.0], "category"
+
+    elif metric_key == "revenue_sources":
+        try:
+            db = DatabaseClient()
+            summary_data = db.get_summary_metrics_for_range(start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")) or {}
+            uber = float(summary_data.get("uber_earnings") or 0)
+            private = float(summary_data.get("private_income") or 0)
+
+            labels = ["Uber Earnings", "Private Client Income"]
+            values = [uber, private]
+            grouping = "source"
+        except Exception as e:
+            logging.error(f"copilot_chart revenue_sources error: {e}")
+            labels, values, grouping = ["Uber Earnings", "Private Client Income"], [0.0, 0.0], "source"
+
+    elif metric_key == "fare_vs_tips":
+        try:
+            db = DatabaseClient()
+            summary_data = db.get_summary_metrics_for_range(start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")) or {}
+            uber = float(summary_data.get("uber_earnings") or 0)
+            tips = float(summary_data.get("uber_tips") or 0)
+            base = max(0.0, uber - tips)
+
+            labels = ["Base Fares", "Tips"]
+            values = [base, tips]
+            grouping = "component"
+        except Exception as e:
+            logging.error(f"copilot_chart fare_vs_tips error: {e}")
+            labels, values, grouping = ["Base Fares", "Tips"], [0.0, 0.0], "component"
+
+    elif metric_key == "top_areas":
+        try:
+            from services.datetime_utils import get_operational_window
+            w_start, _ = get_operational_window(start.strftime("%Y-%m-%d"))
+            _, w_end = get_operational_window(end.strftime("%Y-%m-%d"))
+            db = DatabaseClient()
+            rows = db.get_area_activity(w_start, w_end) or []
+
+            areas = {}
+            for r in rows:
+                addr = r.get("pickup")
+                if not addr:
+                    continue
+                area = _parse_area(addr)
+                areas[area] = areas.get(area, 0) + 1
+
+            ranked = sorted(areas.items(), key=lambda x: -x[1])[:7]
+            if ranked:
+                labels = [area for area, _ in ranked]
+                values = [float(count) for _, count in ranked]
+            else:
+                labels, values = ["No Activity"], [0.0]
+            grouping = "area"
+        except Exception as e:
+            logging.error(f"copilot_chart top_areas error: {e}")
+            labels, values, grouping = ["No Activity"], [0.0], "area"
+
+    elif metric_key == "client_balances":
+        try:
+            db = DatabaseClient()
+            balances = db.get_client_balances(include_inactive=False) or []
+            active = [b for b in balances if float(b.get("balance") or 0) > 0 and b.get("status") == "active"]
+            if active:
+                labels = [str(b.get("client")) for b in active]
+                values = [float(b.get("balance") or 0) for b in active]
+            else:
+                labels, values = ["No Outstanding Balances"], [0.0]
+            grouping = "client"
+        except Exception as e:
+            logging.error(f"copilot_chart client_balances error: {e}")
+            labels, values, grouping = ["No Outstanding Balances"], [0.0], "client"
+
     else:
         try:
             db = DatabaseClient()
@@ -425,8 +520,15 @@ def copilot_chart(req: func.HttpRequest) -> func.HttpResponse:
 
         labels, values, grouping = collect_series(rows, start, end, metric_key, group)
 
+    default_titles = {
+        "breakdown": "Earnings vs Charging vs Expenses",
+        "revenue_sources": "Uber vs Private Client Revenue",
+        "fare_vs_tips": "Base Fares vs Tips",
+        "top_areas": "Top Pickup Areas",
+        "client_balances": "Outstanding Client Balances",
+    }
     series_label = METRICS[metric_key][1]
-    title = str(params.get("title") or "").strip() or ("Earnings vs Charging vs Expenses" if metric_key == "breakdown" else f"{series_label} by {grouping}")
+    title = str(params.get("title") or "").strip() or default_titles.get(metric_key, f"{series_label} by {grouping}")
     subtitle = (
         f"{start.strftime('%b %d, %Y')} – {end.strftime('%b %d, %Y')} "
         f"(Mountain Time)"

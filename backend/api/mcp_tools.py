@@ -1093,7 +1093,7 @@ _GENERATE_CHART_PROPERTIES = json.dumps([
     {
         "propertyName": "metric",
         "propertyType": "string",
-        "description": "What to plot: 'earnings', 'tips', 'trips', 'miles', 'hours', or 'breakdown' (Gross Earnings vs Charging Costs vs Other Expenses). Defaults to 'earnings'.",
+        "description": "What to plot: 'earnings', 'tips', 'trips', 'miles', 'hours', 'breakdown' (Gross Earnings vs Charging Costs vs Other Expenses), 'revenue_sources' (Uber vs Private), 'fare_vs_tips' (Base Fares vs Tips), 'top_areas' (Top Pickups by Neighborhood), or 'client_balances' (Outstanding Invoices). Defaults to 'earnings'.",
         "isRequired": False,
     },
     {
@@ -1140,11 +1140,12 @@ _GENERATE_CHART_PROPERTIES = json.dumps([
     tool_name="generate_chart",
     description=(
         "Renders a data chart image and ready-to-send Teams Adaptive Card for "
-        "any Summit OS metric over time (earnings, tips, trips, miles, drive hours) or "
-        "a financial breakdown (Gross Earnings vs Charging Costs vs Other Expenses). "
-        "Use whenever the user asks to SEE data — 'show me a chart', 'graph my earnings', "
-        "'visualize last month', 'compare expenses vs charging vs earnings'. Returns "
-        "chartUrl, adaptiveCard payload, one-line summary, and the plotted numbers."
+        "any Summit OS metric over time (earnings, tips, trips, miles, drive hours), "
+        "a financial breakdown (Gross Earnings vs Charging Costs vs Other Expenses), "
+        "revenue sources (Uber vs Private), base fares vs tips, top pickup areas, or "
+        "outstanding client balances. Use whenever the user asks to SEE data — "
+        "'show me a chart', 'graph my earnings', 'visualize last month', 'plot top pickup areas'. "
+        "Returns chartUrl, adaptiveCard payload, one-line summary, and the plotted numbers."
     ),
     tool_properties=_GENERATE_CHART_PROPERTIES,
 )
@@ -1160,15 +1161,24 @@ def generate_chart(context) -> str:
             build_chart_url,
             build_adaptive_card,
             format_value,
+            _parse_area,
         )
 
         metric_key = str(args.get("metric") or "earnings").strip().lower()
         if metric_key not in METRICS:
             return json.dumps({"error": f"Unknown metric '{metric_key}'. Choose one of: {', '.join(sorted(METRICS))}."})
 
-        chart_type = str(args.get("chart_type") or ("doughnut" if metric_key == "breakdown" else "bar")).strip().lower()
+        default_types = {
+            "breakdown": "doughnut",
+            "revenue_sources": "doughnut",
+            "fare_vs_tips": "doughnut",
+            "client_balances": "pie",
+            "top_areas": "bar",
+        }
+        def_type = default_types.get(metric_key, "bar")
+        chart_type = str(args.get("chart_type") or def_type).strip().lower()
         if chart_type not in CHART_TYPES:
-            chart_type = "doughnut" if metric_key == "breakdown" else "bar"
+            chart_type = def_type
 
         group = str(args.get("group") or "auto").strip().lower()
         if group not in ("auto", "day", "week"):
@@ -1189,12 +1199,66 @@ def generate_chart(context) -> str:
             labels = ["Gross Earnings", "Charging Costs", "Other Expenses"]
             values = [gross, charging, other_exp]
             grouping = "category"
+        elif metric_key == "revenue_sources":
+            summary_data = db.get_summary_metrics_for_range(start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")) or {}
+            uber = float(summary_data.get("uber_earnings") or 0)
+            private = float(summary_data.get("private_income") or 0)
+
+            labels = ["Uber Earnings", "Private Client Income"]
+            values = [uber, private]
+            grouping = "source"
+        elif metric_key == "fare_vs_tips":
+            summary_data = db.get_summary_metrics_for_range(start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")) or {}
+            uber = float(summary_data.get("uber_earnings") or 0)
+            tips = float(summary_data.get("uber_tips") or 0)
+            base = max(0.0, uber - tips)
+
+            labels = ["Base Fares", "Tips"]
+            values = [base, tips]
+            grouping = "component"
+        elif metric_key == "top_areas":
+            from services.datetime_utils import get_operational_window
+            w_start, _ = get_operational_window(start.strftime("%Y-%m-%d"))
+            _, w_end = get_operational_window(end.strftime("%Y-%m-%d"))
+            rows = db.get_area_activity(w_start, w_end) or []
+
+            areas = {}
+            for r in rows:
+                addr = r.get("pickup")
+                if not addr:
+                    continue
+                area = _parse_area(addr)
+                areas[area] = areas.get(area, 0) + 1
+
+            ranked = sorted(areas.items(), key=lambda x: -x[1])[:7]
+            if ranked:
+                labels = [area for area, _ in ranked]
+                values = [float(count) for _, count in ranked]
+            else:
+                labels, values = ["No Activity"], [0.0]
+            grouping = "area"
+        elif metric_key == "client_balances":
+            balances = db.get_client_balances(include_inactive=False) or []
+            active = [b for b in balances if float(b.get("balance") or 0) > 0 and b.get("status") == "active"]
+            if active:
+                labels = [str(b.get("client")) for b in active]
+                values = [float(b.get("balance") or 0) for b in active]
+            else:
+                labels, values = ["No Outstanding Balances"], [0.0]
+            grouping = "client"
         else:
             rows = db.get_daily_metrics(start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d"))
             labels, values, grouping = collect_series(rows, start, end, metric_key, group)
 
+        default_titles = {
+            "breakdown": "Earnings vs Charging vs Expenses",
+            "revenue_sources": "Uber vs Private Client Revenue",
+            "fare_vs_tips": "Base Fares vs Tips",
+            "top_areas": "Top Pickup Areas",
+            "client_balances": "Outstanding Client Balances",
+        }
         series_label = METRICS[metric_key][1]
-        title = str(args.get("title") or "").strip() or ("Earnings vs Charging vs Expenses" if metric_key == "breakdown" else f"{series_label} by {grouping}")
+        title = str(args.get("title") or "").strip() or default_titles.get(metric_key, f"{series_label} by {grouping}")
         subtitle = f"{start.strftime('%b %d, %Y')} – {end.strftime('%b %d, %Y')} (Mountain Time)"
 
         total = sum(values)
