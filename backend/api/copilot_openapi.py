@@ -16,7 +16,7 @@ def copilot_openapi(req: func.HttpRequest) -> func.HttpResponse:
         "openapi": "3.0.0",
         "info": {
             "title": "Summit Intelligence API",
-            "description": "API for accessing rideshare trip data, earnings metrics, and vehicle status. CRITICAL INSTRUCTION FOR AGENT: All vehicle and trip operations run in Mountain Time (MDT, UTC-6 in summer). When a user asks about 'today', calculate today's MDT date by subtracting 6 hours from UTC. For ANY question about miles driven, battery, speed, elevation, or driving stats for a specific day — ALWAYS call getDailyDriveSummary first. Do NOT use agenticVectorQuery for driving telemetry questions.",
+            "description": "API for accessing rideshare trip data, earnings metrics, and vehicle status. CRITICAL INSTRUCTION FOR AGENT: All vehicle and trip operations run in Mountain Time (MDT, UTC-6 in summer). When a user asks about 'today', calculate today's MDT date by subtracting 6 hours from UTC. For ANY question about miles driven, battery, speed, elevation, or driving stats for a specific day — ALWAYS call getDailyDriveSummary first. Do NOT use agenticVectorQuery for driving telemetry questions. When the user asks to SEE data — a chart, a graph, a plot, a visual, a trend picture — call generateChart and send back the 'adaptiveCard' it returns; do not describe the numbers in text instead.",
             "version": "1.0.0"
         },
         "servers": [
@@ -184,6 +184,96 @@ def copilot_openapi(req: func.HttpRequest) -> func.HttpResponse:
                                                     "summary": {"$ref": "#/components/schemas/Summary"}
                                                 }
                                             }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "/copilot/chart": {
+                "get": {
+                    "operationId": "generateChart",
+                    "summary": "Render a chart image of a Summit OS metric over time",
+                    "description": "VISUALIZATION. Call this whenever the user asks to SEE data — 'show me a chart', 'graph my earnings', 'visualize last month', 'plot my trips'. Queries the real daily metrics in Mountain Time and returns 'chartUrl' (a chart image), 'adaptiveCard' (a complete Adaptive Card payload — send this verbatim in a Send a Message node to display the chart in Teams), 'summary' (a one-line spoken summary), and 'chart.labels'/'chart.values' (the underlying numbers, so you can answer follow-up questions without calling again). Do NOT call getDailyMetrics first — this endpoint pulls the same data itself. Ranges longer than 31 days are automatically rolled up into weekly bars.",
+                    "parameters": [
+                        {
+                            "name": "metric",
+                            "in": "query",
+                            "description": "What to plot. 'earnings' is combined Uber + private revenue.",
+                            "required": False,
+                            "schema": {
+                                "type": "string",
+                                "default": "earnings",
+                                "enum": ["earnings", "tips", "trips", "miles", "hours"]
+                            }
+                        },
+                        {
+                            "name": "days",
+                            "in": "query",
+                            "description": "Number of days back from today to plot (1-90). Ignored when start_date and end_date are supplied.",
+                            "required": False,
+                            "schema": {"type": "integer", "default": 7, "maximum": 90, "minimum": 1}
+                        },
+                        {
+                            "name": "start_date",
+                            "in": "query",
+                            "description": "Start date (YYYY-MM-DD) in local Mountain Time. Must be paired with end_date.",
+                            "required": False,
+                            "schema": {"type": "string", "format": "date"}
+                        },
+                        {
+                            "name": "end_date",
+                            "in": "query",
+                            "description": "End date (YYYY-MM-DD) in local Mountain Time. Must be paired with start_date.",
+                            "required": False,
+                            "schema": {"type": "string", "format": "date"}
+                        },
+                        {
+                            "name": "chart_type",
+                            "in": "query",
+                            "description": "'bar' to compare days against each other, 'line' to show a trend.",
+                            "required": False,
+                            "schema": {"type": "string", "default": "bar", "enum": ["bar", "line"]}
+                        },
+                        {
+                            "name": "group",
+                            "in": "query",
+                            "description": "Bucket size. 'auto' plots days for short ranges and weeks for long ones.",
+                            "required": False,
+                            "schema": {"type": "string", "default": "auto", "enum": ["auto", "day", "week"]}
+                        },
+                        {
+                            "name": "title",
+                            "in": "query",
+                            "description": "Optional chart title. Leave empty to let the API name it from the metric.",
+                            "required": False,
+                            "schema": {"type": "string"}
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "Chart image URL, Adaptive Card payload, and the plotted values",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "success": {"type": "boolean"},
+                                            "chartUrl": {
+                                                "type": "string",
+                                                "description": "Direct URL to the rendered chart image. Use this as the 'url' of an Adaptive Card Image element."
+                                            },
+                                            "adaptiveCard": {
+                                                "type": "object",
+                                                "description": "A complete Adaptive Card (schema 1.5) containing the chart image and its headline figures. Send this as-is."
+                                            },
+                                            "summary": {
+                                                "type": "string",
+                                                "description": "One-line description of what the chart shows."
+                                            },
+                                            "chart": {"$ref": "#/components/schemas/ChartData"}
                                         }
                                     }
                                 }
@@ -1163,6 +1253,32 @@ def copilot_openapi(req: func.HttpRequest) -> func.HttpResponse:
                         "total_tips": {"$ref": "#/components/schemas/Currency"},
                         "total_distance": {"type": "number"},
                         "average_fare": {"$ref": "#/components/schemas/Currency"}
+                    }
+                },
+                "ChartData": {
+                    "type": "object",
+                    "description": "The numbers behind the rendered chart image.",
+                    "properties": {
+                        "metric": {"type": "string"},
+                        "chartType": {"type": "string"},
+                        "grouping": {"type": "string", "description": "'day' or 'week' — the bucket each label covers."},
+                        "title": {"type": "string"},
+                        "subtitle": {"type": "string"},
+                        "startDate": {"type": "string", "format": "date"},
+                        "endDate": {"type": "string", "format": "date"},
+                        "labels": {"type": "array", "items": {"type": "string"}},
+                        "values": {"type": "array", "items": {"type": "number"}},
+                        "total": {"type": "number"},
+                        "average": {"type": "number"},
+                        "peak": {
+                            "type": "object",
+                            "description": "The highest bucket in the range, or null when there is no data.",
+                            "properties": {
+                                "label": {"type": "string"},
+                                "value": {"type": "number"}
+                            }
+                        },
+                        "hasData": {"type": "boolean"}
                     }
                 },
                 "TessieDrive": {

@@ -30,6 +30,7 @@ blueprints = [
     "api.tessie",
     "api.reports",
     "api.copilot",
+    "api.copilot_charts",
     "api.copilot_openapi",
     "api.banking",
     "api.health",
