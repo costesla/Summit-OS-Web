@@ -1093,7 +1093,7 @@ _GENERATE_CHART_PROPERTIES = json.dumps([
     {
         "propertyName": "metric",
         "propertyType": "string",
-        "description": "What to plot: 'earnings' (Uber + private combined), 'tips', 'trips', 'miles', or 'hours'. Defaults to 'earnings'.",
+        "description": "What to plot: 'earnings', 'tips', 'trips', 'miles', 'hours', or 'breakdown' (Gross Earnings vs Charging Costs vs Other Expenses). Defaults to 'earnings'.",
         "isRequired": False,
     },
     {
@@ -1140,10 +1140,11 @@ _GENERATE_CHART_PROPERTIES = json.dumps([
     tool_name="generate_chart",
     description=(
         "Renders a data chart image and ready-to-send Teams Adaptive Card for "
-        "any Summit OS metric over time (earnings, tips, trips, miles, drive hours). "
+        "any Summit OS metric over time (earnings, tips, trips, miles, drive hours) or "
+        "a financial breakdown (Gross Earnings vs Charging Costs vs Other Expenses). "
         "Use whenever the user asks to SEE data — 'show me a chart', 'graph my earnings', "
-        "'visualize last month', 'plot my trips'. Returns chartUrl, adaptiveCard payload, "
-        "one-line summary, and the plotted numbers."
+        "'visualize last month', 'compare expenses vs charging vs earnings'. Returns "
+        "chartUrl, adaptiveCard payload, one-line summary, and the plotted numbers."
     ),
     tool_properties=_GENERATE_CHART_PROPERTIES,
 )
@@ -1165,9 +1166,9 @@ def generate_chart(context) -> str:
         if metric_key not in METRICS:
             return json.dumps({"error": f"Unknown metric '{metric_key}'. Choose one of: {', '.join(sorted(METRICS))}."})
 
-        chart_type = str(args.get("chart_type") or "bar").strip().lower()
+        chart_type = str(args.get("chart_type") or ("doughnut" if metric_key == "breakdown" else "bar")).strip().lower()
         if chart_type not in CHART_TYPES:
-            chart_type = "bar"
+            chart_type = "doughnut" if metric_key == "breakdown" else "bar"
 
         group = str(args.get("group") or "auto").strip().lower()
         if group not in ("auto", "day", "week"):
@@ -1178,12 +1179,22 @@ def generate_chart(context) -> str:
             return json.dumps({"error": error})
 
         db = DatabaseClient()
-        rows = db.get_daily_metrics(start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d"))
+        if metric_key == "breakdown":
+            summary_data = db.get_summary_metrics_for_range(start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")) or {}
+            gross = float(summary_data.get("gross_earnings") or 0)
+            charging = float(summary_data.get("charging") or 0)
+            total_exp = float(summary_data.get("expenses") or 0)
+            other_exp = max(0.0, total_exp - charging)
 
-        labels, values, grouping = collect_series(rows, start, end, metric_key, group)
+            labels = ["Gross Earnings", "Charging Costs", "Other Expenses"]
+            values = [gross, charging, other_exp]
+            grouping = "category"
+        else:
+            rows = db.get_daily_metrics(start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d"))
+            labels, values, grouping = collect_series(rows, start, end, metric_key, group)
 
         series_label = METRICS[metric_key][1]
-        title = str(args.get("title") or "").strip() or f"{series_label} by {grouping}"
+        title = str(args.get("title") or "").strip() or ("Earnings vs Charging vs Expenses" if metric_key == "breakdown" else f"{series_label} by {grouping}")
         subtitle = f"{start.strftime('%b %d, %Y')} – {end.strftime('%b %d, %Y')} (Mountain Time)"
 
         total = sum(values)

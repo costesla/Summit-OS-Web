@@ -341,3 +341,21 @@ def test_pie_and_doughnut_charts_generate_valid_configs():
         assert config["options"]["plugins"]["legend"]["position"] == "bottom"
         assert len(config["data"]["datasets"][0]["backgroundColor"]) == 2
 
+
+def test_breakdown_metric_returns_earnings_charging_and_expenses(monkeypatch):
+    def fake_summary_metrics(self, start_date, end_date):
+        return {
+            "gross_earnings": 1000.0,
+            "charging": 150.0,
+            "expenses": 350.0,
+        }
+    monkeypatch.setattr(copilot_charts.DatabaseClient, "get_summary_metrics_for_range", fake_summary_metrics)
+
+    body = _call(MockHttpRequest(params={"metric": "breakdown", "start_date": "2026-08-01", "end_date": "2026-08-07"}))
+
+    assert body["success"] is True
+    assert body["chart"]["chartType"] == "doughnut"
+    assert body["chart"]["labels"] == ["Gross Earnings", "Charging Costs", "Other Expenses"]
+    assert body["chart"]["values"] == [1000.0, 150.0, 200.0]
+
+

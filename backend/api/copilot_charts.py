@@ -58,6 +58,7 @@ METRICS = {
     "trips": ("TripCount", "Trips", "", "Trips", 0),
     "miles": ("TotalMiles", "Miles", " mi", "Miles", 1),
     "hours": ("DriveTime_Hours", "Drive hours", " hrs", "Hours", 2),
+    "breakdown": (None, "Financial Breakdown", "$", "Dollars ($)", 2),
 }
 
 CHART_TYPES = ("bar", "line", "pie", "doughnut")
@@ -387,9 +388,9 @@ def copilot_chart(req: func.HttpRequest) -> func.HttpResponse:
             "error": f"Unknown metric '{metric_key}'. Choose one of: {', '.join(sorted(METRICS))}.",
         })
 
-    chart_type = str(params.get("chart_type") or "bar").strip().lower()
+    chart_type = str(params.get("chart_type") or ("doughnut" if metric_key == "breakdown" else "bar")).strip().lower()
     if chart_type not in CHART_TYPES:
-        chart_type = "bar"
+        chart_type = "doughnut" if metric_key == "breakdown" else "bar"
 
     group = str(params.get("group") or "auto").strip().lower()
     if group not in ("auto", "day", "week"):
@@ -399,17 +400,33 @@ def copilot_chart(req: func.HttpRequest) -> func.HttpResponse:
     if error:
         return _copilot_response({"success": False, "error": error})
 
-    try:
-        db = DatabaseClient()
-        rows = db.get_daily_metrics(start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d"))
-    except Exception as e:
-        logging.error(f"copilot_chart data error: {e}")
-        return _json_response({"success": False, "error": str(e)}, 500)
+    if metric_key == "breakdown":
+        try:
+            db = DatabaseClient()
+            summary_data = db.get_summary_metrics_for_range(start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")) or {}
+            gross = float(summary_data.get("gross_earnings") or 0)
+            charging = float(summary_data.get("charging") or 0)
+            total_exp = float(summary_data.get("expenses") or 0)
+            other_exp = max(0.0, total_exp - charging)
 
-    labels, values, grouping = collect_series(rows, start, end, metric_key, group)
+            labels = ["Gross Earnings", "Charging Costs", "Other Expenses"]
+            values = [gross, charging, other_exp]
+            grouping = "category"
+        except Exception as e:
+            logging.error(f"copilot_chart breakdown error: {e}")
+            labels, values, grouping = ["Gross Earnings", "Charging Costs", "Other Expenses"], [0.0, 0.0, 0.0], "category"
+    else:
+        try:
+            db = DatabaseClient()
+            rows = db.get_daily_metrics(start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d"))
+        except Exception as e:
+            logging.error(f"copilot_chart data error: {e}")
+            return _json_response({"success": False, "error": str(e)}, 500)
+
+        labels, values, grouping = collect_series(rows, start, end, metric_key, group)
 
     series_label = METRICS[metric_key][1]
-    title = str(params.get("title") or "").strip() or f"{series_label} by {grouping}"
+    title = str(params.get("title") or "").strip() or ("Earnings vs Charging vs Expenses" if metric_key == "breakdown" else f"{series_label} by {grouping}")
     subtitle = (
         f"{start.strftime('%b %d, %Y')} – {end.strftime('%b %d, %Y')} "
         f"(Mountain Time)"
