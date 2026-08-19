@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Loader2, Ban, Pencil, X, Check } from 'lucide-react'
+import { todayInMountainTime } from '../../lib/mountainTime'
 import {
   createManualEntry,
   editManualEntry,
@@ -27,8 +28,10 @@ const PEOPLE: { key: ManualPersonKey; label: string }[] = [
 
 const ENTRY_TYPES: ManualEntryType[] = ['Charge', 'Payment', 'Credit']
 
+/** Mountain Time, not UTC — see lib/mountainTime. Defaulting this field from
+ *  toISOString() dated every entry logged after 6 PM Mountain to the next day. */
 function today(): string {
-  return new Date().toISOString().slice(0, 10)
+  return todayInMountainTime()
 }
 
 function newIdempotencyKey(): string {

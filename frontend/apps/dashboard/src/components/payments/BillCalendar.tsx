@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { fetchBillCalendar, type BillEntry } from './api'
+import { currentMonthInMountainTime } from '../../lib/mountainTime'
 
 const STATUS_STYLE: Record<BillEntry['status'], string> = {
   paid_on_time: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400',
@@ -19,7 +20,9 @@ function BillCalendar() {
   const [obligations, setObligations] = useState<BillEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<BillEntry | null>(null)
-  const month = new Date().toISOString().slice(0, 7)
+  // Mountain Time, not UTC: on the last evening of a month toISOString() has
+  // already rolled to the next month, so the calendar showed next month's bills.
+  const month = currentMonthInMountainTime()
 
   useEffect(() => {
     fetchBillCalendar(month)

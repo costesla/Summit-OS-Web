@@ -6,14 +6,15 @@ import {
 } from 'lucide-react';
 import { isBackgroundableError, devDebugError, getAsyncExecutionLogs, pollJobStatus } from '../../../../src/lib/intelligenceUtils';
 import { apiGet, apiPost } from '../lib/apiClient';
+import { todayInMountainTime } from '../lib/mountainTime';
 import PaymentTrackerPanel from './payments/PaymentTrackerPanel';
 import ManualLedgerPanel from './payments/ManualLedgerPanel';
 
 const AZURE_BASE = import.meta.env.VITE_PUBLIC_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://summitos-api.azurewebsites.net/api';
 const VERSION = "2.0.0";
 
-// Helper: today in Mountain Time
-const getTodayMST = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Denver' });
+// Helper: today in Mountain Time (shared definition — see lib/mountainTime)
+const getTodayMST = () => todayInMountainTime();
 
 // Helper: first name of operator
 const firstName = (name: string | null | undefined): string | null => {
