@@ -243,6 +243,89 @@ def get_vehicle_status(context) -> str:
         return json.dumps({"error": f"Vehicle status failed: {e}"})
 
 
+_RATES_PROPERTIES = json.dumps([
+    {
+        "propertyName": "station",
+        "propertyType": "string",
+        "description": "Limit to one station, matched loosely on name, e.g. 'E Tyler', 'Monument'. Omit to cover every station.",
+        "isRequired": False,
+    },
+    {
+        "propertyName": "days_back",
+        "propertyType": "number",
+        "description": "How far back to look, in days. Defaults to 90. More history gives more reliable peak/off-peak figures.",
+        "isRequired": False,
+    },
+])
+
+
+@bp.mcp_tool_trigger(
+    arg_name="context",
+    tool_name="get_charging_rates",
+    description=(
+        "Works out what you actually pay per kWh at each Supercharger, broken "
+        "down by hour of day, so peak and off-peak pricing can be compared. "
+        "Derived from real billed sessions, not a published price list. Use "
+        "for questions like 'what's the rate at East Tyler St', 'is it cheaper "
+        "to charge at night', 'what are peak vs off-peak rates', 'when should "
+        "I charge to save money', 'how much per kWh am I paying'. Reports the "
+        "cheapest and most expensive hours observed and the spread between "
+        "them. This is what you WERE billed, so it reflects your own charging "
+        "hours; it is not a live price quote for right now."
+    ),
+    tool_properties=_RATES_PROPERTIES,
+)
+def get_charging_rates(context) -> str:
+    args = _parse_args(context)
+    station_filter = (str(args.get("station") or "")).strip().lower()
+
+    try:
+        days_back = int(float(args.get("days_back") or 90))
+    except (TypeError, ValueError):
+        days_back = 90
+    days_back = min(max(days_back, 1), 730)
+
+    try:
+        from services.charging_rates import summarize_rates
+        from services.charging_sites import classify
+
+        today = _current_operational_date()
+        end_dt = datetime.datetime.strptime(today, "%Y-%m-%d")
+        start_dt = end_dt - datetime.timedelta(days=days_back)
+        window_start, _ = get_operational_window(start_dt.strftime("%Y-%m-%d"))
+        _, window_end = get_operational_window(today)
+
+        db = DatabaseClient()
+        rows = db.get_charging_sessions_for_window(window_start, window_end)
+
+        sessions = []
+        for r in rows:
+            match = classify(r.get("latitude"), r.get("longitude"))
+            name = match.site_name or r.get("location") or "Unknown"
+            if station_filter and station_filter not in name.lower():
+                continue
+            sessions.append({
+                "site_name": name,
+                "start_time": r.get("start_time"),
+                "end_time": r.get("end_time"),
+                "energy_added_kwh": r.get("energy_added_kwh"),
+                "cost": r.get("cost"),
+            })
+
+        summary = summarize_rates(sessions)
+        summary["window"] = {
+            "start": start_dt.strftime("%Y-%m-%d"),
+            "end": today,
+            "days": days_back,
+        }
+        if station_filter:
+            summary["station_filter"] = station_filter
+        return json.dumps(summary, default=str)
+    except Exception as e:
+        logging.error(f"MCP get_charging_rates failed: {e}")
+        return json.dumps({"error": f"Charging rate analysis failed: {e}"})
+
+
 _STATIONS_PROPERTIES = json.dumps([
     {
         "propertyName": "near",
