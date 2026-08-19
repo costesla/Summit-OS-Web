@@ -48,16 +48,26 @@ function money(value: string | undefined): string {
 
 function PersonPanel({
   label,
+  personKey,
   person,
   selectedDate,
   onChanged,
 }: {
   label: string
+  /** Whose ledger this panel writes to. Passed explicitly and never derived
+   *  from the server payload: this was `person?.personKey ?? 'JACKIE'`, and
+   *  React does not forward `key` as a prop, so whenever the response was
+   *  missing a person — a failed load, a partial payload, or simply before the
+   *  first fetch resolves — BOTH panels identified as JACKIE and Luis's form
+   *  posted entries against Jackie's balance. Observed 2026-08-19 on a build
+   *  with no API reachable: two elements rendered data-testid
+   *  "manual-balance-JACKIE". Identity must come from the caller, which knows
+   *  it unconditionally, not from data that can be absent. */
+  personKey: ManualPersonKey
   person: ManualLedgerPerson | undefined
   selectedDate: string
   onChanged: () => Promise<void>
 }) {
-  const personKey = person?.personKey ?? 'JACKIE'
   const [amount, setAmount] = useState('')
   const [entryType, setEntryType] = useState<ManualEntryType>('Charge')
   const [effectiveDate, setEffectiveDate] = useState(selectedDate || today())
@@ -383,6 +393,7 @@ function ManualLedgerPanel({ selectedDate }: { selectedDate: string }) {
           <PersonPanel
             key={key}
             label={label}
+            personKey={key}
             person={people[key]}
             selectedDate={selectedDate}
             onChanged={load}
