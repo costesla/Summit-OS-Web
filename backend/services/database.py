@@ -424,21 +424,36 @@ class DatabaseClient:
         if not conn: return
         cursor = conn.cursor()
         
+        # Latitude/Longitude are kept because Supercharger classification runs on
+        # coordinates: Tessie reports street addresses, so the previous substring
+        # test for "supercharger" was never true and all Supercharger spend was
+        # reported as other-charging. Tessie was already sending these; they were
+        # simply discarded here. Nullable, so rows written before the 2026-08-19
+        # migration read as UNKNOWN rather than as not-a-Supercharger.
         query = """
         MERGE INTO Rides.ChargingSessions AS target
         USING (SELECT ? AS SessionID) AS source
         ON (target.SessionID = source.SessionID)
         WHEN MATCHED THEN
-            UPDATE SET Start_Time = ?, End_Time = ?, Location_Name = ?, Energy_Added_kWh = ?, 
-            Cost = ?, LastUpdated = GETDATE()
+            UPDATE SET Start_Time = ?, End_Time = ?, Location_Name = ?, Energy_Added_kWh = ?,
+            Cost = ?, Latitude = ?, Longitude = ?, LastUpdated = GETDATE()
         WHEN NOT MATCHED THEN
-            INSERT (SessionID, Start_Time, End_Time, Location_Name, Energy_Added_kWh, Cost, LastUpdated)
-            VALUES (?, ?, ?, ?, ?, ?, GETDATE());
+            INSERT (SessionID, Start_Time, End_Time, Location_Name, Energy_Added_kWh, Cost,
+                    Latitude, Longitude, LastUpdated)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, GETDATE());
         """
-        
+
+        def _coord(value):
+            """None rather than 0.0: a missing fix must stay distinguishable."""
+            try:
+                return float(value) if value is not None else None
+            except (TypeError, ValueError):
+                return None
+
         sid = str(charge_data.get('session_id'))
         p = (charge_data.get('start_time'), charge_data.get('end_time'), charge_data.get('location'),
-             float(charge_data.get('energy_added') or 0), float(charge_data.get('cost') or 0))
+             float(charge_data.get('energy_added') or 0), float(charge_data.get('cost') or 0),
+             _coord(charge_data.get('latitude')), _coord(charge_data.get('longitude')))
         params = (sid,) + p + (sid,) + p
 
         try:
@@ -735,7 +750,9 @@ class DatabaseClient:
             Format(Start_Time, 'yyyy-MM-ddTHH:mm:ss')    AS start_time,
             Format(End_Time,   'yyyy-MM-ddTHH:mm:ss')    AS end_time,
             CAST(Energy_Added_kWh AS FLOAT)              AS energy_added_kwh,
-            CAST(Cost AS FLOAT)                          AS cost
+            CAST(Cost AS FLOAT)                          AS cost,
+            CAST(Latitude AS FLOAT)                      AS latitude,
+            CAST(Longitude AS FLOAT)                     AS longitude
         FROM Rides.ChargingSessions
         WHERE Start_Time >= ? AND Start_Time < ?
         ORDER BY Start_Time ASC

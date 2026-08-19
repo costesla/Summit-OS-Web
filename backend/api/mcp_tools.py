@@ -402,19 +402,31 @@ def get_charging_report(context) -> str:
         db = DatabaseClient()
         rows = db.get_charging_sessions_for_window(window_start, window_end)
 
+        # Classify by coordinates against the pinned site registry. The previous
+        # rule tested for "supercharger" inside the address Tessie reports, which
+        # never contains it — every Supercharger session was counted as other
+        # charging and supercharger_cost always read $0.00.
+        from services.charging_sites import classify
+
         sessions = []
-        supercharger_cost = other_cost = 0.0
+        supercharger_cost = other_cost = unclassified_cost = 0.0
         for r in rows:
             cost = _money(r.get("cost"))
             loc = r.get("location") or "Unknown"
-            is_sc = "supercharger" in loc.lower()
-            if is_sc:
+            match = classify(r.get("latitude"), r.get("longitude"))
+            if match.is_supercharger is None:
+                # Pre-migration row with no coordinates. Reported on its own
+                # rather than folded into "other", which would silently repeat
+                # the misattribution this replaced.
+                unclassified_cost += cost
+            elif match.is_supercharger:
                 supercharger_cost += cost
             else:
                 other_cost += cost
             sessions.append({
                 "location":         loc,
-                "is_supercharger":  is_sc,
+                "site_name":        match.site_name,
+                "is_supercharger":  match.is_supercharger,
                 "start_time":       r.get("start_time"),
                 "end_time":         r.get("end_time"),
                 "energy_added_kwh": round(float(r.get("energy_added_kwh") or 0), 2),
@@ -430,9 +442,12 @@ def get_charging_report(context) -> str:
                 "timezone": "Mountain Time (America/Denver)",
             },
             "session_count":     len(sessions),
-            "total_cost":        round(supercharger_cost + other_cost, 2),
+            "total_cost":        round(supercharger_cost + other_cost + unclassified_cost, 2),
             "supercharger_cost": round(supercharger_cost, 2),
             "other_cost":        round(other_cost, 2),
+            #: Sessions predating the coordinate migration. Clears as
+            #: TessieSyncService.sync_day replays history.
+            "unclassified_cost": round(unclassified_cost, 2),
             "total_energy_added_kwh": round(sum(s["energy_added_kwh"] for s in sessions), 2),
             "sessions":          sessions,
         }, default=str)

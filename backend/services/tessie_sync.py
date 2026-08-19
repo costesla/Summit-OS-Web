@@ -146,7 +146,11 @@ class TessieSyncService:
                     "end_time":     self._format_ts(charge.get('finished_at') or charge.get('ended_at') or charge.get('ending_at')),
                     "energy_added": charge.get('energy_added', 0),
                     "cost":         charge.get('cost', 0),
-                    "location":     charge.get('location', 'Unknown')
+                    "location":     charge.get('location', 'Unknown'),
+                    # Supercharger classification runs on coordinates, not on the
+                    # address string — see services/charging_sites.
+                    "latitude":     charge.get('latitude'),
+                    "longitude":    charge.get('longitude'),
                 }
                 self.db.save_charge(charge_data)
                 results["charges_saved"] += 1
