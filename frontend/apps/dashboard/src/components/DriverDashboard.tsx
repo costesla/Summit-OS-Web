@@ -1294,7 +1294,7 @@ const DriverDashboard: React.FC = () => {
                                             </form>
 
                                             {/* Manual Ledger — Jackie & Luis (manual-entry-only balances) */}
-                                            <ManualLedgerPanel />
+                                            <ManualLedgerPanel selectedDate={selectedDate} />
 
                                             {/* Dual Ledger Tab Switcher */}
                                             <div className="space-y-3">

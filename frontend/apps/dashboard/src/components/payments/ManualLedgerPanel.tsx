@@ -49,16 +49,23 @@ function money(value: string | undefined): string {
 function PersonPanel({
   label,
   person,
+  selectedDate,
   onChanged,
 }: {
   label: string
   person: ManualLedgerPerson | undefined
+  selectedDate: string
   onChanged: () => Promise<void>
 }) {
   const personKey = person?.personKey ?? 'JACKIE'
   const [amount, setAmount] = useState('')
   const [entryType, setEntryType] = useState<ManualEntryType>('Charge')
-  const [effectiveDate, setEffectiveDate] = useState(today())
+  const [effectiveDate, setEffectiveDate] = useState(selectedDate || today())
+
+  // Follow the Balance Sheet's date. Logging an entry while looking at 8/18
+  // should date it 8/18 — the operator's own sense of "the day I'm working on"
+  // is the date picker, not the wall clock.
+  useEffect(() => { setEffectiveDate(selectedDate || today()) }, [selectedDate])
   const [note, setNote] = useState('')
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -139,7 +146,9 @@ function PersonPanel({
           {label}
         </h4>
         <div className="text-right">
-          <div className="text-[9px] font-mono text-[var(--text-muted)] uppercase">Balance</div>
+          <div className="text-[9px] font-mono text-[var(--text-muted)] uppercase">
+            Balance as of {selectedDate}
+          </div>
           <div
             className={`text-lg font-black tabular-nums ${negative ? 'text-[var(--accent-cyan)]' : 'text-white'}`}
             data-testid={`manual-balance-${personKey}`}
@@ -282,14 +291,21 @@ function PersonPanel({
   )
 }
 
-function ManualLedgerPanel() {
+/**
+ * @param selectedDate  The Balance Sheet's date. The panel shows the CLOSING
+ *   balance for this day, not the running all-time total. Previously the panel
+ *   took no date at all: it fetched once on mount and never refetched, so
+ *   changing the date changed the header above it while these numbers sat
+ *   still — which reads as "the ledger isn't updating".
+ */
+function ManualLedgerPanel({ selectedDate }: { selectedDate: string }) {
   const [people, setPeople] = useState<Record<string, ManualLedgerPerson>>({})
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     try {
-      const data = await fetchManualLedger()
+      const data = await fetchManualLedger(selectedDate)
       setPeople(data.people || {})
       setLoadError(null)
     } catch (err) {
@@ -297,7 +313,7 @@ function ManualLedgerPanel() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [selectedDate])
 
   useEffect(() => { void load() }, [load])
 
@@ -310,7 +326,8 @@ function ManualLedgerPanel() {
         {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--text-muted)]" />}
       </div>
       <p className="text-[10px] text-[var(--text-muted)] font-mono">
-        Manual entries only — no automatic accrual, invoice, or missed-day logic feeds these balances.
+        Manual entries only — no automatic accrual, invoice, or missed-day logic feeds these
+        balances, and these balances feed no other figure on this dashboard.
       </p>
 
       {loadError && (
@@ -321,7 +338,13 @@ function ManualLedgerPanel() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {PEOPLE.map(({ key, label }) => (
-          <PersonPanel key={key} label={label} person={people[key]} onChanged={load} />
+          <PersonPanel
+            key={key}
+            label={label}
+            person={people[key]}
+            selectedDate={selectedDate}
+            onChanged={load}
+          />
         ))}
       </div>
     </div>
