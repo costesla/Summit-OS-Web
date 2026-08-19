@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Loader2, Ban, Pencil, X, Check } from 'lucide-react'
 import { todayInMountainTime } from '../../lib/mountainTime'
 import {
@@ -61,24 +61,51 @@ function PersonPanel({
   const [amount, setAmount] = useState('')
   const [entryType, setEntryType] = useState<ManualEntryType>('Charge')
   const [effectiveDate, setEffectiveDate] = useState(selectedDate || today())
-
-  // Follow the Balance Sheet's date. Logging an entry while looking at 8/18
-  // should date it 8/18 — the operator's own sense of "the day I'm working on"
-  // is the date picker, not the wall clock.
-  useEffect(() => { setEffectiveDate(selectedDate || today()) }, [selectedDate])
   const [note, setNote] = useState('')
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [busyEntryId, setBusyEntryId] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editAmount, setEditAmount] = useState('')
+  const [overdrawAcknowledged, setOverdrawAcknowledged] = useState(false)
+
+  // Follow the Balance Sheet's date. Logging an entry while looking at 8/18
+  // should date it 8/18 — the operator's own sense of "the day I'm working on"
+  // is the date picker, not the wall clock.
+  useEffect(() => { setEffectiveDate(selectedDate || today()) }, [selectedDate])
 
   const balance = person?.balance ?? '0.00'
   const negative = Number(balance) < 0
 
+  /** The balance this entry would produce, but only when it goes negative.
+   *
+   *  A Payment or Credit larger than what is outstanding means the person has
+   *  overpaid — a real state, so this must never block. It is also precisely
+   *  what a MISSING opening balance looks like: Jackie's ledger read -$90.00
+   *  on 2026-08-18 because the debt she was repaying had never been entered,
+   *  and nothing on screen questioned it. Advisory, against the balance the
+   *  operator can actually see. */
+  const overdrawnTo = useMemo(() => {
+    if (entryType === 'Charge') return null
+    const amt = Number(amount)
+    if (!Number.isFinite(amt) || amt <= 0) return null
+    const next = Number(balance) - amt
+    return next < 0 ? next : null
+  }, [amount, entryType, balance])
+
+  const needsConfirmation = overdrawnTo !== null && !overdrawAcknowledged
+
+  // Any change to what is being logged re-arms the warning, so an
+  // acknowledgement can never carry over to a different entry.
+  useEffect(() => { setOverdrawAcknowledged(false) }, [amount, entryType])
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (pending) return // guard against double submit / double tap
+    if (needsConfirmation) {
+      setOverdrawAcknowledged(true) // surface the warning; the next press commits
+      return
+    }
     setError(null)
     setPending(true)
     try {
@@ -203,12 +230,27 @@ function PersonPanel({
             />
           </div>
         </div>
+        {overdrawnTo !== null && (
+          <p
+            className="text-[10px] text-amber-400 font-mono border border-amber-500/20 bg-amber-500/10 rounded-lg p-2"
+            data-testid={`manual-overdraw-${personKey}`}
+          >
+            This takes {label} to {money(String(overdrawnTo))} — a balance owed <em>to</em> {label}.
+            If {label} is paying down a debt, that debt may not have been entered yet: record it as
+            a Charge first.
+            {!overdrawAcknowledged && ' Press again to log it anyway.'}
+          </p>
+        )}
         <button
           type="submit" disabled={pending || !amount.trim()}
-          className="px-4 py-2 bg-[var(--accent-purple)] text-white rounded-xl text-xs font-black hover:opacity-90 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className={`px-4 py-2 rounded-xl text-xs font-black hover:opacity-90 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+            needsConfirmation
+              ? 'bg-amber-500 text-[#0a1628]'
+              : 'bg-[var(--accent-purple)] text-white'
+          }`}
         >
           {pending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-          Log {label} Entry
+          {needsConfirmation ? 'Log anyway' : `Log ${label} Entry`}
         </button>
       </form>
 
