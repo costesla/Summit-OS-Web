@@ -243,6 +243,138 @@ def get_vehicle_status(context) -> str:
         return json.dumps({"error": f"Vehicle status failed: {e}"})
 
 
+_STATIONS_PROPERTIES = json.dumps([
+    {
+        "propertyName": "near",
+        "propertyType": "string",
+        "description": "Place to search around — a town, city or station name, e.g. 'Salida', 'Monument', 'Denver'. Omit to search around the vehicle's current position.",
+        "isRequired": False,
+    },
+    {
+        "propertyName": "radius_miles",
+        "propertyType": "number",
+        "description": "How far to look, in miles. Defaults to 50. Widen it in the back country, where the nearest site can be an hour away.",
+        "isRequired": False,
+    },
+    {
+        "propertyName": "limit",
+        "propertyType": "number",
+        "description": "How many stations to return, nearest first. Defaults to 5.",
+        "isRequired": False,
+    },
+])
+
+
+@bp.mcp_tool_trigger(
+    arg_name="context",
+    tool_name="find_charging_stations",
+    description=(
+        "Finds Tesla Supercharger stations near a place or near the car right "
+        "now, nearest first, with distance in miles, stall count and peak kW. "
+        "Use for questions like 'where can I charge near Salida', 'is there a "
+        "supercharger in Gunnison', 'nearest charger to me', 'how far is the "
+        "next supercharger'. Only stations that are actually open are "
+        "returned — planned, under-construction and closed sites are "
+        "excluded, so an empty result means there is genuinely nowhere to "
+        "Supercharge in range. Covers the United States. This is about WHERE "
+        "to charge; for what charging has COST, use get_charging_report."
+    ),
+    tool_properties=_STATIONS_PROPERTIES,
+)
+def find_charging_stations(context) -> str:
+    args = _parse_args(context)
+    near = (str(args.get("near") or "")).strip()
+
+    try:
+        radius_miles = float(args.get("radius_miles") or 50)
+    except (TypeError, ValueError):
+        radius_miles = 50.0
+    radius_miles = min(max(radius_miles, 1.0), 500.0)
+
+    try:
+        limit = int(float(args.get("limit") or 5))
+    except (TypeError, ValueError):
+        limit = 5
+    limit = min(max(limit, 1), 25)
+
+    try:
+        from services.charging_sites import find_nearby, search_by_text
+
+        origin_lat = origin_lon = None
+        origin_label = None
+
+        if near:
+            # Registry text first: offline, instant, and exact for the way
+            # stations are named. Geocoding is the fallback, not the default.
+            named = search_by_text(near, limit=1)
+            if named:
+                origin_lat, origin_lon = named[0]["latitude"], named[0]["longitude"]
+                origin_label = f'{named[0]["name"]} (matched station name)'
+            else:
+                coords = _geocode(near)
+                if not coords:
+                    return json.dumps({
+                        "error": f"Could not locate '{near}'.",
+                        "hint": "Try a nearby town or a station name.",
+                    })
+                origin_lat, origin_lon = coords
+                origin_label = near
+        else:
+            # No place given: use the car. The home geofence applies — the
+            # nearest station to the vehicle would otherwise disclose roughly
+            # where home is, which is exactly what that gate protects.
+            from services.tessie import TessieClient
+            tessie = TessieClient()
+            vin = _get_vin()
+            if not vin:
+                return json.dumps({"error": "Vehicle VIN not configured, and no 'near' given"})
+            public_state = tessie.get_public_state(vin)
+            if not public_state or public_state.get("privacy"):
+                return json.dumps({
+                    "error": "Current vehicle location is unavailable (asleep, or inside the home privacy geofence).",
+                    "hint": "Name a place to search around instead, e.g. near='Colorado Springs'.",
+                })
+            origin_lat, origin_lon = public_state.get("lat"), public_state.get("long")
+            origin_label = "current vehicle position"
+
+        stations = find_nearby(origin_lat, origin_lon, radius_miles=radius_miles, limit=limit)
+        return json.dumps({
+            "searched_around": origin_label,
+            "radius_miles": radius_miles,
+            "station_count": len(stations),
+            "stations": stations,
+            "note": (
+                None if stations else
+                f"No open Supercharger within {radius_miles:.0f} miles — widen radius_miles, "
+                f"or expect to use a destination/L2 charger, which Tesla does not bill."
+            ),
+        }, default=str)
+    except Exception as e:
+        logging.error(f"MCP find_charging_stations failed (near={near!r}): {e}")
+        return json.dumps({"error": f"Station lookup failed: {e}"})
+
+
+def _geocode(place: str):
+    """Forward-geocode via Nominatim — the same free service this codebase
+    already uses for reverse geocoding, so no new credential is involved.
+    Returns (lat, lon) or None."""
+    import requests
+    try:
+        resp = requests.get(
+            "https://nominatim.openstreetmap.org/search",
+            params={"q": place, "format": "json", "limit": 1, "countrycodes": "us"},
+            headers={"User-Agent": "SummitOS/1.0"},  # required by the OSM policy
+            timeout=6,
+        )
+        if resp.status_code != 200:
+            return None
+        hits = resp.json()
+        return (float(hits[0]["lat"]), float(hits[0]["lon"])) if hits else None
+    except Exception as e:
+        logging.warning(f"Geocode failed for {place!r}: {e}")
+        return None
+
+
 _DRIVES_PROPERTIES = json.dumps([
     {
         "propertyName": "date",

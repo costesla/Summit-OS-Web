@@ -104,3 +104,71 @@ def classify(lat, lon) -> SiteMatch:
     if best is not None and best_d <= MATCH_RADIUS_M:
         return SiteMatch(True, best["n"], round(best_d, 1))
     return SiteMatch(False, None, round(best_d, 1) if best else None)
+
+
+# ── Trip planning ────────────────────────────────────────────────────────────
+#
+# Classification looks backwards and accepts every status: a session at a site
+# that has since closed still happened there. Planning looks forwards and must
+# not, which is why these are separate.
+
+#: Statuses you can actually charge at today. CLOSED_PERM and CLOSED_TEMP are
+#: excluded deliberately — routing someone to a dead site in the back country,
+#: where the next option can be 70 km away, is worse than returning nothing.
+USABLE_STATUSES = frozenset({"OPEN", "EXPANDING"})
+
+_METRES_PER_MILE = 1609.344
+
+
+def _as_result(site: dict, metres: float) -> dict:
+    return {
+        "name": site["n"],
+        "city": site.get("c"),
+        "state": site.get("r"),
+        "status": site.get("s"),
+        "stalls": site.get("st"),
+        "max_kw": site.get("kw"),
+        "distance_miles": round(metres / _METRES_PER_MILE, 1),
+        "latitude": site["lat"],
+        "longitude": site["lon"],
+    }
+
+
+def find_nearby(lat, lon, radius_miles: float = 50.0, limit: int = 5,
+                usable_only: bool = True) -> list:
+    """Sites near a point, nearest first. Empty when nothing is in range."""
+    try:
+        lat_f, lon_f = float(lat), float(lon)
+    except (TypeError, ValueError):
+        return []
+
+    radius_m = float(radius_miles) * _METRES_PER_MILE
+    hits = []
+    for site in _load():
+        if usable_only and site.get("s") not in USABLE_STATUSES:
+            continue
+        d = distance_m(lat_f, lon_f, site["lat"], site["lon"])
+        if d <= radius_m:
+            hits.append((d, site))
+    hits.sort(key=lambda pair: pair[0])
+    return [_as_result(s, d) for d, s in hits[:max(1, int(limit))]]
+
+
+def search_by_text(query: str, limit: int = 5, usable_only: bool = True) -> list:
+    """Sites whose name or city contains *query*, case-insensitively.
+
+    Tried before geocoding: it is offline, instant, and exact for the way
+    stations are actually named ("Monument", "Poncha Springs").
+    """
+    needle = (query or "").strip().lower()
+    if not needle:
+        return []
+    hits = []
+    for site in _load():
+        if usable_only and site.get("s") not in USABLE_STATUSES:
+            continue
+        haystack = f"{site.get('n') or ''} {site.get('c') or ''} {site.get('r') or ''}".lower()
+        if needle in haystack:
+            hits.append(site)
+    hits.sort(key=lambda s: s["n"])
+    return [_as_result(s, 0.0) | {"distance_miles": None} for s in hits[:max(1, int(limit))]]
