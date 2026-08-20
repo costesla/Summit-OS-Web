@@ -356,11 +356,22 @@ def build_short_chart_url(config):
 
 
 def build_adaptive_card(chart_url, title, subtitle, facts):
-    """Adaptive Card the Send-a-Message node can post verbatim into Teams."""
+    """Adaptive Card the Send-a-Message node can post verbatim into Teams.
+
+    This is the ONLY reliable way to get a chart to appear inside a Teams
+    message. Teams does not render markdown image syntax in agent messages: the
+    same `![title](url)` that displays correctly in the Copilot Studio test
+    canvas comes through as a bare link in Teams, because the two use different
+    renderers. Confirmed 2026-08-19 against a working chart that rendered in
+    the test pane and did not in Teams.
+
+    Version 1.4, not 1.5: 1.4 is the version every current Teams client renders
+    without qualification, and nothing here needs a 1.5 feature.
+    """
     return {
         "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
         "type": "AdaptiveCard",
-        "version": "1.5",
+        "version": "1.4",
         "body": [
             {
                 "type": "TextBlock",
