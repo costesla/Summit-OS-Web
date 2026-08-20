@@ -146,7 +146,16 @@ class TessieSyncService:
                     "end_time":     self._format_ts(charge.get('finished_at') or charge.get('ended_at') or charge.get('ending_at')),
                     "energy_added": charge.get('energy_added', 0),
                     "cost":         charge.get('cost', 0),
-                    "location":     charge.get('location', 'Unknown')
+                    "location":     charge.get('location', 'Unknown'),
+                    # Supercharger classification runs on coordinates, not on the
+                    # address string — see services/charging_sites.
+                    "latitude":     charge.get('latitude'),
+                    "longitude":    charge.get('longitude'),
+                    # Tessie states this outright. Preferred over any inference
+                    # we could make: the coordinate registry exists to GROUP a
+                    # station whose address reverse-geocodes four different ways,
+                    # not to guess a fact the source already reports.
+                    "is_supercharger": charge.get('is_supercharger'),
                 }
                 self.db.save_charge(charge_data)
                 results["charges_saved"] += 1

@@ -243,6 +243,244 @@ def get_vehicle_status(context) -> str:
         return json.dumps({"error": f"Vehicle status failed: {e}"})
 
 
+_RATES_PROPERTIES = json.dumps([
+    {
+        "propertyName": "station",
+        "propertyType": "string",
+        "description": "Limit to one station, matched loosely on name, e.g. 'E Tyler', 'Monument'. Omit to cover every station.",
+        "isRequired": False,
+    },
+    {
+        "propertyName": "days_back",
+        "propertyType": "number",
+        "description": "How far back to look, in days. Defaults to 90. More history gives more reliable peak/off-peak figures.",
+        "isRequired": False,
+    },
+])
+
+
+@bp.mcp_tool_trigger(
+    arg_name="context",
+    tool_name="get_charging_rates",
+    description=(
+        "Works out what you actually pay per kWh at each Supercharger, broken "
+        "down by hour of day, so peak and off-peak pricing can be compared. "
+        "Derived from real billed sessions, not a published price list. Use "
+        "for questions like 'what's the rate at East Tyler St', 'is it cheaper "
+        "to charge at night', 'what are peak vs off-peak rates', 'when should "
+        "I charge to save money', 'how much per kWh am I paying'. Reports the "
+        "cheapest and most expensive hours observed and the spread between "
+        "them. This is what you WERE billed, so it reflects your own charging "
+        "hours; it is not a live price quote for right now."
+    ),
+    tool_properties=_RATES_PROPERTIES,
+)
+def get_charging_rates(context) -> str:
+    args = _parse_args(context)
+    station_filter = (str(args.get("station") or "")).strip().lower()
+
+    try:
+        days_back = int(float(args.get("days_back") or 90))
+    except (TypeError, ValueError):
+        days_back = 90
+    days_back = min(max(days_back, 1), 730)
+
+    try:
+        from services.charging_rates import invoices_to_sessions, summarize_rates
+        from services.charging_sites import classify
+
+        today = _current_operational_date()
+        end_dt = datetime.datetime.strptime(today, "%Y-%m-%d")
+        start_dt = end_dt - datetime.timedelta(days=days_back)
+
+        # Tesla's own invoices first: they carry cost_per_kwh, so the rate tiers
+        # are READ rather than inferred, and idle fees arrive broken out. Fall
+        # back to stored sessions only when invoices are unavailable.
+        sessions, source = [], "tesla_invoices"
+        try:
+            from services.tessie import TessieClient
+            invoices = TessieClient().get_charging_invoices(vin=_get_vin())
+            sessions = invoices_to_sessions(invoices, since_epoch=start_dt.timestamp())
+        except Exception as inv_err:
+            logging.warning(f"Charging invoices unavailable, falling back to DB: {inv_err}")
+
+        if not sessions:
+            source = "recorded_sessions"
+            window_start, _ = get_operational_window(start_dt.strftime("%Y-%m-%d"))
+            _, window_end = get_operational_window(today)
+            db = DatabaseClient()
+            for r in db.get_charging_sessions_for_window(window_start, window_end):
+                match = classify(r.get("latitude"), r.get("longitude"))
+                sessions.append({
+                    "site_name": match.site_name or r.get("location") or "Unknown",
+                    "start_time": r.get("start_time"),
+                    "end_time": r.get("end_time"),
+                    "energy_added_kwh": r.get("energy_added_kwh"),
+                    "cost": r.get("cost"),
+                })
+
+        if station_filter:
+            sessions = [s for s in sessions
+                        if station_filter in (s.get("site_name") or "").lower()]
+
+        summary = summarize_rates(sessions)
+        summary["rate_source"] = source
+        if source == "recorded_sessions":
+            # Tessie computes cost from a rate card the operator maintains in
+            # the Tessie app. Those figures are therefore a restatement of what
+            # was entered, not independent confirmation of it — reporting them
+            # as a discovered rate would be circular.
+            summary.setdefault("caveats", []).append(
+                "Rates here come from stored session costs, not Tesla invoices. "
+                "Where a Tessie rate card is configured for a location, that cost "
+                "is computed from the card, so these figures restate what was "
+                "entered rather than verify it."
+            )
+        summary["window"] = {
+            "start": start_dt.strftime("%Y-%m-%d"),
+            "end": today,
+            "days": days_back,
+        }
+        if station_filter:
+            summary["station_filter"] = station_filter
+        return json.dumps(summary, default=str)
+    except Exception as e:
+        logging.error(f"MCP get_charging_rates failed: {e}")
+        return json.dumps({"error": f"Charging rate analysis failed: {e}"})
+
+
+_STATIONS_PROPERTIES = json.dumps([
+    {
+        "propertyName": "near",
+        "propertyType": "string",
+        "description": "Place to search around — a town, city or station name, e.g. 'Salida', 'Monument', 'Denver'. Omit to search around the vehicle's current position.",
+        "isRequired": False,
+    },
+    {
+        "propertyName": "radius_miles",
+        "propertyType": "number",
+        "description": "How far to look, in miles. Defaults to 50. Widen it in the back country, where the nearest site can be an hour away.",
+        "isRequired": False,
+    },
+    {
+        "propertyName": "limit",
+        "propertyType": "number",
+        "description": "How many stations to return, nearest first. Defaults to 5.",
+        "isRequired": False,
+    },
+])
+
+
+@bp.mcp_tool_trigger(
+    arg_name="context",
+    tool_name="find_charging_stations",
+    description=(
+        "Finds Tesla Supercharger stations near a place or near the car right "
+        "now, nearest first, with distance in miles, stall count and peak kW. "
+        "Use for questions like 'where can I charge near Salida', 'is there a "
+        "supercharger in Gunnison', 'nearest charger to me', 'how far is the "
+        "next supercharger'. Only stations that are actually open are "
+        "returned — planned, under-construction and closed sites are "
+        "excluded, so an empty result means there is genuinely nowhere to "
+        "Supercharge in range. Covers the United States. This is about WHERE "
+        "to charge; for what charging has COST, use get_charging_report."
+    ),
+    tool_properties=_STATIONS_PROPERTIES,
+)
+def find_charging_stations(context) -> str:
+    args = _parse_args(context)
+    near = (str(args.get("near") or "")).strip()
+
+    try:
+        radius_miles = float(args.get("radius_miles") or 50)
+    except (TypeError, ValueError):
+        radius_miles = 50.0
+    radius_miles = min(max(radius_miles, 1.0), 500.0)
+
+    try:
+        limit = int(float(args.get("limit") or 5))
+    except (TypeError, ValueError):
+        limit = 5
+    limit = min(max(limit, 1), 25)
+
+    try:
+        from services.charging_sites import find_nearby, search_by_text
+
+        origin_lat = origin_lon = None
+        origin_label = None
+
+        if near:
+            # Registry text first: offline, instant, and exact for the way
+            # stations are named. Geocoding is the fallback, not the default.
+            named = search_by_text(near, limit=1)
+            if named:
+                origin_lat, origin_lon = named[0]["latitude"], named[0]["longitude"]
+                origin_label = f'{named[0]["name"]} (matched station name)'
+            else:
+                coords = _geocode(near)
+                if not coords:
+                    return json.dumps({
+                        "error": f"Could not locate '{near}'.",
+                        "hint": "Try a nearby town or a station name.",
+                    })
+                origin_lat, origin_lon = coords
+                origin_label = near
+        else:
+            # No place given: use the car. The home geofence applies — the
+            # nearest station to the vehicle would otherwise disclose roughly
+            # where home is, which is exactly what that gate protects.
+            from services.tessie import TessieClient
+            tessie = TessieClient()
+            vin = _get_vin()
+            if not vin:
+                return json.dumps({"error": "Vehicle VIN not configured, and no 'near' given"})
+            public_state = tessie.get_public_state(vin)
+            if not public_state or public_state.get("privacy"):
+                return json.dumps({
+                    "error": "Current vehicle location is unavailable (asleep, or inside the home privacy geofence).",
+                    "hint": "Name a place to search around instead, e.g. near='Colorado Springs'.",
+                })
+            origin_lat, origin_lon = public_state.get("lat"), public_state.get("long")
+            origin_label = "current vehicle position"
+
+        stations = find_nearby(origin_lat, origin_lon, radius_miles=radius_miles, limit=limit)
+        return json.dumps({
+            "searched_around": origin_label,
+            "radius_miles": radius_miles,
+            "station_count": len(stations),
+            "stations": stations,
+            "note": (
+                None if stations else
+                f"No open Supercharger within {radius_miles:.0f} miles — widen radius_miles, "
+                f"or expect to use a destination/L2 charger, which Tesla does not bill."
+            ),
+        }, default=str)
+    except Exception as e:
+        logging.error(f"MCP find_charging_stations failed (near={near!r}): {e}")
+        return json.dumps({"error": f"Station lookup failed: {e}"})
+
+
+def _geocode(place: str):
+    """Forward-geocode via Nominatim — the same free service this codebase
+    already uses for reverse geocoding, so no new credential is involved.
+    Returns (lat, lon) or None."""
+    import requests
+    try:
+        resp = requests.get(
+            "https://nominatim.openstreetmap.org/search",
+            params={"q": place, "format": "json", "limit": 1, "countrycodes": "us"},
+            headers={"User-Agent": "SummitOS/1.0"},  # required by the OSM policy
+            timeout=6,
+        )
+        if resp.status_code != 200:
+            return None
+        hits = resp.json()
+        return (float(hits[0]["lat"]), float(hits[0]["lon"])) if hits else None
+    except Exception as e:
+        logging.warning(f"Geocode failed for {place!r}: {e}")
+        return None
+
+
 _DRIVES_PROPERTIES = json.dumps([
     {
         "propertyName": "date",
@@ -402,18 +640,36 @@ def get_charging_report(context) -> str:
         db = DatabaseClient()
         rows = db.get_charging_sessions_for_window(window_start, window_end)
 
+        # Classify by coordinates against the pinned site registry. The previous
+        # rule tested for "supercharger" inside the address Tessie reports, which
+        # never contains it — every Supercharger session was counted as other
+        # charging and supercharger_cost always read $0.00.
+        from services.charging_sites import classify
+
         sessions = []
-        supercharger_cost = other_cost = 0.0
+        supercharger_cost = other_cost = unclassified_cost = 0.0
         for r in rows:
             cost = _money(r.get("cost"))
             loc = r.get("location") or "Unknown"
-            is_sc = "supercharger" in loc.lower()
-            if is_sc:
+            match = classify(r.get("latitude"), r.get("longitude"))
+            # Tessie states this outright, so its answer wins. The coordinate
+            # registry is kept for the site NAME, which groups a station that
+            # reverse-geocodes to several street addresses (215 / 219 / 2611 /
+            # 2727 N Cascade Ave are one Supercharger).
+            reported = r.get("is_supercharger")
+            is_sc = match.is_supercharger if reported is None else bool(reported)
+            if is_sc is None:
+                # Pre-migration row with neither flag nor coordinates. Reported
+                # on its own rather than folded into "other", which would
+                # silently repeat the misattribution this replaced.
+                unclassified_cost += cost
+            elif is_sc:
                 supercharger_cost += cost
             else:
                 other_cost += cost
             sessions.append({
                 "location":         loc,
+                "site_name":        match.site_name,
                 "is_supercharger":  is_sc,
                 "start_time":       r.get("start_time"),
                 "end_time":         r.get("end_time"),
@@ -430,9 +686,12 @@ def get_charging_report(context) -> str:
                 "timezone": "Mountain Time (America/Denver)",
             },
             "session_count":     len(sessions),
-            "total_cost":        round(supercharger_cost + other_cost, 2),
+            "total_cost":        round(supercharger_cost + other_cost + unclassified_cost, 2),
             "supercharger_cost": round(supercharger_cost, 2),
             "other_cost":        round(other_cost, 2),
+            #: Sessions predating the coordinate migration. Clears as
+            #: TessieSyncService.sync_day replays history.
+            "unclassified_cost": round(unclassified_cost, 2),
             "total_energy_added_kwh": round(sum(s["energy_added_kwh"] for s in sessions), 2),
             "sessions":          sessions,
         }, default=str)
@@ -1159,6 +1418,7 @@ def generate_chart(context) -> str:
             collect_series,
             build_chart_config,
             build_chart_url,
+            build_short_chart_url,
             build_adaptive_card,
             format_value,
             _parse_area,
@@ -1275,16 +1535,28 @@ def generate_chart(context) -> str:
             facts.append((f"Best {grouping}", f"{peak['label']} — {format_value(peak['value'], metric_key)}"))
 
         config = build_chart_config(chart_type, title, labels, values, metric_key)
-        chart_url = build_chart_url(config)
+        # Short URL, not the config-in-query-string form: at ~1,700 characters
+        # the long URL is why charts arrived in Teams as a link instead of an
+        # inline image. Falls back to the long URL by itself if QuickChart's
+        # create endpoint is unreachable.
+        chart_url = build_short_chart_url(config)
 
         if total == 0:
             text_desc = f"No {series_label.lower()} recorded between {start.isoformat()} and {end.isoformat()}."
         else:
             text_desc = f"{series_label} for {start.isoformat()} to {end.isoformat()}: {format_value(total, metric_key)} total, {format_value(average, metric_key)} per {grouping}."
 
+        # The image markdown leads, because whatever the orchestrator keeps it
+        # keeps from the front. The instruction stays brief: the earlier version
+        # shouted at the agent to compensate for a URL too long to render, which
+        # was never a problem the agent could fix. With a ~74 character URL the
+        # markdown survives on its own, and a short reminder is enough to stop
+        # the agent claiming it cannot show images.
         summary = (
             f"![{title}]({chart_url})\n\n{text_desc}\n\n"
-            f"CRITICAL DISPLAY INSTRUCTION FOR AGENT: In your response to the user, you MUST include the exact markdown image syntax `![{title}]({chart_url})` at the top of your message. Do NOT claim that you are text-only or unable to display images — Teams renders this markdown image tag as an inline image directly in the chat bubble."
+            f"Display note: reply with the markdown image above included verbatim — "
+            f"Teams renders it inline. Do not describe it as a link, and do not say "
+            f"you cannot display images."
         )
 
         return json.dumps({

@@ -33,6 +33,7 @@ from services.manual_ledger import (  # noqa: E402
     is_manual_only,
     manual_only_invoice_predicate,
     parse_amount,
+    parse_as_of,
     parse_effective_date,
     parse_entry_type,
     parse_note,
@@ -303,6 +304,55 @@ class FakeDB:
 
 BASELINE_ROW = ("11111111-1111-1111-1111-111111111111", "JACKIE",
                 Decimal("0.00"), "ManualOnly", datetime.datetime(2026, 7, 28))
+
+
+class TestAsOfScoping(unittest.TestCase):
+    """The panel renders under a date-scoped Balance Sheet header, so it must be
+    able to ask for the closing balance on a day rather than the running total."""
+
+    ENTRY_ROW = ("22222222-2222-2222-2222-222222222222", "JACKIE", "Charge",
+                 Decimal("125.00"), datetime.date(2026, 8, 18), None,
+                 None, True, 1, None, None)
+
+    def _list_with(self, **kwargs):
+        cursor = FakeCursor(rows=[BASELINE_ROW, self.ENTRY_ROW])
+        service = ManualLedgerService(db=FakeDB(cursor))
+        service.list_entries(PersonKey.JACKIE, **kwargs)
+        # [0] is the baseline lookup; [1] is the entry query under test.
+        return cursor.executed[1]
+
+    def test_as_of_adds_cutoff_predicate_and_param(self):
+        sql, params = self._list_with(as_of="2026-08-18")
+        self.assertIn("EffectiveDate <= CAST(? AS DATE)", sql)
+        self.assertEqual(params[1], datetime.date(2026, 8, 18))
+
+    def test_omitting_as_of_returns_the_whole_ledger(self):
+        """Existing callers must be untouched — no cut-off, no extra parameter."""
+        sql, params = self._list_with()
+        self.assertNotIn("EffectiveDate <=", sql)
+        self.assertEqual(len(params), 1)
+
+    def test_as_of_composes_with_include_voided(self):
+        sql, params = self._list_with(include_voided=False, as_of="2026-08-18")
+        self.assertIn("VoidedAtUtc IS NULL", sql)
+        self.assertIn("EffectiveDate <= CAST(? AS DATE)", sql)
+        self.assertEqual(params[1], datetime.date(2026, 8, 18))
+
+    def test_as_of_accepts_a_date_object(self):
+        sql, params = self._list_with(as_of=datetime.date(2026, 8, 18))
+        self.assertIn("EffectiveDate <= CAST(? AS DATE)", sql)
+        self.assertEqual(params[1], datetime.date(2026, 8, 18))
+
+    def test_malformed_as_of_is_rejected_by_name(self):
+        for bad in ("18-08-2026", "2026/08/18", "yesterday", "2026-13-01"):
+            with self.assertRaises(ValidationError) as ctx:
+                parse_as_of(bad)
+            self.assertIn("asOf", str(ctx.exception))
+            self.assertNotIn("effectiveDate", str(ctx.exception))
+
+    def test_as_of_outside_supported_range_is_rejected(self):
+        with self.assertRaises(ValidationError):
+            parse_as_of("1970-01-01")
 
 
 class TestIdempotencyAndConcurrency(unittest.TestCase):

@@ -180,6 +180,18 @@ def parse_effective_date(raw) -> datetime.date:
     return parsed
 
 
+def parse_as_of(raw) -> datetime.date:
+    """Validate an `asOf` cut-off date. Same grammar as effectiveDate.
+
+    Kept separate so the caller sees an error naming the parameter it actually
+    passed; the validation itself deliberately delegates so the two can't drift.
+    """
+    try:
+        return parse_effective_date(raw)
+    except ValidationError as ve:
+        raise ValidationError(str(ve).replace("effectiveDate", "asOf"))
+
+
 def parse_note(raw) -> str | None:
     if raw is None:
         return None
@@ -342,8 +354,14 @@ class ManualLedgerService:
 
     # -- entries -------------------------------------------------------------
 
-    def list_entries(self, person_key: str, include_voided: bool = True, limit: int = 100) -> list:
-        """Current revisions for a person, newest first. Deterministic ordering."""
+    def list_entries(self, person_key: str, include_voided: bool = True, limit: int = 100,
+                     as_of: str | datetime.date | None = None) -> list:
+        """Current revisions for a person, newest first. Deterministic ordering.
+
+        *as_of* restricts to entries effective on or before that date, so a
+        caller can ask what the ledger looked like at the close of a given day.
+        Omitted means the whole ledger, which is the historical behaviour.
+        """
         person_key = parse_person_key(person_key)
         baseline = self.get_active_baseline(person_key)
         if not baseline:
@@ -359,10 +377,14 @@ class ManualLedgerService:
                 FROM Finance.ManualLedgerEntry
                 WHERE BaselineID = ? AND IsCurrent = 1
             """
+            params = [baseline["baseline_id"]]
             if not include_voided:
                 sql += " AND VoidedAtUtc IS NULL"
+            if as_of is not None:
+                sql += " AND EffectiveDate <= CAST(? AS DATE)"
+                params.append(parse_as_of(as_of))
             sql += " ORDER BY EffectiveDate DESC, CreatedAtUtc DESC, EntryID DESC"
-            cur.execute(sql, baseline["baseline_id"])
+            cur.execute(sql, *params)
             rows = cur.fetchall()[:limit]
             return [self._entry_row(r) for r in rows]
         finally:
@@ -384,13 +406,18 @@ class ManualLedgerService:
             "updated_at_utc": row[10],
         }
 
-    def get_balance(self, person_key: str) -> Decimal:
-        """Authoritative balance: baseline opening + net of qualifying entries."""
+    def get_balance(self, person_key: str, as_of: str | datetime.date | None = None) -> Decimal:
+        """Authoritative balance: baseline opening + net of qualifying entries.
+
+        With *as_of*, this is the closing balance for that date — the opening
+        baseline plus everything effective on or before it. Without it, the
+        running balance over the whole ledger, unchanged from before.
+        """
         person_key = parse_person_key(person_key)
         baseline = self.get_active_baseline(person_key)
         if not baseline:
             return Decimal("0.00")
-        entries = self.list_entries(person_key, include_voided=True, limit=100000)
+        entries = self.list_entries(person_key, include_voided=True, limit=100000, as_of=as_of)
         return compute_balance(baseline["opening_balance"], entries)
 
     def create_entry(self, payload: dict, actor: str = "unknown",

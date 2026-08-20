@@ -157,8 +157,12 @@ export interface ManualEntryInput {
   idempotencyKey?: string
 }
 
-export const fetchManualLedger = () =>
-  apiGet<ManualLedgerResponse>('/financials/manual-ledger')
+/** `asOf` returns the closing balance for that date rather than the running
+ *  total, so the panel can agree with the date-scoped Balance Sheet header. */
+export const fetchManualLedger = (asOf?: string) =>
+  apiGet<ManualLedgerResponse>(
+    asOf ? `/financials/manual-ledger?asOf=${encodeURIComponent(asOf)}` : '/financials/manual-ledger',
+  )
 
 export const createManualEntry = (input: ManualEntryInput) =>
   apiPost<{ success: boolean; entry: ManualLedgerEntry; balance: string }>(

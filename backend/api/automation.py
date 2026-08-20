@@ -64,3 +64,22 @@ def autonomous_cloud_router(mytimer: func.TimerRequest) -> None:
     except Exception as e:
         logging.error(f"Tessie Label Watcher Failed: {str(e)}")
 
+    # Sync TODAY's drives and charges.
+    #
+    # tessie_daily_sync only ever syncs `today - 1`, so before this ran nothing
+    # wrote the current day's rows until the following night. Rides.ChargingSessions
+    # is the sole OpEx source for /financials/summary, which meant the console
+    # reported Daily OpEx $0.00 — and therefore Net Profit == Gross — for the
+    # whole day you were actually driving. Confirmed 2026-08-18: a 34.98 kWh
+    # session at 06:04 was still absent from the summary at 08:05.
+    #
+    # sync_day is idempotent (save_trip and save_charge both MERGE on their
+    # natural key), so re-running it every 30 minutes only refreshes rows.
+    try:
+        from services.tessie_sync import TessieSyncService
+        today_str = datetime.now(mdt).strftime('%Y-%m-%d')
+        sync_results = TessieSyncService().sync_day(today_str)
+        logging.info(f"Intraday Tessie Sync {today_str}: {json.dumps(sync_results)}")
+    except Exception as e:
+        logging.error(f"Intraday Tessie Sync Failed: {str(e)}")
+

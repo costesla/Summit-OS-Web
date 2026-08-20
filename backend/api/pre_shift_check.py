@@ -1391,7 +1391,7 @@ def pre_shift_check(req: func.HttpRequest) -> func.HttpResponse:
         )
 
 
-# ── Timer trigger (7:00 AM MDT = 13:00 UTC) ──────────────────────────────────
+# ── Timer trigger (4:30 AM MDT = 10:30 UTC) ──────────────────────────────────
 
 @bp.timer_trigger(schedule="0 30 10 * * *", arg_name="timer",
                   run_on_startup=False, use_monitor=False)
@@ -1403,6 +1403,26 @@ def pre_shift_daily_timer(timer: func.TimerRequest) -> None:
     try:
         now_mt   = datetime.datetime.now(_MT)
         date_str = (now_mt - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+
+        # Ensure TODAY's OneDrive day folder exists before the shift starts.
+        #
+        # Nothing else creates it on a schedule — _execute_sync_folders was
+        # reachable only through a manual POST to tools/create-folders. When the
+        # folder is missing, _graph_count_files 404s and OneDrive drops out as a
+        # source for tier1 and tier3, which pins the score at 60/WARN and reads
+        # as a data problem rather than a missing directory. Confirmed
+        # 2026-08-18, when Week 4/8.18.26 did not exist at 08:05.
+        #
+        # ensure_path_exists is idempotent, and this is deliberately non-fatal:
+        # a folder failure must not stop the check itself from running.
+        today_str = now_mt.strftime("%Y-%m-%d")
+        try:
+            from api.operations import _execute_sync_folders
+            _execute_sync_folders(process_date_str=today_str, dry_run=False)
+            log.info(f"[PreShift Timer] OneDrive day folder ready for {today_str}")
+        except Exception as folder_err:
+            log.warning(f"[PreShift Timer] Day-folder creation failed for {today_str}: {folder_err}")
+
         log.info(f"[PreShift Timer] Running pre-shift check for {date_str}")
 
         import urllib.request

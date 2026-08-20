@@ -365,12 +365,19 @@ def manual_ledger_get(req: func.HttpRequest) -> func.HttpResponse:
         return guard
 
     from services.manual_ledger import (
-        ManualLedgerService, PersonKey, ValidationError, parse_person_key,
+        ManualLedgerService, PersonKey, ValidationError, parse_as_of, parse_person_key,
     )
     try:
         service = ManualLedgerService()
         requested = req.params.get("person")
         people = [parse_person_key(requested)] if requested else [PersonKey.JACKIE, PersonKey.LUIS]
+
+        # Optional cut-off. The dashboard renders this panel under a date-scoped
+        # "BALANCE SHEET" header, so it asks for the closing balance on that day
+        # rather than the running total. Absent, the response covers the whole
+        # ledger exactly as before — existing callers are unaffected.
+        as_of_raw = req.params.get("asOf")
+        as_of = parse_as_of(as_of_raw) if as_of_raw else None
 
         payload = {}
         for person_key in people:
@@ -379,10 +386,12 @@ def manual_ledger_get(req: func.HttpRequest) -> func.HttpResponse:
                 "personKey": person_key,
                 "activated": baseline is not None,
                 "openingBalance": str(baseline["opening_balance"]) if baseline else "0.00",
-                "balance": str(service.get_balance(person_key)),
-                "entries": [_serialize_entry(e) for e in service.list_entries(person_key)],
+                "balance": str(service.get_balance(person_key, as_of=as_of)),
+                "entries": [_serialize_entry(e)
+                            for e in service.list_entries(person_key, as_of=as_of)],
             }
-        return _json_response({"people": payload}, req)
+        return _json_response({"people": payload,
+                               "asOf": as_of.isoformat() if as_of else None}, req)
     except ValidationError as ve:
         return _json_response({"error": str(ve)}, req, 400)
     except Exception as e:

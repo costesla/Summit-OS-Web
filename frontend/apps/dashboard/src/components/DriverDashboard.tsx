@@ -6,14 +6,15 @@ import {
 } from 'lucide-react';
 import { isBackgroundableError, devDebugError, getAsyncExecutionLogs, pollJobStatus } from '../../../../src/lib/intelligenceUtils';
 import { apiGet, apiPost } from '../lib/apiClient';
+import { todayInMountainTime } from '../lib/mountainTime';
 import PaymentTrackerPanel from './payments/PaymentTrackerPanel';
 import ManualLedgerPanel from './payments/ManualLedgerPanel';
 
 const AZURE_BASE = import.meta.env.VITE_PUBLIC_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://summitos-api.azurewebsites.net/api';
 const VERSION = "2.0.0";
 
-// Helper: today in Mountain Time
-const getTodayMST = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Denver' });
+// Helper: today in Mountain Time (shared definition — see lib/mountainTime)
+const getTodayMST = () => todayInMountainTime();
 
 // Helper: first name of operator
 const firstName = (name: string | null | undefined): string | null => {
@@ -33,6 +34,16 @@ const formatLocation = (raw: string | null | undefined): string => {
     const parts = raw.split(',').map(p => p.trim()).filter(Boolean);
     return parts.slice(0, 2).join(', ');
 };
+
+/** Tessie reports cabin and ambient temperature in Celsius — the console renders Fahrenheit.
+ *
+ *  Returns null when the reading is absent so the caller can render a dash. A
+ *  numeric fallback here would be indistinguishable from a real reading: the
+ *  header displayed a hardcoded 70 whenever Tessie was unreachable, and printed
+ *  the raw Celsius value the rest of the time, so "Cabin: 24.2°F" was shown for
+ *  a 75.6°F cabin — confirmed 2026-08-18 against a live 24.2°C reading. */
+const celsiusToF = (c: number | null | undefined): number | null =>
+    c === null || c === undefined ? null : Math.round(c * 9 / 5 + 32);
 
 // Revenue targets — derived from env var, never hardcoded separately
 const MONTHLY_TARGET = parseInt(import.meta.env.VITE_REVENUE_TARGET_MONTHLY ?? '6500') || 6500;
@@ -747,6 +758,23 @@ const DriverDashboard: React.FC = () => {
         return trips.filter(t => t.type === 'Private' && t.fare > 0);
     }, [trips]);
 
+    /** Trips that have actually happened as of now.
+     *
+     *  /driver/sync returns every ride row dated to the selected day, private
+     *  bookings included — and a booking is written at its SCHEDULED time. A
+     *  7:30 PM booking therefore made the nav badge read "1" at 8:05 AM, next
+     *  to a pre-shift check reporting zero trips for the same day. Counting
+     *  work that has not happened yet as done is the defect; the two numbers
+     *  still measure different things (pre-shift tier1 counts Uber dropoffs
+     *  only, by design) and are not meant to converge.
+     *
+     *  Only today needs filtering — any earlier date is wholly elapsed. */
+    const completedTrips = useMemo(() => {
+        if (selectedDate !== todayMST) return trips;
+        const now = Date.now();
+        return trips.filter(t => !t.timestamp || new Date(t.timestamp).getTime() <= now);
+    }, [trips, selectedDate, todayMST]);
+
     // Telemetry Timeline events combination
     const timelineEvents = useMemo(() => {
         const items: Array<{ time: string; type: 'Trip' | 'Charge' | 'Idle'; details: string; socChange?: string; stats: string }> = [];
@@ -844,7 +872,7 @@ const DriverDashboard: React.FC = () => {
 
     const navItems = [
         { id: 'home', label: 'Home', icon: <LayoutDashboard className="w-4 h-4" /> },
-        { id: 'trips', label: 'Trips', icon: <Route className="w-4 h-4" />, badge: trips.length ? `${trips.length}` : undefined },
+        { id: 'trips', label: 'Trips', icon: <Route className="w-4 h-4" />, badge: completedTrips.length ? `${completedTrips.length}` : undefined },
         { id: 'financials', label: 'Financials', icon: <Receipt className="w-4 h-4" />, badge: unpaidOtherInvoices.length ? `${unpaidOtherInvoices.length} unpaid` : undefined },
         { id: 'charging', label: 'Charging', icon: <Zap className="w-4 h-4" />, badge: charges.length ? `${charges.length}` : undefined },
         { id: 'tools', label: 'Tools', icon: <Wrench className="w-4 h-4" /> }
@@ -892,7 +920,7 @@ const DriverDashboard: React.FC = () => {
                     </div>
                     <div className="hidden sm:flex items-center gap-1.5 text-[var(--text-muted)]">
                         <Gauge className="w-3 h-3 text-amber-400" />
-                        <span>Cabin: {teslaLive?.inside_temp ?? 70}°F</span>
+                        <span>Cabin: {celsiusToF(teslaLive?.inside_temp) ?? '--'}°F</span>
                     </div>
                     {/* Health Check Badge */}
                     <button onClick={() => setSection('tools')}
@@ -1266,7 +1294,7 @@ const DriverDashboard: React.FC = () => {
                                             </form>
 
                                             {/* Manual Ledger — Jackie & Luis (manual-entry-only balances) */}
-                                            <ManualLedgerPanel />
+                                            <ManualLedgerPanel selectedDate={selectedDate} />
 
                                             {/* Dual Ledger Tab Switcher */}
                                             <div className="space-y-3">

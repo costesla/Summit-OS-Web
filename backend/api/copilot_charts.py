@@ -311,12 +311,67 @@ def build_chart_url(config):
     return f"{QUICKCHART_BASE_URL}?{query}"
 
 
+def build_short_chart_url(config):
+    """Trade the config-in-query-string URL for a short one QuickChart stores.
+
+    Encoding a Chart.js config into the query string yields ~1,300 characters
+    for a two-point chart and ~1,700 for a normal one. That length is why a
+    chart arrives in Teams as a LINK rather than an inline image: markdown
+    image syntax carrying a multi-thousand-character URL does not survive
+    rendering. POST /chart/create stores the config and returns roughly 74
+    characters, which does.
+
+    Falls back to the long URL on any failure. A chart shown as a link beats no
+    chart, and every caller keeps working either way.
+
+    Trade-off: the config now lives on QuickChart's servers rather than in the
+    URL, so a stored chart can expire. An old Teams message may eventually show
+    a broken image where the long URL would have kept rendering forever.
+    """
+    payload = {
+        "chart": config,
+        "width": CHART_WIDTH,
+        "height": CHART_HEIGHT,
+        "format": "png",
+        "backgroundColor": SURFACE,
+        "version": "4",
+    }
+    base = QUICKCHART_BASE_URL.rstrip("/")
+    create_url = (base[: -len("/chart")] if base.endswith("/chart") else base) + "/chart/create"
+    try:
+        import urllib.request
+        request = urllib.request.Request(
+            create_url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(request, timeout=8) as response:
+            body = json.loads(response.read().decode("utf-8"))
+        if body.get("success") and body.get("url"):
+            return body["url"]
+        logging.warning(f"QuickChart create returned no url: {body}")
+    except Exception as e:
+        logging.warning(f"QuickChart short-url creation failed, using long URL: {e}")
+    return build_chart_url(config)
+
+
 def build_adaptive_card(chart_url, title, subtitle, facts):
-    """Adaptive Card the Send-a-Message node can post verbatim into Teams."""
+    """Adaptive Card the Send-a-Message node can post verbatim into Teams.
+
+    This is the ONLY reliable way to get a chart to appear inside a Teams
+    message. Teams does not render markdown image syntax in agent messages: the
+    same `![title](url)` that displays correctly in the Copilot Studio test
+    canvas comes through as a bare link in Teams, because the two use different
+    renderers. Confirmed 2026-08-19 against a working chart that rendered in
+    the test pane and did not in Teams.
+
+    Version 1.4, not 1.5: 1.4 is the version every current Teams client renders
+    without qualification, and nothing here needs a 1.5 feature.
+    """
     return {
         "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
         "type": "AdaptiveCard",
-        "version": "1.5",
+        "version": "1.4",
         "body": [
             {
                 "type": "TextBlock",

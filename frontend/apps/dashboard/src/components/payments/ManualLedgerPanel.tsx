@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Loader2, Ban, Pencil, X, Check } from 'lucide-react'
+import { todayInMountainTime } from '../../lib/mountainTime'
 import {
   createManualEntry,
   editManualEntry,
@@ -27,8 +28,10 @@ const PEOPLE: { key: ManualPersonKey; label: string }[] = [
 
 const ENTRY_TYPES: ManualEntryType[] = ['Charge', 'Payment', 'Credit']
 
+/** Mountain Time, not UTC — see lib/mountainTime. Defaulting this field from
+ *  toISOString() dated every entry logged after 6 PM Mountain to the next day. */
 function today(): string {
-  return new Date().toISOString().slice(0, 10)
+  return todayInMountainTime()
 }
 
 function newIdempotencyKey(): string {
@@ -45,30 +48,74 @@ function money(value: string | undefined): string {
 
 function PersonPanel({
   label,
+  personKey,
   person,
+  selectedDate,
   onChanged,
 }: {
   label: string
+  /** Whose ledger this panel writes to. Passed explicitly and never derived
+   *  from the server payload: this was `person?.personKey ?? 'JACKIE'`, and
+   *  React does not forward `key` as a prop, so whenever the response was
+   *  missing a person — a failed load, a partial payload, or simply before the
+   *  first fetch resolves — BOTH panels identified as JACKIE and Luis's form
+   *  posted entries against Jackie's balance. Observed 2026-08-19 on a build
+   *  with no API reachable: two elements rendered data-testid
+   *  "manual-balance-JACKIE". Identity must come from the caller, which knows
+   *  it unconditionally, not from data that can be absent. */
+  personKey: ManualPersonKey
   person: ManualLedgerPerson | undefined
+  selectedDate: string
   onChanged: () => Promise<void>
 }) {
-  const personKey = person?.personKey ?? 'JACKIE'
   const [amount, setAmount] = useState('')
   const [entryType, setEntryType] = useState<ManualEntryType>('Charge')
-  const [effectiveDate, setEffectiveDate] = useState(today())
+  const [effectiveDate, setEffectiveDate] = useState(selectedDate || today())
   const [note, setNote] = useState('')
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [busyEntryId, setBusyEntryId] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editAmount, setEditAmount] = useState('')
+  const [overdrawAcknowledged, setOverdrawAcknowledged] = useState(false)
+
+  // Follow the Balance Sheet's date. Logging an entry while looking at 8/18
+  // should date it 8/18 — the operator's own sense of "the day I'm working on"
+  // is the date picker, not the wall clock.
+  useEffect(() => { setEffectiveDate(selectedDate || today()) }, [selectedDate])
 
   const balance = person?.balance ?? '0.00'
   const negative = Number(balance) < 0
 
+  /** The balance this entry would produce, but only when it goes negative.
+   *
+   *  A Payment or Credit larger than what is outstanding means the person has
+   *  overpaid — a real state, so this must never block. It is also precisely
+   *  what a MISSING opening balance looks like: Jackie's ledger read -$90.00
+   *  on 2026-08-18 because the debt she was repaying had never been entered,
+   *  and nothing on screen questioned it. Advisory, against the balance the
+   *  operator can actually see. */
+  const overdrawnTo = useMemo(() => {
+    if (entryType === 'Charge') return null
+    const amt = Number(amount)
+    if (!Number.isFinite(amt) || amt <= 0) return null
+    const next = Number(balance) - amt
+    return next < 0 ? next : null
+  }, [amount, entryType, balance])
+
+  const needsConfirmation = overdrawnTo !== null && !overdrawAcknowledged
+
+  // Any change to what is being logged re-arms the warning, so an
+  // acknowledgement can never carry over to a different entry.
+  useEffect(() => { setOverdrawAcknowledged(false) }, [amount, entryType])
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (pending) return // guard against double submit / double tap
+    if (needsConfirmation) {
+      setOverdrawAcknowledged(true) // surface the warning; the next press commits
+      return
+    }
     setError(null)
     setPending(true)
     try {
@@ -136,7 +183,9 @@ function PersonPanel({
           {label}
         </h4>
         <div className="text-right">
-          <div className="text-[9px] font-mono text-[var(--text-muted)] uppercase">Balance</div>
+          <div className="text-[9px] font-mono text-[var(--text-muted)] uppercase">
+            Balance as of {selectedDate}
+          </div>
           <div
             className={`text-lg font-black tabular-nums ${negative ? 'text-[var(--accent-cyan)]' : 'text-white'}`}
             data-testid={`manual-balance-${personKey}`}
@@ -191,12 +240,27 @@ function PersonPanel({
             />
           </div>
         </div>
+        {overdrawnTo !== null && (
+          <p
+            className="text-[10px] text-amber-400 font-mono border border-amber-500/20 bg-amber-500/10 rounded-lg p-2"
+            data-testid={`manual-overdraw-${personKey}`}
+          >
+            This takes {label} to {money(String(overdrawnTo))} — a balance owed <em>to</em> {label}.
+            If {label} is paying down a debt, that debt may not have been entered yet: record it as
+            a Charge first.
+            {!overdrawAcknowledged && ' Press again to log it anyway.'}
+          </p>
+        )}
         <button
           type="submit" disabled={pending || !amount.trim()}
-          className="px-4 py-2 bg-[var(--accent-purple)] text-white rounded-xl text-xs font-black hover:opacity-90 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className={`px-4 py-2 rounded-xl text-xs font-black hover:opacity-90 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+            needsConfirmation
+              ? 'bg-amber-500 text-[#0a1628]'
+              : 'bg-[var(--accent-purple)] text-white'
+          }`}
         >
           {pending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-          Log {label} Entry
+          {needsConfirmation ? 'Log anyway' : `Log ${label} Entry`}
         </button>
       </form>
 
@@ -279,14 +343,21 @@ function PersonPanel({
   )
 }
 
-function ManualLedgerPanel() {
+/**
+ * @param selectedDate  The Balance Sheet's date. The panel shows the CLOSING
+ *   balance for this day, not the running all-time total. Previously the panel
+ *   took no date at all: it fetched once on mount and never refetched, so
+ *   changing the date changed the header above it while these numbers sat
+ *   still — which reads as "the ledger isn't updating".
+ */
+function ManualLedgerPanel({ selectedDate }: { selectedDate: string }) {
   const [people, setPeople] = useState<Record<string, ManualLedgerPerson>>({})
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     try {
-      const data = await fetchManualLedger()
+      const data = await fetchManualLedger(selectedDate)
       setPeople(data.people || {})
       setLoadError(null)
     } catch (err) {
@@ -294,7 +365,7 @@ function ManualLedgerPanel() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [selectedDate])
 
   useEffect(() => { void load() }, [load])
 
@@ -307,7 +378,8 @@ function ManualLedgerPanel() {
         {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--text-muted)]" />}
       </div>
       <p className="text-[10px] text-[var(--text-muted)] font-mono">
-        Manual entries only — no automatic accrual, invoice, or missed-day logic feeds these balances.
+        Manual entries only — no automatic accrual, invoice, or missed-day logic feeds these
+        balances, and these balances feed no other figure on this dashboard.
       </p>
 
       {loadError && (
@@ -318,7 +390,14 @@ function ManualLedgerPanel() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {PEOPLE.map(({ key, label }) => (
-          <PersonPanel key={key} label={label} person={people[key]} onChanged={load} />
+          <PersonPanel
+            key={key}
+            label={label}
+            personKey={key}
+            person={people[key]}
+            selectedDate={selectedDate}
+            onChanged={load}
+          />
         ))}
       </div>
     </div>

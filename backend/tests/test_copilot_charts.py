@@ -213,7 +213,11 @@ def test_adaptive_card_points_at_the_chart_and_names_its_facts():
     )
 
     assert card["type"] == "AdaptiveCard"
-    assert card["version"] == "1.5"
+    # 1.4, not 1.5: this card is the only reliable way to show a chart inside a
+    # Teams message — Teams does not render markdown images in agent messages —
+    # and 1.4 is what every current Teams client renders without qualification.
+    # Nothing in this card needs a 1.5 feature.
+    assert card["version"] == "1.4"
 
     images = [b for b in card["body"] if b["type"] == "Image"]
     assert len(images) == 1
