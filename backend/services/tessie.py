@@ -398,6 +398,14 @@ class TessieClient:
         if not self.api_key:
             return []
 
+        # Tesla exposes invoices only for some accounts; this one returns an
+        # empty list (verified against live data 2026-08-19). Remembering that
+        # for the life of the worker avoids a network round-trip on every
+        # single rate query. Process recycling re-checks periodically, so the
+        # day invoices start flowing they are picked up without a code change.
+        if getattr(TessieClient, "_invoices_known_empty", False):
+            return []
+
         try:
             response = requests.get(
                 f"{self.base_url}/charging_invoices",
@@ -410,6 +418,9 @@ class TessieClient:
             # than assuming one and returning nothing if Tessie uses the other.
             invoices = data.get("results", data) if isinstance(data, dict) else data
             if not isinstance(invoices, list):
+                return []
+            if not invoices:
+                TessieClient._invoices_known_empty = True
                 return []
             if vin:
                 invoices = [i for i in invoices if not i.get("vin") or i.get("vin") == vin]

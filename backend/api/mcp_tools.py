@@ -652,19 +652,25 @@ def get_charging_report(context) -> str:
             cost = _money(r.get("cost"))
             loc = r.get("location") or "Unknown"
             match = classify(r.get("latitude"), r.get("longitude"))
-            if match.is_supercharger is None:
-                # Pre-migration row with no coordinates. Reported on its own
-                # rather than folded into "other", which would silently repeat
-                # the misattribution this replaced.
+            # Tessie states this outright, so its answer wins. The coordinate
+            # registry is kept for the site NAME, which groups a station that
+            # reverse-geocodes to several street addresses (215 / 219 / 2611 /
+            # 2727 N Cascade Ave are one Supercharger).
+            reported = r.get("is_supercharger")
+            is_sc = match.is_supercharger if reported is None else bool(reported)
+            if is_sc is None:
+                # Pre-migration row with neither flag nor coordinates. Reported
+                # on its own rather than folded into "other", which would
+                # silently repeat the misattribution this replaced.
                 unclassified_cost += cost
-            elif match.is_supercharger:
+            elif is_sc:
                 supercharger_cost += cost
             else:
                 other_cost += cost
             sessions.append({
                 "location":         loc,
                 "site_name":        match.site_name,
-                "is_supercharger":  match.is_supercharger,
+                "is_supercharger":  is_sc,
                 "start_time":       r.get("start_time"),
                 "end_time":         r.get("end_time"),
                 "energy_added_kwh": round(float(r.get("energy_added_kwh") or 0), 2),

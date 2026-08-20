@@ -26,7 +26,10 @@ from typing import Iterable
 #: Below this, an hour bucket is an anecdote rather than a rate.
 MIN_SESSIONS_FOR_HOURLY_RATE = 2
 
-#: A session longer than this likely crosses a peak/off-peak boundary.
+#: Fallback only, for stations with no configured rate card. Where a card
+#: exists, boundary crossing is determined from the band edges instead: a
+#: 27-minute session starting 08:45 crosses into peak while a 70-minute one
+#: starting 21:00 does not, and duration alone cannot tell them apart.
 LONG_SESSION_MINUTES = 90
 
 
@@ -59,6 +62,47 @@ def _duration_minutes(start_time, end_time) -> float | None:
 
 def _rate(cost: float, kwh: float) -> float | None:
     return round(cost / kwh, 4) if kwh > 0 and cost > 0 else None
+
+
+def _parse_dt(value):
+    import datetime
+    for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S"):
+        try:
+            return datetime.datetime.strptime(str(value), fmt)
+        except (ValueError, TypeError):
+            continue
+    return None
+
+
+def _card_estimate(station: str, s: dict, kwh: float) -> float | None:
+    """What the rate card says a session should have cost, or None."""
+    start = _parse_dt(s.get("start_time"))
+    if start is None:
+        return None
+    try:
+        from services.charging_rate_cards import estimate_cost
+        est = estimate_cost(station, start, _parse_dt(s.get("end_time")), kwh)
+        return est.amount if est else None
+    except Exception:
+        return None
+
+
+def _crosses_rate_boundary(station: str, s: dict) -> bool:
+    """Whether a session was billed across two different rates.
+
+    Uses the station's rate card when one exists, because band edges are the
+    only thing that actually answers this; falls back to a duration heuristic
+    only where no card is configured.
+    """
+    start, end = _parse_dt(s.get("start_time")), _parse_dt(s.get("end_time"))
+    try:
+        from services.charging_rate_cards import bands_for, spans_boundary
+        if bands_for(station):
+            return bool(start and spans_boundary(station, start, end))
+    except Exception:
+        pass
+    minutes = _duration_minutes(s.get("start_time"), s.get("end_time"))
+    return minutes is not None and minutes > LONG_SESSION_MINUTES
 
 
 def invoices_to_sessions(invoices: Iterable[dict], since_epoch: float | None = None) -> list:
@@ -123,6 +167,8 @@ def summarize_rates(sessions: Iterable[dict]) -> dict:
         "cost": 0.0, "kwh": 0.0, "priced": 0, "unpriced": 0,
         "hours": defaultdict(lambda: {"cost": 0.0, "kwh": 0.0, "n": 0, "billed": set()}),
         "long_sessions": 0, "billed_rates": set(), "idle_fees": 0.0,
+        "expected": 0.0, "expected_n": 0,
+        "estimated_cost": 0.0, "estimated_kwh": 0.0, "estimated_n": 0,
     })
 
     for s in sessions or []:
@@ -135,16 +181,30 @@ def summarize_rates(sessions: Iterable[dict]) -> dict:
 
         bucket = by_station[station]
         if cost <= 0 or kwh <= 0:
-            # No price recorded. Counted, never averaged in as free.
+            # No price recorded. Counted, never averaged in as free. Where a
+            # rate card covers the station an estimate is offered SEPARATELY,
+            # so a modelled figure can never be mistaken for a billed one.
             bucket["unpriced"] += 1
+            estimate = _card_estimate(station, s, kwh) if kwh > 0 else None
+            if estimate is not None:
+                bucket["estimated_cost"] += estimate
+                bucket["estimated_kwh"] += kwh
+                bucket["estimated_n"] += 1
             continue
 
         bucket["priced"] += 1
         bucket["cost"] += cost
         bucket["kwh"] += kwh
 
-        minutes = _duration_minutes(s.get("start_time"), s.get("end_time"))
-        if minutes is not None and minutes > LONG_SESSION_MINUTES:
+        # What the operator's rate card says this should have cost. Kept beside
+        # the billed figure rather than replacing it, so divergence surfaces.
+        expected = _card_estimate(station, s, kwh)
+        if expected is not None:
+            bucket["expected"] += expected
+            bucket["expected_n"] += 1
+
+        crossed = _crosses_rate_boundary(station, s)
+        if crossed:
             bucket["long_sessions"] += 1
 
         billed = s.get("billed_rate_per_kwh")
@@ -217,6 +277,26 @@ def summarize_rates(sessions: Iterable[dict]) -> dict:
             #: as observed, e.g. [0.26, 0.29, 0.46] for a three-tier station.
             "billed_rate_tiers": sorted(b["billed_rates"]) or None,
             "idle_fees_total": round(b["idle_fees"], 2) if b["idle_fees"] else None,
+            #: Billed against what the operator's rate card predicts. A
+            #: persistent gap means the card has drifted from real pricing —
+            #: at E Tyler St this ran +8.9% over 45 days, roughly $470/yr.
+            "rate_card_reconciliation": ({
+                "expected_cost": round(b["expected"], 2),
+                "billed_cost": round(b["cost"], 2),
+                "variance": round(b["cost"] - b["expected"], 2),
+                "variance_pct": round((b["cost"] / b["expected"] - 1) * 100, 1) if b["expected"] else None,
+                "sessions_compared": b["expected_n"],
+                "note": "Billed is authoritative; the card is the operator's own input.",
+            } if b["expected_n"] else None),
+            #: Rate-card cost for sessions that arrived with NO billed figure.
+            #: Deliberately not added to total_cost — an estimate must not
+            #: silently join billed money in the same number.
+            "estimated_cost_for_unpriced": ({
+                "estimate": round(b["estimated_cost"], 2),
+                "kwh": round(b["estimated_kwh"], 2),
+                "sessions": b["estimated_n"],
+                "basis": "operator rate card, energy prorated across bands by time",
+            } if b["estimated_n"] else None),
         })
 
     total_priced = sum(s["sessions_priced"] for s in stations)
@@ -234,11 +314,12 @@ def summarize_rates(sessions: Iterable[dict]) -> dict:
             f"{total_unpriced} session(s) had no recorded cost and were excluded "
             f"rather than counted as $0.00."
         )
-    if any(s["spans_boundary_risk"] for s in stations):
+    crossing = sum(s["spans_boundary_risk"] for s in stations)
+    if crossing:
         caveats.append(
-            "Some sessions ran over 90 minutes and may straddle a peak/off-peak "
-            "boundary; those are billed partly at each rate, so their derived "
-            "rate is a blend."
+            f"{crossing} session(s) crossed a peak/off-peak boundary and were "
+            f"billed partly at each rate, so the rate derived for their start "
+            f"hour is a blend rather than that band's price."
         )
     if total_priced and all(
         not h["confident"] for s in stations for h in s["by_hour"]

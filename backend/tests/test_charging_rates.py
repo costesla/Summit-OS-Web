@@ -103,10 +103,25 @@ class TestConfidenceAndCaveats(unittest.TestCase):
         out = summarize_rates(sessions)
         self.assertTrue(out["stations"][0]["by_hour"][0]["confident"])
 
-    def test_long_sessions_are_flagged_as_possibly_spanning_a_boundary(self):
-        out = summarize_rates([session(20, 60, 24.00, end_hour=23)])
+    def test_short_session_crossing_a_band_edge_is_flagged(self):
+        """08:00-09:30 crosses the 09:00 peak edge. Duration alone would have
+        missed it — the real case that prompted this was 27 minutes long."""
+        out = summarize_rates([session(8, 20, 6.00, end_hour=9)])
         self.assertEqual(out["stations"][0]["spans_boundary_risk"], 1)
-        self.assertTrue(any("straddle" in c for c in out["caveats"]))
+        self.assertTrue(any("crossed a peak/off-peak boundary" in c for c in out["caveats"]))
+
+    def test_long_session_inside_one_band_is_not_flagged(self):
+        """20:00-23:30 is entirely within the $0.29 band. The old duration
+        heuristic called this suspicious; it is not."""
+        out = summarize_rates([session(20, 60, 17.40, end_hour=23)])
+        self.assertEqual(out["stations"][0]["spans_boundary_risk"], 0)
+
+    def test_duration_fallback_applies_where_no_card_exists(self):
+        """Stations without a configured card keep the old heuristic."""
+        out = summarize_rates([
+            session(20, 60, 24.00, station="Nowhere, CO", end_hour=23),
+        ])
+        self.assertEqual(out["stations"][0]["spans_boundary_risk"], 1)
 
     def test_confident_hours_outrank_single_observations(self):
         """A lone freak-cheap session must not be reported as the best hour.

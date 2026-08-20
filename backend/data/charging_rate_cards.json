@@ -1,0 +1,15 @@
+{
+  "_comment": "Operator-maintained rate cards, mirroring what is configured in the Tessie app. NEVER authoritative for accounting: billed cost always wins. Used only to (a) fill sessions that arrive with no cost at all, clearly marked estimated, and (b) reconcile billed against expected so drift is visible. Times are Mountain Time, 24h, band end exclusive.",
+  "captured": "2026-08-19",
+  "cards": {
+    "Colorado Springs, CO - E Tyler St": {
+      "source": "Tessie app rate card, read from the operator's screen 2026-08-19",
+      "currency": "USD",
+      "bands": [
+        { "start": "00:00", "end": "09:00", "rate": 0.26 },
+        { "start": "09:00", "end": "20:00", "rate": 0.46 },
+        { "start": "20:00", "end": "24:00", "rate": 0.29 }
+      ]
+    }
+  }
+}

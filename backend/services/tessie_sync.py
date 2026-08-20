@@ -151,6 +151,11 @@ class TessieSyncService:
                     # address string — see services/charging_sites.
                     "latitude":     charge.get('latitude'),
                     "longitude":    charge.get('longitude'),
+                    # Tessie states this outright. Preferred over any inference
+                    # we could make: the coordinate registry exists to GROUP a
+                    # station whose address reverse-geocodes four different ways,
+                    # not to guess a fact the source already reports.
+                    "is_supercharger": charge.get('is_supercharger'),
                 }
                 self.db.save_charge(charge_data)
                 results["charges_saved"] += 1

@@ -23,6 +23,15 @@ IF COL_LENGTH('Rides.ChargingSessions', 'Longitude') IS NULL
     ALTER TABLE Rides.ChargingSessions ADD Longitude DECIMAL(9,6) NULL;
 GO
 
+-- Tessie states outright whether a session was at a Supercharger. Keeping its
+-- answer beats inferring one: the coordinate registry earns its place by
+-- GROUPING a station whose address reverse-geocodes four different ways
+-- (215 / 219 / 2611 / 2727 N Cascade Ave are one site), not by guessing a fact
+-- the source already reports.
+IF COL_LENGTH('Rides.ChargingSessions', 'IsSupercharger') IS NULL
+    ALTER TABLE Rides.ChargingSessions ADD IsSupercharger BIT NULL;
+GO
+
 -- STEP 2 — verification. Coverage climbs as sync_day replays history.
 SELECT
     COUNT(*)                                                        AS total_sessions,
