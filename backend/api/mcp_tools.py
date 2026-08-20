@@ -325,6 +325,17 @@ def get_charging_rates(context) -> str:
 
         summary = summarize_rates(sessions)
         summary["rate_source"] = source
+        if source == "recorded_sessions":
+            # Tessie computes cost from a rate card the operator maintains in
+            # the Tessie app. Those figures are therefore a restatement of what
+            # was entered, not independent confirmation of it — reporting them
+            # as a discovered rate would be circular.
+            summary.setdefault("caveats", []).append(
+                "Rates here come from stored session costs, not Tesla invoices. "
+                "Where a Tessie rate card is configured for a location, that cost "
+                "is computed from the card, so these figures restate what was "
+                "entered rather than verify it."
+            )
         summary["window"] = {
             "start": start_dt.strftime("%Y-%m-%d"),
             "end": today,
