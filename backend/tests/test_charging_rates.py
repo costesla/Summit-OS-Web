@@ -10,8 +10,27 @@ if BACKEND not in sys.path:
 
 from services.charging_rates import (  # noqa: E402
     MIN_SESSIONS_FOR_HOURLY_RATE,
+    invoices_to_sessions,
     summarize_rates,
 )
+
+
+def invoice(epoch, kwh, fees, idle=0.0, rate=None,
+            location="Colorado Springs, CO - E Tyler St"):
+    """A Tesla charging invoice as Tessie returns it."""
+    return {
+        "id": int(epoch),
+        "started_at": epoch,
+        "vin": "5YJ3E1EA1PF000000",
+        "location": location,
+        "energy_used": kwh,
+        "idle_minutes": 0,
+        "charging_fees": fees,
+        "idle_fees": idle,
+        "total_cost": fees + idle,
+        "cost_per_kwh": rate if rate is not None else round(fees / kwh, 4),
+        "currency": "USD",
+    }
 
 TYLER = "Colorado Springs, CO - E Tyler St"
 
@@ -130,6 +149,75 @@ class TestMultipleStations(unittest.TestCase):
             session(2, 40, 12.00),
         ])
         self.assertEqual(out["sessions_priced"], 1)
+
+
+class TestTeslaInvoices(unittest.TestCase):
+    """Invoices are authoritative: cost_per_kwh is what Tesla actually billed."""
+
+    # 2026-08-18 in Mountain Time
+    H05 = 1787050800  # ~05:00 MT
+    H18 = 1787097600  # ~18:00 MT
+
+    def test_billed_rate_is_used_verbatim_not_recomputed(self):
+        """cost/energy would blend in idle fees; the billed rate must win."""
+        sessions = invoices_to_sessions([
+            invoice(self.H05, 40, 10.40, idle=5.00, rate=0.26),
+        ])
+        st = summarize_rates(sessions)["stations"][0]
+        hour = st["by_hour"][0]
+        self.assertEqual(hour["rate_per_kwh"], 0.26)
+        self.assertEqual(hour["rate_source"], "tesla_invoice")
+        # cost/energy would have read (10.40+5.00)/40 = 0.385
+        self.assertNotEqual(hour["rate_per_kwh"], 0.385)
+
+    def test_rate_tiers_are_surfaced(self):
+        """The station's observed rate card, e.g. 0.26 / 0.29 / 0.46."""
+        sessions = invoices_to_sessions([
+            invoice(self.H05, 40, 10.40, rate=0.26),
+            invoice(self.H05 + 3600, 40, 11.60, rate=0.29),
+            invoice(self.H18, 40, 18.40, rate=0.46),
+        ])
+        st = summarize_rates(sessions)["stations"][0]
+        self.assertEqual(st["billed_rate_tiers"], [0.26, 0.29, 0.46])
+
+    def test_idle_fees_are_counted_in_cost_but_reported_separately(self):
+        sessions = invoices_to_sessions([invoice(self.H05, 40, 10.40, idle=7.50, rate=0.26)])
+        st = summarize_rates(sessions)["stations"][0]
+        self.assertEqual(st["total_cost"], 17.90)
+        self.assertEqual(st["idle_fees_total"], 7.50)
+
+    def test_start_hour_is_mountain_time_not_utc(self):
+        """An evening peak session must not land in the small hours."""
+        sessions = invoices_to_sessions([invoice(self.H18, 40, 18.40, rate=0.46)])
+        self.assertEqual(summarize_rates(sessions)["stations"][0]["by_hour"][0]["hour"], 18)
+
+    def test_since_epoch_filters_older_invoices(self):
+        rows = invoices_to_sessions(
+            [invoice(self.H05, 40, 10.40), invoice(self.H05 - 86400 * 400, 40, 10.40)],
+            since_epoch=self.H05 - 86400,
+        )
+        self.assertEqual(len(rows), 1)
+
+    def test_mixed_tiers_within_one_hour_fall_back_to_derivation(self):
+        """Two different billed rates in one hour means a boundary sits inside
+        it; picking either would be a guess."""
+        sessions = invoices_to_sessions([
+            invoice(self.H05, 40, 10.40, rate=0.26),
+            invoice(self.H05 + 600, 40, 11.60, rate=0.29),
+        ])
+        hour = summarize_rates(sessions)["stations"][0]["by_hour"][0]
+        self.assertEqual(hour["rate_source"], "derived")
+
+    def test_malformed_invoices_are_skipped_not_fatal(self):
+        rows = invoices_to_sessions([
+            {"location": "X", "energy_used": "abc", "charging_fees": None},
+            invoice(self.H05, 40, 10.40, rate=0.26),
+        ])
+        self.assertEqual(len(rows), 1)
+
+    def test_empty_input(self):
+        self.assertEqual(invoices_to_sessions([]), [])
+        self.assertEqual(invoices_to_sessions(None), [])
 
 
 if __name__ == "__main__":

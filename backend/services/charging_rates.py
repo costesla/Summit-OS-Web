@@ -61,6 +61,58 @@ def _rate(cost: float, kwh: float) -> float | None:
     return round(cost / kwh, 4) if kwh > 0 and cost > 0 else None
 
 
+def invoices_to_sessions(invoices: Iterable[dict], since_epoch: float | None = None) -> list:
+    """Normalise Tesla charging invoices into the shape summarize_rates expects.
+
+    Invoices are the authoritative source: `cost_per_kwh` is the rate Tesla
+    actually billed, so tiers are read rather than inferred, and `location` is
+    a site name instead of a street address. Idle fees are folded into cost —
+    they are real money paid at that station — but kept visible upstream.
+    """
+    import datetime
+
+    out = []
+    for inv in invoices or []:
+        started = inv.get("started_at")
+        if since_epoch is not None and started is not None:
+            try:
+                if float(started) < since_epoch:
+                    continue
+            except (TypeError, ValueError):
+                pass
+
+        start_time = None
+        if started is not None:
+            try:
+                # Mountain Time: the operating timezone every other date in this
+                # system uses. A UTC hour would misplace evening peak sessions.
+                mt = datetime.timezone(datetime.timedelta(hours=-6))
+                start_time = datetime.datetime.fromtimestamp(float(started), mt).strftime("%Y-%m-%dT%H:%M:%S")
+            except (TypeError, ValueError, OSError):
+                start_time = None
+
+        try:
+            fees = float(inv.get("charging_fees") or 0)
+            idle = float(inv.get("idle_fees") or 0)
+            total = float(inv.get("total_cost") if inv.get("total_cost") is not None else fees + idle)
+            energy = float(inv.get("energy_used") or 0)
+        except (TypeError, ValueError):
+            continue
+
+        out.append({
+            "site_name": inv.get("location") or "Unknown",
+            "start_time": start_time,
+            "end_time": None,
+            "energy_added_kwh": energy,
+            "cost": total,
+            # Tesla's own figure. Preferred over cost/energy, which blends in
+            # idle fees and would overstate the per-kWh rate.
+            "billed_rate_per_kwh": inv.get("cost_per_kwh"),
+            "idle_fees": idle,
+        })
+    return out
+
+
 def summarize_rates(sessions: Iterable[dict]) -> dict:
     """Per-station effective rates, broken down by start hour.
 
@@ -69,8 +121,8 @@ def summarize_rates(sessions: Iterable[dict]) -> dict:
     """
     by_station = defaultdict(lambda: {
         "cost": 0.0, "kwh": 0.0, "priced": 0, "unpriced": 0,
-        "hours": defaultdict(lambda: {"cost": 0.0, "kwh": 0.0, "n": 0}),
-        "long_sessions": 0,
+        "hours": defaultdict(lambda: {"cost": 0.0, "kwh": 0.0, "n": 0, "billed": set()}),
+        "long_sessions": 0, "billed_rates": set(), "idle_fees": 0.0,
     })
 
     for s in sessions or []:
@@ -95,12 +147,28 @@ def summarize_rates(sessions: Iterable[dict]) -> dict:
         if minutes is not None and minutes > LONG_SESSION_MINUTES:
             bucket["long_sessions"] += 1
 
+        billed = s.get("billed_rate_per_kwh")
+        if billed is not None:
+            try:
+                bucket["billed_rates"].add(round(float(billed), 4))
+            except (TypeError, ValueError):
+                pass
+        try:
+            bucket["idle_fees"] += float(s.get("idle_fees") or 0)
+        except (TypeError, ValueError):
+            pass
+
         hour = _hour_of(s.get("start_time"))
         if hour is not None:
             h = bucket["hours"][hour]
             h["cost"] += cost
             h["kwh"] += kwh
             h["n"] += 1
+            if billed is not None:
+                try:
+                    h["billed"].add(round(float(billed), 4))
+                except (TypeError, ValueError):
+                    pass
 
     stations = []
     for name, b in sorted(by_station.items()):
@@ -113,7 +181,12 @@ def summarize_rates(sessions: Iterable[dict]) -> dict:
             hourly.append({
                 "hour": hour,
                 "clock": f"{hour:02d}:00",
-                "rate_per_kwh": rate,
+                # Tesla's billed figure when there is exactly one for this hour;
+                # otherwise the energy-weighted derivation. Two different billed
+                # rates in one hour means a tier boundary sits inside it, and
+                # picking either one would be a guess.
+                "rate_per_kwh": (sorted(h["billed"])[0] if len(h["billed"]) == 1 else rate),
+                "rate_source": "tesla_invoice" if len(h["billed"]) == 1 else "derived",
                 "sessions": h["n"],
                 "kwh": round(h["kwh"], 2),
                 # Below the threshold this is one data point wearing a rate's
@@ -140,6 +213,10 @@ def summarize_rates(sessions: Iterable[dict]) -> dict:
             "priciest_hour": priciest,
             "peak_offpeak_spread_per_kwh": spread,
             "spans_boundary_risk": b["long_sessions"],
+            #: Distinct rates Tesla actually billed here — the site's rate card
+            #: as observed, e.g. [0.26, 0.29, 0.46] for a three-tier station.
+            "billed_rate_tiers": sorted(b["billed_rates"]) or None,
+            "idle_fees_total": round(b["idle_fees"], 2) if b["idle_fees"] else None,
         })
 
     total_priced = sum(s["sessions_priced"] for s in stations)

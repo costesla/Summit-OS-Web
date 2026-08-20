@@ -286,33 +286,45 @@ def get_charging_rates(context) -> str:
     days_back = min(max(days_back, 1), 730)
 
     try:
-        from services.charging_rates import summarize_rates
+        from services.charging_rates import invoices_to_sessions, summarize_rates
         from services.charging_sites import classify
 
         today = _current_operational_date()
         end_dt = datetime.datetime.strptime(today, "%Y-%m-%d")
         start_dt = end_dt - datetime.timedelta(days=days_back)
-        window_start, _ = get_operational_window(start_dt.strftime("%Y-%m-%d"))
-        _, window_end = get_operational_window(today)
 
-        db = DatabaseClient()
-        rows = db.get_charging_sessions_for_window(window_start, window_end)
+        # Tesla's own invoices first: they carry cost_per_kwh, so the rate tiers
+        # are READ rather than inferred, and idle fees arrive broken out. Fall
+        # back to stored sessions only when invoices are unavailable.
+        sessions, source = [], "tesla_invoices"
+        try:
+            from services.tessie import TessieClient
+            invoices = TessieClient().get_charging_invoices(vin=_get_vin())
+            sessions = invoices_to_sessions(invoices, since_epoch=start_dt.timestamp())
+        except Exception as inv_err:
+            logging.warning(f"Charging invoices unavailable, falling back to DB: {inv_err}")
 
-        sessions = []
-        for r in rows:
-            match = classify(r.get("latitude"), r.get("longitude"))
-            name = match.site_name or r.get("location") or "Unknown"
-            if station_filter and station_filter not in name.lower():
-                continue
-            sessions.append({
-                "site_name": name,
-                "start_time": r.get("start_time"),
-                "end_time": r.get("end_time"),
-                "energy_added_kwh": r.get("energy_added_kwh"),
-                "cost": r.get("cost"),
-            })
+        if not sessions:
+            source = "recorded_sessions"
+            window_start, _ = get_operational_window(start_dt.strftime("%Y-%m-%d"))
+            _, window_end = get_operational_window(today)
+            db = DatabaseClient()
+            for r in db.get_charging_sessions_for_window(window_start, window_end):
+                match = classify(r.get("latitude"), r.get("longitude"))
+                sessions.append({
+                    "site_name": match.site_name or r.get("location") or "Unknown",
+                    "start_time": r.get("start_time"),
+                    "end_time": r.get("end_time"),
+                    "energy_added_kwh": r.get("energy_added_kwh"),
+                    "cost": r.get("cost"),
+                })
+
+        if station_filter:
+            sessions = [s for s in sessions
+                        if station_filter in (s.get("site_name") or "").lower()]
 
         summary = summarize_rates(sessions)
+        summary["rate_source"] = source
         summary["window"] = {
             "start": start_dt.strftime("%Y-%m-%d"),
             "end": today,

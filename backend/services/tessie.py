@@ -384,6 +384,40 @@ class TessieClient:
         except Exception as e:
             logging.error(f"Error fetching Tessie charges: {str(e)}")
             return []
+
+    def get_charging_invoices(self, vin=None):
+        """Tesla's actual charging invoices, proxied by Tessie.
+
+        Authoritative billing, unlike /charges — each invoice carries
+        `cost_per_kwh` (the rate Tesla actually charged, so peak/off-peak tiers
+        can be READ rather than estimated), `idle_fees` broken out from
+        `charging_fees`, and a site NAME rather than a street address.
+
+        Account-scoped rather than VIN-scoped, so *vin* only filters the result.
+        """
+        if not self.api_key:
+            return []
+
+        try:
+            response = requests.get(
+                f"{self.base_url}/charging_invoices",
+                headers={"Authorization": f"Bearer {self.api_key}"},
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            data = response.json()
+            # Accept either a bare list or a {"results": [...]} envelope rather
+            # than assuming one and returning nothing if Tessie uses the other.
+            invoices = data.get("results", data) if isinstance(data, dict) else data
+            if not isinstance(invoices, list):
+                return []
+            if vin:
+                invoices = [i for i in invoices if not i.get("vin") or i.get("vin") == vin]
+            return invoices
+        except Exception as e:
+            logging.error(f"Error fetching Tessie charging invoices: {str(e)}")
+            return []
+
     def get_public_state(self, vin):
         """
         Fetches vehicle state with strict Privacy Geofencing.
