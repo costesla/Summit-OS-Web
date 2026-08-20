@@ -1418,6 +1418,7 @@ def generate_chart(context) -> str:
             collect_series,
             build_chart_config,
             build_chart_url,
+            build_short_chart_url,
             build_adaptive_card,
             format_value,
             _parse_area,
@@ -1534,16 +1535,28 @@ def generate_chart(context) -> str:
             facts.append((f"Best {grouping}", f"{peak['label']} — {format_value(peak['value'], metric_key)}"))
 
         config = build_chart_config(chart_type, title, labels, values, metric_key)
-        chart_url = build_chart_url(config)
+        # Short URL, not the config-in-query-string form: at ~1,700 characters
+        # the long URL is why charts arrived in Teams as a link instead of an
+        # inline image. Falls back to the long URL by itself if QuickChart's
+        # create endpoint is unreachable.
+        chart_url = build_short_chart_url(config)
 
         if total == 0:
             text_desc = f"No {series_label.lower()} recorded between {start.isoformat()} and {end.isoformat()}."
         else:
             text_desc = f"{series_label} for {start.isoformat()} to {end.isoformat()}: {format_value(total, metric_key)} total, {format_value(average, metric_key)} per {grouping}."
 
+        # The image markdown leads, because whatever the orchestrator keeps it
+        # keeps from the front. The instruction stays brief: the earlier version
+        # shouted at the agent to compensate for a URL too long to render, which
+        # was never a problem the agent could fix. With a ~74 character URL the
+        # markdown survives on its own, and a short reminder is enough to stop
+        # the agent claiming it cannot show images.
         summary = (
             f"![{title}]({chart_url})\n\n{text_desc}\n\n"
-            f"CRITICAL DISPLAY INSTRUCTION FOR AGENT: In your response to the user, you MUST include the exact markdown image syntax `![{title}]({chart_url})` at the top of your message. Do NOT claim that you are text-only or unable to display images — Teams renders this markdown image tag as an inline image directly in the chat bubble."
+            f"Display note: reply with the markdown image above included verbatim — "
+            f"Teams renders it inline. Do not describe it as a link, and do not say "
+            f"you cannot display images."
         )
 
         return json.dumps({
