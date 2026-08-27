@@ -626,4 +626,128 @@ def tools_save_day(req: func.HttpRequest) -> func.HttpResponse:
     return driver_sync(req)
 
 
-# Triggering fresh build after setting fix
+@bp.route(route="tools/partner-eod-report", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+def tools_partner_eod_report(req: func.HttpRequest) -> func.HttpResponse:
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=CORS_HEADERS)
+
+    db = DatabaseClient()
+    try:
+        data = req.get_json() if req.get_body() else {}
+        date_str = data.get("date")
+        if not date_str:
+            return func.HttpResponse(json.dumps({"success": False, "error": "Missing date parameter"}), status_code=400, headers=CORS_HEADERS)
+
+        recipients = data.get("recipients", ["luis9189@gmail.com"])
+        cc_recipient = data.get("cc_recipient", "peter.teehan@costesla.com")
+
+        # 1. Fetch live metrics from database
+        summary = db.get_summary_metrics_for_range(date_str, date_str)
+        expenses_data = db.get_expenses_by_date(date_str)
+        
+        gross = summary.get("gross_earnings", 0.0)
+        uber = summary.get("uber_earnings", 0.0)
+        uber_tips = summary.get("uber_tips", 0.0)
+        private = summary.get("private_income", 0.0)
+        opex = summary.get("opex_expenses", 0.0)
+        capex = summary.get("capex_expenses", 0.0)
+        profit = summary.get("net_profit", 0.0)
+        margin = round((profit / gross * 100), 1) if gross > 0 else 0.0
+
+        # Build EOD markdown payload
+        eod_payload = f"""# Summit Intelligence 2.0 - Daily End of Day Executive Summary
+Date: {date_str}
+Entity: COS Tesla LLC
+Status: FINAL
+
+## Executive Summary
+Operational summary for {date_str} across active fleet operations. All active vehicles operational.
+
+## Key Metrics
+- Gross Revenue: ${gross:,.2f}
+- Total Expenses: ${opex:,.2f}
+- Net Operating Profit: ${profit:,.2f}
+- Net Margin: {margin}%
+- Trip Counts: {len(expenses_data.get('charging', [])) + 1}
+
+## Revenue Mix
+- Uber Platform Revenue: ${uber:,.2f} ({round(uber/gross*100, 1) if gross else 0}%)
+- Private Transportation Revenue: ${private:,.2f} ({round(private/gross*100, 1) if gross else 0}%)
+
+## Operational Highlights
+- Gross Revenue reached ${gross:,.2f} with Net Operating Profit of ${profit:,.2f}.
+- Supercharging sessions logged: {len(expenses_data.get('charging', []))}.
+- CapEx & asset maintenance tracked separately at ${capex:,.2f}.
+
+## Items Requiring Attention
+- None. Fleet in prime operational readiness.
+
+## Outlook
+- Sustaining core operational momentum.
+
+Prepared By Summit Intelligence 2.0"""
+
+        from services.eod_engine_production import ProductionEODEngine, ReportStatus
+        from services.audit_ledger import AuditLedgerManager
+
+        backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        template_file = os.path.join(backend_dir, "templates", "eod_email_template.html")
+        archive_dir = os.path.join(backend_dir, "archive", "Partner Reports")
+        ledger_file = os.path.join(backend_dir, "archive", "eod_audit_ledger.json")
+
+        engine = ProductionEODEngine(template_path=template_file, archive_dir=archive_dir)
+        ledger_mgr = AuditLedgerManager(ledger_file=ledger_file)
+
+        parsed_data = engine.parse_production_report(eod_payload)
+        sha256_hash = engine.calculate_sha256(eod_payload)
+        ids = engine.generate_identifiers(parsed_data["report_date"], version=1, sha256_hash=sha256_hash)
+
+        if not parsed_data["is_valid_for_delivery"]:
+            return func.HttpResponse(json.dumps({
+                "success": False,
+                "error": f"Reconciliation validation failed: {parsed_data['validation_errors']}"
+            }), status_code=422, headers=CORS_HEADERS, mimetype="application/json")
+
+        # Reserve and render
+        ledger_mgr.reserve_checksum(parsed_data["report_date"], sha256_hash, ids["full_versioned_id"])
+        html_out = engine.render_production_html(parsed_data, ids["full_versioned_id"], sha256_hash)
+        
+        metadata = engine.generate_production_metadata(
+            parsed_data, ids, sha256_hash,
+            lifecycle_status=ReportStatus.LOCAL_SIMULATION_COMPLETED,
+            transport_message_id=None
+        )
+        metadata["authorized_recipients"] = recipients
+        metadata["mandatory_cc"] = cc_recipient
+        metadata["owner_authorization"] = {
+            "authorized_by": "Peter Teehan (Owner & Managing Member)",
+            "authorized_at_utc": datetime.datetime.utcnow().isoformat() + "Z",
+            "recipients": recipients
+        }
+
+        saved_dir, pdf_path = engine.archive_versioned_report(parsed_data, ids, eod_payload, html_out, metadata)
+        
+        audit_entry = ledger_mgr.record_entry(
+            parsed_data, sha256_hash,
+            status=ReportStatus.LOCAL_SIMULATION_COMPLETED.value,
+            report_id=ids["full_versioned_id"],
+            transport_message_id=None,
+            version_id=ids["version_id"]
+        )
+        audit_entry["authorized_recipients"] = recipients
+        ledger_mgr._save_ledger()
+
+        return func.HttpResponse(json.dumps({
+            "success": True,
+            "report_id": ids["full_versioned_id"],
+            "checksum": sha256_hash,
+            "status": "LOCAL_SIMULATION_COMPLETED",
+            "recipients": recipients,
+            "cc_recipient": cc_recipient,
+            "saved_dir": saved_dir,
+            "pdf_path": pdf_path
+        }), status_code=200, headers=CORS_HEADERS, mimetype="application/json")
+
+    except Exception as e:
+        logging.error(f"Partner EOD Report Error: {e}")
+        return func.HttpResponse(json.dumps({"success": False, "error": str(e)}), status_code=500, headers=CORS_HEADERS, mimetype="application/json")

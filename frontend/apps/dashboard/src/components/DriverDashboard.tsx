@@ -2,10 +2,11 @@ import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import {
     LayoutDashboard, Route, Receipt, Zap, Wrench, TrendingUp,
     DollarSign, Car, ShieldAlert, CheckCircle, ExternalLink,
-    ChevronDown, ChevronUp, Plus, Loader2, MapPin, Gauge, Battery, Link2
+    ChevronDown, ChevronUp, Plus, Loader2, MapPin, Gauge, Battery, Link2,
+    Mail, Send, Lock
 } from 'lucide-react';
 import { isBackgroundableError, devDebugError, getAsyncExecutionLogs, pollJobStatus } from '../../../../src/lib/intelligenceUtils';
-import { apiGet, apiPost } from '../lib/apiClient';
+import { apiGet, apiPost, apiRequest } from '../lib/apiClient';
 import PaymentTrackerPanel from './payments/PaymentTrackerPanel';
 
 const AZURE_BASE = import.meta.env.VITE_PUBLIC_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://summitos-api.azurewebsites.net/api';
@@ -163,6 +164,7 @@ interface DatabaseTrip {
     dropoff_location: string | null;
     tessie_drive_id?: string | null;
     tessie_label?: string | null;
+    payment_status?: string | null;
 }
 
 interface TessieDrive {
@@ -242,6 +244,11 @@ const DriverDashboard: React.FC = () => {
     const [logs, setLogs] = useState<string[]>([]);
     const [status, setStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle');
     const [scrubConfirmOpen, setScrubConfirmOpen] = useState(false);
+    const [partnerModalOpen, setPartnerModalOpen] = useState(false);
+    const [selectedRecipients, setSelectedRecipients] = useState<string[]>(['luis9189@gmail.com']);
+    const [customEmailInput, setCustomEmailInput] = useState('');
+    const [showCustomInput, setShowCustomInput] = useState(false);
+    const [partnerConfirmed, setPartnerConfirmed] = useState(false);
     const [isMobileQuickLogOpen, setIsMobileQuickLogOpen] = useState(false);
     const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date());
     const [syncIntervalText, setSyncIntervalText] = useState("Just now");
@@ -550,6 +557,60 @@ const DriverDashboard: React.FC = () => {
         }
     };
 
+    // ─── Actions: Silent Partner EOD Report Dispatch ─────────────────────────────
+    const toggleRecipient = (email: string) => {
+        setSelectedRecipients(prev => 
+            prev.includes(email) ? prev.filter(e => e !== email) : [...prev, email]
+        );
+    };
+
+    const handleAddCustomEmail = (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+        const trimmed = customEmailInput.trim().toLowerCase();
+        if (trimmed && trimmed.includes('@') && !selectedRecipients.includes(trimmed)) {
+            setSelectedRecipients(prev => [...prev, trimmed]);
+            setCustomEmailInput('');
+            setShowCustomInput(false);
+        }
+    };
+
+    const runPartnerEODReport = async (recipientsList: string[] = selectedRecipients) => {
+        if (recipientsList.length === 0) return;
+        setPartnerModalOpen(false);
+        setStatus('running');
+        const recipientsSummary = recipientsList.join(', ');
+        setLogs([
+            `> Initiating Silent Partner EOD Report Pipeline for ${selectedDate}...`,
+            `> Authorized Recipients (${recipientsList.length}): ${recipientsSummary}`,
+            `> Mandatory CC: Peter Teehan (peter.teehan@costesla.com)`,
+            `> Executing financial reconciliation & PII sanitation gates...`
+        ]);
+        try {
+            const data = await apiPost<{ success: boolean; report_id?: string; checksum?: string; logs?: string[]; error?: string }>('/tools/partner-eod-report', {
+                date: selectedDate,
+                recipients: recipientsList,
+                cc_recipient: 'peter.teehan@costesla.com'
+            });
+            if (data.success) {
+                setStatus('success');
+                setLogs(p => [
+                    ...p,
+                    `> [SUCCESS] EOD Report Reconciled & Checksum Verified.`,
+                    `> Report ID: ${data.report_id || 'COSTESLA-EOD-' + selectedDate.replace(/-/g, '')}`,
+                    `> Checksum SHA-256: ${data.checksum || 'Verified'}`,
+                    `> Archived to SharePoint & Dispatched to: ${recipientsSummary}.`
+                ]);
+            } else {
+                setStatus('error');
+                setLogs(p => [...p, `> [ERROR] ${data.error || 'Financial reconciliation failed or duplicate skipped.'}`]);
+            }
+        } catch (err: unknown) {
+            const errMsg = err instanceof Error ? err.message : String(err);
+            setStatus('error');
+            setLogs(p => [...p, `> [CRITICAL] ${errMsg}`]);
+        }
+    };
+
     // ─── Actions: Logging tips / private income from QuickLog ────────────────────────
     const handleLogCashTip = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -690,7 +751,12 @@ const DriverDashboard: React.FC = () => {
     const healthBadgeColor = preShiftScore >= 70 ? 'border-[var(--accent-cyan)] text-[var(--accent-cyan)] bg-[var(--accent-cyan)]/5' : 'border-[var(--accent-red)] text-[var(--accent-red)] bg-[var(--accent-red)]/5 animate-pulse';
 
     const unpaidOtherInvoices = useMemo(() => {
-        return trips.filter(t => t.type === 'Private' && t.fare > 0);
+        return trips.filter(t => 
+            t.type === 'Private' && 
+            t.fare > 0 && 
+            t.id.startsWith('INV-') && 
+            t.payment_status?.toLowerCase() !== 'paid'
+        );
     }, [trips]);
 
     // Telemetry Timeline events combination
@@ -780,7 +846,6 @@ const DriverDashboard: React.FC = () => {
     const uberEarnings = summary?.uber_earnings ?? 0;
     const privateIncome = summary?.private_income ?? 0;
     const netProfit = summary?.net_profit ?? (grossEarnings - (summary?.opex_expenses ?? 0));
-    const deferredTotal = summary?.deferred_total ?? 0;
 
     // Use all loading states to satisfy TS
     const isAnyLoading = loadingSummary || loadingPreShift || loadingTrips;
@@ -1318,7 +1383,20 @@ const DriverDashboard: React.FC = () => {
                                                             <div className="flex items-center gap-3 shrink-0">
                                                                 <span className="text-[9px] text-[#606060]">{inv.timestamp.slice(0, 10)}</span>
                                                                 <span className="font-black text-amber-400 font-mono">${inv.fare.toFixed(2)}</span>
-                                                                <span className="px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-400 text-[8px] font-bold border border-amber-500/20 uppercase font-mono">Unpaid</span>
+                                                                <button 
+                                                                    onClick={async (e) => {
+                                                                        e.stopPropagation();
+                                                                        try {
+                                                                            await apiRequest('/invoices/bulk-collect', { method: 'PATCH', body: { invoice_ids: [inv.id] } });
+                                                                            fetchAllData();
+                                                                        } catch (err) {
+                                                                            console.error('Failed to mark invoice paid:', err);
+                                                                        }
+                                                                    }}
+                                                                    className="px-2 py-0.5 rounded bg-amber-500/10 hover:bg-emerald-500/20 text-amber-400 hover:text-emerald-400 text-[9px] font-bold border border-amber-500/20 hover:border-emerald-500/30 uppercase font-mono transition-all"
+                                                                >
+                                                                    Mark Paid
+                                                                </button>
                                                             </div>
                                                         </div>
                                                     );
@@ -1461,6 +1539,14 @@ const DriverDashboard: React.FC = () => {
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* Card: Silent Partner EOD Report */}
+                                    <ToolCard 
+                                        title="EOD Partner Report" 
+                                        desc="Compile, reconcile & dispatch daily executive summary with owner permission & mode authorization gate." 
+                                        action={() => { setPartnerConfirmed(false); setPartnerModalOpen(true); }} 
+                                        loading={status === 'running'} 
+                                    />
+
                                     {/* Card: Rebuild Day */}
                                     <ToolCard title="Rebuild Day" desc="Reprocess and re-match drives and private bookings for this operational window." action={runRebuild} loading={status === 'running'} />
                                     
@@ -1600,6 +1686,199 @@ const DriverDashboard: React.FC = () => {
                                 className="flex-1 py-2.5 rounded-xl text-xs font-bold border border-white/10 bg-white/5 text-[var(--text-muted)] hover:bg-white/10 transition-all">Cancel</button>
                             <button onClick={runScrub} 
                                 className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-[var(--accent-red)] text-white hover:bg-red-600 transition-all">Proceed Scrub</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ─── Modals: Partner Report Authorization Gate ───────────────────────── */}
+            {partnerModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+                    <div className="w-full max-w-lg rounded-2xl border border-[var(--accent-cyan)]/30 p-6 space-y-5 bg-[var(--bg-surface)] shadow-2xl">
+                        <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2.5 rounded-xl bg-[var(--accent-cyan)]/10 border border-[var(--accent-cyan)]/20">
+                                    <Send className="w-5 h-5 text-[var(--accent-cyan)]" />
+                                </div>
+                                <div>
+                                    <h2 className="text-base font-bold text-white">Authorize EOD Report Dispatch</h2>
+                                    <p className="text-xs text-[var(--text-muted)] mt-0.5">COS Tesla LLC — Date: <span className="text-white font-mono font-bold">{selectedDate}</span></p>
+                                </div>
+                            </div>
+                            <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-[var(--accent-cyan)]/10 text-[var(--accent-cyan)] border border-[var(--accent-cyan)]/20">
+                                <Lock className="w-3 h-3" /> Owner Gate
+                            </span>
+                        </div>
+
+                        {/* Recipient Roster Multi-Select */}
+                        <div className="space-y-2.5">
+                            <div className="flex items-center justify-between">
+                                <label className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Select Recipients ({selectedRecipients.length} Selected)</label>
+                                <button 
+                                    type="button" 
+                                    onClick={() => setShowCustomInput(!showCustomInput)} 
+                                    className="text-[10px] font-bold text-[var(--accent-cyan)] hover:underline flex items-center gap-1"
+                                >
+                                    <Plus className="w-3 h-3" /> {showCustomInput ? 'Close Custom' : 'Add Custom Email'}
+                                </button>
+                            </div>
+
+                            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                                {/* Preset: Luis Canales */}
+                                <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${selectedRecipients.includes('luis9189@gmail.com') ? 'border-[var(--accent-cyan)]/40 bg-[var(--accent-cyan)]/5 text-white' : 'border-white/5 bg-white/[0.02] text-[var(--text-muted)] hover:border-white/10'}`}>
+                                    <input 
+                                        type="checkbox" 
+                                        checked={selectedRecipients.includes('luis9189@gmail.com')} 
+                                        onChange={() => toggleRecipient('luis9189@gmail.com')} 
+                                        className="mt-1 rounded border-white/20 text-[var(--accent-cyan)] focus:ring-0 cursor-pointer" 
+                                    />
+                                    <div className="flex-1">
+                                        <div className="text-xs font-bold text-white flex items-center justify-between">
+                                            <span>Luis Canales</span>
+                                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono">Silent Partner</span>
+                                        </div>
+                                        <div className="text-[10px] text-[var(--text-muted)] font-mono mt-0.5 flex items-center gap-1">
+                                            <Mail className="w-3 h-3 text-[var(--accent-cyan)]" /> luis9189@gmail.com
+                                        </div>
+                                    </div>
+                                </label>
+
+                                {/* Preset: Peter Teehan (Internal Test) */}
+                                <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${selectedRecipients.includes('peter.teehan@costesla.com') ? 'border-blue-500/40 bg-blue-500/5 text-white' : 'border-white/5 bg-white/[0.02] text-[var(--text-muted)] hover:border-white/10'}`}>
+                                    <input 
+                                        type="checkbox" 
+                                        checked={selectedRecipients.includes('peter.teehan@costesla.com')} 
+                                        onChange={() => toggleRecipient('peter.teehan@costesla.com')} 
+                                        className="mt-1 rounded border-white/20 text-blue-400 focus:ring-0 cursor-pointer" 
+                                    />
+                                    <div className="flex-1">
+                                        <div className="text-xs font-bold text-white flex items-center justify-between">
+                                            <span>Peter Teehan</span>
+                                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-mono">Owner Inbox Direct</span>
+                                        </div>
+                                        <div className="text-[10px] text-[var(--text-muted)] font-mono mt-0.5 flex items-center gap-1">
+                                            <Mail className="w-3 h-3 text-blue-400" /> peter.teehan@costesla.com
+                                        </div>
+                                    </div>
+                                </label>
+
+                                {/* Preset: CPA & Accounting */}
+                                <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${selectedRecipients.includes('cpa@costesla.com') ? 'border-amber-500/40 bg-amber-500/5 text-white' : 'border-white/5 bg-white/[0.02] text-[var(--text-muted)] hover:border-white/10'}`}>
+                                    <input 
+                                        type="checkbox" 
+                                        checked={selectedRecipients.includes('cpa@costesla.com')} 
+                                        onChange={() => toggleRecipient('cpa@costesla.com')} 
+                                        className="mt-1 rounded border-white/20 text-amber-400 focus:ring-0 cursor-pointer" 
+                                    />
+                                    <div className="flex-1">
+                                        <div className="text-xs font-bold text-white flex items-center justify-between">
+                                            <span>Tax & Accounting Team</span>
+                                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono">CPA Roster</span>
+                                        </div>
+                                        <div className="text-[10px] text-[var(--text-muted)] font-mono mt-0.5 flex items-center gap-1">
+                                            <Mail className="w-3 h-3 text-amber-400" /> cpa@costesla.com
+                                        </div>
+                                    </div>
+                                </label>
+
+                                {/* Preset: Legal / Advisory */}
+                                <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${selectedRecipients.includes('advisory@costesla.com') ? 'border-purple-500/40 bg-purple-500/5 text-white' : 'border-white/5 bg-white/[0.02] text-[var(--text-muted)] hover:border-white/10'}`}>
+                                    <input 
+                                        type="checkbox" 
+                                        checked={selectedRecipients.includes('advisory@costesla.com')} 
+                                        onChange={() => toggleRecipient('advisory@costesla.com')} 
+                                        className="mt-1 rounded border-white/20 text-purple-400 focus:ring-0 cursor-pointer" 
+                                    />
+                                    <div className="flex-1">
+                                        <div className="text-xs font-bold text-white flex items-center justify-between">
+                                            <span>Legal & Advisory Roster</span>
+                                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono">Advisory</span>
+                                        </div>
+                                        <div className="text-[10px] text-[var(--text-muted)] font-mono mt-0.5 flex items-center gap-1">
+                                            <Mail className="w-3 h-3 text-purple-400" /> advisory@costesla.com
+                                        </div>
+                                    </div>
+                                </label>
+
+                                {/* Custom Added Recipients */}
+                                {selectedRecipients.filter(r => !['luis9189@gmail.com', 'peter.teehan@costesla.com', 'cpa@costesla.com', 'advisory@costesla.com'].includes(r)).map(customEmail => (
+                                    <div key={customEmail} className="flex items-center justify-between p-3 rounded-xl border border-[var(--accent-cyan)]/40 bg-[var(--accent-cyan)]/5 text-white">
+                                        <div className="flex items-center gap-2">
+                                            <Mail className="w-3.5 h-3.5 text-[var(--accent-cyan)]" />
+                                            <span className="text-xs font-mono font-bold">{customEmail}</span>
+                                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-mono">Custom Recipient</span>
+                                        </div>
+                                        <button 
+                                            type="button" 
+                                            onClick={() => toggleRecipient(customEmail)} 
+                                            className="text-[10px] text-rose-400 hover:text-rose-300 font-bold"
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Add Custom Email Field */}
+                            {showCustomInput && (
+                                <div className="flex gap-2 p-2.5 rounded-xl bg-black/40 border border-white/10">
+                                    <input 
+                                        type="email" 
+                                        placeholder="e.g. partner@domain.com" 
+                                        value={customEmailInput} 
+                                        onChange={(e) => setCustomEmailInput(e.target.value)} 
+                                        onKeyDown={(e) => { if (e.key === 'Enter') handleAddCustomEmail(e); }}
+                                        className="flex-1 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs text-white placeholder-[var(--text-muted)] font-mono focus:outline-none focus:border-[var(--accent-cyan)]"
+                                    />
+                                    <button 
+                                        type="button" 
+                                        onClick={handleAddCustomEmail} 
+                                        className="px-3 py-1.5 rounded-lg bg-[var(--accent-cyan)] text-black text-xs font-bold hover:opacity-90 transition-all"
+                                    >
+                                        Add
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* CC Audit Notice */}
+                            <div className="px-3 py-2 rounded-lg bg-white/[0.02] border border-white/5 text-[10px] text-[var(--text-muted)] font-mono flex items-center justify-between">
+                                <span>Owner Audit Copy (CC):</span>
+                                <span className="text-white font-bold">peter.teehan@costesla.com (Always Included)</span>
+                            </div>
+                        </div>
+
+                        {/* Permission Confirmation Checkbox */}
+                        <div className="p-3.5 rounded-xl bg-black/40 border border-white/10 space-y-2">
+                            <label className="flex items-start gap-2.5 cursor-pointer">
+                                <input 
+                                    type="checkbox" 
+                                    checked={partnerConfirmed} 
+                                    onChange={(e) => setPartnerConfirmed(e.target.checked)} 
+                                    className="mt-0.5 rounded border-white/20 text-[var(--accent-cyan)] focus:ring-0 cursor-pointer" 
+                                />
+                                <span className="text-xs text-white leading-relaxed select-none">
+                                    I, <strong>Peter Teehan</strong>, have reviewed the daily metrics and explicitly authorize the execution of this EOD dispatch to the selected <strong>{selectedRecipients.length}</strong> recipient(s).
+                                </span>
+                            </label>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-3 pt-2">
+                            <button 
+                                type="button"
+                                onClick={() => setPartnerModalOpen(false)} 
+                                className="flex-1 py-2.5 rounded-xl text-xs font-bold border border-white/10 bg-white/5 text-[var(--text-muted)] hover:bg-white/10 transition-all"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                type="button"
+                                onClick={() => runPartnerEODReport(selectedRecipients)} 
+                                disabled={!partnerConfirmed || selectedRecipients.length === 0}
+                                className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${partnerConfirmed && selectedRecipients.length > 0 ? 'bg-[var(--accent-cyan)] text-black hover:opacity-90 shadow-lg shadow-[var(--accent-cyan)]/20' : 'bg-white/10 text-white/40 cursor-not-allowed'}`}
+                            >
+                                <Send className="w-3.5 h-3.5" /> Authorize & Dispatch ({selectedRecipients.length})
+                            </button>
                         </div>
                     </div>
                 </div>

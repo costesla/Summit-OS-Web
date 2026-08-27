@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>COS Tesla LLC | Daily EOD Executive Briefing</title>
+</head>
+<body style="margin:0; padding:0; background-color:#F1F5F9; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing:antialiased;">
+  <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px; background-color:#FFFFFF; margin:24px auto; border-radius:10px; overflow:hidden; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); border:1px solid #E2E8F0;">
+    
+    <!-- Masthead Header -->
+    <tr>
+      <td style="background-color:#0F172A; padding:28px 24px; text-align:left; border-bottom:3px solid #0EA5E9;">
+        <table width="100%" border="0" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="vertical-align:middle;">
+              <div style="color:#38BDF8; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:4px;">Operational Intelligence</div>
+              <h1 style="color:#FFFFFF; margin:0; font-size:22px; font-weight:800; letter-spacing:-0.5px;">COS TESLA LLC</h1>
+              <p style="color:#94A3B8; margin:4px 0 0 0; font-size:13px; font-weight:500;">Daily Executive Briefing</p>
+            </td>
+            <td style="text-align:right; vertical-align:middle;">
+              <div style="display:inline-block; background-color:#1E293B; border:1px solid #334155; color:#F8FAFC; padding:8px 14px; border-radius:6px; font-size:12px; font-weight:600; text-align:center;">
+                <div style="color:#94A3B8; font-size:10px; text-transform:uppercase; margin-bottom:2px;">Report Date</div>
+                {{REPORT_DATE}}
+              </div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    {{FALLBACK_ALERT_BLOCK}}
+
+    <!-- KPI Grid -->
+    <tr>
+      <td style="padding:24px 24px 12px 24px;">
+        <table width="100%" cellspacing="0" cellpadding="0" border="0">
+          <tr>
+            <td width="48%" style="background-color:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:18px; text-align:left; vertical-align:top;">
+              <div style="color:#64748B; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Gross Revenue</div>
+              <div style="color:#0F172A; font-size:24px; font-weight:800; margin-top:6px;">${{GROSS_REVENUE}}</div>
+              <div style="color:#64748B; font-size:11px; margin-top:4px;">Total daily top-line</div>
+            </td>
+            <td width="4%"></td>
+            <td width="48%" style="background-color:#F0FDF4; border:1px solid #BBF7D0; border-radius:8px; padding:18px; text-align:left; vertical-align:top;">
+              <div style="color:#166534; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Net Operating Profit</div>
+              <div style="color:#15803D; font-size:24px; font-weight:800; margin-top:6px;">${{NET_PROFIT}}</div>
+              <div style="color:#166534; font-size:11px; margin-top:4px;">{{NET_MARGIN}}% Net Margin</div>
+            </td>
+          </tr>
+          <tr><td height="12"></td></tr>
+          <tr>
+            <td width="48%" style="background-color:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:16px; text-align:left; vertical-align:top;">
+              <div style="color:#64748B; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Total Expenses</div>
+              <div style="color:#DC2626; font-size:20px; font-weight:700; margin-top:4px;">-${{TOTAL_EXPENSES}}</div>
+              <div style="color:#64748B; font-size:11px; margin-top:2px;">OpEx & Fleet Overhead</div>
+            </td>
+            <td width="4%"></td>
+            <td width="48%" style="background-color:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:16px; text-align:left; vertical-align:top;">
+              <div style="color:#64748B; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Completed Trips</div>
+              <div style="color:#0F172A; font-size:20px; font-weight:700; margin-top:4px;">{{TRIP_COUNT}} Trips</div>
+              <div style="color:#64748B; font-size:11px; margin-top:2px;">${{AVG_REV_PER_TRIP}} avg / trip</div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- Financial & Revenue Mix Breakdown -->
+    <tr>
+      <td style="padding:12px 24px;">
+        <div style="background-color:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:18px;">
+          <div style="font-size:12px; font-weight:700; color:#0F172A; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px; border-bottom:1px solid #E2E8F0; padding-bottom:6px;">
+            Revenue Composition & Breakdown
+          </div>
+          <table width="100%" style="font-size:13px; color:#334155;" cellpadding="6" cellspacing="0">
+            <tr style="border-bottom:1px solid #EDF2F7;">
+              <td style="font-weight:500;">Uber Platform Revenue</td>
+              <td style="text-align:right; font-weight:700; color:#0F172A;">${{UBER_REVENUE}} <span style="color:#64748B; font-weight:500; font-size:12px;">({{UBER_MIX_PCT}}%)</span></td>
+            </tr>
+            <tr style="border-bottom:1px solid #EDF2F7;">
+              <td style="font-weight:500;">Private Charter / Direct Client</td>
+              <td style="text-align:right; font-weight:700; color:#0F172A;">${{PRIVATE_REVENUE}} <span style="color:#64748B; font-weight:500; font-size:12px;">({{PRIVATE_MIX_PCT}}%)</span></td>
+            </tr>
+            <tr>
+              <td style="font-weight:600; color:#0F172A; padding-top:10px;">Total Gross Revenue</td>
+              <td style="text-align:right; font-weight:800; color:#0F172A; padding-top:10px; font-size:14px;">${{GROSS_REVENUE}}</td>
+            </tr>
+          </table>
+        </div>
+      </td>
+    </tr>
+
+    <!-- Executive Summary Section -->
+    <tr>
+      <td style="padding:12px 24px;">
+        <div style="font-size:12px; font-weight:700; color:#0F172A; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">Executive Summary</div>
+        <div style="font-size:14px; color:#334155; line-height:1.6; background-color:#FFFFFF; border-left:3px solid #0EA5E9; padding:8px 14px; font-weight:400;">
+          {{EXECUTIVE_SUMMARY}}
+        </div>
+      </td>
+    </tr>
+
+    <!-- Operational Highlights Section -->
+    <tr>
+      <td style="padding:12px 24px;">
+        <div style="font-size:12px; font-weight:700; color:#0F172A; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">Operational Highlights</div>
+        <div style="font-size:13px; color:#334155; line-height:1.6;">
+          {{OPERATIONAL_HIGHLIGHTS}}
+        </div>
+      </td>
+    </tr>
+
+    <!-- Items Requiring Attention -->
+    <tr>
+      <td style="padding:12px 24px;">
+        <div style="background-color:#FFFBEB; border-left:4px solid #F59E0B; padding:14px 16px; border-radius:6px;">
+          <div style="font-size:12px; font-weight:700; color:#B45309; text-transform:uppercase; letter-spacing:0.5px;">Items Requiring Attention</div>
+          <div style="font-size:13px; color:#92400E; margin-top:6px; line-height:1.5;">
+            {{ITEMS_ATTENTION}}
+          </div>
+        </div>
+      </td>
+    </tr>
+
+    <!-- Forward Outlook -->
+    <tr>
+      <td style="padding:12px 24px 20px 24px;">
+        <div style="font-size:12px; font-weight:700; color:#0F172A; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">Forward Outlook & Commentary</div>
+        <div style="font-size:13px; color:#334155; line-height:1.6;">
+          {{OUTLOOK}}
+        </div>
+      </td>
+    </tr>
+
+    <!-- Footer -->
+    <tr>
+      <td style="background-color:#F8FAFC; border-top:1px solid #E2E8F0; padding:22px 24px; text-align:center;">
+        <p style="margin:0; font-size:12px; color:#64748B; font-weight:500;">
+          Prepared automatically by <strong>Summit Intelligence 2.0</strong> for COS Tesla LLC.
+        </p>
+        <p style="margin:6px 0 0 0; font-size:11px; color:#94A3B8;">
+          Archive Checksum: <code style="font-family:monospace; background-color:#E2E8F0; padding:2px 4px; border-radius:3px; font-size:10px;">{{CHECKSUM_SHORT}}</code>
+        </p>
+        <p style="margin:8px 0 0 0; font-size:11px; color:#94A3B8;">
+          Confidential — Transmitted strictly to Luis Canales & Peter Teehan.
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
