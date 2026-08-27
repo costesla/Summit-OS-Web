@@ -1083,3 +1083,230 @@ def record_private_payment(context) -> str:
     except Exception as e:
         logging.error(f"MCP record_private_payment failed: {e}")
         return json.dumps({"error": f"Payment recording failed: {e}"})
+
+
+# ═════════════════════════════════════════════════════════════════════
+# Charting + Visualization tool
+# ═════════════════════════════════════════════════════════════════════
+
+_GENERATE_CHART_PROPERTIES = json.dumps([
+    {
+        "propertyName": "metric",
+        "propertyType": "string",
+        "description": "What to plot: 'earnings', 'tips', 'trips', 'miles', 'hours', 'breakdown' (Gross Earnings vs Charging Costs vs Other Expenses), 'revenue_sources' (Uber vs Private), 'fare_vs_tips' (Base Fares vs Tips), 'top_areas' (Top Pickups by Neighborhood), or 'client_balances' (Outstanding Invoices). Defaults to 'earnings'.",
+        "isRequired": False,
+    },
+    {
+        "propertyName": "days",
+        "propertyType": "number",
+        "description": "Number of days back from today to plot (1-90). Defaults to 7.",
+        "isRequired": False,
+    },
+    {
+        "propertyName": "start_date",
+        "propertyType": "string",
+        "description": "Start date (YYYY-MM-DD) in Mountain Time. Must be paired with end_date.",
+        "isRequired": False,
+    },
+    {
+        "propertyName": "end_date",
+        "propertyType": "string",
+        "description": "End date (YYYY-MM-DD) in Mountain Time. Must be paired with start_date.",
+        "isRequired": False,
+    },
+    {
+        "propertyName": "chart_type",
+        "propertyType": "string",
+        "description": "'bar' to compare buckets, 'line' for a trend, 'pie' or 'doughnut' for proportion breakdowns. Defaults to 'bar'.",
+        "isRequired": False,
+    },
+    {
+        "propertyName": "group",
+        "propertyType": "string",
+        "description": "Bucket size: 'auto', 'day', or 'week'. Defaults to 'auto'.",
+        "isRequired": False,
+    },
+    {
+        "propertyName": "title",
+        "propertyType": "string",
+        "description": "Optional chart title override.",
+        "isRequired": False,
+    },
+])
+
+
+@bp.mcp_tool_trigger(
+    arg_name="context",
+    tool_name="generate_chart",
+    description=(
+        "Renders a data chart image and ready-to-send Teams Adaptive Card for "
+        "any Summit OS metric over time (earnings, tips, trips, miles, drive hours), "
+        "a financial breakdown (Gross Earnings vs Charging Costs vs Other Expenses), "
+        "revenue sources (Uber vs Private), base fares vs tips, top pickup areas, or "
+        "outstanding client balances. Use whenever the user asks to SEE data — "
+        "'show me a chart', 'graph my earnings', 'visualize last month', 'plot top pickup areas'. "
+        "Returns chartUrl, adaptiveCard payload, one-line summary, and the plotted numbers."
+    ),
+    tool_properties=_GENERATE_CHART_PROPERTIES,
+)
+def generate_chart(context) -> str:
+    args = _parse_args(context)
+    try:
+        from api.copilot_charts import (
+            METRICS,
+            CHART_TYPES,
+            _resolve_range,
+            collect_series,
+            build_chart_config,
+            build_chart_url,
+            build_adaptive_card,
+            format_value,
+            _parse_area,
+        )
+
+        metric_key = str(args.get("metric") or "earnings").strip().lower()
+        if metric_key not in METRICS:
+            return json.dumps({"error": f"Unknown metric '{metric_key}'. Choose one of: {', '.join(sorted(METRICS))}."})
+
+        default_types = {
+            "breakdown": "doughnut",
+            "revenue_sources": "doughnut",
+            "fare_vs_tips": "doughnut",
+            "client_balances": "pie",
+            "top_areas": "bar",
+        }
+        def_type = default_types.get(metric_key, "bar")
+        chart_type = str(args.get("chart_type") or def_type).strip().lower()
+        if chart_type not in CHART_TYPES:
+            chart_type = def_type
+
+        group = str(args.get("group") or "auto").strip().lower()
+        if group not in ("auto", "day", "week"):
+            group = "auto"
+
+        start, end, error = _resolve_range(args)
+        if error:
+            return json.dumps({"error": error})
+
+        db = DatabaseClient()
+        if metric_key == "breakdown":
+            summary_data = db.get_summary_metrics_for_range(start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")) or {}
+            gross = float(summary_data.get("gross_earnings") or 0)
+            charging = float(summary_data.get("charging") or 0)
+            total_exp = float(summary_data.get("expenses") or 0)
+            other_exp = max(0.0, total_exp - charging)
+
+            labels = ["Gross Earnings", "Charging Costs", "Other Expenses"]
+            values = [gross, charging, other_exp]
+            grouping = "category"
+        elif metric_key == "revenue_sources":
+            summary_data = db.get_summary_metrics_for_range(start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")) or {}
+            uber = float(summary_data.get("uber_earnings") or 0)
+            private = float(summary_data.get("private_income") or 0)
+
+            labels = ["Uber Earnings", "Private Client Income"]
+            values = [uber, private]
+            grouping = "source"
+        elif metric_key == "fare_vs_tips":
+            summary_data = db.get_summary_metrics_for_range(start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")) or {}
+            uber = float(summary_data.get("uber_earnings") or 0)
+            tips = float(summary_data.get("uber_tips") or 0)
+            base = max(0.0, uber - tips)
+
+            labels = ["Base Fares", "Tips"]
+            values = [base, tips]
+            grouping = "component"
+        elif metric_key == "top_areas":
+            from services.datetime_utils import get_operational_window
+            w_start, _ = get_operational_window(start.strftime("%Y-%m-%d"))
+            _, w_end = get_operational_window(end.strftime("%Y-%m-%d"))
+            rows = db.get_area_activity(w_start, w_end) or []
+
+            areas = {}
+            for r in rows:
+                addr = r.get("pickup")
+                if not addr:
+                    continue
+                area = _parse_area(addr)
+                areas[area] = areas.get(area, 0) + 1
+
+            ranked = sorted(areas.items(), key=lambda x: -x[1])[:7]
+            if ranked:
+                labels = [area for area, _ in ranked]
+                values = [float(count) for _, count in ranked]
+            else:
+                labels, values = ["No Activity"], [0.0]
+            grouping = "area"
+        elif metric_key == "client_balances":
+            balances = db.get_client_balances(include_inactive=False) or []
+            active = [b for b in balances if float(b.get("balance") or 0) > 0 and b.get("status") == "active"]
+            if active:
+                labels = [str(b.get("client")) for b in active]
+                values = [float(b.get("balance") or 0) for b in active]
+            else:
+                labels, values = ["No Outstanding Balances"], [0.0]
+            grouping = "client"
+        else:
+            rows = db.get_daily_metrics(start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d"))
+            labels, values, grouping = collect_series(rows, start, end, metric_key, group)
+
+        default_titles = {
+            "breakdown": "Earnings vs Charging vs Expenses",
+            "revenue_sources": "Uber vs Private Client Revenue",
+            "fare_vs_tips": "Base Fares vs Tips",
+            "top_areas": "Top Pickup Areas",
+            "client_balances": "Outstanding Client Balances",
+        }
+        series_label = METRICS[metric_key][1]
+        title = str(args.get("title") or "").strip() or default_titles.get(metric_key, f"{series_label} by {grouping}")
+        subtitle = f"{start.strftime('%b %d, %Y')} – {end.strftime('%b %d, %Y')} (Mountain Time)"
+
+        total = sum(values)
+        average = total / len(values) if values else 0.0
+        peak_index = max(range(len(values)), key=lambda i: values[i]) if values else None
+
+        facts = [
+            ("Total", format_value(total, metric_key)),
+            (f"Average per {grouping}", format_value(average, metric_key)),
+        ]
+        peak = None
+        if peak_index is not None and total > 0:
+            peak = {"label": labels[peak_index], "value": values[peak_index]}
+            facts.append((f"Best {grouping}", f"{peak['label']} — {format_value(peak['value'], metric_key)}"))
+
+        config = build_chart_config(chart_type, title, labels, values, metric_key)
+        chart_url = build_chart_url(config)
+
+        if total == 0:
+            text_desc = f"No {series_label.lower()} recorded between {start.isoformat()} and {end.isoformat()}."
+        else:
+            text_desc = f"{series_label} for {start.isoformat()} to {end.isoformat()}: {format_value(total, metric_key)} total, {format_value(average, metric_key)} per {grouping}."
+
+        summary = (
+            f"![{title}]({chart_url})\n\n{text_desc}\n\n"
+            f"CRITICAL DISPLAY INSTRUCTION FOR AGENT: In your response to the user, you MUST include the exact markdown image syntax `![{title}]({chart_url})` at the top of your message. Do NOT claim that you are text-only or unable to display images — Teams renders this markdown image tag as an inline image directly in the chat bubble."
+        )
+
+        return json.dumps({
+            "chartUrl": chart_url,
+            "adaptiveCard": build_adaptive_card(chart_url, title, subtitle, facts),
+            "summary": summary,
+            "chart": {
+                "metric": metric_key,
+                "chartType": chart_type,
+                "grouping": grouping,
+                "title": title,
+                "subtitle": subtitle,
+                "startDate": start.isoformat(),
+                "endDate": end.isoformat(),
+                "labels": labels,
+                "values": [round(v, 4) for v in values],
+                "total": round(total, 4),
+                "average": round(average, 4),
+                "peak": peak,
+                "hasData": total > 0,
+            },
+        }, default=str)
+    except Exception as e:
+        logging.error(f"MCP generate_chart failed: {e}")
+        return json.dumps({"error": f"Chart generation failed: {e}"})

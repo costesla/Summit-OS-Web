@@ -201,7 +201,7 @@ def finalize_stripe_session(session_id: str) -> dict:
     # until the platform kills it.) If it fails, release the claim so a
     # Stripe redelivery or page refresh can retry cleanly.
     try:
-        from services.bookings import BookingsClient
+        from services.bookings import BookingsClient, decode_route_metadata
         from services.calendar import calculate_buffers
         from services.datetime_utils import normalize_to_utc
 
@@ -211,6 +211,11 @@ def finalize_stripe_session(session_id: str) -> dict:
         except (TypeError, ValueError):
             duration_minutes = 60
         buffers = calculate_buffers(start_time, duration_minutes)
+        # Flight rides along in the calendar note so dispatch sees it on the
+        # appointment — mirrors the unpaid path in api/bookings.py.
+        _fn = (meta.get("flightNumber") or "").strip().upper()
+        _dest = (meta.get("arrivalAirport") or "").strip().upper()
+        flight_note = f" | Flight: {_fn}{f' arriving {_dest}' if _dest else ''}" if _fn else ""
         appointment = BookingsClient().create_appointment(
             customer_data={
                 "name": meta.get("customerName"),
@@ -218,7 +223,8 @@ def finalize_stripe_session(session_id: str) -> dict:
                 "phone": meta.get("customerPhone"),
                 "pickup": meta.get("pickup"),
                 "dropoff": meta.get("dropoff"),
-                "notes": "Payment Method: Stripe (paid)",
+                "stops": decode_route_metadata(meta),
+                "notes": f"Payment Method: Stripe (paid){flight_note}",
             },
             start_dt=buffers["buffer_start"],
             end_dt=buffers["buffer_end"],
@@ -251,6 +257,9 @@ def finalize_stripe_session(session_id: str) -> dict:
                     "phone": meta.get("customerPhone"),
                     "pickup": meta.get("dropoff"),
                     "dropoff": meta.get("pickup"),
+                    # Reversed: the way back visits the stops in the opposite
+                    # order, and reusing the outbound list would zig-zag.
+                    "stops": list(reversed(decode_route_metadata(meta))),
                     "notes": "Return leg — Payment Method: Stripe (paid)",
                 },
                 start_dt=ret_buffers["buffer_start"],
@@ -264,12 +273,18 @@ def finalize_stripe_session(session_id: str) -> dict:
     #    already exists in the calendar, so a failed email doesn't warrant
     #    releasing the claim. (Previously posted to /api/book, which sent
     #    paid customers the legacy invoice template with payment options.)
+    # Whether the passenger's receipt actually left the building. The send stays
+    # non-fatal — the booking is paid and on the calendar either way — but the
+    # confirmation page must not claim a delivery we never observed. During the
+    # 7/27 Graph outage that claim was shown to every passenger while nothing
+    # was actually sent.
+    receipt_emailed = False
     try:
-        _send_paid_receipt(session, meta)
+        receipt_emailed = bool(_send_paid_receipt(session, meta))
     except Exception as email_err:
         logging.warning(f"Receipt email failed (non-fatal): {email_err}")
     try:
-        _log_trip(session, meta)
+        _log_trip(session, meta, event_id=event_id)
     except Exception as db_err:
         logging.warning(f"DB trip log failed (non-fatal): {db_err}")
 
@@ -302,22 +317,55 @@ def finalize_stripe_session(session_id: str) -> dict:
         "duplicate": False,
         "customerEmail": customer_email,
         "amount": amount_usd,
+        "receiptEmailed": receipt_emailed,
+        "invoiceNumber": canonical_invoice_id(session, meta),
     }
 
 
 OWNER_EMAIL = "peter.teehan@costesla.com"
 
 
-def _log_trip(session, meta):
+def canonical_invoice_id(session, meta) -> str:
+    """The single INV- number for a booking.
+
+    The same string has to appear on the Stripe invoice PDF, the confirmation
+    page, the receipt email, and the Rides.Rides row — otherwise a passenger
+    quoting their invoice number can't be matched to their trip.
+
+    Checkout mints this *before* creating the session and passes it through
+    metadata, because Stripe does not allow invoice_creation.invoice_data to be
+    updated after Session.create: the number must be known up front to reach the
+    PDF at all, and the old session-derived form can't be known that early.
+
+    Sessions created before that change — and any where minting failed — fall
+    back to the original derivation, so in-flight and historical sessions
+    resolve to exactly the id they have always had.
+    """
+    minted = (meta.get("invoiceId") or "").strip()
+    if minted:
+        return minted
+    import re
+    raw_name = (meta.get("customerName") or "").strip() or "Guest"
+    first_name = re.sub(r'[^A-Za-z0-9]', '', raw_name.split()[0]).capitalize() or "Guest"
+    return f"INV-{first_name}-{session.id[-8:].upper()}"
+
+
+def _log_trip(session, meta, event_id=None):
+    """Write the Rides row for a paid Stripe booking.
+
+    `event_id` is the Graph appointment this flow already created, captured so
+    the reconciliation sweep can adjudicate card bookings too. Without it the
+    sweep would be blind to every Stripe booking. Defaulted to None so the
+    signature stays backward-compatible with any caller that doesn't have one.
+    """
     import time
     import re
     from services.datetime_utils import normalize_to_utc
-    
-    booking_id = session.id[-8:].upper()
+
     customer_name = meta.get("customerName", "Guest")
     first_name = re.sub(r'[^A-Za-z0-9]', '', customer_name.split()[0]).capitalize()
-    ride_id = f"INV-{first_name}-{booking_id}"
-    
+    ride_id = canonical_invoice_id(session, meta)
+
     raw_time = meta.get("appointmentStart")
     timestamp_epoch = time.time()
     if raw_time:
@@ -342,22 +390,48 @@ def _log_trip(session, meta):
     # Card was charged before the webhook fired — this booking is settled
     db.set_payment_status(ride_id, "Paid")
 
+    # Link to the calendar appointment this flow created. Wrapped separately:
+    # the booking is already durable by here, and a missing link costs the
+    # sweep one adjudicable row, never the booking or the payment.
+    # Only one leg exists on this path — the Stripe flow books a single
+    # appointment — so return_attempted stays False and a captured id yields
+    # 'captured' rather than 'partial'.
+    #
+    # outbound_attempted is unconditionally True: an appointment is ALWAYS
+    # intended here (finalize treats a missing eventId as a failed booking and
+    # says so at line ~241). Deriving it from bool(event_id) would record
+    # 'none-expected' when Graph failed — telling the sweep to skip exactly the
+    # rows that need retrying.
+    try:
+        db.set_appointment_link(ride_id, outbound_id=event_id,
+                                outbound_attempted=True)
+    except Exception as link_err:
+        logging.warning(f"Appointment link not recorded for {ride_id} (non-fatal): {link_err}")
+
 
 
 def _send_paid_receipt(session, meta):
-    """Paid receipt for a Stripe checkout booking — no payment options, no
-    'pick a slot' instructions (the legacy /api/book template is for invoices)."""
+    """Trip confirmation + cabin access for a Stripe checkout booking.
+
+    No longer a receipt, despite the function name: Stripe's invoice and receipt
+    are now the money artifacts. This email exists for what Stripe cannot send —
+    the trip details and the cabin access token. No payment options, no 'pick a
+    slot' instructions (the legacy /api/book template is for invoices)."""
     from services.datetime_utils import format_local_time, normalize_to_utc
 
     name = meta.get("customerName", "Customer")
     email = meta.get("customerEmail")
     if not email:
         logging.warning(f"No customer email on session {session.id} — skipping receipt")
-        return
+        return False
 
     amount_paid = (session.amount_total or 0) / 100.0
     pickup = meta.get("pickup", "N/A")
     dropoff = meta.get("dropoff", "N/A")
+    # Same renderer the unpaid path uses — a receipt that lists stops in a
+    # different order from the driver's calendar is worse than no receipt.
+    from services.bookings import decode_route_metadata, render_route_rows
+    route_rows = render_route_rows(pickup, decode_route_metadata(meta), dropoff)
     phone = meta.get("customerPhone", "N/A")
 
     pickup_time = "To be scheduled"
@@ -377,7 +451,7 @@ def _send_paid_receipt(session, meta):
             return_fmt = raw_return
         return_row = f'<tr><td style="padding: 6px 0; font-size: 14px; color: #666666;">Return Pickup</td><td style="padding: 6px 0; font-size: 14px; color: #333333; text-align: right; font-weight: 600;">{return_fmt}</td></tr>'
 
-    booking_id = session.id[-8:].upper()
+    booking_id = canonical_invoice_id(session, meta)
 
     # Cabin-access token (same behavior as the invoice flow)
     cabin_block = ""
@@ -389,7 +463,15 @@ def _send_paid_receipt(session, meta):
         token_expiry = None
         if raw_time:
             token_expiry = normalize_to_utc(raw_time) + timedelta(hours=CABIN_TOKEN_HOURS)
-        cabin_token = DatabaseClient().create_cabin_token(session.id, expires_at=token_expiry)
+        # Airport-pickup context, carried through Stripe metadata. Normalised
+        # the same way as the unpaid path in api/bookings.py so the two write
+        # identical values for the same booking.
+        cabin_token = DatabaseClient().create_cabin_token(
+            session.id,
+            expires_at=token_expiry,
+            flight_number=(meta.get("flightNumber") or "").strip().upper() or None,
+            expected_dest=(meta.get("arrivalAirport") or "").strip().upper() or None,
+        )
         site_url = os.environ.get("SITE_URL", "https://www.costesla.com")
         cabin_block = f"""
         <div style="background: #000000; padding: 20px; border-radius: 8px; margin: 0 0 25px; text-align: center;">
@@ -419,10 +501,11 @@ def _send_paid_receipt(session, meta):
                     </tr>
                     <tr>
                         <td style="padding: 30px 20px;">
-                            <p style="margin: 0 0 8px; font-size: 18px; font-weight: bold; color: #16a34a;">✓ Payment received — booking confirmed</p>
+                            <p style="margin: 0 0 8px; font-size: 18px; font-weight: bold; color: #16a34a;">✓ Your trip is confirmed</p>
                             <p style="margin: 0 0 20px; font-size: 16px; color: #333333;">Hello {name},</p>
                             <p style="margin: 0 0 25px; font-size: 14px; color: #666666; line-height: 1.5;">
-                                Thank you for choosing COS Tesla. Your card payment of <strong>${amount_paid:,.2f}</strong> was processed successfully and your trip is booked. No further action is needed.
+                                Thank you for choosing COS Tesla. Your trip is booked and your cabin access details are below — no further action is needed.
+                                Your invoice and payment receipt arrive in a separate email from Stripe, who process our payments.
                             </p>
                             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 0 0 25px; border-bottom: 1px solid #eeeeee; padding-bottom: 20px;">
                                 <tr><td colspan="2" style="padding: 0 0 15px; font-size: 18px; font-weight: bold; color: #000000;">Trip Details</td></tr>
@@ -439,12 +522,9 @@ def _send_paid_receipt(session, meta):
                                     <td style="padding: 6px 0; font-size: 14px; color: #333333; text-align: right; font-weight: 600;">{pickup_time}</td>
                                 </tr>
                                 {return_row}
-                                <tr><td colspan="2" style="padding: 15px 0 6px; font-size: 14px; color: #666666;">Pickup Location</td></tr>
-                                <tr><td colspan="2" style="padding: 0 0 6px; font-size: 14px; color: #333333; font-weight: 600;">{pickup}</td></tr>
-                                <tr><td colspan="2" style="padding: 15px 0 6px; font-size: 14px; color: #666666;">Dropoff Location</td></tr>
-                                <tr><td colspan="2" style="padding: 0 0 6px; font-size: 14px; color: #333333; font-weight: 600;">{dropoff}</td></tr>
+                                {route_rows}
                                 <tr>
-                                    <td style="padding: 20px 0 0; font-size: 18px; font-weight: bold; color: #000000; border-top: 2px solid #000000;">Total Paid</td>
+                                    <td style="padding: 20px 0 0; font-size: 18px; font-weight: bold; color: #000000; border-top: 2px solid #000000;">Fare</td>
                                     <td style="padding: 20px 0 0; font-size: 18px; font-weight: bold; color: #000000; text-align: right; border-top: 2px solid #000000;">${amount_paid:,.2f}</td>
                                 </tr>
                             </table>
@@ -469,7 +549,18 @@ def _send_paid_receipt(session, meta):
     """
 
     graph = GraphClient()
-    graph.send_mail(email, f"Receipt & Booking Confirmation: {booking_id}", html)
-    graph.send_mail(OWNER_EMAIL, f"New PAID Booking: {name} - ${amount_paid:,.2f}", html)
+    # Deliberately NOT a receipt. Stripe now issues the invoice and receipt as
+    # the durable money artifacts; this email's job is the trip and the cabin
+    # access token, which Stripe knows nothing about. Two emails, two distinct
+    # jobs — neither pretending to be the other.
+    graph.send_mail(email, f"Your trip is confirmed — {booking_id}", html)
+    # The passenger copy above is what receiptEmailed reports on. A failure of
+    # the owner's copy must not make us tell the passenger their receipt didn't
+    # send, so it gets its own guard.
+    try:
+        graph.send_mail(OWNER_EMAIL, f"New PAID Booking: {name} - ${amount_paid:,.2f}", html)
+    except Exception as owner_err:
+        logging.warning(f"Owner booking copy failed (non-fatal): {owner_err}")
     logging.info(f"Paid receipt sent to {email} for session {session.id}")
+    return True
 

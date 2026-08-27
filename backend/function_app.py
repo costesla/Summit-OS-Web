@@ -22,6 +22,7 @@ def ping_root(req: func.HttpRequest) -> func.HttpResponse:
 blueprints = [
     "api.pricing",
     "api.checkout",
+    "api.payment_confirm",
     "api.finalize",
     "api.webhook",
     "api.ocr",
@@ -29,6 +30,7 @@ blueprints = [
     "api.tessie",
     "api.reports",
     "api.copilot",
+    "api.copilot_charts",
     "api.copilot_openapi",
     "api.banking",
     "api.health",
@@ -51,6 +53,8 @@ blueprints = [
     "api.flightaware",
     "api.feedback",
     "api.push",
+    "api.return_trip",
+    "api.return_trip_public",
 ]
 
 registration_logs = []

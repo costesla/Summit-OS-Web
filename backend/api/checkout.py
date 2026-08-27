@@ -38,6 +38,16 @@ def create_checkout_session(req: func.HttpRequest) -> func.HttpResponse:
         trip_duration = req_body.get("tripDuration", "N/A")
         duration = req_body.get("duration", 60)
         return_start = req_body.get("returnStart") or ""
+        # Airport-pickup context. Stripe metadata values are capped at 500
+        # chars; a flight number and an airport code are far inside that, so
+        # they ride along as their own keys rather than needing packing.
+        # Empty strings when absent — Stripe metadata has no null.
+        flight_number = (req_body.get("flightNumber") or "").strip().upper()
+        arrival_airport = (req_body.get("arrivalAirport") or "").strip().upper()
+        # Ordered stops as numbered keys — see encode_route_metadata for why
+        # they can't share one value.
+        from services.bookings import encode_route_metadata
+        route_metadata = encode_route_metadata(req_body.get("stops"))
         success_url = req_body.get("successUrl")
         cancel_url = req_body.get("cancelUrl")
         
@@ -47,7 +57,19 @@ def create_checkout_session(req: func.HttpRequest) -> func.HttpResponse:
         # Convert formatted price string (e.g., "$100.00") to number for Stripe
         amount_num = float(re.sub(r'[^0-9.]', '', str(price)))
         amount_cents = int(round(amount_num * 100))
-        
+
+        # Mint the invoice number BEFORE creating the session. Stripe does not
+        # allow invoice_creation.invoice_data to be updated after Session.create,
+        # so anything that should appear on the invoice PDF has to be known now —
+        # which rules out the old session-id-derived form. finalize_service reads
+        # this back out of metadata so the PDF, the confirmation page, the receipt
+        # email, and the Rides.Rides row all carry the same number.
+        import datetime as _dt
+        from services.invoice import build_invoice_id
+        safe_name = (customer_name or "").strip() or "Client"
+        invoice_date = (appointment_start or "").strip() or _dt.date.today().isoformat()
+        invoice_id = build_invoice_id(safe_name, invoice_date)
+
         session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             customer_email=customer_email if customer_email else None,
@@ -66,9 +88,22 @@ def create_checkout_session(req: func.HttpRequest) -> func.HttpResponse:
                 'quantity': 1,
             }],
             mode='payment',
+            # Generates a real Stripe invoice (hosted page + PDF) for the
+            # passenger. Previously a paid booking produced no invoice at all,
+            # so there was nothing to show on the confirmation page and nothing
+            # durable if the Graph receipt email failed to send.
+            invoice_creation={
+                'enabled': True,
+                'invoice_data': {
+                    'custom_fields': [
+                        {'name': 'Invoice #', 'value': invoice_id},
+                    ],
+                },
+            },
             success_url=success_url,
             cancel_url=cancel_url,
             metadata={
+                'invoiceId': invoice_id,
                 'customerName': customer_name,
                 'customerEmail': customer_email,
                 'customerPhone': customer_phone,
@@ -80,7 +115,10 @@ def create_checkout_session(req: func.HttpRequest) -> func.HttpResponse:
                 'tripDuration': trip_duration,
                 'duration': str(duration),
                 'returnStart': return_start,
-                'fareString': str(price)
+                'fareString': str(price),
+                'flightNumber': flight_number,
+                'arrivalAirport': arrival_airport,
+                **route_metadata
             }
         )
         

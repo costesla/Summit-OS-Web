@@ -60,10 +60,45 @@ def create_stripe_payment_link(customer_name: str, customer_email: str, amount_u
         }
         if invoice_id:
             metadata["invoiceId"] = invoice_id
-        link = stripe.PaymentLink.create(
-            line_items=[{"price": price.id, "quantity": 1}],
-            metadata=metadata,
-        )
+
+        link_params = {
+            "line_items": [{"price": price.id, "quantity": 1}],
+            "metadata": metadata,
+            # Without this, Stripe drops the payer on stripe.com after paying —
+            # they never came back to our site and never saw a confirmation.
+            "after_completion": {
+                "type": "redirect",
+                "redirect": {
+                    "url": "https://www.costesla.com/invoice/success/"
+                           "?session_id={CHECKOUT_SESSION_ID}",
+                },
+            },
+            # Produces a real invoice (hosted page + PDF) instead of a bare
+            # charge. Payment Links accept neither customer_email nor
+            # receipt_email — verified against the API reference — so this,
+            # plus customer_creation below, is how the payer actually gets
+            # emailed: Stripe creates a Customer from the address confirmed on
+            # the hosted page (prefilled below) and mails the invoice to it.
+            "invoice_creation": {"enabled": True},
+            "customer_creation": "always",
+        }
+        if invoice_id:
+            link_params["invoice_creation"]["invoice_data"] = {
+                "custom_fields": [{"name": "Invoice #", "value": invoice_id}],
+            }
+
+        try:
+            link = stripe.PaymentLink.create(**link_params)
+        except Exception as param_err:
+            # customer_creation is redundant when invoice_creation already forces
+            # a Customer, and Stripe rejects the pair on some API versions. Drop
+            # it and retry rather than losing the link — and therefore the whole
+            # card-payment option — over a redundant parameter.
+            if "customer_creation" not in str(param_err):
+                raise
+            logging.warning(f"Retrying payment link without customer_creation: {param_err}")
+            link_params.pop("customer_creation", None)
+            link = stripe.PaymentLink.create(**link_params)
         url = link.url
         # Prefill the email field on the hosted page (Payment Links can't
         # take customer_email at creation time the way Sessions can).
@@ -511,8 +546,45 @@ def build_invoice_html(
 
 
 def build_invoice_id(customer_name: str, trip_date: str) -> str:
-    """Generates a clean invoice ID."""
+    """Generates a clean invoice ID.
+
+    The time component is HHMMSS, not HHMM. With minute resolution two bookings
+    collide whenever they share a client, a weekday token and a processing
+    minute — and save_trip's MERGE then matches the existing RideID and UPDATES
+    it, so the second booking silently absorbs the first. No error, no duplicate
+    row, nothing left in SQL to find afterwards.
+
+    That is not theoretical: 10 same-minute collisions are recorded in Stripe as
+    a single invoiceId carrying multiple payment links (2026-08-05 audit). All
+    ten turned out to be duplicate submissions or corrections, so no distinct
+    booking has been lost yet — but the exposure is a function of draw count,
+    and batch-booking consecutive service dates is the dominant usage pattern.
+    Twelve pairs currently sit one minute apart, and the site books 90 days out,
+    so a client booking the same weekday across consecutive weeks is routine.
+
+    SECONDS RATHER THAN A RANDOM SUFFIX, deliberately:
+
+    A random suffix would make every submission unique, including a double-click
+    on a single booking — which would then create two rows instead of merging
+    into one, converting silent absorption into visible duplication. Seconds
+    close the window that catches genuinely DIFFERENT bookings (observed gaps
+    are 13-72s) while preserving the merge for same-second resubmits, where
+    merging is the correct behaviour: a human cannot fill in and submit two
+    different bookings inside one second, so a same-second repeat is always the
+    same booking twice.
+
+    Position 1 still carries the client token. get_open_client_invoices() parses
+    RideID.split("-")[1] and payment_tracker matches it against bank counterparty
+    strings, so that segment's meaning is load-bearing and unchanged. The extra
+    two digits land in the final segment, which nothing parses.
+
+    Protects NEW rows only. Existing RideIDs are left exactly as they are.
+
+    KNOWN, NOT ADDRESSED HERE: the id mixes timezones — date_clean derives from a
+    Mountain-formatted string while the time component is UTC. It is opaque and
+    nothing parses it, so this is cosmetic, but it makes ids misleading to read.
+    """
     safe_name = customer_name.split()[0].upper() if customer_name else "CLIENT"
     date_clean = trip_date.replace("-", "").replace("/", "").replace(" ", "")[:8]
-    ts = datetime.now().strftime("%H%M")
+    ts = datetime.now().strftime("%H%M%S")
     return f"INV-{safe_name}-{date_clean}-{ts}"

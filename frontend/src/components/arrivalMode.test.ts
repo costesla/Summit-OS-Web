@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
-    ARRIVAL_SWITCH_DELAY_MIN, deriveMode, minutesSinceLanding,
+    ARRIVAL_SWITCH_DELAY_MIN, deriveMode, minutesSinceLanding, resolveView,
 } from "./arrivalMode";
 import type { FlightLike } from "./arrivalMode";
 
@@ -132,5 +132,67 @@ describe("vehicle-only surface", () => {
     test("no flight on a trip-bound surface shows the vehicle", () => {
         expect(deriveMode({ flight: null, tripBound: true, cardDone: false }))
             .toBe("VEHICLE");
+    });
+});
+
+/*
+ * The passenger override. The rule worth protecting: the state machine may
+ * OFFER the driver view, never seize it. Someone who deliberately pinned the
+ * flight and then had the screen change under them learns not to trust the
+ * control — and that costs more than a stale flight view ever does.
+ */
+describe("passenger override", () => {
+    test("AUTO defers to the state machine, whatever it decided", () => {
+        for (const auto of ["FLIGHT", "LANDED", "VEHICLE"] as const) {
+            expect(resolveView({ auto, choice: "AUTO" }))
+                .toEqual({ mode: auto, driverSuggested: false, overridden: false });
+        }
+    });
+
+    test("picking Flight holds the flight view even once auto wants the car", () => {
+        const r = resolveView({ auto: "VEHICLE", choice: "FLIGHT" });
+        expect(r.mode).toBe("FLIGHT");
+        expect(r.overridden).toBe(true);
+    });
+
+    test("...and offers the driver rather than switching to it", () => {
+        expect(resolveView({ auto: "VEHICLE", choice: "FLIGHT" }).driverSuggested).toBe(true);
+        // LANDED is the hand-off card — auto is already on its way to the car.
+        expect(resolveView({ auto: "LANDED", choice: "FLIGHT" }).driverSuggested).toBe(true);
+    });
+
+    test("no driver offer while the plane is still in the air", () => {
+        // Nothing to offer yet: suggesting the car mid-flight is noise.
+        expect(resolveView({ auto: "FLIGHT", choice: "FLIGHT" }).driverSuggested).toBe(false);
+    });
+
+    test("picking Driver goes straight to the car, even mid-flight", () => {
+        const r = resolveView({ auto: "FLIGHT", choice: "VEHICLE" });
+        expect(r.mode).toBe("VEHICLE");
+        expect(r.overridden).toBe(true);
+        // Already on the car — there is nothing left to suggest.
+        expect(r.driverSuggested).toBe(false);
+    });
+
+    test("returning to AUTO gives control back to the state machine", () => {
+        // The way back must actually restore automatic behaviour, not freeze
+        // whatever was last shown.
+        expect(resolveView({ auto: "VEHICLE", choice: "AUTO" }).mode).toBe("VEHICLE");
+        expect(resolveView({ auto: "FLIGHT", choice: "AUTO" }).mode).toBe("FLIGHT");
+        expect(resolveView({ auto: "VEHICLE", choice: "AUTO" }).overridden).toBe(false);
+    });
+
+    test("an override cannot resurrect a suppressed hand-off", () => {
+        // A diversion makes deriveMode return FLIGHT. Choosing Driver shows the
+        // car's own map, which is honest — but nothing here may turn a
+        // suppressed arrival into a LANDED hand-off card.
+        const diverted = landed({ landed_at: "DEN", diverted: true });
+        const auto = deriveMode({
+            flight: diverted, tripBound: true, expectedDestination: "COS",
+            cardDone: false, now: at(60),
+        });
+        expect(auto).toBe("FLIGHT");
+        expect(resolveView({ auto, choice: "VEHICLE" }).mode).toBe("VEHICLE");
+        expect(resolveView({ auto, choice: "AUTO" }).mode).toBe("FLIGHT");
     });
 });

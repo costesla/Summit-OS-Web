@@ -327,7 +327,19 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
         dropoff = data.get('dropoff', "N/A")
         price = data.get('price', "$0.00")
         phone = data.get('phone') or data.get('customerPhone') or "N/A"
-        
+
+        # Airport-pickup context. Both optional — absent, every downstream write
+        # is unchanged and the cabin console keeps its vehicle-only map.
+        # Normalised here so the two booking paths (this one and the Stripe
+        # finalize path) can't drift in how they store the same values.
+        flight_number = (data.get('flightNumber') or '').strip().upper() or None
+        arrival_airport = (data.get('arrivalAirport') or '').strip().upper() or None
+
+        # Intermediate stops IN TRAVEL ORDER. Blanks are dropped; the surviving
+        # sequence is never sorted or de-duplicated, because the order is the
+        # trip and revisiting an address is a legitimate itinerary.
+        stops = [str(s).strip() for s in (data.get('stops') or []) if s and str(s).strip()]
+
         # Handle Pickup Time formatting
         from services.datetime_utils import format_local_time, normalize_to_utc
         from datetime import datetime, timedelta
@@ -383,26 +395,52 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
         except (TypeError, ValueError):
             duration_minutes = 60
 
+        # Flight rides along in the calendar note so dispatch sees it on the
+        # appointment without opening anything else.
+        flight_note = ""
+        if flight_number:
+            flight_note = f" | Flight: {flight_number}"
+            if arrival_airport:
+                flight_note += f" arriving {arrival_airport}"
+
+        # Appointment ids, captured for the reconciliation sweep. Both start as
+        # None and are only ever assigned inside the existing try blocks, so a
+        # Graph failure still lands in the same except it always did — the
+        # booking cannot fail because of this. 'attempted' records that we tried
+        # to create an appointment at all, which is what separates "Graph was
+        # down" from "no appointment was ever meant to exist" further down.
+        outbound_appt_id = None
+        return_appt_id = None
+        outbound_attempted = False
+        return_attempted = False
+
         if payment_method in ["Invoice", "Venmo", "Cash"] and raw_time:
+            outbound_attempted = True
             try:
                 from services.bookings import BookingsClient
                 bookings = BookingsClient()
                 dt_utc = normalize_to_utc(raw_time)
 
                 # Create appointment in calendar
-                bookings.create_appointment(
+                appointment = bookings.create_appointment(
                     customer_data={
                         'name': name,
                         'email': email,
                         'phone': phone,
                         'pickup': pickup,
                         'dropoff': dropoff,
-                        'notes': f"Payment Method: {payment_method}"
+                        'stops': stops,
+                        'notes': f"Payment Method: {payment_method}{flight_note}"
                     },
                     start_dt=dt_utc,
                     end_dt=dt_utc + timedelta(minutes=duration_minutes),
                     service_id=os.environ.get('MS_BOOKINGS_SERVICE_ID', 'dc16877c-160d-436e-b53b-52ae6f419604')
                 )
+                # .get on a possibly-non-dict return must not raise here — a
+                # created appointment we failed to read the id from is still a
+                # created appointment, and the customer is already booked.
+                if isinstance(appointment, dict):
+                    outbound_appt_id = appointment.get("id")
                 logging.info(f"Calendar event created for {payment_method} booking: {booking_id}")
             except Exception as cal_err:
                 logging.error(f"Failed to create calendar event for {payment_method} booking: {cal_err}")
@@ -416,22 +454,30 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
             except Exception:
                 return_time_fmt = str(return_start)
         if payment_method in ["Invoice", "Venmo", "Cash"] and return_start:
+            return_attempted = True
             try:
                 from services.bookings import BookingsClient
                 ret_utc = normalize_to_utc(return_start)
-                BookingsClient().create_appointment(
+                return_appointment = BookingsClient().create_appointment(
                     customer_data={
                         'name': name,
                         'email': email,
                         'phone': phone,
                         'pickup': dropoff,
                         'dropoff': pickup,
+                        # The return retraces the outbound, so the stops run in
+                        # the opposite order. Reversing here rather than
+                        # reusing the outbound list is the difference between
+                        # a sensible route back and a zig-zag.
+                        'stops': list(reversed(stops)),
                         'notes': f"Return leg — Payment Method: {payment_method}"
                     },
                     start_dt=ret_utc,
                     end_dt=ret_utc + timedelta(minutes=duration_minutes),
                     service_id=os.environ.get('MS_BOOKINGS_SERVICE_ID', 'dc16877c-160d-436e-b53b-52ae6f419604')
                 )
+                if isinstance(return_appointment, dict):
+                    return_appt_id = return_appointment.get("id")
                 logging.info(f"Return-leg calendar event created for booking: {booking_id}")
             except Exception as cal_err:
                 logging.error(f"Failed to create return-leg calendar event for {booking_id}: {cal_err}")
@@ -470,12 +516,20 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
                 except:
                     pass
             
-            cabin_token = db_early.create_cabin_token(booking_id, expires_at=token_expiry)
+            cabin_token = db_early.create_cabin_token(
+                booking_id,
+                expires_at=token_expiry,
+                flight_number=flight_number,
+                expected_dest=arrival_airport,
+            )
         except Exception as e:
             logging.warning(f"Failed to create persistent cabin token: {e}")
             import secrets
             cabin_token = str(secrets.randbelow(900000) + 100000)  # fallback: 6-digit code
 
+        # Same renderer the paid path uses — the two receipts must agree.
+        from services.bookings import render_route_rows
+        route_rows = render_route_rows(pickup, stops, dropoff)
         site_url = os.environ.get("SITE_URL", "https://www.costesla.com")
         cabin_url = f"{site_url}/cabin?token={cabin_token}"
         html = f"""
@@ -529,18 +583,7 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
                                             <td style="padding: 6px 0; font-size: 14px; color: #333333; text-align: right; font-weight: 600;">{pickup_time}</td>
                                         </tr>
                                         {f'<tr><td style="padding: 6px 0; font-size: 14px; color: #666666;">Return Pickup</td><td style="padding: 6px 0; font-size: 14px; color: #333333; text-align: right; font-weight: 600;">{return_time_fmt}</td></tr>' if return_time_fmt else ''}
-                                        <tr>
-                                            <td colspan="2" style="padding: 15px 0 6px; font-size: 14px; color: #666666;">Pickup Location</td>
-                                        </tr>
-                                        <tr>
-                                            <td colspan="2" style="padding: 0 0 6px; font-size: 14px; color: #333333; font-weight: 600;">{pickup}</td>
-                                        </tr>
-                                        <tr>
-                                            <td colspan="2" style="padding: 15px 0 6px; font-size: 14px; color: #666666;">Dropoff Location</td>
-                                        </tr>
-                                        <tr>
-                                            <td colspan="2" style="padding: 0 0 6px; font-size: 14px; color: #333333; font-weight: 600;">{dropoff}</td>
-                                        </tr>
+                                        {route_rows}
                                         <tr>
                                             <td style="padding: 20px 0 0; font-size: 18px; font-weight: bold; color: #000000; border-top: 2px solid #000000;">Total</td>
                                             <td style="padding: 20px 0 0; font-size: 18px; font-weight: bold; color: #000000; text-align: right; border-top: 2px solid #000000;">{price}</td>
@@ -697,6 +740,21 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
             db.set_payment_status(booking_id, "Pending")
         except Exception as db_err:
             logging.error(f"Failed to log booking to DB: {db_err}")
+
+        # Link the row to the appointment(s) it created, so a deletion in
+        # Outlook can be reconciled back to this booking. Its own try block on
+        # purpose: this runs after the booking is already durable, and losing
+        # the link costs the sweep one adjudicable row — never the booking.
+        try:
+            db.set_appointment_link(
+                booking_id,
+                outbound_id=outbound_appt_id,
+                return_id=return_appt_id,
+                outbound_attempted=outbound_attempted,
+                return_attempted=return_attempted,
+            )
+        except Exception as link_err:
+            logging.warning(f"Appointment link not recorded for {booking_id} (non-fatal): {link_err}")
             
         return func.HttpResponse(
             json.dumps({"success": True, "message": "Booking confirmed & Receipt Sent"}),

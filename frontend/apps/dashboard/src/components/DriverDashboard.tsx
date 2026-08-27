@@ -2,12 +2,13 @@ import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import {
     LayoutDashboard, Route, Receipt, Zap, Wrench, TrendingUp,
     DollarSign, Car, ShieldAlert, CheckCircle, ExternalLink,
-    ChevronDown, ChevronUp, Plus, Loader2, MapPin, Gauge, Battery, Link2,
+    ChevronDown, ChevronUp, Plus, Loader2, MapPin, Gauge, Battery, Link2, Trash2,
     Mail, Send, Lock
 } from 'lucide-react';
 import { isBackgroundableError, devDebugError, getAsyncExecutionLogs, pollJobStatus } from '../../../../src/lib/intelligenceUtils';
 import { apiGet, apiPost, apiRequest } from '../lib/apiClient';
 import PaymentTrackerPanel from './payments/PaymentTrackerPanel';
+import ManualLedgerPanel from './payments/ManualLedgerPanel';
 
 const AZURE_BASE = import.meta.env.VITE_PUBLIC_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://summitos-api.azurewebsites.net/api';
 const VERSION = "2.0.0";
@@ -40,16 +41,45 @@ const WEEKLY_TARGET  = Math.round(MONTHLY_TARGET / 4);
 const DAILY_TARGET   = Math.round(WEEKLY_TARGET / 7);
 
 // Helper: get payment status badge JSX
-const getPaymentStatusBadge = (status: string) => {
-    switch (status.toLowerCase()) {
+/** Renders a row's REAL payment state.
+ *
+ *  Accepts null/undefined because an absent status must render as UNKNOWN and
+ *  must never fall through to Paid. A badge that cannot fail is worse than no
+ *  badge: it looks like a check while confirming nothing. This panel is the
+ *  surface a human eyeballs to sanity-check receivables, so for as long as it
+ *  rendered a hardcoded "Paid" every visual check made against it was
+ *  structurally blind — confirmed 2026-08-05, when a genuinely unpaid $30
+ *  booking (Pending in SQL, zero Stripe sessions against its invoice id) was
+ *  displaying green here.
+ *
+ *  TESSIE- telemetry rows legitimately carry no payment state and arrive as
+ *  null; they must read "unknown", which is the honest answer, rather than
+ *  defaulting to anything.
+ */
+const getPaymentStatusBadge = (status: string | null | undefined) => {
+    const pill = (cls: string, label: string) => (
+        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase border ${cls}`}>{label}</span>
+    );
+    if (!status || !String(status).trim()) {
+        return pill("bg-white/5 text-[var(--text-muted)] border-white/10", "unknown");
+    }
+    switch (String(status).toLowerCase()) {
         case 'paid':
-            return <span className="px-2 py-0.5 rounded-full bg-[var(--accent-green)]/10 text-[var(--accent-green)] text-[9px] font-bold uppercase border border-[var(--accent-green)]/20">Paid</span>;
+            return pill("bg-[var(--accent-green)]/10 text-[var(--accent-green)] border-[var(--accent-green)]/20", "Paid");
+        case 'pending':
+            return pill("bg-sky-500/10 text-sky-400 border-sky-500/20", "Pending");
         case 'deferred':
-            return <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 text-[9px] font-bold uppercase border border-amber-500/20">Deferred</span>;
+            return pill("bg-amber-500/10 text-amber-400 border-amber-500/20", "Deferred");
         case 'credit':
-            return <span className="px-2 py-0.5 rounded-full bg-[var(--accent-purple)]/10 text-[var(--accent-purple)] text-[9px] font-bold uppercase border border-[var(--accent-purple)]/20">Credit</span>;
+            return pill("bg-[var(--accent-purple)]/10 text-[var(--accent-purple)] border-[var(--accent-purple)]/20", "Credit");
+        case 'comped':
+            return pill("bg-[var(--accent-purple)]/10 text-[var(--accent-purple)] border-[var(--accent-purple)]/20", "Comped");
+        case 'forgiven':
+            return pill("bg-white/5 text-slate-300 border-white/10", "Forgiven");
+        case 'nonchargeable':
+            return pill("bg-white/5 text-slate-300 border-white/10", "No Charge");
         default:
-            return <span className="px-2 py-0.5 rounded-full bg-white/5 text-[var(--text-muted)] text-[9px] font-bold uppercase border border-white/5">{status}</span>;
+            return pill("bg-white/5 text-[var(--text-muted)] border-white/5", String(status));
     }
 };
 
@@ -164,6 +194,11 @@ interface DatabaseTrip {
     dropoff_location: string | null;
     tessie_drive_id?: string | null;
     tessie_label?: string | null;
+    /** Real payment state from Rides.Rides, projected by /driver/sync as of
+     *  PR #28. Before that the field was absent from the payload entirely, which
+     *  is why the badge below rendered a literal. Optional and nullable because
+     *  TESSIE- telemetry rows carry no payment state — absent must render as
+     *  unknown, never as paid. */
     payment_status?: string | null;
 }
 
@@ -533,6 +568,24 @@ const DriverDashboard: React.FC = () => {
         }
     };
 
+    const handleDeletePrivateBooking = async (tripId: string, clientName: string) => {
+        if (!window.confirm(`Delete private booking for ${clientName}? This action cannot be undone.`)) return;
+        try {
+            const res = await fetch(`${AZURE_BASE}/operations/delete-trip/${encodeURIComponent(tripId)}`, {
+                method: 'DELETE',
+            });
+            const data = await res.json();
+            if (data.success) {
+                setTrips(prev => prev.filter(t => t.id !== tripId));
+                fetchAllData();
+            } else {
+                alert(`Error deleting booking: ${data.error || 'Unknown error'}`);
+            }
+        } catch (e) {
+            alert(`Error connecting to server: ${e instanceof Error ? e.message : String(e)}`);
+        }
+    };
+
     // ─── Actions: Save Day to Cloud ────────────────────────────────────────────────
     const runSaveDay = async () => {
         setStatus('running');
@@ -846,6 +899,10 @@ const DriverDashboard: React.FC = () => {
     const uberEarnings = summary?.uber_earnings ?? 0;
     const privateIncome = summary?.private_income ?? 0;
     const netProfit = summary?.net_profit ?? (grossEarnings - (summary?.opex_expenses ?? 0));
+    // `deferred_total` is no longer surfaced: the only deferred invoices belong
+    // to manual-ledger-only people, whose current balance now comes from the
+    // Manual Ledger. (This binding was already unused and failing the build on
+    // master with TS6133; removing it is part of retiring the deferred display.)
 
     // Use all loading states to satisfy TS
     const isAnyLoading = loadingSummary || loadingPreShift || loadingTrips;
@@ -1058,10 +1115,19 @@ const DriverDashboard: React.FC = () => {
                                                         }
                                                         const clientName = getClientDisplayName(t);
                                                         return (
-                                                            <div key={t.id} className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-1.5 hover:bg-white/[0.03] transition-colors">
+                                                            <div key={t.id} className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-1.5 hover:bg-white/[0.03] transition-colors group">
                                                                 <div className="flex items-center justify-between">
                                                                     <span className="text-xs font-bold text-white">{clientName}</span>
-                                                                    {getPaymentStatusBadge("Paid")}
+                                                                    <div className="flex items-center gap-2">
+                                                                        {getPaymentStatusBadge(t.payment_status)}
+                                                                        <button
+                                                                            onClick={() => handleDeletePrivateBooking(t.id, clientName)}
+                                                                            title="Delete Booking"
+                                                                            className="p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all border-none bg-transparent"
+                                                                        >
+                                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                    </div>
                                                                 </div>
                                                                 <p className="text-[10px] text-[var(--text-muted)] font-mono truncate">{scrubAddress(t.pickup_location)} to {scrubAddress(t.dropoff_location)}</p>
                                                                 <div className="flex items-center justify-between pt-1 font-mono">
@@ -1263,6 +1329,9 @@ const DriverDashboard: React.FC = () => {
                                                     Log Manual Expense
                                                 </button>
                                             </form>
+
+                                            {/* Manual Ledger — Jackie & Luis (manual-entry-only balances) */}
+                                            <ManualLedgerPanel />
 
                                             {/* Dual Ledger Tab Switcher */}
                                             <div className="space-y-3">

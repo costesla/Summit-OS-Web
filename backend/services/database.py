@@ -74,6 +74,74 @@ class DatabaseClient:
             "ALTER TABLE Rides.Rides ADD PaymentStatus NVARCHAR(20) NULL"
         )
 
+    def set_appointment_link(self, ride_id: str, outbound_id: str = None,
+                             return_id: str = None,
+                             outbound_attempted: bool = False,
+                             return_attempted: bool = False) -> bool:
+        """Record which Graph appointment(s) a booking created.
+
+        A deliberately separate UPDATE rather than columns bolted onto
+        save_trip's MERGE. Capturing these must never be able to fail a
+        booking, and the MERGE sits on the critical path; a failure here costs
+        the reconciliation sweep its ability to adjudicate this one row and
+        nothing else. Callers wrap it anyway — belt and braces on purpose.
+
+        AppointmentSyncStatus is always written, so that NULL means exactly one
+        thing. Four explicit values, three of which a bare NULL would conflate:
+
+          'captured'      every leg we tried to create came back with an id
+          'partial'       at least one leg has an id, another we tried does not
+          'failed'        we tried to create appointment(s) and got no id at
+                          all — Graph was down, or returned something
+                          unreadable. RETRYABLE: the appointment may well
+                          exist, we just never learned its id.
+          'none-expected' no appointment was ever meant to exist for this row
+                          (e.g. a payment method that books no calendar entry).
+                          Nothing to reconcile, and nothing wrong.
+
+        NULL is reserved for rows written before this column existed — stamped
+        'legacy' by the backfill migration. After that migration, a booking row
+        with a NULL status is a BUG: it means the write below never ran, most
+        likely a crash between save_trip's commit and this one. That is
+        precisely the case the old design hid inside 'legacy', and the reason
+        this returns a value rather than leaving the column unset.
+        """
+        got = [i for i in (outbound_id, return_id) if i]
+        tried = sum((bool(outbound_attempted), bool(return_attempted)))
+        if not tried:
+            status = "none-expected"
+        elif not got:
+            status = "failed"
+        elif len(got) == tried:
+            status = "captured"
+        else:
+            status = "partial"
+
+        conn = self.get_connection()
+        if not conn:
+            return False
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                """UPDATE Rides.Rides
+                   SET AppointmentID         = ?,
+                       ReturnAppointmentID   = ?,
+                       AppointmentSyncStatus = ?,
+                       LastUpdated           = GETUTCDATE()
+                   WHERE RideID = ?""",
+                (outbound_id, return_id, status, ride_id),
+            )
+            updated = cursor.rowcount
+            conn.commit()
+            logging.info(f"Appointment link for {ride_id}: status={status} "
+                         f"outbound={'y' if outbound_id else 'n'} return={'y' if return_id else 'n'}")
+            return updated > 0
+        except Exception as e:
+            logging.error(f"set_appointment_link failed for {ride_id}: {e}")
+            return False
+        finally:
+            conn.close()
+
     def set_payment_status(self, ride_id: str, status: str) -> bool:
         """Set PaymentStatus ('Pending', 'Paid', ...) on a ride. Auto-creates the column."""
         conn = self.get_connection()
@@ -618,8 +686,17 @@ class DatabaseClient:
             Format(Timestamp_Start, 'yyyy-MM-ddTHH:mm:ss') as timestamp,
             Classification AS classification,
             Pickup_Location AS pickup_location,
-            Dropoff_Location AS dropoff_location
-        FROM Rides.Rides 
+            Dropoff_Location AS dropoff_location,
+            -- The dashboard at www.dashboardcostesla.com reads its trips from
+            -- /driver/sync, which calls this. The column was never projected, so
+            -- that dashboard's Private Bookings panel had no payment state to
+            -- render and hardcoded the literal "Paid" on every row — a badge that
+            -- could not fail, on the one surface a human eyeballs to sanity-check
+            -- receivables. Projecting it is what lets that badge tell the truth.
+            -- NULL is left as NULL deliberately: the renderer must show "unknown"
+            -- rather than defaulting to paid.
+            PaymentStatus AS payment_status
+        FROM Rides.Rides
         WHERE Timestamp_Start >= DATEADD(hour, 4, CAST(? AS DATETIME2))
           AND Timestamp_Start < DATEADD(hour, 28, CAST(? AS DATETIME2))
           AND DeletedAt IS NULL
@@ -1064,6 +1141,10 @@ class DatabaseClient:
         """
         if not token:
             return None
+        import os
+        admin_token = os.environ.get("CABIN_ADMIN_TOKEN", "777999")
+        if str(token).strip() == str(admin_token).strip():
+            return {"flight_number": None, "expected_dest": "COS"}
         conn = self.get_connection()
         if not conn:
             return None
@@ -1188,6 +1269,15 @@ class DatabaseClient:
             conn.close()
 
     def execute_query_params(self, query, params):
+        """Run a parameterised SELECT and return rows as dicts.
+
+        READ ONLY. This never commits, so an INSERT/UPDATE/DELETE passed here
+        is silently rolled back on close and returns [] — indistinguishable
+        from a successful write that matched no rows. Every current call site
+        is a SELECT (audited 2026-08-05); keep it that way. For writes use a
+        method that owns its own commit, e.g. set_payment_status or
+        set_appointment_link.
+        """
         conn = self.get_connection()
         if not conn: return []
         cursor = conn.cursor()
@@ -1467,18 +1557,28 @@ class DatabaseClient:
             conn.close()
 
     def get_global_deferred_total(self) -> float:
-        """Sum of all outstanding Deferred invoices across all clients."""
+        """Sum of outstanding Deferred invoices for ACTIVE receivables only.
+
+        People under manual-ledger-only control (Jackie, Luis) are excluded here
+        — their current amount due lives in Finance.ManualLedgerEntry, not in
+        invoice rows. Excluding them at the query, rather than in a UI card,
+        keeps this total consistent with the dashboards, exports and summaries
+        that read it. Their invoice rows remain untouched and queryable as
+        history via the unfiltered paths.
+        """
+        from .manual_ledger import manual_only_invoice_predicate
         conn = self.get_connection()
         if not conn:
             return 0.0
         try:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(f"""
                 SELECT SUM(Fare)
                 FROM Rides.Rides
                 WHERE PaymentStatus = 'Deferred'
                   AND DeletedAt IS NULL
                   AND (IsTest IS NULL OR IsTest = 0)
+                  AND {manual_only_invoice_predicate()}
             """)
             row = cursor.fetchone()
             return float(row[0] or 0.0) if row else 0.0
@@ -1591,6 +1691,107 @@ class DatabaseClient:
                 WHERE name = 'UX_LuisPayments_ServiceDate' AND object_id = OBJECT_ID('Finance.LuisPayments')
             )
             CREATE UNIQUE INDEX UX_LuisPayments_ServiceDate ON Finance.LuisPayments (ServiceDate)
+        """)
+        # ── Manual Ledger (Jackie & Luis) ──────────────────────────────────
+        # Manual-entry-only ledger, structurally isolated from every automatic
+        # source (LuisBalanceLog accrual, Rides.Rides invoices, calendar).
+        #
+        # Isolation is by FOREIGN KEY, not by date: a displayed balance is the
+        # active baseline's OpeningBalance plus the net of entries carrying that
+        # BaselineID. A legacy row has no BaselineID and therefore cannot enter
+        # the balance under any clock skew, replay, or back-dated insert.
+        #
+        # DDL here is idempotent and safe to run; it does NOT seed/activate a
+        # baseline. Activation is a deliberate migration step (see
+        # scripts/sql/2026_07_28_manual_ledger.sql) so restarting the app can
+        # never silently switch a person to ManualOnly in production.
+        cursor.execute("""
+            IF OBJECT_ID('Finance.ManualLedgerBaseline', 'U') IS NULL
+            CREATE TABLE Finance.ManualLedgerBaseline (
+                BaselineID      UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+                PersonKey       VARCHAR(20)   NOT NULL,
+                OpeningBalance  DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                Mode            VARCHAR(20)   NOT NULL DEFAULT 'ManualOnly',
+                IsActive        BIT           NOT NULL DEFAULT 1,
+                ActivatedAtUtc  DATETIME2     NOT NULL DEFAULT SYSUTCDATETIME(),
+                ActivatedBy     VARCHAR(100)  NOT NULL DEFAULT 'migration',
+                LegacyCutoffRef VARCHAR(200)  NULL,
+                RowVersion      ROWVERSION,
+                CONSTRAINT CK_MLBaseline_PersonKey CHECK (PersonKey IN ('JACKIE','LUIS')),
+                CONSTRAINT CK_MLBaseline_Mode      CHECK (Mode IN ('ManualOnly','Legacy'))
+            )
+        """)
+        # At most one ACTIVE baseline per person (filtered unique index).
+        cursor.execute("""
+            IF NOT EXISTS (
+                SELECT * FROM sys.indexes
+                WHERE name = 'UX_MLBaseline_ActivePerson' AND object_id = OBJECT_ID('Finance.ManualLedgerBaseline')
+            )
+            CREATE UNIQUE INDEX UX_MLBaseline_ActivePerson
+            ON Finance.ManualLedgerBaseline (PersonKey) WHERE IsActive = 1
+        """)
+        # Append-only revisions: an edit inserts a new row superseding the old.
+        # Only IsCurrent = 1 AND VoidedAtUtc IS NULL rows drive the balance.
+        cursor.execute("""
+            IF OBJECT_ID('Finance.ManualLedgerEntry', 'U') IS NULL
+            CREATE TABLE Finance.ManualLedgerEntry (
+                EntryID        UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+                BaselineID     UNIQUEIDENTIFIER NOT NULL,
+                PersonKey      VARCHAR(20)   NOT NULL,
+                EntryType      VARCHAR(20)   NOT NULL,
+                Amount         DECIMAL(10,2) NOT NULL,
+                EffectiveDate  DATE          NOT NULL,
+                Note           NVARCHAR(500) NULL,
+                Source         VARCHAR(50)   NOT NULL DEFAULT 'Manual Ledger',
+                RootEntryID    UNIQUEIDENTIFIER NULL,
+                RevisionNumber INT           NOT NULL DEFAULT 1,
+                IsCurrent      BIT           NOT NULL DEFAULT 1,
+                VoidedAtUtc    DATETIME2     NULL,
+                VoidedBy       VARCHAR(100)  NULL,
+                IdempotencyKey VARCHAR(120)  NULL,
+                CreatedAtUtc   DATETIME2     NOT NULL DEFAULT SYSUTCDATETIME(),
+                CreatedBy      VARCHAR(100)  NOT NULL DEFAULT 'unknown',
+                UpdatedAtUtc   DATETIME2     NOT NULL DEFAULT SYSUTCDATETIME(),
+                RowVersion     ROWVERSION,
+                CONSTRAINT FK_MLEntry_Baseline FOREIGN KEY (BaselineID)
+                    REFERENCES Finance.ManualLedgerBaseline (BaselineID),
+                CONSTRAINT CK_MLEntry_PersonKey CHECK (PersonKey IN ('JACKIE','LUIS')),
+                CONSTRAINT CK_MLEntry_EntryType CHECK (EntryType IN ('Charge','Payment','Credit')),
+                CONSTRAINT CK_MLEntry_Amount    CHECK (Amount > 0)
+            )
+        """)
+        cursor.execute("""
+            IF NOT EXISTS (
+                SELECT * FROM sys.indexes
+                WHERE name = 'IX_MLEntry_Baseline_Current' AND object_id = OBJECT_ID('Finance.ManualLedgerEntry')
+            )
+            CREATE INDEX IX_MLEntry_Baseline_Current
+            ON Finance.ManualLedgerEntry (BaselineID, IsCurrent, VoidedAtUtc)
+        """)
+        # DB-backed idempotency: a replayed create collapses to one entry.
+        cursor.execute("""
+            IF NOT EXISTS (
+                SELECT * FROM sys.indexes
+                WHERE name = 'UX_MLEntry_Idempotency' AND object_id = OBJECT_ID('Finance.ManualLedgerEntry')
+            )
+            CREATE UNIQUE INDEX UX_MLEntry_Idempotency
+            ON Finance.ManualLedgerEntry (IdempotencyKey) WHERE IdempotencyKey IS NOT NULL
+        """)
+        # Immutable audit trail for create/edit/void.
+        cursor.execute("""
+            IF OBJECT_ID('Finance.ManualLedgerAudit', 'U') IS NULL
+            CREATE TABLE Finance.ManualLedgerAudit (
+                AuditID        UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+                EntryID        UNIQUEIDENTIFIER NOT NULL,
+                EventType      VARCHAR(20)   NOT NULL,
+                PreviousValues NVARCHAR(MAX) NULL,
+                NewValues      NVARCHAR(MAX) NULL,
+                Actor          VARCHAR(100)  NOT NULL DEFAULT 'unknown',
+                CorrelationID  VARCHAR(120)  NULL,
+                Reason         NVARCHAR(500) NULL,
+                AtUtc          DATETIME2     NOT NULL DEFAULT SYSUTCDATETIME(),
+                CONSTRAINT CK_MLAudit_EventType CHECK (EventType IN ('Create','Edit','Void','Activate'))
+            )
         """)
 
     def ensure_finance_tables(self):
@@ -2020,7 +2221,19 @@ class DatabaseClient:
             conn.close()
 
     def save_luis_log(self, date, amount_sent, tier, deferred_amount, running_balance, notes=None):
-        """Upserts the LuisBalanceLog row for `date` (one row per day)."""
+        """Upserts the LuisBalanceLog row for `date` (one row per day).
+
+        Defense in depth: `_recompute_luis_chain` already short-circuits while
+        Luis is manual-ledger-only, but this is the only write path into the
+        accrual table, so it refuses too. A future caller added upstream cannot
+        reintroduce automatic accrual by accident.
+        """
+        from .manual_ledger import PersonKey, is_manual_only
+        if is_manual_only(PersonKey.LUIS):
+            logging.info(
+                "[ManualLedger] save_luis_log refused — Luis is manual-ledger-only"
+            )
+            return
         conn = self.get_connection()
         if not conn:
             return

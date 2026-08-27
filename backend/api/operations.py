@@ -369,13 +369,74 @@ def scrub_day(req: func.HttpRequest) -> func.HttpResponse:
         bookings_before = []
         bookings_after = []
 
-        # 1. Delete all TRIP- records for this date
+        # ── Dry run by default ────────────────────────────────────────────────
+        # This endpoint used to hard-DELETE on sight. On 2026-08-02 one
+        # accidental call wiped two days of Uber trips and their earnings; the
+        # data came back only because the source screenshots happened to still
+        # be in OneDrive. Nothing about that recovery was guaranteed.
+        #
+        # It now reports what it would touch and executes only when the caller
+        # echoes back the exact count it was shown, in `confirm`. The count is
+        # recomputed here rather than trusted from the dry run, so if a scan
+        # lands in between the numbers diverge and the run refuses — that
+        # refusal is the gate working, not a bug to design around. It means the
+        # day is no longer the one the caller was looking at.
         cursor.execute(
-            "DELETE FROM Rides.Rides WHERE RideID LIKE ?",
+            "SELECT RideID FROM Rides.Rides WHERE RideID LIKE ? AND DeletedAt IS NULL ORDER BY RideID",
             (f"TRIP-{date_compact}-%",)
         )
+        affected_ids = [r[0] for r in cursor.fetchall()]
+        affected = len(affected_ids)
+
+        confirm = data.get("confirm")
+        if confirm is None:
+            conn.close()
+            return func.HttpResponse(
+                json.dumps({
+                    "success": True,
+                    "dryRun": True,
+                    "date": date_str,
+                    "wouldRemove": affected,
+                    "rideIds": affected_ids,
+                    "message": (f"Dry run — {affected} TRIP record(s) would be removed for {date_str}. "
+                                f"Re-send with confirm={affected} to execute."),
+                }),
+                status_code=200, headers=_cors(req), mimetype="application/json"
+            )
+
+        try:
+            confirm_n = int(confirm)
+        except (TypeError, ValueError):
+            conn.close()
+            return func.HttpResponse(
+                json.dumps({"success": False, "error": "confirm must be a number"}),
+                status_code=400, headers=_cors(req), mimetype="application/json"
+            )
+
+        if confirm_n != affected:
+            conn.close()
+            return func.HttpResponse(
+                json.dumps({
+                    "success": False,
+                    "error": "confirm does not match the current record count — the day changed since you looked",
+                    "confirmSent": confirm_n,
+                    "actualNow": affected,
+                }),
+                status_code=409, headers=_cors(req), mimetype="application/json"
+            )
+
+        # 1. Soft-delete all TRIP- records for this date.
+        # scan_day_trips' MERGE sets DeletedAt = NULL when it re-inserts, so a
+        # rescan brings these back with fresh data exactly as the hard delete
+        # allowed — but a rescan that finds nothing (an empty OneDrive folder,
+        # or a Graph read that failed and looked empty) no longer costs the day.
+        cursor.execute("""
+            UPDATE Rides.Rides
+            SET DeletedAt = GETUTCDATE(), LastUpdated = GETUTCDATE()
+            WHERE RideID LIKE ? AND DeletedAt IS NULL
+        """, (f"TRIP-{date_compact}-%",))
         deleted_trips = cursor.rowcount
-        logs.append(f"SCRUB: Deleted {deleted_trips} TRIP-{date_compact}-* records")
+        logs.append(f"SCRUB: Soft-deleted {deleted_trips} TRIP-{date_compact}-* records (recoverable)")
 
         # 2. Reset Tessie drive classifications to Sidecar originals directly (idempotent)
         cursor.execute("""
@@ -667,8 +728,11 @@ def _execute_daily_sync(target_date_str: str = None) -> dict:
         logging.error(f"Tessie Sync Error: {te}")
         logs.append(f"[ERROR] Tessie Sync Error: {str(te)}")
 
-    # 3. Banking Sync — DISABLED (manual expense entry only)
-    logs.append(f"[SKIP] Banking Auto-Sync disabled — use manual expense entry on dashboard.")
+    # 3. Banking is not part of this pipeline — timer_payment_sync owns it and
+    #    runs separately at 06:30 and 12:30 UTC. This step used to log
+    #    "Banking Auto-Sync disabled", which read as a fault on the dashboard
+    #    even though Finance.Payments was current the whole time. A pipeline
+    #    that isn't responsible for something shouldn't report on it.
 
     # 4. Integrated Cloud Scan (Match screenshots to drives)
     try:
@@ -800,6 +864,122 @@ def screenshot_url(req: func.HttpRequest) -> func.HttpResponse:
             status_code=500, headers=_cors(req), mimetype="application/json"
         )
 
+def _client_token_from_ride_id(ride_id: str) -> str:
+    """'INV-TERRANCE-Monday,A-1102' -> 'Terrance'.
+
+    Same position-1 convention get_open_client_invoices() parses. Only used to
+    re-tag a drive on restore; the nightly pairing is authoritative and will
+    correct it on the next run if this guess is off.
+    """
+    parts = (ride_id or "").split("-")
+    return parts[1].capitalize() if len(parts) >= 2 and parts[1] else "Untagged"
+
+
+def _release_drive_if_orphaned(cursor, tessie_drive_id: str, ride_id: str) -> bool:
+    """Reset a Tessie drive to 'Untagged' when no other live booking claims it.
+
+    A drive keeps the passenger's name in Classification, so a removed booking
+    whose drive is left tagged still renders on the timeline as a pickup that
+    happened. Only live rows count as claims — a soft-deleted booking is not a
+    reason to keep the drive attributed.
+    """
+    if not tessie_drive_id:
+        return False
+    cursor.execute(
+        """SELECT COUNT(*) FROM Rides.Rides
+           WHERE Tessie_DriveID = ? AND RideID <> ? AND DeletedAt IS NULL""",
+        (tessie_drive_id, ride_id),
+    )
+    if cursor.fetchone()[0]:
+        return False
+    cursor.execute("""
+        UPDATE Rides.Rides
+        SET TripType = NULL, Classification = 'Untagged', LastUpdated = GETUTCDATE()
+        WHERE RideID = ?
+    """, (tessie_drive_id,))
+    return cursor.rowcount > 0
+
+
+@bp.route(route="operations/restore-trip/{ride_id}", methods=["POST", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
+def restore_trip(req: func.HttpRequest) -> func.HttpResponse:
+    """Undo a soft delete: clear DeletedAt and re-attach the paired drive.
+
+    This is what makes the dashboard's delete safe to offer without a
+    confirmation modal — the row comes back with one click. Restoring a row
+    that was never soft-deleted is a no-op, not an error.
+    """
+    if req.method == "OPTIONS":
+        return func.HttpResponse(status_code=204, headers=_cors(req))
+
+    ride_id = req.route_params.get("ride_id")
+    if not ride_id:
+        return func.HttpResponse(
+            json.dumps({"success": False, "error": "ride_id is required"}),
+            status_code=400, headers=_cors(req), mimetype="application/json"
+        )
+
+    try:
+        from services.database import DatabaseClient
+        conn = DatabaseClient().get_connection()
+        if not conn:
+            return func.HttpResponse(
+                json.dumps({"success": False, "error": "Database connection failed"}),
+                status_code=500, headers=_cors(req), mimetype="application/json"
+            )
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT Tessie_DriveID, DeletedAt FROM Rides.Rides WHERE RideID = ?", (ride_id,))
+        row = cursor.fetchone()
+        if not row:
+            cursor.close()
+            conn.close()
+            return func.HttpResponse(
+                json.dumps({"success": False, "error": "Trip not found"}),
+                status_code=404, headers=_cors(req), mimetype="application/json"
+            )
+        tessie_drive_id, deleted_at = row[0], row[1]
+
+        cursor.execute("""
+            UPDATE Rides.Rides
+            SET DeletedAt = NULL, LastUpdated = GETUTCDATE()
+            WHERE RideID = ? AND DeletedAt IS NOT NULL
+        """, (ride_id,))
+        restored = cursor.rowcount > 0
+
+        # Re-tag the drive only if it is still sitting untagged — if something
+        # else has claimed it since, that claim is newer and wins.
+        drive_retagged = False
+        if restored and tessie_drive_id:
+            cursor.execute("""
+                UPDATE Rides.Rides
+                SET TripType = 'Private', Classification = ?, LastUpdated = GETUTCDATE()
+                WHERE RideID = ? AND Classification = 'Untagged'
+            """, (_client_token_from_ride_id(ride_id), tessie_drive_id))
+            drive_retagged = cursor.rowcount > 0
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return func.HttpResponse(
+            json.dumps({
+                "success": True,
+                "rideId": ride_id,
+                "restored": restored,
+                "driveRetagged": drive_retagged,
+                "message": (f"Restored trip {ride_id}" if restored
+                            else f"Trip {ride_id} was not deleted — nothing to restore"),
+            }),
+            status_code=200, headers=_cors(req), mimetype="application/json"
+        )
+    except Exception as e:
+        logging.error(f"Restore Trip Error: {e}")
+        return func.HttpResponse(
+            json.dumps({"success": False, "error": str(e)}),
+            status_code=500, headers=_cors(req), mimetype="application/json"
+        )
+
+
 @bp.route(route="operations/delete-trip/{ride_id}", methods=["DELETE", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def delete_trip(req: func.HttpRequest) -> func.HttpResponse:
     if req.method == "OPTIONS":
@@ -823,8 +1003,8 @@ def delete_trip(req: func.HttpRequest) -> func.HttpResponse:
             )
         cursor = conn.cursor()
         
-        # Check if the trip exists and get its Tessie_DriveID
-        cursor.execute("SELECT Tessie_DriveID FROM Rides.Rides WHERE RideID = ?", (ride_id,))
+        # Check if the trip exists and get its Tessie_DriveID, Sidecar_Artifact_JSON
+        cursor.execute("SELECT Tessie_DriveID, Sidecar_Artifact_JSON FROM Rides.Rides WHERE RideID = ?", (ride_id,))
         row = cursor.fetchone()
         if not row:
             cursor.close()
@@ -835,29 +1015,73 @@ def delete_trip(req: func.HttpRequest) -> func.HttpResponse:
             )
             
         tessie_drive_id = row[0]
+        sidecar_raw = row[1]
         
-        # Delete the trip record
+        # Check for calendar event ID to delete from Outlook calendar
+        calendar_event_id = req.params.get("calendar_event_id")
+        if not calendar_event_id and sidecar_raw:
+            try:
+                sidecar_data = json.loads(str(sidecar_raw))
+                calendar_event_id = sidecar_data.get("calendar_event_id") or sidecar_data.get("eventId")
+            except Exception:
+                pass
+                
+        if not calendar_event_id:
+            try:
+                cursor.execute(
+                    "SELECT EventId FROM Bookings.CalendarIdempotency WHERE IdempotencyKey = ?",
+                    (ride_id,)
+                )
+                cal_row = cursor.fetchone()
+                if cal_row and cal_row[0]:
+                    calendar_event_id = cal_row[0]
+            except Exception:
+                pass
+
+        if calendar_event_id:
+            try:
+                from services.graph import GraphClient
+                GraphClient().delete_calendar_event(calendar_event_id)
+            except Exception as graph_err:
+                logging.warning(f"Non-fatal: Failed to delete calendar event {calendar_event_id}: {graph_err}")
+
+        # Soft delete (?soft=true): flag the row instead of removing it.
+        soft = (req.params.get("soft") or "").strip().lower() in ("1", "true", "yes")
+        if soft:
+            cursor.execute("""
+                UPDATE Rides.Rides
+                SET DeletedAt   = GETUTCDATE(),
+                    LastUpdated = GETUTCDATE()
+                WHERE RideID = ? AND DeletedAt IS NULL
+            """, (ride_id,))
+            already = cursor.rowcount == 0
+
+            released = _release_drive_if_orphaned(cursor, tessie_drive_id, ride_id) if not already else False
+
+            conn.commit()
+            cursor.close()
+            conn.close()
+            return func.HttpResponse(
+                json.dumps({
+                    "success": True,
+                    "rideId": ride_id,
+                    "mode": "soft",
+                    "alreadyDeleted": already,
+                    "driveReleased": released,
+                    "tessieDriveId": tessie_drive_id,
+                    "message": (f"Trip {ride_id} was already soft-deleted" if already
+                                else f"Soft-deleted trip {ride_id}"),
+                }),
+                status_code=200, headers=_cors(req), mimetype="application/json"
+            )
+
+        # Hard Delete the trip record
         cursor.execute("DELETE FROM Rides.Rides WHERE RideID = ?", (ride_id,))
         rows_deleted = cursor.rowcount
-        
-        # If there was a Tessie_DriveID, check if there are other trips mapped to it
-        if tessie_drive_id:
-            cursor.execute(
-                "SELECT COUNT(*) FROM Rides.Rides WHERE Tessie_DriveID = ? AND RideID <> ?",
-                (tessie_drive_id, ride_id)
-            )
-            other_trips_count = cursor.fetchone()[0]
-            
-            # If no other trips are mapped, reset the Tessie drive's classification back to Untagged
-            if other_trips_count == 0:
-                cursor.execute("""
-                    UPDATE Rides.Rides
-                    SET TripType = NULL,
-                        Classification = 'Untagged',
-                        LastUpdated = GETUTCDATE()
-                    WHERE RideID = ?
-                """, (tessie_drive_id,))
-                
+
+        # Release the paired drive if nothing else claims it.
+        _release_drive_if_orphaned(cursor, tessie_drive_id, ride_id)
+
         conn.commit()
         cursor.close()
         conn.close()

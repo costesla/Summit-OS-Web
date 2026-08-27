@@ -12,12 +12,19 @@ interface CalendarBookingProps {
     passengers: number;
     pickup: string;
     dropoff: string;
+    /* Intermediate stops IN TRAVEL ORDER. The array's order is the trip —
+       everything downstream preserves it rather than sorting or de-duplicating. */
+    stops?: string[];
     price: string;
     quoteType?: string;
     tripDistance?: string;
     tripDuration?: string;
     durationMinutes?: number;
     returnScheduled?: boolean;
+    /* Airport-pickup context. Both optional: omitted, the booking is written
+       exactly as before and the cabin console keeps its vehicle-only map. */
+    flightNumber?: string;
+    arrivalAirport?: string;
     onBookingComplete: (eventId: string) => void;
 }
 
@@ -57,12 +64,15 @@ export default function CalendarBooking({
     passengers,
     pickup,
     dropoff,
+    stops,
     price,
     quoteType = 'single',
     tripDistance,
     tripDuration,
     durationMinutes = 60,
     returnScheduled = false,
+    flightNumber,
+    arrivalAirport,
     onBookingComplete,
 }: CalendarBookingProps) {
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -212,6 +222,29 @@ export default function CalendarBooking({
     // Clients who pay via Venmo/Zelle and should bypass Stripe entirely
     const VENMO_CLIENTS = new Set<string>([]);
 
+    /* Airport context, normalised once and shared by both booking paths — the
+       paid and unpaid flows write the booking through different backends, and
+       they must not drift. Omitted entirely when there's no flight, so a
+       non-airport booking's payload is byte-identical to before. */
+    const airportFields = flightNumber?.trim()
+        ? {
+            flightNumber: flightNumber.trim().toUpperCase(),
+            // Present ONLY for an arrival. Its absence is what tells the cabin
+            // console not to run the arrival workflow for a departure — no
+            // separate direction flag, no extra column.
+            ...(arrivalAirport?.trim()
+                ? { arrivalAirport: arrivalAirport.trim().toUpperCase() }
+                : {}),
+        }
+        : {};
+
+    /* Ordered intermediate stops, shared by both booking paths. Blank entries
+       are dropped rather than sent: a gap in an ordered route is an unknown
+       place, not a shorter trip. */
+    const routeFields = stops?.some(s => s?.trim())
+        ? { stops: stops.filter(s => s?.trim()).map(s => s.trim()) }
+        : {};
+
     const handleBooking = async (method: 'stripe' | 'invoice' | 'cash') => {
         if (!selectedTime) return;
         if (returnScheduled && !returnTime) return;
@@ -240,6 +273,8 @@ export default function CalendarBooking({
                         returnStart: returnScheduled ? returnTime : undefined,
                         quoteType,
                         paymentMethod: method === 'invoice' ? "Invoice" : (method === 'cash' ? "Cash" : "Venmo"),
+                        ...airportFields,
+                        ...routeFields,
                     }),
                 });
                 const data = await res.json();
@@ -277,6 +312,8 @@ export default function CalendarBooking({
                     duration: durationMinutes,
                     returnStart: returnScheduled ? returnTime : undefined,
                     quoteType,
+                    ...airportFields,
+                    ...routeFields,
                     successUrl: `${window.location.origin}/book/success?session_id={CHECKOUT_SESSION_ID}`,
                     cancelUrl: `${window.location.origin}/book?payment_cancelled=true`
                 }),

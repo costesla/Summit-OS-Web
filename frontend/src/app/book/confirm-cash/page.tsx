@@ -16,16 +16,21 @@ function ConfirmContent() {
 
         const confirmPayment = async () => {
             try {
-                // Call proxied endpoint
-                await fetch('/api/update-payment', {
+                // Call mark-paid endpoint
+                const res = await fetch('/api/mark-paid', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        bookingId: id,
-                        paymentMethod: "Cash (Confirmed)"
+                        rideId: id,
+                        status: "Paid"
                     })
                 });
-                setStatus('success');
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    setStatus('success');
+                } else {
+                    setStatus('error');
+                }
             } catch (e) {
                 console.error(e);
                 // Even on error, we might show success if it's just a network glitch after firing?
