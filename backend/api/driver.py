@@ -727,26 +727,50 @@ Prepared By Summit Intelligence 2.0"""
 
         saved_dir, pdf_path = engine.archive_versioned_report(parsed_data, ids, eod_payload, html_out, metadata)
         
+        # Outbound Cloud Email Dispatch via Microsoft Graph
+        delivery_status = ReportStatus.LOCAL_SIMULATION_COMPLETED.value
+        dispatch_error = None
+        try:
+            from services.graph import GraphClient
+            graph = GraphClient()
+            subject = f"COS Tesla LLC | Daily EOD Executive Briefing - {parsed_data['formatted_date']}"
+            graph.send_partner_eod_email(
+                to_recipients=recipients,
+                cc_recipients=[cc_recipient],
+                subject=subject,
+                body_html=html_out,
+                pdf_path=pdf_path
+            )
+            delivery_status = ReportStatus.DELIVERED.value
+            logging.info(f"Partner EOD Report successfully delivered via Microsoft Graph to {recipients} with CC to {cc_recipient}")
+        except Exception as mail_err:
+            dispatch_error = str(mail_err)
+            logging.error(f"Mail dispatch failed: {mail_err}")
+            delivery_status = ReportStatus.FAILED.value
+
         audit_entry = ledger_mgr.record_entry(
             parsed_data, sha256_hash,
-            status=ReportStatus.LOCAL_SIMULATION_COMPLETED.value,
+            status=delivery_status,
             report_id=ids["full_versioned_id"],
             transport_message_id=None,
             version_id=ids["version_id"]
         )
         audit_entry["authorized_recipients"] = recipients
+        if dispatch_error:
+            audit_entry["dispatch_error"] = dispatch_error
         ledger_mgr._save_ledger()
 
         return func.HttpResponse(json.dumps({
-            "success": True,
+            "success": delivery_status == ReportStatus.DELIVERED.value,
             "report_id": ids["full_versioned_id"],
             "checksum": sha256_hash,
-            "status": "LOCAL_SIMULATION_COMPLETED",
+            "status": delivery_status,
             "recipients": recipients,
             "cc_recipient": cc_recipient,
             "saved_dir": saved_dir,
-            "pdf_path": pdf_path
-        }), status_code=200, headers=CORS_HEADERS, mimetype="application/json")
+            "pdf_path": pdf_path,
+            "error": dispatch_error
+        }), status_code=200 if delivery_status == ReportStatus.DELIVERED.value else 500, headers=CORS_HEADERS, mimetype="application/json")
 
     except Exception as e:
         logging.error(f"Partner EOD Report Error: {e}")

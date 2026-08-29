@@ -252,6 +252,71 @@ class GraphClient:
             
         return True
 
+    def send_partner_eod_email(self, to_recipients, cc_recipients, subject, body_html, pdf_path=None, from_email="peter.teehan@costesla.com"):
+        """Sends multi-recipient Partner EOD report with PDF attachment and mandatory CC via Microsoft Graph."""
+        import base64
+        token = self._get_token()
+        url = f"https://graph.microsoft.com/v1.0/users/{from_email}/sendMail"
+        
+        if isinstance(to_recipients, str):
+            to_recipients = [to_recipients]
+        if isinstance(cc_recipients, str):
+            cc_recipients = [cc_recipients]
+            
+        to_list = [{"emailAddress": {"address": addr.strip()}} for addr in to_recipients if addr.strip()]
+        cc_list = [{"emailAddress": {"address": addr.strip()}} for addr in cc_recipients if addr.strip()]
+        
+        message_obj = {
+            "subject": subject,
+            "body": {
+                "contentType": "HTML",
+                "content": body_html
+            },
+            "toRecipients": to_list,
+            "ccRecipients": cc_list,
+            "replyTo": [
+                {
+                    "emailAddress": {
+                        "address": "peter.teehan@costesla.com"
+                    }
+                }
+            ],
+            "internetMessageHeaders": [
+                { "name": "X-Mailer", "value": "Summit Intelligence 2.0 Partner Engine" }
+            ]
+        }
+        
+        if pdf_path and os.path.exists(pdf_path):
+            with open(pdf_path, "rb") as f:
+                pdf_bytes = f.read()
+            pdf_base64 = base64.b64encode(pdf_bytes).decode("utf-8")
+            filename = os.path.basename(pdf_path)
+            message_obj["attachments"] = [
+                {
+                    "@odata.type": "#microsoft.graph.fileAttachment",
+                    "name": filename,
+                    "contentType": "application/pdf",
+                    "contentBytes": pdf_base64
+                }
+            ]
+            
+        payload = {
+            "message": message_obj,
+            "saveToSentItems": "true"
+        }
+        
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
+        
+        resp = requests.post(url, headers=headers, json=payload)
+        if not resp.ok:
+            logging.error(f"Graph SendPartnerEOD Error: {resp.text}")
+            raise Exception(f"Graph SendPartnerEOD Error: {resp.status_code} {resp.text}")
+            
+        return True
+
     def get_booking_business_hours(self):
         """Fetches Business Hours for the main Booking Business."""
         token = self._get_token()
