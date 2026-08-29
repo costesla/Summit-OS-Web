@@ -5,7 +5,7 @@ import {
     ChevronDown, ChevronUp, Plus, Loader2, MapPin, Gauge, Battery, Link2, Trash2,
     Mail, Send, Lock
 } from 'lucide-react';
-import { isBackgroundableError, devDebugError, getAsyncExecutionLogs, pollJobStatus } from '../../../../src/lib/intelligenceUtils';
+import { isBackgroundableError, devDebugError, getAsyncExecutionLogs, pollJobStatus } from '../lib/intelligenceUtils';
 import { apiGet, apiPost, apiRequest } from '../lib/apiClient';
 import PaymentTrackerPanel from './payments/PaymentTrackerPanel';
 import ManualLedgerPanel from './payments/ManualLedgerPanel';
