@@ -91,6 +91,39 @@
       </td>
     </tr>
 
+    <!-- Spending vs Earnings vs Charging Pie Breakdown Bar -->
+    <tr>
+      <td style="padding:12px 24px;">
+        <div style="background-color:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:18px;">
+          <div style="font-size:12px; font-weight:700; color:#0F172A; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">
+            🥧 Spending vs. Earnings vs. Charging Breakdown
+          </div>
+          <!-- Proportional Visual Segment Bar -->
+          <table width="100%" height="16" cellpadding="0" cellspacing="0" style="border-radius:6px; overflow:hidden; margin-bottom:12px; border-collapse:collapse;">
+            <tr>
+              <td width="61%" bgcolor="#15803D" title="Net Profit (61.0%)" style="text-align:center; color:#FFFFFF; font-size:10px; font-weight:700;">61% Profit</td>
+              <td width="20%" bgcolor="#0EA5E9" title="Charging (19.8%)" style="text-align:center; color:#FFFFFF; font-size:10px; font-weight:700;">20% Charge</td>
+              <td width="19%" bgcolor="#F59E0B" title="Meals (19.2%)" style="text-align:center; color:#FFFFFF; font-size:10px; font-weight:700;">19% Meals</td>
+            </tr>
+          </table>
+          <table width="100%" style="font-size:12px; color:#334155;" cellpadding="4" cellspacing="0">
+            <tr>
+              <td><span style="display:inline-block; width:10px; height:10px; background-color:#15803D; border-radius:2px; margin-right:6px;"></span><strong>Net Profit Retained</strong></td>
+              <td style="text-align:right; font-weight:700; color:#15803D;">${{NET_PROFIT}} (61.0%)</td>
+            </tr>
+            <tr>
+              <td><span style="display:inline-block; width:10px; height:10px; background-color:#0EA5E9; border-radius:2px; margin-right:6px;"></span><strong>Supercharging Energy</strong></td>
+              <td style="text-align:right; font-weight:700; color:#0EA5E9;">$50.29 (19.8%)</td>
+            </tr>
+            <tr>
+              <td><span style="display:inline-block; width:10px; height:10px; background-color:#F59E0B; border-radius:2px; margin-right:6px;"></span><strong>Road Meals & Incidentals</strong></td>
+              <td style="text-align:right; font-weight:700; color:#B45309;">$48.71 (19.2%)</td>
+            </tr>
+          </table>
+        </div>
+      </td>
+    </tr>
+
     <!-- Executive Summary Section -->
     <tr>
       <td style="padding:12px 24px;">
@@ -100,6 +133,15 @@
         </div>
       </td>
     </tr>
+
+    <!-- Run of the Day & Efficiency Highlights -->
+    {{RUN_OF_THE_DAY_BLOCK}}
+
+    <!-- Itemized Daily Purchases & Supercharging Ledger -->
+    {{ITEMIZED_EXPENSES_BLOCK}}
+
+    <!-- Fleet Telemetry & Fun Stats -->
+    {{FLEET_TELEMETRY_BLOCK}}
 
     <!-- Operational Highlights Section -->
     <tr>

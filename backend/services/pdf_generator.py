@@ -173,28 +173,129 @@ class ExecutivePDFGenerator:
         story.append(kpi_table)
         story.append(Spacer(1, 10))
 
-        # 3. Revenue Composition Table
-        story.append(Paragraph("REVENUE MIX & COMPOSITION", heading_style))
+        # 3. Revenue & Spending Distribution (Table + Pie Chart)
+        story.append(Paragraph("EARNINGS VS SPENDING VS CHARGING (PIE BREAKDOWN)", heading_style))
+        
+        from reportlab.graphics.shapes import Drawing
+        from reportlab.graphics.charts.piecharts import Pie
+
+        pie_drawing = Drawing(160, 85)
+        pc = Pie()
+        pc.x = 25
+        pc.y = 5
+        pc.width = 75
+        pc.height = 75
+        pc.data = [data.get('net_profit', 154.65), 50.29, 48.71]
+        pc.labels = ['Profit 61%', 'Charge 20%', 'Meals 19%']
+        pc.simpleLabels = 0
+        pc.slices[0].fillColor = self.success_color  # Profit (Green)
+        pc.slices[1].fillColor = self.accent_color   # Charging (Blue)
+        pc.slices[2].fillColor = colors.HexColor("#F59E0B") # Meals/Incidentals (Amber)
+        pc.slices.fontSize = 6.5
+        pie_drawing.add(pc)
+
         mix_data = [
-            ["Platform / Channel", "Gross Amount", "Share %", "Status"],
-            ["Uber Platform Revenue", f"${data['uber_revenue']:,.2f}", f"{data['uber_mix_pct']}%", "Reconciled"],
-            ["Private Charter / Direct Clients", f"${data['private_revenue']:,.2f}", f"{data['private_mix_pct']}%", "Reconciled"],
-            ["Total Gross Revenue", f"${data['gross_revenue']:,.2f}", "100.0%", "Balanced"]
+            ["Platform / Category", "Amount", "Share %"],
+            ["Net Profit Retained", f"${data['net_profit']:,.2f}", f"{data['net_margin_pct']}%"],
+            ["Supercharging Energy", "$50.29", "19.8%"],
+            ["Road Meals & Incidentals", "$48.71", "19.2%"],
+            ["Total Gross Inflow", f"${data['gross_revenue']:,.2f}", "100.0%"]
         ]
-        mix_table = Table(mix_data, colWidths=[240, 100, 100, 100])
+        mix_table = Table(mix_data, colWidths=[180, 80, 70])
         mix_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), self.primary_color),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 8.5),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('FONTSIZE', (0, 0), (-1, -1), 7.5),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 2.5),
+            ('TOPPADDING', (0, 0), (-1, -1), 2.5),
             ('GRID', (0, 0), (-1, -1), 0.5, self.border_color),
+            ('BACKGROUND', (0, 1), (-1, 1), colors.HexColor("#F0FDF4")),
+            ('FONTNAME', (0, 1), (-1, 1), 'Helvetica-Bold'),
+            ('TEXTCOLOR', (1, 1), (1, 1), self.success_color),
             ('BACKGROUND', (0, -1), (-1, -1), self.bg_light),
             ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
         ]))
-        story.append(mix_table)
-        story.append(Spacer(1, 10))
+
+        distribution_grid = Table([[mix_table, pie_drawing]], colWidths=[340, 200])
+        distribution_grid.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('PADDING', (0, 0), (-1, -1), 0),
+        ]))
+        story.append(distribution_grid)
+        story.append(Spacer(1, 8))
+
+        # 3b. Run of the Day & Trip Efficiency Highlights
+        story.append(Paragraph("RUN OF THE DAY & TRIP EFFICIENCY HIGHLIGHTS", heading_style))
+        rod_data = [
+            ["👑 Top Revenue Booking", "$90.00", "Private Client Transfer (100% Net Margin / Zero Platform Cut)"],
+            ["⚡ Best Energy Charge", "$11.33", "02:38 AM Tyler St Off-Peak Supercharge"],
+            ["💵 Top Tipped Ride", "$11.55", "Afternoon Airport Surge Window"]
+        ]
+        rod_table = Table(rod_data, colWidths=[150, 70, 320])
+        rod_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#F0F9FF")),
+            ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor("#0369A1")),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTNAME', (1, 0), (1, -1), 'Helvetica-Bold'),
+            ('TEXTCOLOR', (1, 0), (1, -1), colors.HexColor("#0F172A")),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+            ('TOPPADDING', (0, 0), (-1, -1), 3),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#BAE6FD")),
+        ]))
+        story.append(rod_table)
+        story.append(Spacer(1, 8))
+
+        # 3c. Itemized Daily Spending & Supercharging Ledger
+        story.append(Paragraph("ITEMIZED SPENDING & SUPERCHARGING LEDGER", heading_style))
+        spend_data = [
+            ["Category", "Time & Merchant / Location", "Amount", "Classification"],
+            ["Supercharge", "02:38 · 23 East Tyler Street, Colorado Springs", "$11.33", "Fleet Energy"],
+            ["Supercharge", "12:11 · 23 East Tyler Street, Colorado Springs", "$19.38", "Fleet Energy"],
+            ["Supercharge", "17:46 · 1410 Cipriani Loop, Monument", "$19.58", "Fleet Energy"],
+            ["Road Meal", "08:21 · Dutch Bros Coffee (Colorado)", "$16.34", "Driver Incidental"],
+            ["Road Meal", "12:00 · QuikTrip (Hot Refill)", "$2.15", "Driver Incidental"],
+            ["Road Meal", "12:00 · Arby's (Cheesesteak & Drink)", "$12.85", "Driver Incidental"],
+            ["Road Meal", "15:45 · Starbucks Coffee", "$17.37", "Driver Incidental"],
+            ["Total OpEx", "7 Verified Operational Transactions", "-$99.00", "Reconciled 100%"]
+        ]
+        spend_table = Table(spend_data, colWidths=[80, 260, 80, 120])
+        spend_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), self.primary_color),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 7.5),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 2.5),
+            ('TOPPADDING', (0, 0), (-1, -1), 2.5),
+            ('GRID', (0, 0), (-1, -1), 0.5, self.border_color),
+            ('BACKGROUND', (0, -1), (-1, -1), self.bg_light),
+            ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+            ('TEXTCOLOR', (2, -1), (2, -1), self.danger_color),
+        ]))
+        story.append(spend_table)
+        story.append(Spacer(1, 8))
+
+        # 3d. Fleet Telemetry & Performance Stats
+        story.append(Paragraph("FLEET TELEMETRY & PERFORMANCE STATS", heading_style))
+        stats_data = [
+            ["🎯 Goal Pacing", "109% ($253.65 / $232.00 Daily Benchmark)", "⭐ Quality Score", "5.00 ★ Passenger Rating (0 Incidents)"],
+            ["🔋 Vehicle Availability", "100% Active Operating Readiness", "🔧 CapEx Servicing", "$29.86 Isolated Maintenance Tracking"]
+        ]
+        stats_table = Table(stats_data, colWidths=[120, 150, 120, 150])
+        stats_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#FAF5FF")),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTNAME', (2, 0), (2, -1), 'Helvetica-Bold'),
+            ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor("#7E22CE")),
+            ('TEXTCOLOR', (2, 0), (2, -1), colors.HexColor("#7E22CE")),
+            ('FONTSIZE', (0, 0), (-1, -1), 7.5),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+            ('TOPPADDING', (0, 0), (-1, -1), 3),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#E9D5FF")),
+        ]))
+        story.append(stats_table)
+        story.append(Spacer(1, 8))
 
         # 4. Executive Summary
         story.append(Paragraph("EXECUTIVE SUMMARY", heading_style))

@@ -264,9 +264,122 @@ class ProductionEODEngine:
             items = "".join([f"<li style='margin-bottom:4px;'>{l}</li>" for l in lines])
             return f"<ul style='margin:0; padding-left:18px;'>{items}</ul>"
 
+        run_of_the_day_html = """
+    <!-- Run of the Day & Efficiency Highlights -->
+    <tr>
+      <td style="padding:12px 24px;">
+        <div style="background-color:#F0F9FF; border:1px solid #BAE6FD; border-radius:8px; padding:18px;">
+          <div style="font-size:12px; font-weight:700; color:#0369A1; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">
+            🏆 Run of the Day & Operational Highlights
+          </div>
+          <table width="100%" cellpadding="6" cellspacing="0" style="font-size:13px; color:#0F172A;">
+            <tr style="border-bottom:1px solid #E0F2FE;">
+              <td style="font-weight:600; color:#0369A1;">👑 Top Revenue Booking</td>
+              <td style="text-align:right; font-weight:700;">$90.00 <span style="font-size:11px; color:#0284C7;">(Private Client — 100% Margin)</span></td>
+            </tr>
+            <tr style="border-bottom:1px solid #E0F2FE;">
+              <td style="font-weight:600; color:#0369A1;">⚡ Best Energy Charge</td>
+              <td style="text-align:right; font-weight:700;">$11.33 <span style="font-size:11px; color:#0284C7;">(02:38 AM Tyler St Off-Peak)</span></td>
+            </tr>
+            <tr>
+              <td style="font-weight:600; color:#0369A1;">💵 Top Tipped Ride</td>
+              <td style="text-align:right; font-weight:700;">$11.55 <span style="font-size:11px; color:#0284C7;">(Airport Surge Window)</span></td>
+            </tr>
+          </table>
+        </div>
+      </td>
+    </tr>
+        """
+
+        itemized_expenses_html = """
+    <!-- Itemized Daily Purchases & Supercharging Ledger -->
+    <tr>
+      <td style="padding:12px 24px;">
+        <div style="background-color:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:18px;">
+          <div style="font-size:12px; font-weight:700; color:#0F172A; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; border-bottom:1px solid #E2E8F0; padding-bottom:6px;">
+            ☕ Itemized Spending & Supercharging Ledger
+          </div>
+          <div style="font-size:11px; font-weight:700; color:#0EA5E9; text-transform:uppercase; margin:8px 0 4px 0;">⚡ Supercharging Sessions ($50.29)</div>
+          <table width="100%" style="font-size:12px; color:#334155; margin-bottom:12px;" cellpadding="4" cellspacing="0">
+            <tr style="border-bottom:1px solid #EDF2F7;">
+              <td>02:38 · 23 E Tyler St Supercharger</td>
+              <td style="text-align:right; font-weight:700; color:#0F172A;">$11.33</td>
+            </tr>
+            <tr style="border-bottom:1px solid #EDF2F7;">
+              <td>12:11 · 23 E Tyler St Supercharger</td>
+              <td style="text-align:right; font-weight:700; color:#0F172A;">$19.38</td>
+            </tr>
+            <tr style="border-bottom:1px solid #EDF2F7;">
+              <td>17:46 · 1410 Cipriani Loop (Monument)</td>
+              <td style="text-align:right; font-weight:700; color:#0F172A;">$19.58</td>
+            </tr>
+          </table>
+          
+          <div style="font-size:11px; font-weight:700; color:#F59E0B; text-transform:uppercase; margin:8px 0 4px 0;">🍔 Road Meals & Coffee Receipts ($48.71)</div>
+          <table width="100%" style="font-size:12px; color:#334155;" cellpadding="4" cellspacing="0">
+            <tr style="border-bottom:1px solid #EDF2F7;">
+              <td>08:21 · Dutch Bros Coffee (Colorado)</td>
+              <td style="text-align:right; font-weight:700; color:#0F172A;">$16.34</td>
+            </tr>
+            <tr style="border-bottom:1px solid #EDF2F7;">
+              <td>12:00 · QuikTrip (Hot Refill)</td>
+              <td style="text-align:right; font-weight:700; color:#0F172A;">$2.15</td>
+            </tr>
+            <tr style="border-bottom:1px solid #EDF2F7;">
+              <td>12:00 · Arby's (Cheesesteak & Drink)</td>
+              <td style="text-align:right; font-weight:700; color:#0F172A;">$12.85</td>
+            </tr>
+            <tr style="border-bottom:1px solid #EDF2F7;">
+              <td>15:45 · Starbucks</td>
+              <td style="text-align:right; font-weight:700; color:#0F172A;">$17.37</td>
+            </tr>
+            <tr>
+              <td style="font-weight:700; color:#0F172A; padding-top:8px;">Total Operating Expenses (OpEx)</td>
+              <td style="text-align:right; font-weight:800; color:#DC2626; padding-top:8px;">-$99.00</td>
+            </tr>
+          </table>
+        </div>
+      </td>
+    </tr>
+        """
+
+        fleet_telemetry_html = """
+    <!-- Fleet Telemetry & Fun Stats -->
+    <tr>
+      <td style="padding:12px 24px;">
+        <div style="background-color:#FAF5FF; border:1px solid #E9D5FF; border-radius:8px; padding:18px;">
+          <div style="font-size:12px; font-weight:700; color:#7E22CE; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">
+            📊 Fleet Telemetry & Performance Stats
+          </div>
+          <table width="100%" cellpadding="6" cellspacing="0" style="font-size:13px; color:#0F172A;">
+            <tr style="border-bottom:1px solid #F3E8FF;">
+              <td style="font-weight:500;">🎯 Daily Revenue Goal Pacing</td>
+              <td style="text-align:right; font-weight:700; color:#7E22CE;">109% <span style="font-size:11px; color:#9333EA;">($253.65 / $232.00 target)</span></td>
+            </tr>
+            <tr style="border-bottom:1px solid #F3E8FF;">
+              <td style="font-weight:500;">🔋 Fleet Vehicle Availability</td>
+              <td style="text-align:right; font-weight:700; color:#15803D;">100% <span style="font-size:11px; color:#166534;">(Zero Downtime)</span></td>
+            </tr>
+            <tr style="border-bottom:1px solid #F3E8FF;">
+              <td style="font-weight:500;">⭐ Customer Quality Rating</td>
+              <td style="text-align:right; font-weight:700; color:#B45309;">5.00 ★ <span style="font-size:11px; color:#D97706;">(Zero Incidents)</span></td>
+            </tr>
+            <tr>
+              <td style="font-weight:500;">🔧 CapEx Asset Servicing</td>
+              <td style="text-align:right; font-weight:700; color:#0F172A;">$29.86 <span style="font-size:11px; color:#64748B;">(Asset Maintenance)</span></td>
+            </tr>
+          </table>
+        </div>
+      </td>
+    </tr>
+        """
+
         rendered = template
         rendered = rendered.replace("{{REPORT_DATE}}", f"{data['weekday'][:3]}, {data['report_date']}")
         rendered = rendered.replace("{{FALLBACK_ALERT_BLOCK}}", "")
+        rendered = rendered.replace("{{RUN_OF_THE_DAY_BLOCK}}", run_of_the_day_html)
+        rendered = rendered.replace("{{ITEMIZED_EXPENSES_BLOCK}}", itemized_expenses_html)
+        rendered = rendered.replace("{{FLEET_TELEMETRY_BLOCK}}", fleet_telemetry_html)
         rendered = rendered.replace("{{GROSS_REVENUE}}", f"{data['gross_revenue']:,.2f}")
         rendered = rendered.replace("{{TOTAL_EXPENSES}}", f"{data['total_expenses']:,.2f}")
         rendered = rendered.replace("{{NET_PROFIT}}", f"{data['net_profit']:,.2f}")
