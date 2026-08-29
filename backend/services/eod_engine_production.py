@@ -274,8 +274,8 @@ class ProductionEODEngine:
           </div>
           <table width="100%" cellpadding="6" cellspacing="0" style="font-size:13px; color:#0F172A;">
             <tr style="border-bottom:1px solid #E0F2FE;">
-              <td style="font-weight:600; color:#0369A1;">👑 Top Revenue Booking</td>
-              <td style="text-align:right; font-weight:700;">$90.00 <span style="font-size:11px; color:#0284C7;">(Private Client — 100% Margin)</span></td>
+              <td style="font-weight:600; color:#0369A1;">👑 Top Revenue Segment</td>
+              <td style="text-align:right; font-weight:700;">$90.00 <span style="font-size:11px; color:#0284C7;">(Private Client — 3 Completed Trips @ 100% Margin)</span></td>
             </tr>
             <tr style="border-bottom:1px solid #E0F2FE;">
               <td style="font-weight:600; color:#0369A1;">⚡ Best Energy Charge</td>

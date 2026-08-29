@@ -228,7 +228,7 @@ class ExecutivePDFGenerator:
         # 3b. Run of the Day & Trip Efficiency Highlights
         story.append(Paragraph("RUN OF THE DAY & TRIP EFFICIENCY HIGHLIGHTS", heading_style))
         rod_data = [
-            ["👑 Top Revenue Booking", "$90.00", "Private Client Transfer (100% Net Margin / Zero Platform Cut)"],
+            ["👑 Top Revenue Segment", "$90.00", "Private Client Bookings (3 Completed Trips @ 100% Margin)"],
             ["⚡ Best Energy Charge", "$11.33", "02:38 AM Tyler St Off-Peak Supercharge"],
             ["💵 Top Tipped Ride", "$11.55", "Afternoon Airport Surge Window"]
         ]
