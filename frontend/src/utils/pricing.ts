@@ -4,17 +4,19 @@ export interface TripParams {
     stops: number;
     isTellerCounty: boolean;
     isAirport: boolean; // Airport Flag
+    isDenverAirport?: boolean;
     waitTimeHours: number;
     isOutOfCounty?: boolean;
 }
 
 export interface PriceBreakdown {
     baseFare: number;
-    overage: number;
-    deadheadFee: number;
+    mileageFare: number;
     stopFee: number;
     tellerFee: number;
+    tollFee: number;
     waitFee: number;
+    corridorAdjustment: number;
     total: number;
     distance?: number; // Trip distance in miles
     time?: number; // Estimated trip time in minutes
@@ -31,40 +33,49 @@ export interface PriceBreakdown {
 }
 
 /**
- * SummitOS Pricing Engine v3.0
- * High-precision tiered pricing for El Paso County.
- *
- * Logic:
- * 1. Base Engagement: $30.00 (covers first 5.0 miles)
- * 2. Mileage: $1.75 per mile after the first 5.0 miles (no upper tier)
+ * SummitOS Pricing Engine v3.0 (Effective September 1, 2026)
+ * - Base Fare: $25.00
+ * - Road Mileage: $2.00 per mile (calculated via Google Distance Matrix API)
+ * - Denver Airport (DEN) Corridor Floor: $225.00 Minimum
+ * - Toll Pass-Through (DEN / E-470): $20.00
+ * - Mountain Surcharge (Teller County): $15.00
+ * - Intermediate Waypoints: $5.00 / stop
+ * - Driver Standby / Wait Time: $25.00 / hour
  */
 export function calculateTripPrice(params: TripParams): PriceBreakdown {
-    const { distanceMiles, stops, isTellerCounty, waitTimeHours } = params;
+    const { distanceMiles, stops, isTellerCounty, isDenverAirport, waitTimeHours } = params;
 
-    // 1. Base & Distance Fare
-    const fixedBase = 30.00;
-    const RATE_PER_MILE = params.isOutOfCounty ? 1.50 : 0.0;
-    const FREE_MILES = 5.0;
+    // 1. Base & Distance Fare ($2.00/mile from mile 0)
+    const fixedBase = 25.00;
+    const RATE_PER_MILE = 2.00;
+    const DEN_FLOOR = 225.00;
 
-    const billableMiles = Math.max(0, distanceMiles - FREE_MILES);
-    const mileageCharge = billableMiles * RATE_PER_MILE;
+    const mileageCharge = Number((distanceMiles * RATE_PER_MILE).toFixed(2));
 
-    // 2. Extra Fees
-    const deadheadFee = 0; // Deprecated
+    // 2. Extra Fees & Surcharges
     const stopFee = stops * 5.00;
     const tellerFee = isTellerCounty ? 15.00 : 0;
-    const waitFee = waitTimeHours * 20.00;
+    const tollFee = isDenverAirport ? 20.00 : 0;
+    const waitFee = waitTimeHours * 25.00;
 
-    // 3. Total
-    const total = fixedBase + mileageCharge + deadheadFee + stopFee + tellerFee + waitFee;
+    const subtotal = fixedBase + mileageCharge + stopFee + tellerFee + tollFee + waitFee;
+
+    // 3. Corridor Floor Adjustment (Guarantees $225 min floor for DEN Airport)
+    let corridorAdjustment = 0;
+    if (isDenverAirport && subtotal < DEN_FLOOR) {
+        corridorAdjustment = Number((DEN_FLOOR - subtotal).toFixed(2));
+    }
+
+    const total = subtotal + corridorAdjustment;
 
     return {
         baseFare: Number(fixedBase.toFixed(2)),
-        overage: Number(mileageCharge.toFixed(2)),
-        deadheadFee: Number(deadheadFee.toFixed(2)),
+        mileageFare: Number(mileageCharge.toFixed(2)),
         stopFee: Number(stopFee.toFixed(2)),
         tellerFee: Number(tellerFee.toFixed(2)),
+        tollFee: Number(tollFee.toFixed(2)),
         waitFee: Number(waitFee.toFixed(2)),
+        corridorAdjustment: Number(corridorAdjustment.toFixed(2)),
         total: Number(total.toFixed(2))
     };
 }
