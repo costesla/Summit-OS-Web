@@ -5,7 +5,7 @@ import {
     ChevronDown, ChevronUp, Plus, Loader2, MapPin, Gauge, Battery, Link2, Trash2,
     Mail, Send, Lock
 } from 'lucide-react';
-import { isBackgroundableError, devDebugError, getAsyncExecutionLogs, pollJobStatus } from '../lib/intelligenceUtils';
+import { isBackgroundableError, devDebugError, getAsyncExecutionLogs, pollJobStatus } from '../../../../src/lib/intelligenceUtils';
 import { apiGet, apiPost, apiRequest } from '../lib/apiClient';
 import PaymentTrackerPanel from './payments/PaymentTrackerPanel';
 import ManualLedgerPanel from './payments/ManualLedgerPanel';
@@ -628,20 +628,29 @@ const DriverDashboard: React.FC = () => {
     };
 
     const runPartnerEODReport = async (recipientsList: string[] = selectedRecipients) => {
-        if (recipientsList.length === 0) return;
+        let finalRecipients = [...recipientsList];
+        if (customEmailInput.trim() && customEmailInput.includes('@')) {
+            const trimmed = customEmailInput.trim().toLowerCase();
+            if (!finalRecipients.includes(trimmed)) {
+                finalRecipients.push(trimmed);
+            }
+        }
+        if (finalRecipients.length === 0) return;
         setPartnerModalOpen(false);
+        setCustomEmailInput('');
+        setShowCustomInput(false);
         setStatus('running');
-        const recipientsSummary = recipientsList.join(', ');
+        const recipientsSummary = finalRecipients.join(', ');
         setLogs([
             `> Initiating Silent Partner EOD Report Pipeline for ${selectedDate}...`,
-            `> Authorized Recipients (${recipientsList.length}): ${recipientsSummary}`,
+            `> Authorized Recipients (${finalRecipients.length}): ${recipientsSummary}`,
             `> Mandatory CC: Peter Teehan (peter.teehan@costesla.com)`,
             `> Executing financial reconciliation & PII sanitation gates...`
         ]);
         try {
             const data = await apiPost<{ success: boolean; report_id?: string; checksum?: string; logs?: string[]; error?: string }>('/tools/partner-eod-report', {
                 date: selectedDate,
-                recipients: recipientsList,
+                recipients: finalRecipients,
                 cc_recipient: 'peter.teehan@costesla.com'
             });
             if (data.success) {
