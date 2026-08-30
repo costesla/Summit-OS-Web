@@ -647,13 +647,6 @@ def tools_partner_eod_report(req: func.HttpRequest) -> func.HttpResponse:
         trips_list = db.get_trips_by_date(date_str)
         private_payments_list = db.get_private_payments(date_str, date_str)
         
-        real_uber_trips = [t for t in trips_list if str(t.get('id', '')).startswith('TRIP-')]
-        uber_trip_count = len(real_uber_trips) if real_uber_trips else len([t for t in trips_list if t.get('type') == 'Uber'])
-        private_trip_count = len(private_payments_list) if private_payments_list else (2 if private == 60.0 else (1 if private > 0 else 0))
-        total_trip_count = uber_trip_count + private_trip_count
-        if total_trip_count == 0:
-            total_trip_count = 1
-        
         gross = summary.get("gross_earnings", 0.0)
         uber = summary.get("uber_earnings", 0.0)
         uber_tips = summary.get("uber_tips", 0.0)
@@ -662,6 +655,13 @@ def tools_partner_eod_report(req: func.HttpRequest) -> func.HttpResponse:
         capex = summary.get("capex_expenses", 0.0)
         profit = summary.get("net_profit", 0.0)
         margin = round((profit / gross * 100), 1) if gross > 0 else 0.0
+
+        real_uber_trips = [t for t in trips_list if str(t.get('id', '')).startswith('TRIP-')]
+        uber_trip_count = len(real_uber_trips) if real_uber_trips else len([t for t in trips_list if t.get('type') == 'Uber'])
+        private_trip_count = len(private_payments_list) if private_payments_list else (2 if private == 60.0 else (1 if private > 0 else 0))
+        total_trip_count = uber_trip_count + private_trip_count
+        if total_trip_count == 0:
+            total_trip_count = 1
 
         # Build EOD markdown payload
         eod_payload = f"""# Summit Intelligence 2.0 - Daily End of Day Executive Summary
