@@ -160,6 +160,8 @@ interface FinancialsSummaryResponse {
     date: string;
     gross_earnings: number;
     uber_earnings: number;
+    uber_on_app?: number;
+    cash_tips?: number;
     uber_tips?: number;
     private_income: number;
     expenses: number;
@@ -1043,10 +1045,10 @@ const DriverDashboard: React.FC = () => {
                                 {/* StatGrid */}
                                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                                     <StatCard label="Gross Earnings" value={`$${grossEarnings.toFixed(2)}`} sub="Today's aggregate" icon={<TrendingUp className="w-4.5 h-4.5" />} color="cyan" highlight />
-                                    <StatCard label="Uber Earnings" value={`$${uberEarnings.toFixed(2)}`} sub={(summary?.uber_tips ?? 0) > 0 ? `Core rideshare · incl. $${(summary?.uber_tips ?? 0).toFixed(2)} tips` : 'Core rideshare'} icon={<Car className="w-4.5 h-4.5" />} color="cyan" />
+                                    <StatCard label="Uber Rideshare" value={`$${(summary?.uber_on_app ?? (uberEarnings - (summary?.cash_tips ?? 0))).toFixed(2)}`} sub={(summary?.uber_tips ?? 0) > 0 ? `On-app · incl. $${(summary?.uber_tips ?? 0).toFixed(2)} tips` : 'Core on-app rideshare'} icon={<Car className="w-4.5 h-4.5" />} color="cyan" />
+                                    <StatCard label="Cash Tips" value={`$${(summary?.cash_tips ?? 0).toFixed(2)}`} sub="Direct cash gratuities" icon={<DollarSign className="w-4.5 h-4.5" />} color="amber" />
                                     <StatCard label="Private Income" value={`$${privateIncome.toFixed(2)}`} sub="Paid invoices only" icon={<DollarSign className="w-4.5 h-4.5" />} color="cyan" />
                                     <StatCard label="Daily OpEx" value={`$${summary?.opex_expenses?.toFixed(2) ?? '0.00'}`} sub="Charging & tolls" icon={<Zap className="w-4.5 h-4.5" />} color="red" />
-                                    <StatCard label="CapEx & Maintenance" value={`$${summary?.capex_expenses?.toFixed(2) ?? '0.00'}`} sub="Asset investments" icon={<Wrench className="w-4.5 h-4.5" />} color="amber" />
                                     <StatCard label="Net Profit" value={`$${netProfit.toFixed(2)}`} sub="Gross - OpEx margin" icon={<TrendingUp className="w-4.5 h-4.5" />} color="cyan" highlight />
                                 </div>
 
