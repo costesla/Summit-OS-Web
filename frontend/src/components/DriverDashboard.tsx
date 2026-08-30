@@ -630,7 +630,7 @@ const DriverDashboard: React.FC = () => {
     };
 
     const runPartnerEODReport = async (recipientsList: string[] = selectedRecipients) => {
-        let finalRecipients = [...recipientsList];
+        const finalRecipients = [...recipientsList];
         if (customEmailInput.trim() && customEmailInput.includes('@')) {
             const trimmed = customEmailInput.trim().toLowerCase();
             if (!finalRecipients.includes(trimmed)) {
