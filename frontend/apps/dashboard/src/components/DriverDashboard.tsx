@@ -202,6 +202,7 @@ interface DatabaseTrip {
      *  TESSIE- telemetry rows carry no payment state — absent must render as
      *  unknown, never as paid. */
     payment_status?: string | null;
+    payment_method?: string | null;
 }
 
 interface TessieDrive {
@@ -896,9 +897,15 @@ const DriverDashboard: React.FC = () => {
         );
     }, [trips]);
 
-    // Sort and format Uber trips for Ledger
+    // Sort and format Uber trips for Ledger (On-app only)
     const uberTrips = useMemo(() => {
-        return trips.filter(t => (t.type === 'Uber' || t.type === 'Uber_OffApp') && !t.id.startsWith('TESSIE-'))
+        return trips.filter(t => t.type === 'Uber' && !t.id.startsWith('TESSIE-'))
+                    .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+    }, [trips]);
+
+    // Dedicated Cash Tips & Gratuities (Not counted as Uber rideshare trips)
+    const cashTips = useMemo(() => {
+        return trips.filter(t => (t.type === 'Uber_OffApp' || t.classification === 'Cash Tip' || t.id.startsWith('M-OFFAPP-')) && !t.id.startsWith('TESSIE-'))
                     .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
     }, [trips]);
 
@@ -1165,32 +1172,28 @@ const DriverDashboard: React.FC = () => {
                                                     }
                                                     return uberSlots.map((t, idx) => {
                                                         if (!t) {
-                                                            return (
+                                                             return (
                                                                 <div key={`uber-empty-${idx}`} className="p-3.5 rounded-xl border border-dashed border-white/10 flex items-center justify-center h-[90px] select-none">
                                                                     <span className="text-[10px] text-[var(--text-muted)] italic">// empty slot</span>
                                                                 </div>
                                                             );
                                                         }
-                                                        const isOffApp = t.type === 'Uber_OffApp';
                                                         return (
-                                                            <div key={t.id} className={`p-3.5 rounded-xl border space-y-1.5 hover:bg-white/[0.03] transition-colors ${isOffApp ? 'bg-orange-500/[0.03] border-orange-500/15' : 'bg-white/[0.02] border-white/5'}`}>
+                                                            <div key={t.id} className="p-3.5 rounded-xl border space-y-1.5 hover:bg-white/[0.03] transition-colors bg-white/[0.02] border-white/5">
                                                                 <div className="flex items-center justify-between">
-                                                                    <span className="text-xs font-bold text-white font-sans">{isOffApp ? 'Off-App' : `Uber ${idx + 1}`}</span>
-                                                                    {isOffApp ? (
-                                                                        <span className="px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-400 border border-orange-500/25 text-[8px] font-bold uppercase font-mono">Zelle/Cash</span>
-                                                                    ) : t.tessie_drive_id ? (
+                                                                    <span className="text-xs font-bold text-white font-sans">Uber {idx + 1}</span>
+                                                                    {t.tessie_drive_id ? (
                                                                         <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[8px] font-bold uppercase font-mono">Matched</span>
                                                                     ) : (
                                                                         <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[8px] font-bold uppercase font-mono">Unmatched</span>
                                                                     )}
                                                                 </div>
                                                                 <p className="text-[10px] text-[var(--text-muted)] font-mono truncate">
-                                                                    {isOffApp ? (t.pickup_location || 'Off-app payment') : `Distance: ${(t.distance_miles ?? 0).toFixed(1)} mi`}
+                                                                    Distance: {(t.distance_miles ?? 0).toFixed(1)} mi
                                                                 </p>
                                                                 <div className="flex items-center justify-between pt-1 font-mono">
                                                                     <span className="text-[10px] text-[#606060]">{formatToLocalTime(t.timestamp)}</span>
-                                                                    {/* On-app: driver_earnings (our cut, tip-inclusive). Off-app: fare IS our money. */}
-                                                                    <span className={`text-sm font-black ${isOffApp ? 'text-orange-400' : 'text-white'}`}>${(isOffApp ? t.fare : (t.driver_earnings ?? t.fare)).toFixed(2)}</span>
+                                                                    <span className="text-sm font-black text-white">${(t.driver_earnings ?? t.fare).toFixed(2)}</span>
                                                                 </div>
                                                             </div>
                                                         );
@@ -1198,6 +1201,34 @@ const DriverDashboard: React.FC = () => {
                                                 })()}
                                             </div>
                                         </div>
+
+                                        {/* Dedicated Cash Tips & Gratuities Section */}
+                                        {cashTips.length > 0 && (
+                                            <div className="lg:col-span-2 p-5 rounded-2xl glass space-y-3 border border-orange-500/20 bg-orange-500/[0.02]">
+                                                <div className="flex items-center justify-between border-b border-orange-500/10 pb-2">
+                                                    <h3 className="text-xs font-bold uppercase tracking-wider text-orange-400 font-mono flex items-center gap-2">
+                                                        💵 Cash Tips & Gratuities ({cashTips.length})
+                                                    </h3>
+                                                    <span className="text-xs font-bold font-mono text-orange-400">
+                                                        ${cashTips.reduce((acc, c) => acc + c.fare, 0).toFixed(2)}
+                                                    </span>
+                                                </div>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                                    {cashTips.map((tip) => (
+                                                        <div key={tip.id} className="p-3 rounded-xl bg-white/[0.02] border border-orange-500/20 space-y-1">
+                                                            <div className="flex items-center justify-between">
+                                                                <span className="text-xs font-bold text-white font-sans">{tip.pickup_location || 'Cash Tip'}</span>
+                                                                <span className="px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-400 border border-orange-500/25 text-[8px] font-bold uppercase font-mono">{tip.payment_method || 'Cash'}</span>
+                                                            </div>
+                                                            <div className="flex items-center justify-between pt-1 font-mono">
+                                                                <span className="text-[10px] text-[#606060]">{formatToLocalTime(tip.timestamp)}</span>
+                                                                <span className="text-sm font-black text-orange-400">${tip.fare.toFixed(2)}</span>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 ) : (
                                     /* Telemetry tab activity timeline */
@@ -1279,7 +1310,7 @@ const DriverDashboard: React.FC = () => {
                                                 </form>
 
                                                 <form id="log-offapp-form" onSubmit={handleLogOffApp} className="space-y-3 p-3 bg-orange-500/[0.03] border border-orange-500/15 rounded-xl lg:col-span-2">
-                                                    <h4 className="text-[10px] font-bold font-mono text-orange-400 uppercase tracking-wider">Log Uber Off-App Trip (Zelle / Cash)</h4>
+                                                    <h4 className="text-[10px] font-bold font-mono text-orange-400 uppercase tracking-wider">Log Cash Tip / Gratuity (Zelle / Cash)</h4>
                                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                                                         <input type="number" placeholder="Amount ($)" step="0.01" value={offAppAmount} onChange={e=>setOffAppAmount(e.target.value)} className="p-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white focus:outline-none" />
                                                         <select value={offAppMethod} onChange={e=>setOffAppMethod(e.target.value as 'Zelle' | 'Cash')} className="p-2 bg-[var(--bg-surface)] border border-white/10 rounded-lg text-xs text-white focus:outline-none font-sans">
@@ -1290,7 +1321,7 @@ const DriverDashboard: React.FC = () => {
                                                     </div>
                                                     <button type="submit" disabled={isLoggingOffApp} className="px-3.5 py-1.5 bg-orange-500 text-white rounded-lg text-xs font-bold flex items-center gap-2 disabled:opacity-50">
                                                         {isLoggingOffApp && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                                                        Log Off-App Trip
+                                                        Log Cash Tip
                                                     </button>
                                                 </form>
                                             </div>
