@@ -21,10 +21,16 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           // Vendor splitting: keeps recharts + lucide-react out of the main chunk
-          manualChunks: {
-            'vendor-react': ['react', 'react-dom'],
-            'vendor-recharts': ['recharts'],
-            'vendor-lucide': ['lucide-react'],
+          manualChunks(id: string) {
+            if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
+              return 'vendor-react'
+            }
+            if (id.includes('node_modules/recharts/')) {
+              return 'vendor-recharts'
+            }
+            if (id.includes('node_modules/lucide-react/')) {
+              return 'vendor-lucide'
+            }
           },
         },
       },

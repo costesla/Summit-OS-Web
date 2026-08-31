@@ -5,7 +5,7 @@ import {
     ChevronDown, ChevronUp, Plus, Loader2, MapPin, Gauge, Battery, Link2
 } from 'lucide-react';
 import { isBackgroundableError, devDebugError, getAsyncExecutionLogs, pollJobStatus } from '../../../../src/lib/intelligenceUtils';
-import { apiGet, apiPost } from '../lib/apiClient';
+import { apiGet, apiPost, apiRequest } from '../lib/apiClient';
 import PaymentTrackerPanel from './payments/PaymentTrackerPanel';
 import ManualLedgerPanel from './payments/ManualLedgerPanel';
 
@@ -164,6 +164,7 @@ interface DatabaseTrip {
     dropoff_location: string | null;
     tessie_drive_id?: string | null;
     tessie_label?: string | null;
+    payment_status?: string | null;
 }
 
 interface TessieDrive {
@@ -691,7 +692,12 @@ const DriverDashboard: React.FC = () => {
     const healthBadgeColor = preShiftScore >= 70 ? 'border-[var(--accent-cyan)] text-[var(--accent-cyan)] bg-[var(--accent-cyan)]/5' : 'border-[var(--accent-red)] text-[var(--accent-red)] bg-[var(--accent-red)]/5 animate-pulse';
 
     const unpaidOtherInvoices = useMemo(() => {
-        return trips.filter(t => t.type === 'Private' && t.fare > 0);
+        return trips.filter(t => 
+            t.type === 'Private' && 
+            t.fare > 0 && 
+            t.id.startsWith('INV-') && 
+            t.payment_status?.toLowerCase() !== 'paid'
+        );
     }, [trips]);
 
     // Telemetry Timeline events combination
@@ -1325,7 +1331,20 @@ const DriverDashboard: React.FC = () => {
                                                             <div className="flex items-center gap-3 shrink-0">
                                                                 <span className="text-[9px] text-[#606060]">{inv.timestamp.slice(0, 10)}</span>
                                                                 <span className="font-black text-amber-400 font-mono">${inv.fare.toFixed(2)}</span>
-                                                                <span className="px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-400 text-[8px] font-bold border border-amber-500/20 uppercase font-mono">Unpaid</span>
+                                                                <button 
+                                                                    onClick={async (e) => {
+                                                                        e.stopPropagation();
+                                                                        try {
+                                                                            await apiRequest('/invoices/bulk-collect', { method: 'PATCH', body: { invoice_ids: [inv.id] } });
+                                                                            fetchAllData();
+                                                                        } catch (err) {
+                                                                            console.error('Failed to mark invoice paid:', err);
+                                                                        }
+                                                                    }}
+                                                                    className="px-2 py-0.5 rounded bg-amber-500/10 hover:bg-emerald-500/20 text-amber-400 hover:text-emerald-400 text-[9px] font-bold border border-amber-500/20 hover:border-emerald-500/30 uppercase font-mono transition-all"
+                                                                >
+                                                                    Mark Paid
+                                                                </button>
                                                             </div>
                                                         </div>
                                                     );
