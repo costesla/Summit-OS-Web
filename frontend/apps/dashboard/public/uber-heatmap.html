@@ -689,8 +689,8 @@ function parseLocalDate(dateStr) {
 // ── Tile layers ────────────────────────────────────────────────────────
 const TILES = {
   dark: {
-    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-    attr: '&copy; OpenStreetMap &copy; CARTO'
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+    attr: '&copy; Esri &mdash; Esri, DeLorme, NAVTEQ, OpenStreetMap'
   },
   satellite: {
     url: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
