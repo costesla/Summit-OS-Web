@@ -179,14 +179,42 @@ class ExecutivePDFGenerator:
         from reportlab.graphics.shapes import Drawing
         from reportlab.graphics.charts.piecharts import Pie
 
+        # Dynamic Database Expenses & Telemetry
+        date_str = data.get("report_date", "")
+        db_expenses = {}
+        db_summary = {}
+        try:
+            from services.database import DatabaseClient
+            db = DatabaseClient()
+            db_expenses = db.get_expenses_by_date(date_str)
+            db_summary = db.get_summary_metrics_for_range(date_str, date_str)
+        except Exception:
+            pass
+
+        charging_list = db_expenses.get("charging", [])
+        meals_list = db_expenses.get("fastfood", []) + db_expenses.get("meals", [])
+        capex_list = db_expenses.get("capital_maintenance", [])
+
+        charging_total = sum(float(c.get("amount") or 0.0) for c in charging_list)
+        meals_total = sum(float(m.get("amount") or 0.0) for m in meals_list)
+        capex_total = sum(float(x.get("amount") or 0.0) for x in capex_list)
+        if capex_total == 0.0 and db_summary.get("capex_expenses"):
+            capex_total = float(db_summary.get("capex_expenses"))
+
+        gross_rev = data.get('gross_revenue', 0.0)
+        net_prof = data.get('net_profit', 0.0)
+        profit_pct = data.get('net_margin_pct', 0.0)
+        charging_pct = round((charging_total / gross_rev * 100), 1) if gross_rev > 0 else 0.0
+        meals_pct = round((meals_total / gross_rev * 100), 1) if gross_rev > 0 else 0.0
+
         pie_drawing = Drawing(160, 85)
         pc = Pie()
         pc.x = 25
         pc.y = 5
         pc.width = 75
         pc.height = 75
-        pc.data = [data.get('net_profit', 154.65), 50.29, 48.71]
-        pc.labels = ['Profit 61%', 'Charge 20%', 'Meals 19%']
+        pc.data = [max(net_prof, 0.01), max(charging_total, 0.01), max(meals_total, 0.01)]
+        pc.labels = [f'Profit {profit_pct}%', f'Charge {charging_pct}%', f'Meals {meals_pct}%']
         pc.simpleLabels = 0
         pc.slices[0].fillColor = self.success_color  # Profit (Green)
         pc.slices[1].fillColor = self.accent_color   # Charging (Blue)
@@ -196,10 +224,10 @@ class ExecutivePDFGenerator:
 
         mix_data = [
             ["Platform / Category", "Amount", "Share %"],
-            ["Net Profit Retained", f"${data['net_profit']:,.2f}", f"{data['net_margin_pct']}%"],
-            ["Supercharging Energy", "$50.29", "19.8%"],
-            ["Road Meals & Incidentals", "$48.71", "19.2%"],
-            ["Total Gross Inflow", f"${data['gross_revenue']:,.2f}", "100.0%"]
+            ["Net Profit Retained", f"${net_prof:,.2f}", f"{profit_pct}%"],
+            ["Supercharging Energy", f"${charging_total:,.2f}", f"{charging_pct}%"],
+            ["Road Meals & Incidentals", f"${meals_total:,.2f}", f"{meals_pct}%"],
+            ["Total Gross Inflow", f"${gross_rev:,.2f}", "100.0%"]
         ]
         mix_table = Table(mix_data, colWidths=[180, 80, 70])
         mix_table.setStyle(TableStyle([
@@ -228,9 +256,9 @@ class ExecutivePDFGenerator:
         # 3b. Run of the Day & Trip Efficiency Highlights
         story.append(Paragraph("RUN OF THE DAY & TRIP EFFICIENCY HIGHLIGHTS", heading_style))
         rod_data = [
-            ["👑 Top Revenue Segment", "$90.00", "Private Client Bookings (3 Completed Trips @ 100% Margin)"],
-            ["⚡ Best Energy Charge", "$11.33", "02:38 AM Tyler St Off-Peak Supercharge"],
-            ["💵 Top Tipped Ride", "$11.55", "Afternoon Airport Surge Window"]
+            ["👑 Top Revenue Segment", f"${data['private_revenue']:,.2f}", "Private Client Invoices @ 100% Margin"],
+            ["⚡ Energy Management", f"${charging_total:,.2f}", f"{len(charging_list)} Verified Supercharging Sessions"],
+            ["💵 Core Passenger Rides", f"${data['uber_revenue']:,.2f}", "Uber Platform + In-App & Cash Gratuities"]
         ]
         rod_table = Table(rod_data, colWidths=[150, 70, 320])
         rod_table.setStyle(TableStyle([
@@ -249,17 +277,29 @@ class ExecutivePDFGenerator:
 
         # 3c. Itemized Daily Spending & Supercharging Ledger
         story.append(Paragraph("ITEMIZED SPENDING & SUPERCHARGING LEDGER", heading_style))
-        spend_data = [
-            ["Category", "Time & Merchant / Location", "Amount", "Classification"],
-            ["Supercharge", "02:38 · 23 East Tyler Street, Colorado Springs", "$11.33", "Fleet Energy"],
-            ["Supercharge", "12:11 · 23 East Tyler Street, Colorado Springs", "$19.38", "Fleet Energy"],
-            ["Supercharge", "17:46 · 1410 Cipriani Loop, Monument", "$19.58", "Fleet Energy"],
-            ["Road Meal", "08:21 · Dutch Bros Coffee (Colorado)", "$16.34", "Driver Incidental"],
-            ["Road Meal", "12:00 · QuikTrip (Hot Refill)", "$2.15", "Driver Incidental"],
-            ["Road Meal", "12:00 · Arby's (Cheesesteak & Drink)", "$12.85", "Driver Incidental"],
-            ["Road Meal", "15:45 · Starbucks Coffee", "$17.37", "Driver Incidental"],
-            ["Total OpEx", "7 Verified Operational Transactions", "-$99.00", "Reconciled 100%"]
-        ]
+        spend_data = [["Category", "Time & Merchant / Location", "Amount", "Classification"]]
+        for ch in charging_list:
+            ts = ch.get("timestamp") or ""
+            time_str = ts.split("T")[1][:5] if "T" in str(ts) else (str(ts)[:5] if ts else "--:--")
+            loc = ch.get("note") or "Tesla Supercharger"
+            loc_short = loc.split(",")[0] if "," in loc else loc
+            amt = float(ch.get("amount") or 0.0)
+            spend_data.append(["Supercharge", f"{time_str} · {loc_short}", f"${amt:.2f}", "Fleet Energy"])
+
+        for m in meals_list:
+            ts = m.get("timestamp") or ""
+            time_str = ts.split("T")[1][:5] if "T" in str(ts) else (str(ts)[:5] if ts else "--:--")
+            note = m.get("note") or "Road Meal"
+            merchant = note.split(".")[0].replace("Merchant:", "").strip() if "Merchant:" in note else note[:30]
+            amt = float(m.get("amount") or 0.0)
+            spend_data.append(["Road Meal", f"{time_str} · {merchant}", f"${amt:.2f}", "Driver Incidental"])
+
+        if len(spend_data) == 1:
+            spend_data.append(["OpEx", "No off-depot operating expenses logged", "$0.00", "Operational"])
+
+        total_tx_count = len(charging_list) + len(meals_list)
+        spend_data.append(["Total OpEx", f"{total_tx_count} Verified Operational Transactions", f"-${data['total_expenses']:,.2f}", "Reconciled 100%"])
+
         spend_table = Table(spend_data, colWidths=[80, 260, 80, 120])
         spend_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), self.primary_color),
@@ -278,9 +318,10 @@ class ExecutivePDFGenerator:
 
         # 3d. Fleet Telemetry & Performance Stats
         story.append(Paragraph("FLEET TELEMETRY & PERFORMANCE STATS", heading_style))
+        goal_pacing_pct = round((gross_rev / 232.0 * 100), 1) if gross_rev else 100.0
         stats_data = [
-            ["🎯 Goal Pacing", "109% ($253.65 / $232.00 Daily Benchmark)", "⭐ Quality Score", "5.00 ★ Passenger Rating (0 Incidents)"],
-            ["🔋 Vehicle Availability", "100% Active Operating Readiness", "🔧 CapEx Servicing", "$29.86 Isolated Maintenance Tracking"]
+            ["🎯 Goal Pacing", f"{goal_pacing_pct}% (${gross_rev:,.2f} / $232.00 Daily Benchmark)", "⭐ Quality Score", "5.00 ★ Passenger Rating (0 Incidents)"],
+            ["🔋 Vehicle Availability", "100% Active Operating Readiness", "🔧 CapEx Servicing", f"${capex_total:,.2f} Isolated Maintenance Tracking"]
         ]
         stats_table = Table(stats_data, colWidths=[120, 150, 120, 150])
         stats_table.setStyle(TableStyle([

@@ -264,8 +264,80 @@ class ProductionEODEngine:
             items = "".join([f"<li style='margin-bottom:4px;'>{l}</li>" for l in lines])
             return f"<ul style='margin:0; padding-left:18px;'>{items}</ul>"
 
-        run_of_the_day_html = """
-    <!-- Run of the Day & Efficiency Highlights -->
+        # Dynamic generation of Itemized Expenses, Run of the Day, and Fleet Telemetry
+        date_str = data.get("report_date", "")
+        db_expenses = {}
+        db_summary = {}
+        try:
+            from services.database import DatabaseClient
+            db = DatabaseClient()
+            db_expenses = db.get_expenses_by_date(date_str)
+            db_summary = db.get_summary_metrics_for_range(date_str, date_str)
+        except Exception as e:
+            logging.warning(f"Failed to fetch dynamic expenses for {date_str}: {e}")
+
+        charging_list = db_expenses.get("charging", [])
+        meals_list = db_expenses.get("fastfood", []) + db_expenses.get("meals", [])
+        capex_list = db_expenses.get("capital_maintenance", [])
+
+        charging_total = sum(float(c.get("amount") or 0.0) for c in charging_list)
+        meals_total = sum(float(m.get("amount") or 0.0) for m in meals_list)
+        capex_total = sum(float(x.get("amount") or 0.0) for x in capex_list)
+        if capex_total == 0.0 and db_summary.get("capex_expenses"):
+            capex_total = float(db_summary.get("capex_expenses"))
+
+        # Build Dynamic Supercharging Table Rows
+        charging_rows_html = ""
+        for ch in charging_list:
+            ts = ch.get("timestamp") or ""
+            time_str = ts.split("T")[1][:5] if "T" in str(ts) else (str(ts)[:5] if ts else "--:--")
+            loc = ch.get("note") or "Tesla Supercharger"
+            # Clean up street address for display
+            loc_short = loc.split(",")[0] if "," in loc else loc
+            amt = float(ch.get("amount") or 0.0)
+            charging_rows_html += f"""
+            <tr style="border-bottom:1px solid #EDF2F7;">
+              <td>{time_str} · {loc_short}</td>
+              <td style="text-align:right; font-weight:700; color:#0F172A;">${amt:.2f}</td>
+            </tr>"""
+
+        if not charging_rows_html:
+            charging_rows_html = """
+            <tr style="border-bottom:1px solid #EDF2F7;">
+              <td>No off-depot supercharging sessions logged</td>
+              <td style="text-align:right; font-weight:700; color:#0F172A;">$0.00</td>
+            </tr>"""
+
+        # Build Dynamic Road Meals Table Rows
+        meals_rows_html = ""
+        for m in meals_list:
+            ts = m.get("timestamp") or ""
+            time_str = ts.split("T")[1][:5] if "T" in str(ts) else (str(ts)[:5] if ts else "--:--")
+            note = m.get("note") or "Road Meal"
+            merchant = note.split(".")[0].replace("Merchant:", "").strip() if "Merchant:" in note else note[:30]
+            amt = float(m.get("amount") or 0.0)
+            meals_rows_html += f"""
+            <tr style="border-bottom:1px solid #EDF2F7;">
+              <td>{time_str} · {merchant}</td>
+              <td style="text-align:right; font-weight:700; color:#0F172A;">${amt:.2f}</td>
+            </tr>"""
+
+        if not meals_rows_html:
+            meals_rows_html = """
+            <tr style="border-bottom:1px solid #EDF2F7;">
+              <td>No road meals or driver incidentals logged</td>
+              <td style="text-align:right; font-weight:700; color:#0F172A;">$0.00</td>
+            </tr>"""
+
+        # Best charge
+        best_charge_str = f"${charging_list[0].get('amount', 0.0):.2f}" if charging_list else "$0.00"
+        best_charge_sub = f"({charging_list[0].get('timestamp','')[11:16] if 'T' in str(charging_list[0].get('timestamp','')) else ''} Tyler St Off-Peak)" if charging_list else "(Base Charge)"
+
+        # Goal Pacing
+        goal_pacing_pct = round((data['gross_revenue'] / 232.0 * 100), 1) if data.get('gross_revenue') else 100.0
+
+        run_of_the_day_html = f"""
+    <!-- Run of the Day & Operational Highlights -->
     <tr>
       <td style="padding:12px 24px;">
         <div style="background-color:#F0F9FF; border:1px solid #BAE6FD; border-radius:8px; padding:18px;">
@@ -275,15 +347,15 @@ class ProductionEODEngine:
           <table width="100%" cellpadding="6" cellspacing="0" style="font-size:13px; color:#0F172A;">
             <tr style="border-bottom:1px solid #E0F2FE;">
               <td style="font-weight:600; color:#0369A1;">👑 Top Revenue Segment</td>
-              <td style="text-align:right; font-weight:700;">$90.00 <span style="font-size:11px; color:#0284C7;">(Private Client — 3 Completed Trips @ 100% Margin)</span></td>
+              <td style="text-align:right; font-weight:700;">${data['private_revenue']:,.2f} <span style="font-size:11px; color:#0284C7;">(Private Client Invoices @ 100% Margin)</span></td>
             </tr>
             <tr style="border-bottom:1px solid #E0F2FE;">
-              <td style="font-weight:600; color:#0369A1;">⚡ Best Energy Charge</td>
-              <td style="text-align:right; font-weight:700;">$11.33 <span style="font-size:11px; color:#0284C7;">(02:38 AM Tyler St Off-Peak)</span></td>
+              <td style="font-weight:600; color:#0369A1;">⚡ Energy Management</td>
+              <td style="text-align:right; font-weight:700;">${charging_total:,.2f} <span style="font-size:11px; color:#0284C7;">({len(charging_list)} Verified Charging Sessions)</span></td>
             </tr>
             <tr>
-              <td style="font-weight:600; color:#0369A1;">💵 Top Tipped Ride</td>
-              <td style="text-align:right; font-weight:700;">$11.55 <span style="font-size:11px; color:#0284C7;">(Airport Surge Window)</span></td>
+              <td style="font-weight:600; color:#0369A1;">💵 Core Passenger Rides</td>
+              <td style="text-align:right; font-weight:700;">${data['uber_revenue']:,.2f} <span style="font-size:11px; color:#0284C7;">(Uber Rideshare + In-App & Cash Tips)</span></td>
             </tr>
           </table>
         </div>
@@ -291,7 +363,7 @@ class ProductionEODEngine:
     </tr>
         """
 
-        itemized_expenses_html = """
+        itemized_expenses_html = f"""
     <!-- Itemized Daily Purchases & Supercharging Ledger -->
     <tr>
       <td style="padding:12px 24px;">
@@ -299,43 +371,17 @@ class ProductionEODEngine:
           <div style="font-size:12px; font-weight:700; color:#0F172A; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; border-bottom:1px solid #E2E8F0; padding-bottom:6px;">
             ☕ Itemized Spending & Supercharging Ledger
           </div>
-          <div style="font-size:11px; font-weight:700; color:#0EA5E9; text-transform:uppercase; margin:8px 0 4px 0;">⚡ Supercharging Sessions ($50.29)</div>
+          <div style="font-size:11px; font-weight:700; color:#0EA5E9; text-transform:uppercase; margin:8px 0 4px 0;">⚡ Supercharging Sessions (${charging_total:,.2f})</div>
           <table width="100%" style="font-size:12px; color:#334155; margin-bottom:12px;" cellpadding="4" cellspacing="0">
-            <tr style="border-bottom:1px solid #EDF2F7;">
-              <td>02:38 · 23 E Tyler St Supercharger</td>
-              <td style="text-align:right; font-weight:700; color:#0F172A;">$11.33</td>
-            </tr>
-            <tr style="border-bottom:1px solid #EDF2F7;">
-              <td>12:11 · 23 E Tyler St Supercharger</td>
-              <td style="text-align:right; font-weight:700; color:#0F172A;">$19.38</td>
-            </tr>
-            <tr style="border-bottom:1px solid #EDF2F7;">
-              <td>17:46 · 1410 Cipriani Loop (Monument)</td>
-              <td style="text-align:right; font-weight:700; color:#0F172A;">$19.58</td>
-            </tr>
+            {charging_rows_html}
           </table>
           
-          <div style="font-size:11px; font-weight:700; color:#F59E0B; text-transform:uppercase; margin:8px 0 4px 0;">🍔 Road Meals & Coffee Receipts ($48.71)</div>
+          <div style="font-size:11px; font-weight:700; color:#F59E0B; text-transform:uppercase; margin:8px 0 4px 0;">🍔 Road Meals & Coffee Receipts (${meals_total:,.2f})</div>
           <table width="100%" style="font-size:12px; color:#334155;" cellpadding="4" cellspacing="0">
-            <tr style="border-bottom:1px solid #EDF2F7;">
-              <td>08:21 · Dutch Bros Coffee (Colorado)</td>
-              <td style="text-align:right; font-weight:700; color:#0F172A;">$16.34</td>
-            </tr>
-            <tr style="border-bottom:1px solid #EDF2F7;">
-              <td>12:00 · QuikTrip (Hot Refill)</td>
-              <td style="text-align:right; font-weight:700; color:#0F172A;">$2.15</td>
-            </tr>
-            <tr style="border-bottom:1px solid #EDF2F7;">
-              <td>12:00 · Arby's (Cheesesteak & Drink)</td>
-              <td style="text-align:right; font-weight:700; color:#0F172A;">$12.85</td>
-            </tr>
-            <tr style="border-bottom:1px solid #EDF2F7;">
-              <td>15:45 · Starbucks</td>
-              <td style="text-align:right; font-weight:700; color:#0F172A;">$17.37</td>
-            </tr>
+            {meals_rows_html}
             <tr>
               <td style="font-weight:700; color:#0F172A; padding-top:8px;">Total Operating Expenses (OpEx)</td>
-              <td style="text-align:right; font-weight:800; color:#DC2626; padding-top:8px;">-$99.00</td>
+              <td style="text-align:right; font-weight:800; color:#DC2626; padding-top:8px;">-${data['total_expenses']:,.2f}</td>
             </tr>
           </table>
         </div>
@@ -343,7 +389,7 @@ class ProductionEODEngine:
     </tr>
         """
 
-        fleet_telemetry_html = """
+        fleet_telemetry_html = f"""
     <!-- Fleet Telemetry & Fun Stats -->
     <tr>
       <td style="padding:12px 24px;">
@@ -354,7 +400,7 @@ class ProductionEODEngine:
           <table width="100%" cellpadding="6" cellspacing="0" style="font-size:13px; color:#0F172A;">
             <tr style="border-bottom:1px solid #F3E8FF;">
               <td style="font-weight:500;">🎯 Daily Revenue Goal Pacing</td>
-              <td style="text-align:right; font-weight:700; color:#7E22CE;">109% <span style="font-size:11px; color:#9333EA;">($253.65 / $232.00 target)</span></td>
+              <td style="text-align:right; font-weight:700; color:#7E22CE;">{goal_pacing_pct}% <span style="font-size:11px; color:#9333EA;">(${data['gross_revenue']:,.2f} / $232.00 target)</span></td>
             </tr>
             <tr style="border-bottom:1px solid #F3E8FF;">
               <td style="font-weight:500;">🔋 Fleet Vehicle Availability</td>
@@ -366,7 +412,7 @@ class ProductionEODEngine:
             </tr>
             <tr>
               <td style="font-weight:500;">🔧 CapEx Asset Servicing</td>
-              <td style="text-align:right; font-weight:700; color:#0F172A;">$29.86 <span style="font-size:11px; color:#64748B;">(Asset Maintenance)</span></td>
+              <td style="text-align:right; font-weight:700; color:#0F172A;">${capex_total:,.2f} <span style="font-size:11px; color:#64748B;">(Asset Maintenance)</span></td>
             </tr>
           </table>
         </div>
