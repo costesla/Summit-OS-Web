@@ -469,6 +469,20 @@
       </select>
     </div>
 
+    <!-- City / Region Filter -->
+    <div class="ctrl-group">
+      <span class="ctrl-label">City</span>
+      <select id="region-select">
+        <option value="cos" selected>Colorado Springs</option>
+        <option value="den">Denver Metro</option>
+        <option value="pue">Pueblo</option>
+        <option value="cas">Castle Rock</option>
+        <option value="bou">Boulder</option>
+        <option value="ftc">Fort Collins</option>
+        <option value="all">All Front Range</option>
+      </select>
+    </div>
+
     <!-- Map layer -->
     <div class="ctrl-group">
       <span class="ctrl-label">Map</span>
@@ -673,7 +687,43 @@ const BACKEND = (() => {
   return 'https://summitos-api.azurewebsites.net';
 })();
 
-const COS_CENTER = [38.8339, -104.8214]; // Colorado Springs center
+const REGION_PRESETS = {
+  cos: { name: 'Colorado Springs', center: [38.8339, -104.8214], zoom: 12 },
+  den: { name: 'Denver Metro',     center: [39.7392, -104.9903], zoom: 11 },
+  pue: { name: 'Pueblo',           center: [38.2544, -104.6091], zoom: 12 },
+  cas: { name: 'Castle Rock',      center: [39.3722, -104.8561], zoom: 12 },
+  bou: { name: 'Boulder',          center: [40.0150, -105.2705], zoom: 12 },
+  ftc: { name: 'Fort Collins',     center: [40.5853, -105.0844], zoom: 12 }
+};
+
+const COS_CENTER = REGION_PRESETS.cos.center; // Colorado Springs center
+
+const CO_BOUNDS = {
+  minLat: 36.5,
+  maxLat: 41.5,
+  minLon: -109.5,
+  maxLon: -101.5
+};
+
+function isColoradoPoint(lat, lon) {
+  return lat >= CO_BOUNDS.minLat && lat <= CO_BOUNDS.maxLat && lon >= CO_BOUNDS.minLon && lon <= CO_BOUNDS.maxLon;
+}
+
+function fitColoradoBounds(customPts) {
+  const raw = customPts || allHeatPoints.map(p => [p.lat, p.lon]);
+  const points = raw.filter(p => isColoradoPoint(p[0], p[1]));
+  if (points.length > 0) {
+    const lats = points.map(p => p[0]);
+    const lons = points.map(p => p[1]);
+    const bounds = L.latLngBounds(
+      [Math.min(...lats), Math.min(...lons)],
+      [Math.max(...lats), Math.max(...lons)]
+    );
+    map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
+  } else {
+    map.setView(REGION_PRESETS.cos.center, REGION_PRESETS.cos.zoom);
+  }
+}
 
 function parseLocalDate(dateStr) {
   if (!dateStr) return null;
@@ -941,13 +991,14 @@ function getHeatPoints(drives, mode) {
 }
 
 // ── Render heatmap ────────────────────────────────────────────────────
-function renderHeatmap() {
-  const hourFilter = document.getElementById('hour-filter-select').value;
+function renderHeatmap(autoFit = false) {
+  // Filter out rogue points outside Colorado
+  const validPoints = allHeatPoints.filter(p => isColoradoPoint(p.lat, p.lon));
 
   // Filter pre-geocoded points by mode (Both / Pickups / Dropoffs)
-  let filtered = allHeatPoints;
-  if (currentMode === 'pickup')  filtered = allHeatPoints.filter(p => p.type === 'pickup');
-  if (currentMode === 'dropoff') filtered = allHeatPoints.filter(p => p.type === 'dropoff');
+  let filtered = validPoints;
+  if (currentMode === 'pickup')  filtered = validPoints.filter(p => p.type === 'pickup');
+  if (currentMode === 'dropoff') filtered = validPoints.filter(p => p.type === 'dropoff');
 
   // Normalise weights so the hottest point = 1.0
   const maxW = filtered.reduce((m, p) => Math.max(m, p.weight), 1);
@@ -958,14 +1009,13 @@ function renderHeatmap() {
 
   document.getElementById('pill-count').textContent = `${pts.length} points`;
 
-  if (pts.length > 0) {
-    const lats = pts.map(p => p[0]);
-    const lons = pts.map(p => p[1]);
-    const bounds = L.latLngBounds(
-      [Math.min(...lats), Math.min(...lons)],
-      [Math.max(...lats), Math.max(...lons)]
-    );
-    map.fitBounds(bounds, { padding: [40, 40] });
+  if (autoFit && pts.length > 0) {
+    const selectedRegion = document.getElementById('region-select')?.value || 'cos';
+    if (selectedRegion === 'all') {
+      fitColoradoBounds(pts);
+    } else if (REGION_PRESETS[selectedRegion]) {
+      map.setView(REGION_PRESETS[selectedRegion].center, REGION_PRESETS[selectedRegion].zoom);
+    }
   }
 }
 
@@ -1040,7 +1090,7 @@ function renderZones() {
   // Cluster start/end locations by approximate 0.01° grid (~1km)
   const grid = {};
   const addPt = (lat, lon, label) => {
-    if (!lat || !lon) return;
+    if (!lat || !lon || !isColoradoPoint(lat, lon)) return;
     const key = `${(lat * 100 | 0) / 100},${(lon * 100 | 0) / 100}`;
     if (!grid[key]) grid[key] = { lat, lon, count: 0, labels: {} };
     grid[key].count++;
@@ -1135,7 +1185,7 @@ function renderRecommendations() {
     const sLat = d._start_lat || d.start_lat;
     const sLon = d._start_lon || d.start_lon;
     const name = (d.start || '').split(',')[0].trim();
-    if (name && sLat && sLon) {
+    if (name && sLat && sLon && isColoradoPoint(sLat, sLon)) {
       if (!zoneCounts[name]) zoneCounts[name] = { count: 0, lat: sLat, lon: sLon };
       zoneCounts[name].count++;
     }
@@ -1195,7 +1245,7 @@ function renderRecommendations() {
 }
 
 function flyToZone(lat, lon) {
-  if (map) {
+  if (map && isColoradoPoint(lat, lon)) {
     map.setView([lat, lon], 14, { animate: true, duration: 1.5 });
   }
 }
@@ -1213,10 +1263,19 @@ function setMode(mode) {
   ['both','pickup','dropoff'].forEach(m => {
     document.getElementById(`tab-${m === 'dropoff' ? 'drop' : m}`).classList.toggle('active', m === mode);
   });
-  if (allDrives.length > 0) renderHeatmap();
+  if (allHeatPoints.length > 0) renderHeatmap(false);
 }
 
 // ── Controls ──────────────────────────────────────────────────────────
+document.getElementById('region-select').addEventListener('change', e => {
+  const key = e.target.value;
+  if (key === 'all') {
+    fitColoradoBounds();
+  } else if (REGION_PRESETS[key]) {
+    map.setView(REGION_PRESETS[key].center, REGION_PRESETS[key].zoom, { animate: true });
+  }
+});
+
 document.getElementById('tile-select').addEventListener('change', e => {
   const key = e.target.value;
   if (tileLayer) map.removeLayer(tileLayer);
@@ -1239,7 +1298,7 @@ document.getElementById('radius-slider').addEventListener('input', e => {
 
 document.getElementById('days-select').addEventListener('change', loadData);
 document.getElementById('hour-filter-select').addEventListener('change', () => {
-  if (allDrives.length > 0) renderHeatmap();
+  if (allHeatPoints.length > 0) renderHeatmap(false);
 });
 document.getElementById('charging-toggle').addEventListener('change', renderCharges);
 document.getElementById('rec-day-select').addEventListener('change', renderRecommendations);
@@ -1279,7 +1338,7 @@ async function updateLiveLocation() {
     const body = await res.json();
 
     const loc = body?.vehicle?.location;
-    if (loc && loc.lat && loc.long) {
+    if (loc && loc.lat && loc.long && isColoradoPoint(loc.lat, loc.long)) {
       const lat = loc.lat;
       const lon = loc.long;
       const speed = loc.speed || 0;

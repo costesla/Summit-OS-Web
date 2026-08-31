@@ -1088,10 +1088,21 @@ def copilot_tessie_heatmap(req: func.HttpRequest) -> func.HttpResponse:
                 for addr in uncached[:geocode_batch]:
                     lat, lon = None, None
                     try:
-                        result = gmaps.geocode(addr)
+                        # Append state if missing to bias geocoding to Colorado
+                        query_addr = addr
+                        if "CO" not in addr and "Colorado" not in addr:
+                            query_addr = f"{addr}, Colorado, USA"
+                        result = gmaps.geocode(
+                            query_addr,
+                            components={"country": "US", "administrative_area": "CO"},
+                            bounds={"southwest": (36.5, -109.5), "northeast": (41.5, -102.0)}
+                        )
                         if result:
                             loc = result[0]["geometry"]["location"]
-                            lat, lon = loc["lat"], loc["lng"]
+                            r_lat, r_lon = loc["lat"], loc["lng"]
+                            # Validate Colorado bounds
+                            if 36.5 <= r_lat <= 41.5 and -109.5 <= r_lon <= -101.5:
+                                lat, lon = r_lat, r_lon
                     except Exception as ge:
                         logging.warning(f"Geocode failed for {addr[:60]}: {ge}")
                     geo_cache[addr] = (lat, lon) if (lat and lon) else None
@@ -1101,6 +1112,8 @@ def copilot_tessie_heatmap(req: func.HttpRequest) -> func.HttpResponse:
                             MERGE Rides.GeoCache AS t
                             USING (SELECT ? AS Address, ? AS Lat, ? AS Lon) AS s
                             ON t.Address = s.Address
+                            WHEN MATCHED THEN
+                                UPDATE SET Lat = s.Lat, Lon = s.Lon
                             WHEN NOT MATCHED THEN
                                 INSERT (Address, Lat, Lon) VALUES (s.Address, s.Lat, s.Lon);
                         """, (addr, lat, lon))
@@ -1111,16 +1124,18 @@ def copilot_tessie_heatmap(req: func.HttpRequest) -> func.HttpResponse:
                 except Exception:
                     pass
 
-        # Build heatmap points
+        # Build heatmap points (strictly bounded to Colorado region)
         points = []
         for pickup, dropoff, earnings in rows:
             weight = max(0.1, float(earnings or 1.0))
             if pickup and geo_cache.get(pickup):
                 lat, lon = geo_cache[pickup]
-                points.append({"lat": lat, "lon": lon, "weight": weight, "type": "pickup"})
+                if lat is not None and lon is not None and 36.5 <= lat <= 41.5 and -109.5 <= lon <= -101.5:
+                    points.append({"lat": lat, "lon": lon, "weight": weight, "type": "pickup"})
             if dropoff and geo_cache.get(dropoff):
                 lat, lon = geo_cache[dropoff]
-                points.append({"lat": lat, "lon": lon, "weight": weight, "type": "dropoff"})
+                if lat is not None and lon is not None and 36.5 <= lat <= 41.5 and -109.5 <= lon <= -101.5:
+                    points.append({"lat": lat, "lon": lon, "weight": weight, "type": "dropoff"})
 
         conn.close()
 
