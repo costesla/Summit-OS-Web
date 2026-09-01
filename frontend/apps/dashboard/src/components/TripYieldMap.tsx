@@ -1,55 +1,8 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { GoogleMap, useJsApiLoader } from "@react-google-maps/api";
-import { AlertCircle, RefreshCw, Car, User, Calendar, Activity, Flame, DollarSign, MapPin } from "lucide-react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import { RefreshCw, Car, User, Calendar, Activity, Flame, DollarSign, MapPin } from "lucide-react";
 import { apiGet } from "../lib/apiClient";
-
-// Colorado Springs Center
-const defaultCenter = {
-    lat: 38.8650,
-    lng: -104.7900
-};
-
-const mapContainerStyle = {
-    width: "100%",
-    height: "100%"
-};
-
-// Dark Mode Styling matching Dashboard Void Aesthetic
-const darkMapStyles = [
-    { elementType: "geometry", stylers: [{ color: "#090d16" }] },
-    { elementType: "labels.text.stroke", stylers: [{ color: "#090d16" }] },
-    { elementType: "labels.text.fill", stylers: [{ color: "#94a3b8" }] },
-    {
-        featureType: "administrative.locality",
-        elementType: "labels.text.fill",
-        stylers: [{ color: "#38bdf8" }],
-    },
-    {
-        featureType: "road",
-        elementType: "geometry",
-        stylers: [{ color: "#1e293b" }],
-    },
-    {
-        featureType: "road",
-        elementType: "geometry.stroke",
-        stylers: [{ color: "#0f172a" }],
-    },
-    {
-        featureType: "road",
-        elementType: "labels.text.fill",
-        stylers: [{ color: "#64748b" }],
-    },
-    {
-        featureType: "road.highway",
-        elementType: "geometry",
-        stylers: [{ color: "#334155" }],
-    },
-    {
-        featureType: "water",
-        elementType: "geometry",
-        stylers: [{ color: "#020617" }],
-    },
-];
 
 interface ZoneConfig {
     id: string;
@@ -58,7 +11,7 @@ interface ZoneConfig {
     description: string;
     center: { lat: number; lng: number };
     bounds: { north: number; south: number; east: number; west: number };
-    paths: { lat: number; lng: number }[];
+    paths: [number, number][]; // [lat, lng]
 }
 
 const CS_ZONES: ZoneConfig[] = [
@@ -70,10 +23,10 @@ const CS_ZONES: ZoneConfig[] = [
         center: { lat: 39.015, lng: -104.825 },
         bounds: { north: 39.12, south: 38.98, east: -104.70, west: -104.92 },
         paths: [
-            { lat: 39.12, lng: -104.92 },
-            { lat: 39.12, lng: -104.70 },
-            { lat: 38.98, lng: -104.70 },
-            { lat: 38.98, lng: -104.92 },
+            [39.12, -104.92],
+            [39.12, -104.70],
+            [38.98, -104.70],
+            [38.98, -104.92],
         ]
     },
     {
@@ -84,10 +37,10 @@ const CS_ZONES: ZoneConfig[] = [
         center: { lat: 38.948, lng: -104.775 },
         bounds: { north: 38.98, south: 38.92, east: -104.70, west: -104.85 },
         paths: [
-            { lat: 38.98, lng: -104.85 },
-            { lat: 38.98, lng: -104.70 },
-            { lat: 38.92, lng: -104.70 },
-            { lat: 38.92, lng: -104.85 },
+            [38.98, -104.85],
+            [38.98, -104.70],
+            [38.92, -104.70],
+            [38.92, -104.85],
         ]
     },
     {
@@ -98,10 +51,10 @@ const CS_ZONES: ZoneConfig[] = [
         center: { lat: 38.790, lng: -104.855 },
         bounds: { north: 38.82, south: 38.74, east: -104.80, west: -104.92 },
         paths: [
-            { lat: 38.82, lng: -104.92 },
-            { lat: 38.82, lng: -104.80 },
-            { lat: 38.74, lng: -104.80 },
-            { lat: 38.74, lng: -104.92 },
+            [38.82, -104.92],
+            [38.82, -104.80],
+            [38.74, -104.80],
+            [38.74, -104.92],
         ]
     },
     {
@@ -112,10 +65,10 @@ const CS_ZONES: ZoneConfig[] = [
         center: { lat: 38.895, lng: -104.845 },
         bounds: { north: 38.92, south: 38.87, east: -104.80, west: -104.90 },
         paths: [
-            { lat: 38.92, lng: -104.90 },
-            { lat: 38.92, lng: -104.80 },
-            { lat: 38.87, lng: -104.80 },
-            { lat: 38.87, lng: -104.90 },
+            [38.92, -104.90],
+            [38.92, -104.80],
+            [38.87, -104.80],
+            [38.87, -104.90],
         ]
     },
     {
@@ -126,10 +79,10 @@ const CS_ZONES: ZoneConfig[] = [
         center: { lat: 38.845, lng: -104.835 },
         bounds: { north: 38.87, south: 38.82, east: -104.80, west: -104.88 },
         paths: [
-            { lat: 38.87, lng: -104.88 },
-            { lat: 38.87, lng: -104.80 },
-            { lat: 38.82, lng: -104.80 },
-            { lat: 38.82, lng: -104.88 },
+            [38.87, -104.88],
+            [38.87, -104.80],
+            [38.82, -104.80],
+            [38.82, -104.88],
         ]
     },
     {
@@ -140,10 +93,10 @@ const CS_ZONES: ZoneConfig[] = [
         center: { lat: 38.880, lng: -104.730 },
         bounds: { north: 38.94, south: 38.83, east: -104.68, west: -104.78 },
         paths: [
-            { lat: 38.94, lng: -104.78 },
-            { lat: 38.94, lng: -104.68 },
-            { lat: 38.83, lng: -104.68 },
-            { lat: 38.83, lng: -104.78 },
+            [38.94, -104.78],
+            [38.94, -104.68],
+            [38.83, -104.68],
+            [38.83, -104.78],
         ]
     },
     {
@@ -154,10 +107,10 @@ const CS_ZONES: ZoneConfig[] = [
         center: { lat: 38.805, lng: -104.705 },
         bounds: { north: 38.84, south: 38.77, east: -104.64, west: -104.75 },
         paths: [
-            { lat: 38.84, lng: -104.75 },
-            { lat: 38.84, lng: -104.64 },
-            { lat: 38.77, lng: -104.64 },
-            { lat: 38.77, lng: -104.75 },
+            [38.84, -104.75],
+            [38.84, -104.64],
+            [38.77, -104.64],
+            [38.77, -104.75],
         ]
     },
     {
@@ -168,10 +121,10 @@ const CS_ZONES: ZoneConfig[] = [
         center: { lat: 38.745, lng: -104.755 },
         bounds: { north: 38.78, south: 38.68, east: -104.68, west: -104.82 },
         paths: [
-            { lat: 38.78, lng: -104.82 },
-            { lat: 38.78, lng: -104.68 },
-            { lat: 38.68, lng: -104.68 },
-            { lat: 38.68, lng: -104.82 },
+            [38.78, -104.82],
+            [38.78, -104.68],
+            [38.68, -104.68],
+            [38.68, -104.82],
         ]
     },
     {
@@ -182,10 +135,10 @@ const CS_ZONES: ZoneConfig[] = [
         center: { lat: 38.860, lng: -104.925 },
         bounds: { north: 38.90, south: 38.82, east: -104.88, west: -105.00 },
         paths: [
-            { lat: 38.90, lng: -105.00 },
-            { lat: 38.90, lng: -104.88 },
-            { lat: 38.82, lng: -104.88 },
-            { lat: 38.82, lng: -105.00 },
+            [38.90, -105.00],
+            [38.90, -104.88],
+            [38.82, -104.88],
+            [38.82, -105.00],
         ]
     }
 ];
@@ -251,7 +204,6 @@ interface Props {
 export default function TripYieldMap({ className = "" }: Props) {
     const [trips, setTrips] = useState<TripYieldFeature[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
-    const [map, setMap] = useState<google.maps.Map | null>(null);
 
     // View & Filter states
     const [viewMode, setViewMode] = useState<ViewMode>("zones");
@@ -263,22 +215,9 @@ export default function TripYieldMap({ className = "" }: Props) {
     const [energyRate] = useState<number>(0.45);
     const [wearRate] = useState<number>(0.13);
 
-    const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
-
-    const googleMapsApiKey = 
-        (import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined) ||
-        (import.meta.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string | undefined) ||
-        "";
-
-    const [libraries] = useState<("places" | "geometry" | "drawing")[]>([
-        "places"
-    ]);
-
-    const { isLoaded, loadError } = useJsApiLoader({
-        id: "google-map-trip-yield-dash",
-        googleMapsApiKey,
-        libraries,
-    });
+    const mapContainerRef = useRef<HTMLDivElement>(null);
+    const mapInstanceRef = useRef<L.Map | null>(null);
+    const layersGroupRef = useRef<L.LayerGroup | null>(null);
 
     const fetchTripData = useCallback(async () => {
         setLoading(true);
@@ -420,94 +359,104 @@ export default function TripYieldMap({ className = "" }: Props) {
             }
         });
 
-        // Sort descending by average fare
         return results.sort((a, b) => b.avgFare - a.avgFare);
     }, [trips]);
 
-    // Native Google Maps Overlay Manager — avoids React 18 __e3_ listener lifecycle bugs
+    // ─── Initialize Leaflet Map ────────────────────────────────────────────────
     useEffect(() => {
-        if (!map || typeof google === "undefined" || !google.maps) return;
+        if (!mapContainerRef.current) return;
 
-        const overlays: (google.maps.Polygon | google.maps.Marker | google.maps.Circle)[] = [];
+        if (!mapInstanceRef.current) {
+            const map = L.map(mapContainerRef.current, {
+                center: [38.8650, -104.7900],
+                zoom: 11,
+                zoomControl: true,
+                attributionControl: false,
+            });
 
-        if (!infoWindowRef.current) {
-            infoWindowRef.current = new google.maps.InfoWindow();
+            // Clean CartoDB Dark Matter tiles (no API key required, 100% reliable)
+            L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+                maxZoom: 19,
+                subdomains: "abcd",
+            }).addTo(map);
+
+            layersGroupRef.current = L.layerGroup().addTo(map);
+            mapInstanceRef.current = map;
         }
-        const infoWindow = infoWindowRef.current;
+
+        return () => {
+            if (mapInstanceRef.current) {
+                mapInstanceRef.current.remove();
+                mapInstanceRef.current = null;
+                layersGroupRef.current = null;
+            }
+        };
+    }, []);
+
+    // ─── Render Map Overlays (Zones, Pickups, Heatmap) ───────────────────────────
+    useEffect(() => {
+        const map = mapInstanceRef.current;
+        const layerGroup = layersGroupRef.current;
+        if (!map || !layerGroup) return;
+
+        layerGroup.clearLayers();
 
         if (viewMode === "zones") {
             zoneAnalytics.forEach((za) => {
                 const isSelected = selectedZone?.zone.id === za.zone.id;
                 const zoneColor = za.tier === "premium" ? "#10b981" : (za.tier === "mid" ? "#3b82f6" : "#ef4444");
 
-                // Sector Polygon
-                const poly = new google.maps.Polygon({
-                    paths: za.zone.paths,
+                // 1. Sector Polygon
+                const poly = L.polygon(za.zone.paths, {
+                    color: isSelected ? "#ffffff" : zoneColor,
                     fillColor: zoneColor,
                     fillOpacity: isSelected ? 0.35 : (za.tier === "premium" ? 0.20 : 0.12),
-                    strokeColor: isSelected ? "#ffffff" : zoneColor,
-                    strokeOpacity: isSelected ? 1 : 0.7,
-                    strokeWeight: isSelected ? 2.5 : 1.5,
-                    map,
+                    weight: isSelected ? 2.5 : 1.5,
                 });
 
-                poly.addListener("click", () => {
-                    setSelectedZone(za);
-                    infoWindow.setContent(`
-                        <div style="padding:10px; font-family:sans-serif; color:#0f172a; max-width:240px;">
-                            <div style="font-weight:bold; font-size:13px; margin-bottom:4px;">${za.zone.name}</div>
-                            <div style="font-size:11px; color:#475569; margin-bottom:8px;">${za.zone.description}</div>
-                            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;">
-                                <div>
-                                    <span style="font-size:10px; color:#64748b;">Expected Fare:</span><br/>
-                                    <strong style="font-size:18px; font-family:monospace; color:#0f172a;">$${za.avgFare.toFixed(2)}</strong>
-                                </div>
-                                <div style="text-align:right;">
-                                    <span style="font-size:10px; color:#64748b;">Net Yield:</span><br/>
-                                    <strong style="font-size:13px; font-family:monospace; color:#059669;">$${za.avgNetPerHour.toFixed(0)}/hr</strong>
-                                </div>
+                poly.bindPopup(`
+                    <div style="padding:4px; font-family:sans-serif; color:#0f172a; min-width:220px;">
+                        <div style="font-weight:bold; font-size:13px; margin-bottom:2px;">${za.zone.name}</div>
+                        <div style="font-size:10px; color:#64748b; margin-bottom:8px;">${za.zone.description}</div>
+                        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;">
+                            <div>
+                                <span style="font-size:10px; color:#64748b;">Expected Fare:</span><br/>
+                                <strong style="font-size:18px; font-family:monospace; color:#0f172a;">$${za.avgFare.toFixed(2)}</strong>
                             </div>
-                            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:6px; font-size:10px; color:#334155; margin-bottom:8px;">
-                                <div>Historical Trips: <strong>${za.trips}</strong> (${za.privateTrips} Priv, ${za.uberTrips} Uber)</div>
-                                <div>Avg Distance: <strong>${za.avgDistance.toFixed(1)} mi</strong></div>
-                                <div>Fare Range: <strong>$${za.minFare.toFixed(0)} – $${za.maxFare.toFixed(0)}</strong></div>
-                            </div>
-                            <div style="padding:4px; text-align:center; border-radius:4px; font-size:10px; font-weight:bold; ${
-                                za.tier === "premium" ? "background:#d1fae5; color:#065f46;" : (za.tier === "mid" ? "background:#dbeafe; color:#1e40af;" : "background:#fee2e2; color:#991b1b;")
-                            }">
-                                ${za.tier === "premium" ? "🟢 Top Priority Staging" : (za.tier === "mid" ? "🟡 Steady Mid-Tier" : "🔴 Low Value Short Hops")}
+                            <div style="text-align:right;">
+                                <span style="font-size:10px; color:#64748b;">Net Yield:</span><br/>
+                                <strong style="font-size:13px; font-family:monospace; color:#059669;">$${za.avgNetPerHour.toFixed(0)}/hr</strong>
                             </div>
                         </div>
-                    `);
-                    infoWindow.setPosition(za.zone.center);
-                    infoWindow.open(map);
-                });
-                overlays.push(poly);
+                        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:6px; font-size:10px; color:#334155; margin-bottom:8px;">
+                            <div>Historical Trips: <strong>${za.trips}</strong> (${za.privateTrips} Priv, ${za.uberTrips} Uber)</div>
+                            <div>Avg Distance: <strong>${za.avgDistance.toFixed(1)} mi</strong></div>
+                            <div>Fare Range: <strong>$${za.minFare.toFixed(0)} – $${za.maxFare.toFixed(0)}</strong></div>
+                        </div>
+                        <div style="padding:4px; text-align:center; border-radius:4px; font-size:10px; font-weight:bold; ${
+                            za.tier === "premium" ? "background:#d1fae5; color:#065f46;" : (za.tier === "mid" ? "background:#dbeafe; color:#1e40af;" : "background:#fee2e2; color:#991b1b;")
+                        }">
+                            ${za.tier === "premium" ? "🟢 Top Priority Staging" : (za.tier === "mid" ? "🟡 Steady Mid-Tier" : "🔴 Low Value Short Hops")}
+                        </div>
+                    </div>
+                `);
 
-                // Dollar Badge Marker
-                const marker = new google.maps.Marker({
-                    position: za.zone.center,
-                    label: {
-                        text: `$${za.avgFare.toFixed(0)}`,
-                        color: "#ffffff",
-                        fontSize: "12px",
-                        fontWeight: "bold",
-                    },
-                    icon: {
-                        path: 0, // SymbolPath.CIRCLE
-                        scale: 14,
-                        fillColor: zoneColor,
-                        fillOpacity: 0.95,
-                        strokeColor: "#ffffff",
-                        strokeWeight: 2,
-                    },
-                    map,
+                poly.on("click", () => setSelectedZone(za));
+                layerGroup.addLayer(poly);
+
+                // 2. Floating Dollar Badge Marker
+                const badgeIcon = L.divIcon({
+                    className: "zone-badge-marker",
+                    html: `<div style="background:${zoneColor}; color:#ffffff; font-weight:bold; font-family:monospace; font-size:11px; padding:2px 8px; border-radius:12px; border:2px solid #ffffff; box-shadow:0 2px 8px rgba(0,0,0,0.6); white-space:nowrap; text-align:center; transform:translate(-50%, -50%); cursor:pointer;">$${za.avgFare.toFixed(0)}/trip</div>`,
+                    iconSize: [0, 0],
                 });
-                marker.addListener("click", () => {
+
+                const marker = L.marker([za.zone.center.lat, za.zone.center.lng], { icon: badgeIcon });
+                marker.on("click", () => {
                     setSelectedZone(za);
-                    poly.setOptions({ strokeColor: "#ffffff", fillOpacity: 0.35, strokeWeight: 2.5 });
+                    poly.openPopup();
                 });
-                overlays.push(marker);
+                layerGroup.addLayer(marker);
             });
         } else if (viewMode === "pickups") {
             trips.forEach((t) => {
@@ -519,36 +468,31 @@ export default function TripYieldMap({ className = "" }: Props) {
                 );
                 if (!coords) return;
 
-                const marker = new google.maps.Marker({
-                    position: { lat: coords[1], lng: coords[0] },
-                    icon: {
-                        path: 0, // SymbolPath.CIRCLE
-                        scale: p.is_estimated ? 4.5 : 5.5,
-                        fillColor: getYieldColor(p.net_per_hour),
-                        fillOpacity: p.is_estimated ? 0.6 : 0.9,
-                        strokeColor: p.net_per_hour <= 0 ? "#fca5a5" : (p.is_estimated ? "#cbd5e1" : "#ffffff"),
-                        strokeWeight: 1.5,
-                    },
-                    map,
+                const color = getYieldColor(p.net_per_hour);
+                const circle = L.circleMarker([coords[1], coords[0]], {
+                    radius: p.is_estimated ? 4.5 : 5.5,
+                    fillColor: color,
+                    fillOpacity: p.is_estimated ? 0.6 : 0.9,
+                    color: p.net_per_hour <= 0 ? "#fca5a5" : "#ffffff",
+                    weight: 1.5,
                 });
-                marker.addListener("click", () => {
-                    infoWindow.setContent(`
-                        <div style="padding:8px; font-family:sans-serif; color:#0f172a; max-width:200px;">
-                            <div style="font-weight:bold; font-size:11px; text-transform:uppercase; color:#475569;">${p.trip_type} Pickup</div>
-                            <div style="display:flex; justify-content:space-between; align-items:baseline; margin:6px 0;">
-                                <strong style="font-size:18px; font-family:monospace; color:#0f172a;">$${p.gross.toFixed(2)}</strong>
-                                <span style="font-size:11px; font-weight:bold; color:#059669; font-family:monospace;">$${p.net_per_hour.toFixed(0)}/hr</span>
-                            </div>
-                            <div style="font-size:10px; color:#64748b;">
-                                <div>Distance: <strong>${p.distance_mi.toFixed(1)} mi</strong></div>
-                                <div>Duration: <strong>${p.duration_min} min</strong></div>
-                            </div>
+
+                circle.bindPopup(`
+                    <div style="padding:4px; font-family:sans-serif; color:#0f172a; min-width:180px;">
+                        <div style="font-weight:bold; font-size:11px; text-transform:uppercase; color:#475569;">${p.trip_type} Pickup</div>
+                        <div style="display:flex; justify-content:space-between; align-items:baseline; margin:6px 0;">
+                            <strong style="font-size:18px; font-family:monospace; color:#0f172a;">$${p.gross.toFixed(2)}</strong>
+                            <span style="font-size:11px; font-weight:bold; color:#059669; font-family:monospace;">$${p.net_per_hour.toFixed(0)}/hr</span>
                         </div>
-                    `);
-                    infoWindow.setPosition({ lat: coords[1], lng: coords[0] });
-                    infoWindow.open(map);
-                });
-                overlays.push(marker);
+                        <div style="font-size:10px; color:#64748b;">
+                            <div>Distance: <strong>${p.distance_mi.toFixed(1)} mi</strong></div>
+                            <div>Duration: <strong>${p.duration_min} min</strong></div>
+                            <div>Date: <strong>${p.timestamp_start?.split("T")[0]}</strong></div>
+                        </div>
+                    </div>
+                `);
+
+                layerGroup.addLayer(circle);
             });
         } else if (viewMode === "heatmap") {
             trips.forEach((t) => {
@@ -560,34 +504,19 @@ export default function TripYieldMap({ className = "" }: Props) {
                 );
                 if (!coords) return;
 
-                const circle = new google.maps.Circle({
-                    center: { lat: coords[1], lng: coords[0] },
-                    radius: 650,
-                    fillColor: getYieldColor(p.net_per_hour),
-                    fillOpacity: 0.18,
-                    strokeColor: getYieldColor(p.net_per_hour),
-                    strokeOpacity: 0.4,
-                    strokeWeight: 1,
-                    map,
+                const color = getYieldColor(p.net_per_hour);
+                const glow = L.circle([coords[1], coords[0]], {
+                    radius: 700,
+                    fillColor: color,
+                    fillOpacity: 0.16,
+                    color: color,
+                    weight: 1,
+                    stroke: true,
                 });
-                overlays.push(circle);
+                layerGroup.addLayer(glow);
             });
         }
-
-        return () => {
-            overlays.forEach((o) => o.setMap(null));
-        };
-    }, [map, viewMode, zoneAnalytics, trips, selectedZone]);
-
-    if (loadError) {
-        return (
-            <div className="bg-red-950/40 border border-red-800 text-red-300 p-6 rounded-xl text-center">
-                <AlertCircle className="w-8 h-8 mx-auto mb-2 text-red-500" />
-                <h3 className="font-semibold text-lg">Google Maps Load Error</h3>
-                <p className="text-sm mt-1 text-red-400">{loadError.message}</p>
-            </div>
-        );
-    }
+    }, [viewMode, zoneAnalytics, trips, selectedZone]);
 
     return (
         <div className={`flex flex-col h-full bg-[#030712] text-slate-100 rounded-xl overflow-hidden border border-slate-800 shadow-2xl ${className}`}>
@@ -734,24 +663,11 @@ export default function TripYieldMap({ className = "" }: Props) {
 
             {/* Map Canvas */}
             <div className="relative flex-1 min-h-[480px]">
-                {isLoaded ? (
-                    <GoogleMap
-                        mapContainerStyle={mapContainerStyle}
-                        center={defaultCenter}
-                        zoom={11}
-                        onLoad={(m) => setMap(m)}
-                        onUnmount={() => setMap(null)}
-                        options={{
-                            styles: darkMapStyles,
-                            disableDefaultUI: true,
-                            zoomControl: true,
-                            clickableIcons: false,
-                        }}
-                    />
-                ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-500">
-                        <div className="w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-3"></div>
-                        <span className="text-xs uppercase tracking-widest font-mono text-cyan-400">Loading Staging Console...</span>
+                <div ref={mapContainerRef} className="w-full h-full min-h-[480px] bg-[#090d16]" />
+                {loading && (
+                    <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs flex flex-col items-center justify-center text-slate-400 z-500">
+                        <div className="w-7 h-7 border-3 border-cyan-500 border-t-transparent rounded-full animate-spin mb-2" />
+                        <span className="text-xs uppercase tracking-widest font-mono text-cyan-400">Updating Staging Intelligence...</span>
                     </div>
                 )}
             </div>
