@@ -11,7 +11,7 @@ bp = func.Blueprint()
 DEFAULT_ENERGY_RATE = 0.45  # $/kWh (unvalidated placeholder)
 DEFAULT_WEAR_RATE = 0.13    # $/mile (unvalidated placeholder)
 
-@bp.route(route="analytics/trip-yield", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.FUNCTION)
+@bp.route(route="analytics/trip-yield", methods=["GET", "OPTIONS"], auth_level=func.AuthLevel.ANONYMOUS)
 def get_trip_yield(req: func.HttpRequest) -> func.HttpResponse:
     """
     Returns commercial trip yields as a GeoJSON FeatureCollection.

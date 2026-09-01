@@ -6,7 +6,7 @@ import {
     Mail, Send, Lock
 } from 'lucide-react';
 import { isBackgroundableError, devDebugError, getAsyncExecutionLogs, pollJobStatus } from '../../../../src/lib/intelligenceUtils';
-import { apiGet, apiPost, apiRequest } from '../lib/apiClient';
+import { apiGet, apiPost, apiRequest, API_FUNCTION_KEY } from '../lib/apiClient';
 import PaymentTrackerPanel from './payments/PaymentTrackerPanel';
 import ManualLedgerPanel from './payments/ManualLedgerPanel';
 import TripYieldMap from './TripYieldMap';
@@ -1698,9 +1698,14 @@ const DriverDashboard: React.FC = () => {
                                             <h3 className="text-xs font-bold uppercase tracking-wider text-white font-mono">Commercial Route & Heatmap Console</h3>
                                         </div>
                                         <a 
-                                            href="/uber-heatmap.html" 
+                                            href={`/uber-heatmap.html${API_FUNCTION_KEY ? `?code=${encodeURIComponent(API_FUNCTION_KEY)}` : ''}`} 
                                             target="_blank" 
                                             rel="noopener noreferrer"
+                                            onClick={() => {
+                                                if (API_FUNCTION_KEY) {
+                                                    try { localStorage.setItem('summitos_fn_key', API_FUNCTION_KEY); } catch { /* ignore */ }
+                                                }
+                                            }}
                                             className="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--accent-cyan)] transition-all font-mono"
                                         >
                                             Fullscreen Popout <ExternalLink className="w-3.5 h-3.5" />

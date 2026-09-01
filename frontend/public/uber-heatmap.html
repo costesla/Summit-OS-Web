@@ -857,12 +857,24 @@ async function loadData() {
       dateParam = `&from=${d.toISOString().split('T')[0]}`;
     }
 
-    const tripYieldUrl = `${BACKEND}/api/analytics/trip-yield?format=points${dateParam}`;
+    // Extract Function Key from URL query or localStorage
+    const urlParams = new URLSearchParams(window.location.search);
+    const fnCode = urlParams.get('code') || urlParams.get('key') || localStorage.getItem('summitos_fn_key') || '';
+    if (fnCode) {
+      try { localStorage.setItem('summitos_fn_key', fnCode); } catch { /* ignore */ }
+    }
+
+    const headers = {};
+    if (fnCode) {
+      headers['x-functions-key'] = fnCode;
+    }
+
+    const tripYieldUrl = `${BACKEND}/api/analytics/trip-yield?format=points${dateParam}${fnCode ? `&code=${encodeURIComponent(fnCode)}` : ''}`;
     const chargesUrl = `${BACKEND}/api/copilot/tessie/charges?days=${days}`;
 
     const [yieldRes, chargesRes] = await Promise.all([
-      fetch(tripYieldUrl, { signal: AbortSignal.timeout(30000) }).catch(() => null),
-      fetch(chargesUrl, { signal: AbortSignal.timeout(20000) }).catch(() => null)
+      fetch(tripYieldUrl, { headers, signal: AbortSignal.timeout(30000) }).catch(() => null),
+      fetch(chargesUrl, { headers, signal: AbortSignal.timeout(20000) }).catch(() => null)
     ]);
 
     if (yieldRes && yieldRes.ok) {
