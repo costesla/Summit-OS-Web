@@ -73,6 +73,12 @@ export interface TripYieldFeature {
     };
 }
 
+interface FeatureCollectionResponse {
+    type: string;
+    features: TripYieldFeature[];
+    metadata?: Record<string, unknown>;
+}
+
 export type TripTypeFilter = "all" | "uber" | "private";
 export type ViewMode = "corridors" | "pickups" | "heatmap";
 
@@ -105,8 +111,8 @@ export default function TripYieldMap({ className = "" }: Props) {
     const [wearRate] = useState<number>(0.13);
 
     const googleMapsApiKey = 
-        (import.meta as any).env.VITE_GOOGLE_MAPS_API_KEY ||
-        (import.meta as any).env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ||
+        (import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined) ||
+        (import.meta.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string | undefined) ||
         "";
 
     const [libraries] = useState<("places" | "geometry" | "drawing" | "visualization")[]>([
@@ -143,9 +149,9 @@ export default function TripYieldMap({ className = "" }: Props) {
                 params.append("from", d.toISOString().split("T")[0]);
             }
 
-            const data = await apiGet<any>(`/analytics/trip-yield?${params.toString()}`);
+            const data = await apiGet<FeatureCollectionResponse>(`/analytics/trip-yield?${params.toString()}`);
             setTrips(data.features || []);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Failed to fetch trip yield data:", err);
         } finally {
             setLoading(false);
@@ -190,7 +196,7 @@ export default function TripYieldMap({ className = "" }: Props) {
 
     // Google Maps Heatmap Data points
     const heatmapPoints = useMemo(() => {
-        if (!isLoaded || typeof window === "undefined" || !(window as any).google || !(window as any).google.maps) return [];
+        if (!isLoaded || typeof google === "undefined" || !google.maps) return [];
         return trips.map((t) => {
             const coords = (
                 t.geometry.type === "Point"
@@ -199,7 +205,7 @@ export default function TripYieldMap({ className = "" }: Props) {
             );
             if (!coords) return null;
             return {
-                location: new (window as any).google.maps.LatLng(coords[1], coords[0]),
+                location: new google.maps.LatLng(coords[1], coords[0]),
                 weight: Math.max(1, Math.min(10, (t.properties.net_per_hour || 20) / 10)),
             };
         }).filter(Boolean) as google.maps.visualization.WeightedLocation[];
@@ -390,7 +396,7 @@ export default function TripYieldMap({ className = "" }: Props) {
                                         icons: [
                                             {
                                                 icon: {
-                                                    path: (window as any).google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+                                                    path: 1, // google.maps.SymbolPath.FORWARD_CLOSED_ARROW
                                                     scale: 2.5,
                                                     strokeColor: isSelected ? "#ffffff" : strokeColor,
                                                     fillColor: strokeColor,
@@ -421,7 +427,7 @@ export default function TripYieldMap({ className = "" }: Props) {
                             const markerColor = getYieldColor(p.net_per_hour);
 
                             const markerIcon: google.maps.Symbol = {
-                                path: (window as any).google.maps.SymbolPath.CIRCLE,
+                                path: 0, // google.maps.SymbolPath.CIRCLE
                                 scale: p.is_estimated ? 5.5 : 6.5,
                                 fillColor: markerColor,
                                 fillOpacity: p.is_estimated ? 0.6 : 0.9,
