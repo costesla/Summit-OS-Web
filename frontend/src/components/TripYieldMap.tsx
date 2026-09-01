@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { GoogleMap, useJsApiLoader, InfoWindow, MarkerF, CircleF, PolygonF } from "@react-google-maps/api";
 import { AlertCircle, RefreshCw, Car, User, Calendar, Activity, Flame, DollarSign, MapPin } from "lucide-react";
 import { getTripYieldData } from "@/lib/api";
@@ -591,44 +591,51 @@ export default function TripYieldMap({ className = "" }: Props) {
                             clickableIcons: false,
                         }}
                     >
-                        {/* 1. ZONE STAGING MODE (Polygons & Floating Average $/Trip Labels) */}
+                        {/* 1. ZONE STAGING MODE - POLYGONS */}
                         {viewMode === "zones" && zoneAnalytics.map((za) => {
                             const isSelected = selectedZone?.zone.id === za.zone.id;
                             const zoneColor = za.tier === "premium" ? "#10b981" : (za.tier === "mid" ? "#3b82f6" : "#ef4444");
 
                             return (
-                                <React.Fragment key={za.zone.id}>
-                                    <PolygonF
-                                        paths={za.zone.paths}
-                                        options={{
-                                            fillColor: zoneColor,
-                                            fillOpacity: isSelected ? 0.35 : (za.tier === "premium" ? 0.20 : 0.12),
-                                            strokeColor: isSelected ? "#ffffff" : zoneColor,
-                                            strokeOpacity: isSelected ? 1 : 0.7,
-                                            strokeWeight: isSelected ? 2.5 : 1.5,
-                                        }}
-                                        onClick={() => setSelectedZone(za)}
-                                    />
-                                    <MarkerF
-                                        position={za.zone.center}
-                                        label={{
-                                            text: `$${za.avgFare.toFixed(0)}/trip`,
-                                            color: "#ffffff",
-                                            fontSize: "12px",
-                                            fontWeight: "bold",
-                                            className: "font-mono px-2 py-0.5 rounded bg-slate-900/90 border border-slate-700 shadow-lg"
-                                        }}
-                                        icon={{
-                                            path: 0, // SymbolPath.CIRCLE
-                                            scale: 6,
-                                            fillColor: zoneColor,
-                                            fillOpacity: 1,
-                                            strokeColor: "#ffffff",
-                                            strokeWeight: 1.5,
-                                        }}
-                                        onClick={() => setSelectedZone(za)}
-                                    />
-                                </React.Fragment>
+                                <PolygonF
+                                    key={`poly-${za.zone.id}`}
+                                    paths={za.zone.paths}
+                                    options={{
+                                        fillColor: zoneColor,
+                                        fillOpacity: isSelected ? 0.35 : (za.tier === "premium" ? 0.20 : 0.12),
+                                        strokeColor: isSelected ? "#ffffff" : zoneColor,
+                                        strokeOpacity: isSelected ? 1 : 0.7,
+                                        strokeWeight: isSelected ? 2.5 : 1.5,
+                                    }}
+                                    onClick={() => setSelectedZone(za)}
+                                />
+                            );
+                        })}
+
+                        {/* 1. ZONE STAGING MODE - DOLLAR BADGE MARKERS */}
+                        {viewMode === "zones" && zoneAnalytics.map((za) => {
+                            const zoneColor = za.tier === "premium" ? "#10b981" : (za.tier === "mid" ? "#3b82f6" : "#ef4444");
+
+                            return (
+                                <MarkerF
+                                    key={`mark-${za.zone.id}`}
+                                    position={za.zone.center}
+                                    label={{
+                                        text: `$${za.avgFare.toFixed(0)}`,
+                                        color: "#ffffff",
+                                        fontSize: "12px",
+                                        fontWeight: "bold",
+                                    }}
+                                    icon={{
+                                        path: 0, // SymbolPath.CIRCLE
+                                        scale: 14,
+                                        fillColor: zoneColor,
+                                        fillOpacity: 0.95,
+                                        strokeColor: "#ffffff",
+                                        strokeWeight: 2,
+                                    }}
+                                    onClick={() => setSelectedZone(za)}
+                                />
                             );
                         })}
 
