@@ -9,6 +9,7 @@ import { isBackgroundableError, devDebugError, getAsyncExecutionLogs, pollJobSta
 import { apiGet, apiPost, apiRequest } from '../lib/apiClient';
 import PaymentTrackerPanel from './payments/PaymentTrackerPanel';
 import ManualLedgerPanel from './payments/ManualLedgerPanel';
+import TripYieldMap from './TripYieldMap';
 
 const AZURE_BASE = import.meta.env.VITE_PUBLIC_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://summitos-api.azurewebsites.net/api';
 const VERSION = "2.0.0";
@@ -1689,20 +1690,18 @@ const DriverDashboard: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {/* Uber Activity Heatmap */}
-                                <a href="/uber-heatmap.html" target="_blank" rel="noopener noreferrer"
-                                    className="p-5 rounded-2xl glass border border-white/8 hover:border-[var(--accent-cyan)]/30 hover:bg-white/[0.02] flex items-center justify-between transition-all duration-200 group">
-                                    <div className="flex items-center gap-3">
-                                        <MapPin className="w-5 h-5 text-[var(--accent-cyan)]" />
-                                        <div>
-                                            <h4 className="text-sm font-bold text-white">Uber Activity Heatmap</h4>
-                                            <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Launches external map layer of pickup & dropoff density hotspots</p>
+                                {/* Commercial Route & Heatmap Console */}
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <MapPin className="w-4 h-4 text-[var(--accent-cyan)]" />
+                                            <h3 className="text-xs font-bold uppercase tracking-wider text-white font-mono">Commercial Route & Heatmap Console</h3>
                                         </div>
                                     </div>
-                                    <span className="flex items-center gap-1.5 text-xs font-semibold text-[#606060] group-hover:text-[var(--accent-cyan)] transition-all">
-                                        Open Map <ExternalLink className="w-3.5 h-3.5" />
-                                    </span>
-                                </a>
+                                    <div className="h-[600px] rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
+                                        <TripYieldMap className="h-full w-full" />
+                                    </div>
+                                </div>
 
                                 {/* Intelligence Console */}
                                 <div className="bg-black/40 rounded-2xl border border-[var(--border-subtle)] overflow-hidden shadow-xl">

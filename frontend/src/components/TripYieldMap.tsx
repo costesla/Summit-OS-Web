@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { GoogleMap, useJsApiLoader, InfoWindow, MarkerF, Polyline } from "@react-google-maps/api";
-import { AlertCircle, RefreshCw, Car, User, Calendar, Navigation, Activity } from "lucide-react";
+import { GoogleMap, useJsApiLoader, InfoWindow, MarkerF, Polyline, HeatmapLayerF } from "@react-google-maps/api";
+import { AlertCircle, RefreshCw, Car, User, Calendar, Navigation, Activity, Flame } from "lucide-react";
 import { getTripYieldData } from "@/lib/api";
 
 // Colorado Springs Center
@@ -76,7 +76,7 @@ export interface TripYieldFeature {
 }
 
 export type TripTypeFilter = "all" | "uber" | "private";
-export type ViewMode = "corridors" | "pickups";
+export type ViewMode = "corridors" | "pickups" | "heatmap";
 
 // Continuous Yield Color Scale (Loss = Crimson, Low = Indigo, Med = Blue, High = Cyan/Teal, Peak = Emerald)
 function getYieldColor(netPerHour: number): string {
@@ -108,7 +108,10 @@ export default function TripYieldMap({ className = "" }: Props) {
     const [wearRate, setWearRate] = useState<number>(0.13);
 
     const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
-    const [libraries] = useState<("places" | "geometry" | "drawing")[]>(["places"]);
+    const [libraries] = useState<("places" | "geometry" | "drawing" | "visualization")[]>([
+        "places",
+        "visualization"
+    ]);
 
     const { isLoaded, loadError } = useJsApiLoader({
         id: "google-map-trip-yield",
@@ -121,7 +124,7 @@ export default function TripYieldMap({ className = "" }: Props) {
         setError(null);
         try {
             const params = new URLSearchParams();
-            params.append("format", viewMode);
+            params.append("format", viewMode === "corridors" ? "corridors" : "points");
             if (tripFilter !== "all") params.append("trip_type", tripFilter);
             if (energyRate) params.append("energy_rate", energyRate.toString());
             if (wearRate) params.append("wear_rate", wearRate.toString());
@@ -186,6 +189,23 @@ export default function TripYieldMap({ className = "" }: Props) {
         };
     }, [trips]);
 
+    // Google Maps Heatmap Data points
+    const heatmapPoints = useMemo(() => {
+        if (!isLoaded || typeof window === "undefined" || !window.google || !window.google.maps) return [];
+        return trips.map((t) => {
+            const coords = (
+                t.geometry.type === "Point"
+                    ? (t.geometry.coordinates as [number, number])
+                    : (t.geometry.coordinates as [number, number][])[0]
+            );
+            if (!coords) return null;
+            return {
+                location: new google.maps.LatLng(coords[1], coords[0]),
+                weight: Math.max(1, Math.min(10, (t.properties.net_per_hour || 20) / 10)),
+            };
+        }).filter(Boolean) as google.maps.visualization.WeightedLocation[];
+    }, [trips, isLoaded]);
+
     if (loadError) {
         return (
             <div className="bg-red-950/40 border border-red-800 text-red-300 p-6 rounded-xl text-center">
@@ -206,20 +226,20 @@ export default function TripYieldMap({ className = "" }: Props) {
                     </div>
                     <div>
                         <h2 className="text-base font-bold text-white tracking-wide flex items-center gap-2">
-                            Commercial Route & Yield Console
+                            Commercial Route & Heatmap Console
                             <span className="text-[11px] px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800 font-mono">
                                 Verified Telemetry
                             </span>
                         </h2>
                         <p className="text-xs text-slate-400">
-                            Real commercial corridors color-coded by net $/engaged hour
+                            {viewMode === "heatmap" ? "Density & yield intensity heatmap" : "Real commercial routes color-coded by net $/engaged hour"}
                         </p>
                     </div>
                 </div>
 
                 {/* Filter & Mode Controls */}
                 <div className="flex flex-wrap items-center gap-2 text-xs">
-                    {/* View Mode Toggle: Corridors vs Pickups */}
+                    {/* View Mode Toggle: Corridors vs Pickups vs Heatmap */}
                     <div className="flex items-center bg-slate-950 rounded-lg p-1 border border-slate-800">
                         <button
                             onClick={() => setViewMode("corridors")}
@@ -238,6 +258,15 @@ export default function TripYieldMap({ className = "" }: Props) {
                         >
                             <Activity className="w-3.5 h-3.5" />
                             Pickups
+                        </button>
+                        <button
+                            onClick={() => setViewMode("heatmap")}
+                            className={`px-2.5 py-1 rounded font-medium flex items-center gap-1.5 transition-all ${
+                                viewMode === "heatmap" ? "bg-slate-800 text-amber-400 shadow-sm" : "text-slate-400 hover:text-white"
+                            }`}
+                        >
+                            <Flame className="w-3.5 h-3.5" />
+                            Heatmap
                         </button>
                     </div>
 
@@ -411,6 +440,25 @@ export default function TripYieldMap({ className = "" }: Props) {
                                 />
                             );
                         })}
+
+                        {/* 3. HEATMAP MODE */}
+                        {viewMode === "heatmap" && heatmapPoints.length > 0 && (
+                            <HeatmapLayerF
+                                data={heatmapPoints}
+                                options={{
+                                    radius: 35,
+                                    opacity: 0.85,
+                                    gradient: [
+                                        "rgba(0, 255, 255, 0)",
+                                        "rgba(0, 255, 255, 1)",
+                                        "rgba(59, 130, 246, 1)",
+                                        "rgba(99, 102, 241, 1)",
+                                        "rgba(245, 158, 11, 1)",
+                                        "rgba(239, 68, 68, 1)",
+                                    ],
+                                }}
+                            />
+                        )}
 
                         {/* Interactive Tooltip Card */}
                         {selectedTrip && (
