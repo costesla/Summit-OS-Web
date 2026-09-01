@@ -189,3 +189,11 @@ export async function getPricing(
   });
   return apiFetch<PricingResponse>(`pricing?${params}`);
 }
+
+export { apiFetch };
+
+/** GET /api/analytics/trip-yield */
+export async function getTripYieldData(params: URLSearchParams): Promise<any> {
+  return apiFetch<any>(`analytics/trip-yield?${params.toString()}`);
+}
+

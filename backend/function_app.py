@@ -55,6 +55,8 @@ blueprints = [
     "api.push",
     "api.return_trip",
     "api.return_trip_public",
+    "api.spatial_profitability",
+    "api.trip_yield",
 ]
 
 registration_logs = []

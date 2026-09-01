@@ -2763,5 +2763,54 @@ class DatabaseClient:
         finally:
             conn.close()
 
+    def get_spatial_trip_records(self, start_date: str = None, end_date: str = None, limit: int = 500):
+        """Fetches trip records joined with telemetry and fare metrics for spatial profitability aggregation."""
+        conn = self.get_connection()
+        if not conn:
+            return []
+        try:
+            cursor = conn.cursor()
+            query = """
+                SELECT TOP (?)
+                    RideID,
+                    Timestamp_Start,
+                    Pickup_Location,
+                    Dropoff_Location,
+                    Distance_mi,
+                    Duration_min,
+                    Tessie_Distance,
+                    Energy_Used_kWh,
+                    Fare,
+                    Tip,
+                    Driver_Earnings,
+                    Classification,
+                    TripType,
+                    Sidecar_Artifact_JSON
+                FROM Rides.Rides
+                WHERE DeletedAt IS NULL
+                  AND (Driver_Earnings > 0 OR Fare > 0)
+            """
+            params = [limit]
+
+            if start_date and end_date:
+                query += " AND CAST(Timestamp_Start AS DATE) BETWEEN ? AND ?"
+                params.extend([start_date, end_date])
+            elif start_date:
+                query += " AND CAST(Timestamp_Start AS DATE) >= ?"
+                params.append(start_date)
+
+            query += " ORDER BY Timestamp_Start DESC"
+
+            cursor.execute(query, params)
+            columns = [col[0] for col in cursor.description]
+            rows = cursor.fetchall()
+            return [dict(zip(columns, row)) for row in rows]
+        except Exception as e:
+            logging.error(f"get_spatial_trip_records failed: {e}")
+            return []
+        finally:
+            conn.close()
+
+
 
 
