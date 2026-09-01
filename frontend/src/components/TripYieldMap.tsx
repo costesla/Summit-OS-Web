@@ -1,14 +1,12 @@
-"use client";
-
-import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { GoogleMap, useJsApiLoader, InfoWindow, MarkerF, Polyline, CircleF } from "@react-google-maps/api";
-import { AlertCircle, RefreshCw, Car, User, Calendar, Navigation, Activity, Flame } from "lucide-react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { GoogleMap, useJsApiLoader, InfoWindow, MarkerF, CircleF, PolygonF } from "@react-google-maps/api";
+import { AlertCircle, RefreshCw, Car, User, Calendar, Activity, Flame, DollarSign, MapPin } from "lucide-react";
 import { getTripYieldData } from "@/lib/api";
 
 // Colorado Springs Center
 const defaultCenter = {
-    lat: 38.8339,
-    lng: -104.8214
+    lat: 38.8650,
+    lng: -104.7900
 };
 
 const mapContainerStyle = {
@@ -53,11 +51,150 @@ const darkMapStyles = [
     },
 ];
 
-export interface TripYieldFeature {
+interface ZoneConfig {
+    id: string;
+    name: string;
+    shortName: string;
+    description: string;
+    center: { lat: number; lng: number };
+    bounds: { north: number; south: number; east: number; west: number };
+    paths: { lat: number; lng: number }[];
+}
+
+const CS_ZONES: ZoneConfig[] = [
+    {
+        id: "northgate_monument",
+        name: "Northgate / Flying Horse / Monument",
+        shortName: "Northgate / Monument",
+        description: "High-ticket residential, airport shuttles, long-haul private & Uber Black",
+        center: { lat: 39.015, lng: -104.825 },
+        bounds: { north: 39.12, south: 38.98, east: -104.70, west: -104.92 },
+        paths: [
+            { lat: 39.12, lng: -104.92 },
+            { lat: 39.12, lng: -104.70 },
+            { lat: 38.98, lng: -104.70 },
+            { lat: 38.98, lng: -104.92 },
+        ]
+    },
+    {
+        id: "briargate_cordera",
+        name: "Briargate / Pine Creek / Cordera",
+        shortName: "Briargate / Cordera",
+        description: "Affluent suburban corridor, frequent high-ticket business & airport transfers",
+        center: { lat: 38.948, lng: -104.775 },
+        bounds: { north: 38.98, south: 38.92, east: -104.70, west: -104.85 },
+        paths: [
+            { lat: 38.98, lng: -104.85 },
+            { lat: 38.98, lng: -104.70 },
+            { lat: 38.92, lng: -104.70 },
+            { lat: 38.92, lng: -104.85 },
+        ]
+    },
+    {
+        id: "broadmoor_sw",
+        name: "The Broadmoor / Cheyenne Mtn / SW",
+        shortName: "The Broadmoor / SW",
+        description: "Luxury resort & executive residential; highest fare averages & VIP transfers",
+        center: { lat: 38.790, lng: -104.855 },
+        bounds: { north: 38.82, south: 38.74, east: -104.80, west: -104.92 },
+        paths: [
+            { lat: 38.82, lng: -104.92 },
+            { lat: 38.82, lng: -104.80 },
+            { lat: 38.74, lng: -104.80 },
+            { lat: 38.74, lng: -104.92 },
+        ]
+    },
+    {
+        id: "north_nevada_gog",
+        name: "North Nevada / Garden of Gods / UCCS",
+        shortName: "North Nevada / GOG",
+        description: "Major commercial spine, tech campuses & hotel clusters; steady mid-to-high ticket",
+        center: { lat: 38.895, lng: -104.845 },
+        bounds: { north: 38.92, south: 38.87, east: -104.80, west: -104.90 },
+        paths: [
+            { lat: 38.92, lng: -104.90 },
+            { lat: 38.92, lng: -104.80 },
+            { lat: 38.87, lng: -104.80 },
+            { lat: 38.87, lng: -104.90 },
+        ]
+    },
+    {
+        id: "downtown_occ",
+        name: "Downtown / Old Colorado City",
+        shortName: "Downtown / OCC",
+        description: "Dense dining, nightlife & tourist core; high frequency, short turns, moderate fares",
+        center: { lat: 38.845, lng: -104.835 },
+        bounds: { north: 38.87, south: 38.82, east: -104.80, west: -104.88 },
+        paths: [
+            { lat: 38.87, lng: -104.88 },
+            { lat: 38.87, lng: -104.80 },
+            { lat: 38.82, lng: -104.80 },
+            { lat: 38.82, lng: -104.88 },
+        ]
+    },
+    {
+        id: "powers_corridor",
+        name: "Powers Corridor / Stetson Hills / Cimarron",
+        shortName: "Powers Corridor",
+        description: "Suburban retail corridor, family commutes, mid-distance trips to airport & downtown",
+        center: { lat: 38.880, lng: -104.730 },
+        bounds: { north: 38.94, south: 38.83, east: -104.68, west: -104.78 },
+        paths: [
+            { lat: 38.94, lng: -104.78 },
+            { lat: 38.94, lng: -104.68 },
+            { lat: 38.83, lng: -104.68 },
+            { lat: 38.83, lng: -104.78 },
+        ]
+    },
+    {
+        id: "airport_peterson",
+        name: "COS Airport / Peterson Space Base",
+        shortName: "COS Airport / SFB",
+        description: "Terminal pickups & military personnel; consistent medium-to-high ticket fares",
+        center: { lat: 38.805, lng: -104.705 },
+        bounds: { north: 38.84, south: 38.77, east: -104.64, west: -104.75 },
+        paths: [
+            { lat: 38.84, lng: -104.75 },
+            { lat: 38.84, lng: -104.64 },
+            { lat: 38.77, lng: -104.64 },
+            { lat: 38.77, lng: -104.75 },
+        ]
+    },
+    {
+        id: "south_academy_chelton",
+        name: "South Academy / Chelton / Fountain / Security",
+        shortName: "South Academy / Fountain",
+        description: "Low-value local short hops; lower average fares, higher deadhead exposure",
+        center: { lat: 38.745, lng: -104.755 },
+        bounds: { north: 38.78, south: 38.68, east: -104.68, west: -104.82 },
+        paths: [
+            { lat: 38.78, lng: -104.82 },
+            { lat: 38.78, lng: -104.68 },
+            { lat: 38.68, lng: -104.68 },
+            { lat: 38.68, lng: -104.82 },
+        ]
+    },
+    {
+        id: "manitou_ute_pass",
+        name: "Manitou Springs / Ute Pass",
+        shortName: "Manitou / Ute Pass",
+        description: "Mountain tourist corridor & Cog Railway transfers; high seasonal spikes",
+        center: { lat: 38.860, lng: -104.925 },
+        bounds: { north: 38.90, south: 38.82, east: -104.88, west: -105.00 },
+        paths: [
+            { lat: 38.90, lng: -105.00 },
+            { lat: 38.90, lng: -104.88 },
+            { lat: 38.82, lng: -104.88 },
+            { lat: 38.82, lng: -105.00 },
+        ]
+    }
+];
+
+interface TripYieldFeature {
     type: "Feature";
     geometry: {
         type: "Point" | "LineString";
-        coordinates: [number, number] | [number, number][]; // [lng, lat] or [[lng, lat], [lng, lat]]
+        coordinates: [number, number] | [number, number][]; // [lng, lat]
     };
     properties: {
         ride_id: string;
@@ -75,8 +212,28 @@ export interface TripYieldFeature {
     };
 }
 
-export type TripTypeFilter = "all" | "uber" | "private";
-export type ViewMode = "corridors" | "pickups" | "heatmap";
+interface FeatureCollectionResponse {
+    type: string;
+    features: TripYieldFeature[];
+    metadata?: Record<string, unknown>;
+}
+
+type TripTypeFilter = "all" | "uber" | "private";
+type ViewMode = "zones" | "pickups" | "heatmap";
+
+interface ZoneAnalytics {
+    zone: ZoneConfig;
+    trips: number;
+    privateTrips: number;
+    uberTrips: number;
+    avgFare: number;
+    minFare: number;
+    maxFare: number;
+    avgNetPerHour: number;
+    avgDistance: number;
+    totalGross: number;
+    tier: "premium" | "mid" | "low";
+}
 
 // Continuous Yield Color Scale (Loss = Crimson, Low = Indigo, Med = Blue, High = Cyan/Teal, Peak = Emerald)
 function getYieldColor(netPerHour: number): string {
@@ -94,36 +251,38 @@ interface Props {
 export default function TripYieldMap({ className = "" }: Props) {
     const [trips, setTrips] = useState<TripYieldFeature[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
-    const [error, setError] = useState<string | null>(null);
 
     // View & Filter states
-    const [viewMode, setViewMode] = useState<ViewMode>("corridors");
+    const [viewMode, setViewMode] = useState<ViewMode>("zones");
     const [tripFilter, setTripFilter] = useState<TripTypeFilter>("all");
     const [dateRange, setDateRange] = useState<string>("all");
     const [selectedTrip, setSelectedTrip] = useState<TripYieldFeature | null>(null);
-    const [hoveredTripId, setHoveredTripId] = useState<string | null>(null);
+    const [selectedZone, setSelectedZone] = useState<ZoneAnalytics | null>(null);
 
-    // Unvalidated rate parameters (changeable live in UI)
-    const [energyRate, setEnergyRate] = useState<number>(0.45);
-    const [wearRate, setWearRate] = useState<number>(0.13);
+    // Unvalidated rate parameters
+    const [energyRate] = useState<number>(0.45);
+    const [wearRate] = useState<number>(0.13);
 
-    const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+    const googleMapsApiKey = 
+        (import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined) ||
+        (import.meta.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string | undefined) ||
+        "";
+
     const [libraries] = useState<("places" | "geometry" | "drawing")[]>([
         "places"
     ]);
 
     const { isLoaded, loadError } = useJsApiLoader({
-        id: "google-map-trip-yield",
+        id: "google-map-trip-yield-dash",
         googleMapsApiKey,
         libraries,
     });
 
     const fetchTripData = useCallback(async () => {
         setLoading(true);
-        setError(null);
         try {
             const params = new URLSearchParams();
-            params.append("format", viewMode === "corridors" ? "corridors" : "points");
+            params.append("format", "points");
             if (tripFilter !== "all") params.append("trip_type", tripFilter);
             if (energyRate) params.append("energy_rate", energyRate.toString());
             if (wearRate) params.append("wear_rate", wearRate.toString());
@@ -144,13 +303,12 @@ export default function TripYieldMap({ className = "" }: Props) {
 
             const data = await getTripYieldData(params);
             setTrips(data.features || []);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Failed to fetch trip yield data:", err);
-            setError(err.message || "Failed to load trip yield data");
         } finally {
             setLoading(false);
         }
-    }, [viewMode, tripFilter, dateRange, energyRate, wearRate]);
+    }, [tripFilter, dateRange, energyRate, wearRate]);
 
     useEffect(() => {
         fetchTripData();
@@ -176,16 +334,92 @@ export default function TripYieldMap({ className = "" }: Props) {
         });
 
         const avgYield = totalEngagedMinutes > 0 ? (totalNet / (totalEngagedMinutes / 60)) : 0;
+        const avgGrossFare = trips.length > 0 ? (totalGross / trips.length) : 0;
 
         return {
             count: trips.length,
             totalGross,
             totalNet,
             totalDistance,
+            avgGrossFare,
             avgYield,
             lossCount,
             estCount,
         };
+    }, [trips]);
+
+    // Calculate Zone-Level Dollar Yields from Empirical Telemetry
+    const zoneAnalytics = useMemo<ZoneAnalytics[]>(() => {
+        if (!trips.length) return [];
+
+        const results: ZoneAnalytics[] = [];
+
+        CS_ZONES.forEach((z) => {
+            const zoneTrips: TripYieldFeature[] = [];
+            trips.forEach((t) => {
+                const coords = (
+                    t.geometry.type === "Point"
+                        ? (t.geometry.coordinates as [number, number])
+                        : (t.geometry.coordinates as [number, number][])[0]
+                );
+                if (!coords) return;
+                const lng = coords[0];
+                const lat = coords[1];
+
+                if (lat >= z.bounds.south && lat <= z.bounds.north && lng >= z.bounds.west && lng <= z.bounds.east) {
+                    zoneTrips.push(t);
+                }
+            });
+
+            if (zoneTrips.length > 0) {
+                let totalGross = 0;
+                let totalNet = 0;
+                let totalMin = 0;
+                let totalDist = 0;
+                let privateCount = 0;
+                let uberCount = 0;
+                const fares: number[] = [];
+
+                zoneTrips.forEach((zt) => {
+                    const p = zt.properties;
+                    totalGross += p.gross;
+                    totalNet += p.net;
+                    totalMin += p.duration_min;
+                    totalDist += p.distance_mi;
+                    fares.push(p.gross);
+                    if (p.trip_type === "Private") privateCount++;
+                    else uberCount++;
+                });
+
+                const count = zoneTrips.length;
+                const avgFare = totalGross / count;
+                const avgDist = totalDist / count;
+                const hours = totalMin / 60;
+                const avgNetPerHour = hours > 0 ? (totalNet / hours) : 0;
+                const minFare = Math.min(...fares);
+                const maxFare = Math.max(...fares);
+
+                const tier: "premium" | "mid" | "low" = 
+                    avgFare >= 22 ? "premium" : (avgFare >= 14 ? "mid" : "low");
+
+                results.push({
+                    zone: z,
+                    trips: count,
+                    privateTrips: privateCount,
+                    uberTrips: uberCount,
+                    avgFare,
+                    minFare,
+                    maxFare,
+                    avgNetPerHour,
+                    avgDistance: avgDist,
+                    totalGross,
+                    tier
+                });
+            }
+        });
+
+        // Sort descending by average fare
+        return results.sort((a, b) => b.avgFare - a.avgFare);
     }, [trips]);
 
     if (loadError) {
@@ -204,33 +438,33 @@ export default function TripYieldMap({ className = "" }: Props) {
             <div className="p-4 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 flex flex-wrap items-center justify-between gap-4 z-10">
                 <div className="flex items-center gap-3">
                     <div className="p-2.5 bg-cyan-950/80 border border-cyan-700/60 rounded-lg text-cyan-400 shadow-inner">
-                        <Navigation className="w-5 h-5" />
+                        <DollarSign className="w-5 h-5" />
                     </div>
                     <div>
                         <h2 className="text-base font-bold text-white tracking-wide flex items-center gap-2">
-                            Commercial Route & Heatmap Console
+                            Colorado Springs Zone Staging & Yield Console
                             <span className="text-[11px] px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800 font-mono">
-                                Verified Telemetry
+                                Verified Yields
                             </span>
                         </h2>
                         <p className="text-xs text-slate-400">
-                            {viewMode === "heatmap" ? "Density & yield intensity heatmap" : "Real commercial routes color-coded by net $/engaged hour"}
+                            Expected dollar earnings per trip and net $/hr by pickup neighborhood
                         </p>
                     </div>
                 </div>
 
                 {/* Filter & Mode Controls */}
                 <div className="flex flex-wrap items-center gap-2 text-xs">
-                    {/* View Mode Toggle: Corridors vs Pickups vs Heatmap */}
+                    {/* View Mode Toggle */}
                     <div className="flex items-center bg-slate-950 rounded-lg p-1 border border-slate-800">
                         <button
-                            onClick={() => setViewMode("corridors")}
+                            onClick={() => setViewMode("zones")}
                             className={`px-2.5 py-1 rounded font-medium flex items-center gap-1.5 transition-all ${
-                                viewMode === "corridors" ? "bg-slate-800 text-cyan-400 shadow-sm" : "text-slate-400 hover:text-white"
+                                viewMode === "zones" ? "bg-slate-800 text-emerald-400 shadow-sm" : "text-slate-400 hover:text-white"
                             }`}
                         >
-                            <Navigation className="w-3.5 h-3.5" />
-                            Corridors
+                            <DollarSign className="w-3.5 h-3.5" />
+                            Zone Staging
                         </button>
                         <button
                             onClick={() => setViewMode("pickups")}
@@ -239,7 +473,7 @@ export default function TripYieldMap({ className = "" }: Props) {
                             }`}
                         >
                             <Activity className="w-3.5 h-3.5" />
-                            Pickups
+                            All Pickups
                         </button>
                         <button
                             onClick={() => setViewMode("heatmap")}
@@ -248,7 +482,7 @@ export default function TripYieldMap({ className = "" }: Props) {
                             }`}
                         >
                             <Flame className="w-3.5 h-3.5" />
-                            Heatmap
+                            Density Heatmap
                         </button>
                     </div>
 
@@ -310,26 +544,35 @@ export default function TripYieldMap({ className = "" }: Props) {
                 </div>
             </div>
 
-            {/* Unvalidated Parameters Notice Banner */}
-            <div className="px-4 py-2 bg-amber-950/25 border-b border-amber-900/40 flex items-center justify-between text-[11px] text-amber-300/90">
-                <div className="flex items-center gap-1.5">
-                    <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                    <span>
-                        <strong className="text-amber-300 font-semibold">Cost Parameters (Unvalidated):</strong> Energy at <strong>${energyRate.toFixed(2)}/kWh</strong> | Wear at <strong>${wearRate.toFixed(2)}/mi</strong>
-                    </span>
-                </div>
-                <div className="flex items-center gap-3">
-                    {stats && (
-                        <span className="font-mono text-slate-300">
-                            Avg Net Yield: <strong className="text-cyan-400">${stats.avgYield.toFixed(2)}/hr</strong>
+            {/* Zone Quick-Staging Decision Strip */}
+            <div className="bg-slate-950/90 border-b border-slate-800 px-4 py-2 flex items-center gap-3 overflow-x-auto text-xs scrollbar-thin">
+                <span className="font-mono text-[11px] uppercase tracking-wider text-slate-400 shrink-0 flex items-center gap-1">
+                    <MapPin className="w-3.5 h-3.5 text-cyan-400" />
+                    Staging Guide:
+                </span>
+                {zoneAnalytics.map((za) => (
+                    <button
+                        key={za.zone.id}
+                        onClick={() => setSelectedZone(za)}
+                        className={`flex items-center gap-2 px-2.5 py-1 rounded-lg border text-xs whitespace-nowrap transition-all ${
+                            selectedZone?.zone.id === za.zone.id
+                                ? "bg-slate-800 border-cyan-400 text-white shadow-md ring-1 ring-cyan-400"
+                                : za.tier === "premium"
+                                ? "bg-emerald-950/30 border-emerald-800/60 text-emerald-300 hover:bg-emerald-900/40"
+                                : za.tier === "mid"
+                                ? "bg-blue-950/30 border-blue-800/60 text-blue-300 hover:bg-blue-900/40"
+                                : "bg-red-950/30 border-red-800/60 text-red-300 hover:bg-red-900/40"
+                        }`}
+                    >
+                        <span className="font-medium">{za.zone.shortName}</span>
+                        <span className="font-mono font-bold">
+                            ${za.avgFare.toFixed(1)}/trip
                         </span>
-                    )}
-                    {stats && stats.estCount > 0 && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
-                            {stats.estCount} Estimated kWh
+                        <span className="text-[10px] opacity-75 font-mono">
+                            (${za.avgNetPerHour.toFixed(0)}/hr)
                         </span>
-                    )}
-                </div>
+                    </button>
+                ))}
             </div>
 
             {/* Map Canvas */}
@@ -346,51 +589,48 @@ export default function TripYieldMap({ className = "" }: Props) {
                             clickableIcons: false,
                         }}
                     >
-                        {/* 1. CORRIDOR LINES MODE (POLYLINES) */}
-                        {viewMode === "corridors" && trips.map((trip) => {
-                            const p = trip.properties;
-                            if (trip.geometry.type !== "LineString") return null;
-                            const coords = trip.geometry.coordinates as [number, number][];
-                            if (!coords || coords.length < 2) return null;
-
-                            const path = [
-                                { lat: coords[0][1], lng: coords[0][0] },
-                                { lat: coords[1][1], lng: coords[1][0] },
-                            ];
-
-                            const strokeColor = getYieldColor(p.net_per_hour);
-                            const isHovered = hoveredTripId === p.ride_id;
-                            const isSelected = selectedTrip?.properties.ride_id === p.ride_id;
+                        {/* 1. ZONE STAGING MODE (Polygons & Floating Average $/Trip Labels) */}
+                        {viewMode === "zones" && zoneAnalytics.map((za) => {
+                            const isSelected = selectedZone?.zone.id === za.zone.id;
+                            const zoneColor = za.tier === "premium" ? "#10b981" : (za.tier === "mid" ? "#3b82f6" : "#ef4444");
 
                             return (
-                                <Polyline
-                                    key={p.ride_id}
-                                    path={path}
-                                    options={{
-                                        strokeColor: isSelected ? "#ffffff" : strokeColor,
-                                        strokeOpacity: isHovered || isSelected ? 0.95 : (p.is_estimated ? 0.6 : 0.8),
-                                        strokeWeight: isSelected ? 5 : (isHovered ? 4 : (p.trip_type === "Private" ? 3.5 : 2.5)),
-                                        icons: [
-                                            {
-                                                icon: {
-                                                    path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-                                                    scale: 2.5,
-                                                    strokeColor: isSelected ? "#ffffff" : strokeColor,
-                                                    fillColor: strokeColor,
-                                                    fillOpacity: 1,
-                                                },
-                                                offset: "65%",
-                                            },
-                                        ],
-                                    }}
-                                    onClick={() => setSelectedTrip(trip)}
-                                    onMouseOver={() => setHoveredTripId(p.ride_id)}
-                                    onMouseOut={() => setHoveredTripId(null)}
-                                />
+                                <div key={za.zone.id}>
+                                    <PolygonF
+                                        paths={za.zone.paths}
+                                        options={{
+                                            fillColor: zoneColor,
+                                            fillOpacity: isSelected ? 0.35 : (za.tier === "premium" ? 0.20 : 0.12),
+                                            strokeColor: isSelected ? "#ffffff" : zoneColor,
+                                            strokeOpacity: isSelected ? 1 : 0.7,
+                                            strokeWeight: isSelected ? 2.5 : 1.5,
+                                        }}
+                                        onClick={() => setSelectedZone(za)}
+                                    />
+                                    <MarkerF
+                                        position={za.zone.center}
+                                        label={{
+                                            text: `$${za.avgFare.toFixed(0)}/trip`,
+                                            color: "#ffffff",
+                                            fontSize: "12px",
+                                            fontWeight: "bold",
+                                            className: "font-mono px-2 py-0.5 rounded bg-slate-900/90 border border-slate-700 shadow-lg"
+                                        }}
+                                        icon={{
+                                            path: 0, // SymbolPath.CIRCLE
+                                            scale: 6,
+                                            fillColor: zoneColor,
+                                            fillOpacity: 1,
+                                            strokeColor: "#ffffff",
+                                            strokeWeight: 1.5,
+                                        }}
+                                        onClick={() => setSelectedZone(za)}
+                                    />
+                                </div>
                             );
                         })}
 
-                        {/* 2. PICKUPS MODE (MARKERS) */}
+                        {/* 2. PICKUPS MODE (Individual Trip Dots) */}
                         {viewMode === "pickups" && trips.map((trip) => {
                             const p = trip.properties;
                             const coords = (
@@ -404,8 +644,8 @@ export default function TripYieldMap({ className = "" }: Props) {
                             const markerColor = getYieldColor(p.net_per_hour);
 
                             const markerIcon: google.maps.Symbol = {
-                                path: google.maps.SymbolPath.CIRCLE,
-                                scale: p.is_estimated ? 5.5 : 6.5,
+                                path: 0, // SymbolPath.CIRCLE
+                                scale: p.is_estimated ? 5 : 6,
                                 fillColor: markerColor,
                                 fillOpacity: p.is_estimated ? 0.6 : 0.9,
                                 strokeColor: p.net_per_hour <= 0 ? "#fca5a5" : (p.is_estimated ? "#cbd5e1" : "#ffffff"),
@@ -423,7 +663,7 @@ export default function TripYieldMap({ className = "" }: Props) {
                             );
                         })}
 
-                        {/* 3. HEATMAP MODE (Density Glow via native Circle overlays) */}
+                        {/* 3. DENSITY HEATMAP MODE (Compound Overlapping Concentric Circles) */}
                         {viewMode === "heatmap" && trips.map((trip) => {
                             const p = trip.properties;
                             const coords = (
@@ -454,18 +694,71 @@ export default function TripYieldMap({ className = "" }: Props) {
                             );
                         })}
 
-                        {/* Interactive Tooltip Card */}
+                        {/* Selected Zone Intelligence Modal */}
+                        {selectedZone && (
+                            <InfoWindow
+                                position={selectedZone.zone.center}
+                                onCloseClick={() => setSelectedZone(null)}
+                            >
+                                <div className="p-2.5 text-slate-900 max-w-[260px] font-sans">
+                                    <div className="flex items-center justify-between border-b pb-1 mb-1.5">
+                                        <span className="text-[12px] font-bold text-slate-900">
+                                            {selectedZone.zone.name}
+                                        </span>
+                                    </div>
+                                    <p className="text-[10px] text-slate-600 mb-2">
+                                        {selectedZone.zone.description}
+                                    </p>
+
+                                    <div className="flex items-baseline justify-between mb-2">
+                                        <div>
+                                            <div className="text-xs text-slate-500 font-semibold">Expected Fare:</div>
+                                            <div className="text-xl font-extrabold font-mono text-slate-900">
+                                                ${selectedZone.avgFare.toFixed(2)}
+                                                <span className="text-xs font-normal text-slate-500">/trip</span>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-xs text-slate-500 font-semibold">Net Yield:</div>
+                                            <span className="text-sm font-bold text-emerald-700 font-mono">
+                                                ${selectedZone.avgNetPerHour.toFixed(2)}/hr
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-1 text-[11px] text-slate-600 bg-slate-50 p-2 rounded border border-slate-200 mb-2">
+                                        <div>Historical Trips: <strong>{selectedZone.trips}</strong></div>
+                                        <div>Avg Distance: <strong>{selectedZone.avgDistance.toFixed(1)} mi</strong></div>
+                                        <div>Fare Range: <strong>${selectedZone.minFare.toFixed(0)} - ${selectedZone.maxFare.toFixed(0)}</strong></div>
+                                        <div>Total Gross: <strong>${selectedZone.totalGross.toFixed(0)}</strong></div>
+                                    </div>
+
+                                    <div className={`p-1.5 rounded text-[10px] font-medium text-center ${
+                                        selectedZone.tier === "premium" 
+                                            ? "bg-emerald-100 text-emerald-900 border border-emerald-300"
+                                            : selectedZone.tier === "mid"
+                                            ? "bg-blue-100 text-blue-900 border border-blue-300"
+                                            : "bg-red-100 text-red-900 border border-red-300"
+                                    }`}>
+                                        {selectedZone.tier === "premium"
+                                            ? "🟢 Top Priority Staging — High-Ticket Yield"
+                                            : selectedZone.tier === "mid"
+                                            ? "🟡 Steady Staging — Consistent Volume"
+                                            : "🔴 Low-Value Warning — High Deadhead Exposure"}
+                                    </div>
+                                </div>
+                            </InfoWindow>
+                        )}
+
+                        {/* Selected Individual Trip Tooltip Card */}
                         {selectedTrip && (
                             <InfoWindow
                                 position={(() => {
-                                    if (selectedTrip.geometry.type === "LineString") {
-                                        const coords = selectedTrip.geometry.coordinates as [number, number][];
-                                        return {
-                                            lat: (coords[0][1] + coords[1][1]) / 2,
-                                            lng: (coords[0][0] + coords[1][0]) / 2,
-                                        };
-                                    }
-                                    const coords = selectedTrip.geometry.coordinates as [number, number];
+                                    const coords = (
+                                        selectedTrip.geometry.type === "Point"
+                                            ? (selectedTrip.geometry.coordinates as [number, number])
+                                            : (selectedTrip.geometry.coordinates as [number, number][])[0]
+                                    );
                                     return { lat: coords[1], lng: coords[0] };
                                 })()}
                                 onCloseClick={() => setSelectedTrip(null)}
@@ -473,7 +766,7 @@ export default function TripYieldMap({ className = "" }: Props) {
                                 <div className="p-2 text-slate-900 max-w-[240px] font-sans">
                                     <div className="flex items-center justify-between border-b pb-1 mb-1.5">
                                         <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700">
-                                            {selectedTrip.properties.trip_type} Route
+                                            {selectedTrip.properties.trip_type} Pickup
                                         </span>
                                         <span className="text-[10px] font-mono text-slate-500">
                                             {selectedTrip.properties.timestamp_start?.split("T")[0]}
@@ -482,8 +775,8 @@ export default function TripYieldMap({ className = "" }: Props) {
 
                                     <div className="flex items-baseline justify-between mb-2">
                                         <div className="text-xl font-extrabold font-mono text-slate-900">
-                                            ${selectedTrip.properties.net_per_hour.toFixed(2)}
-                                            <span className="text-xs font-normal text-slate-500">/hr</span>
+                                            ${selectedTrip.properties.gross.toFixed(2)}
+                                            <span className="text-xs font-normal text-slate-500"> gross</span>
                                         </div>
                                         <span
                                             className={`text-[10px] font-bold px-1.5 py-0.5 rounded font-mono ${
@@ -492,22 +785,14 @@ export default function TripYieldMap({ className = "" }: Props) {
                                                     : "bg-red-100 text-red-800"
                                             }`}
                                         >
-                                            Net ${selectedTrip.properties.net.toFixed(2)}
+                                            ${selectedTrip.properties.net_per_hour.toFixed(0)}/hr
                                         </span>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-1 text-[11px] text-slate-600 bg-slate-50 p-1.5 rounded border border-slate-200 mb-1">
-                                        <div>Gross: <strong>${selectedTrip.properties.gross.toFixed(2)}</strong></div>
+                                    <div className="grid grid-cols-2 gap-1 text-[11px] text-slate-600 bg-slate-50 p-1.5 rounded border border-slate-200">
                                         <div>Duration: <strong>{selectedTrip.properties.duration_min}m</strong></div>
                                         <div>Distance: <strong>{selectedTrip.properties.distance_mi.toFixed(1)}mi</strong></div>
-                                        <div>Energy: <strong>{selectedTrip.properties.energy_used_kwh ? `${selectedTrip.properties.energy_used_kwh.toFixed(1)} kWh` : "Est"}</strong></div>
                                     </div>
-
-                                    {selectedTrip.properties.is_estimated && (
-                                        <p className="text-[9px] text-amber-700 italic mt-1">
-                                            * Energy estimated using vehicle averages
-                                        </p>
-                                    )}
                                 </div>
                             </InfoWindow>
                         )}
@@ -515,44 +800,38 @@ export default function TripYieldMap({ className = "" }: Props) {
                 ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center text-slate-500">
                         <div className="w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-3"></div>
-                        <span className="text-xs uppercase tracking-widest font-mono text-cyan-400">Loading Map Console...</span>
+                        <span className="text-xs uppercase tracking-widest font-mono text-cyan-400">Loading Staging Console...</span>
                     </div>
                 )}
             </div>
 
-            {/* Legend & Telemetry Footer */}
+            {/* Legend & Staging Decision Footer */}
             <div className="p-3 bg-slate-950 border-t border-slate-800 flex flex-wrap items-center justify-between text-xs text-slate-400 gap-2">
                 <div className="flex items-center gap-4">
-                    <span className="font-mono text-[11px] uppercase tracking-wider text-slate-500">Yield Scale:</span>
+                    <span className="font-mono text-[11px] uppercase tracking-wider text-slate-500">Zone Verdict:</span>
                     <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444]" />
-                        <span>Loss (&le;$0)</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#6366f1]" />
-                        <span>&lt;$30/hr</span>
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#10b981]" />
+                        <span className="text-emerald-300 font-medium">Top Yield (&ge;$22/trip)</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-[#3b82f6]" />
-                        <span>$30-$55</span>
+                        <span className="text-blue-300 font-medium">Steady Mid ($14-$22)</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#06b6d4]" />
-                        <span>$55-$85</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#10b981]" />
-                        <span>&gt;$85/hr</span>
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444]" />
+                        <span className="text-red-300 font-medium">Low Value (&lt;$14/trip)</span>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-3 text-[11px]">
-                    <span className="flex items-center gap-1">
-                        <span className="w-3 h-0.5 bg-cyan-400 inline-block" /> Private Route
+                    <span className="text-slate-400">
+                        Total Analyzed: <strong className="text-white font-mono">{trips.length} trips</strong>
                     </span>
-                    <span className="flex items-center gap-1">
-                        <span className="w-3 h-0.5 bg-indigo-400 inline-block" /> Uber Route
-                    </span>
+                    {stats && (
+                        <span className="text-slate-400">
+                            Overall Avg: <strong className="text-cyan-400 font-mono">${stats.avgGrossFare.toFixed(2)}/trip</strong>
+                        </span>
+                    )}
                 </div>
             </div>
         </div>
