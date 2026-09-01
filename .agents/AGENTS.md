@@ -60,3 +60,22 @@ The cabin console is **passenger-facing**. Error states must be written for pass
 - ❌ "Check deploy config — see console for details" — developer voice on a customer screen
 
 Rule: anything visible in the cabin UI must make sense to someone who has never opened DevTools. Technical detail belongs exclusively in the console log.
+
+---
+
+## Analytics & Operational Inference Guardrails
+
+SummitOS data is used to drive physical vehicle positioning ("staging") and financial decisions. Agents must adhere to strict statistical honesty:
+
+1. **No False Predictive "Verdicts":**
+   - Never present raw, unshrinked sample means as authoritative "AI Staging Instructions" (e.g., "Top Priority Staging: $85/hr").
+   - If an area has low trip volume ($N < 30$), the average is noise. Always report sample sizes ($N$) alongside metrics.
+   - When computing zone-level averages, implement **Empirical Bayes shrinkage** pulling low-sample buckets toward the citywide prior before making operational comparisons.
+
+2. **Strict Cohort Separation:**
+   - **Never mix scheduled private bookings with on-demand rideshare trips** when calculating staging or positioning advice.
+   - Advance private bookings represent pre-arranged dispatches, not street-hail or on-demand demand density.
+
+3. **Explicit Parameter Labeling:**
+   - Energy ($/kWh) and vehicle wear ($/mi) rates must be clearly labeled as user-configurable assumptions or estimates, not measured constants, until backed by empirical billing reconciliations.
+
