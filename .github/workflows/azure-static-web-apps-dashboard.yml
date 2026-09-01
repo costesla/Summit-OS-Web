@@ -63,6 +63,8 @@ jobs:
         env:
           VITE_TELLER_APPLICATION_ID: ${{ vars.VITE_TELLER_APPLICATION_ID }}
           VITE_API_FUNCTION_KEY: ${{ secrets.VITE_API_FUNCTION_KEY }}
+          VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || secrets.NEXT_PUBLIC_GMAPS_API_KEY || secrets.GOOGLE_MAPS_API_KEY }}
+          NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || secrets.NEXT_PUBLIC_GMAPS_API_KEY || secrets.GOOGLE_MAPS_API_KEY }}
 
       - name: Deploy to Azure Static Web Apps
         id: builddeploy
