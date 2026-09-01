@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import {
     LayoutDashboard, Route, Receipt, Zap, Wrench, TrendingUp,
-    DollarSign, Car, ShieldAlert, CheckCircle,
+    DollarSign, Car, ShieldAlert, CheckCircle, ExternalLink,
     ChevronDown, ChevronUp, Plus, Loader2, MapPin, Gauge, Battery, Link2, Trash2,
     Mail, Send, Lock
 } from 'lucide-react';
@@ -1697,6 +1697,14 @@ const DriverDashboard: React.FC = () => {
                                             <MapPin className="w-4 h-4 text-[var(--accent-cyan)]" />
                                             <h3 className="text-xs font-bold uppercase tracking-wider text-white font-mono">Commercial Route & Heatmap Console</h3>
                                         </div>
+                                        <a 
+                                            href="/uber-heatmap.html" 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--accent-cyan)] transition-all font-mono"
+                                        >
+                                            Fullscreen Popout <ExternalLink className="w-3.5 h-3.5" />
+                                        </a>
                                     </div>
                                     <div className="h-[600px] rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
                                         <TripYieldMap className="h-full w-full" />

@@ -846,61 +846,70 @@ async function loadData() {
   document.getElementById('refresh-btn').disabled = true;
   document.getElementById('error-box').style.display = 'none';
 
-  // Heatmap endpoint may be slow on Azure cold-start + geocoding.
-  // Try up to 2 attempts with clear status messages.
-  let heatRes = null;
-  for (let attempt = 1; attempt <= 2; attempt++) {
-    try {
-      showLoading(true, attempt === 1
-        ? 'Fetching drive history…'
-        : 'Backend warming up — retrying…');
-      heatRes = await fetch(
-        `${BACKEND}/api/copilot/tessie/heatmap?days=${days}&batch=20`,
-        { signal: AbortSignal.timeout(90000) }  // 90s — covers cold-start + geocoding
-      );
-      break; // success
-    } catch (e) {
-      if (attempt === 2 || !String(e).includes('timeout')) {
-        document.getElementById('error-box').style.display = 'block';
-        document.getElementById('error-box').textContent =
-          'Backend unavailable — check connection or try again in a moment.';
-        showLoading(false);
-        document.getElementById('refresh-btn').disabled = false;
-        return;
-      }
-      // First attempt timed out — brief pause then retry
-      await new Promise(r => setTimeout(r, 2000));
-    }
-  }
-
   try {
-    const drivesUrl  = `${BACKEND}/api/copilot/tessie/drives?tag=uber&days=${days}`;
+    showLoading(true, 'Fetching verified commercial telemetry…');
+    
+    // Determine date filter from days selector
+    let dateParam = '';
+    if (days && days !== '365' && days !== 'all') {
+      const d = new Date();
+      d.setDate(d.getDate() - parseInt(days, 10));
+      dateParam = `&from=${d.toISOString().split('T')[0]}`;
+    }
+
+    const tripYieldUrl = `${BACKEND}/api/analytics/trip-yield?format=points${dateParam}`;
     const chargesUrl = `${BACKEND}/api/copilot/tessie/charges?days=${days}`;
 
-    // Sidebar stats calls run after the heatmap succeeds
-    const [drivesRes, chargesRes] = await Promise.all([
-      fetch(drivesUrl,  { signal: AbortSignal.timeout(20000) }).catch(() => null),
+    const [yieldRes, chargesRes] = await Promise.all([
+      fetch(tripYieldUrl, { signal: AbortSignal.timeout(30000) }).catch(() => null),
       fetch(chargesUrl, { signal: AbortSignal.timeout(20000) }).catch(() => null)
     ]);
 
-    // Heat points
-    if (heatRes && heatRes.ok) {
-      const heatData = await heatRes.json();
-      allHeatPoints = heatData.points || [];
-      const remaining = heatData.uncached_remaining || 0;
-      if (remaining > 0) {
-        showLoading(true, `Rendering ${allHeatPoints.length} points… (${remaining} addresses still geocoding)`);
-        await new Promise(r => setTimeout(r, 50));
-      }
+    if (yieldRes && yieldRes.ok) {
+      const yieldData = await yieldRes.json();
+      const features = yieldData.features || [];
+      
+      allHeatPoints = [];
+      allDrives = [];
+
+      features.forEach(f => {
+        const coords = f.geometry.coordinates;
+        if (coords && coords.length >= 2) {
+          const lon = coords[0];
+          const lat = coords[1];
+          const p = f.properties;
+          const intensity = Math.max(1, Math.min(10, (p.net_per_hour || 25) / 10));
+          
+          allHeatPoints.push({
+            lat: lat,
+            lon: lon,
+            intensity: intensity,
+            type: 'pickup',
+            fare: p.gross,
+            distance_mi: p.distance_mi,
+            duration_min: p.duration_min,
+            net_per_hour: p.net_per_hour,
+            timestamp: p.timestamp_start
+          });
+
+          allDrives.push({
+            distance: p.distance_mi,
+            duration_min: p.duration_min,
+            fare: p.gross,
+            start_time: p.timestamp_start,
+            trip_type: p.trip_type,
+            net_per_hour: p.net_per_hour
+          });
+        }
+      });
     } else {
       allHeatPoints = [];
+      allDrives = [];
     }
 
-    // Drives (sidebar stats)
-    allDrives  = (drivesRes  && drivesRes.ok)  ? (await drivesRes.json()).drives   || [] : [];
     allCharges = (chargesRes && chargesRes.ok) ? (await chargesRes.json()).sessions || [] : [];
 
-    showLoading(true, `Rendering ${allHeatPoints.length} geocoded points…`);
+    showLoading(true, `Rendering ${allHeatPoints.length} verified commercial points…`);
     await new Promise(r => setTimeout(r, 50));
 
     renderHeatmap();
