@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { GoogleMap, useJsApiLoader, InfoWindow, MarkerF, CircleF, PolygonF } from "@react-google-maps/api";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { GoogleMap, useJsApiLoader } from "@react-google-maps/api";
 import { AlertCircle, RefreshCw, Car, User, Calendar, Activity, Flame, DollarSign, MapPin } from "lucide-react";
 import { getTripYieldData } from "@/lib/api";
 
@@ -253,17 +253,19 @@ interface Props {
 export default function TripYieldMap({ className = "" }: Props) {
     const [trips, setTrips] = useState<TripYieldFeature[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
+    const [map, setMap] = useState<google.maps.Map | null>(null);
 
     // View & Filter states
     const [viewMode, setViewMode] = useState<ViewMode>("zones");
     const [tripFilter, setTripFilter] = useState<TripTypeFilter>("all");
     const [dateRange, setDateRange] = useState<string>("all");
-    const [selectedTrip, setSelectedTrip] = useState<TripYieldFeature | null>(null);
     const [selectedZone, setSelectedZone] = useState<ZoneAnalytics | null>(null);
 
     // Unvalidated rate parameters
     const [energyRate] = useState<number>(0.45);
     const [wearRate] = useState<number>(0.13);
+
+    const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
 
     const googleMapsApiKey = 
         (import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined) ||
@@ -423,6 +425,161 @@ export default function TripYieldMap({ className = "" }: Props) {
         // Sort descending by average fare
         return results.sort((a, b) => b.avgFare - a.avgFare);
     }, [trips]);
+
+    // Native Google Maps Overlay Manager — avoids React 18 __e3_ listener lifecycle bugs
+    useEffect(() => {
+        if (!map || typeof google === "undefined" || !google.maps) return;
+
+        const overlays: (google.maps.Polygon | google.maps.Marker | google.maps.Circle)[] = [];
+
+        if (!infoWindowRef.current) {
+            infoWindowRef.current = new google.maps.InfoWindow();
+        }
+        const infoWindow = infoWindowRef.current;
+
+        if (viewMode === "zones") {
+            zoneAnalytics.forEach((za) => {
+                const isSelected = selectedZone?.zone.id === za.zone.id;
+                const zoneColor = za.tier === "premium" ? "#10b981" : (za.tier === "mid" ? "#3b82f6" : "#ef4444");
+
+                // Sector Polygon
+                const poly = new google.maps.Polygon({
+                    paths: za.zone.paths,
+                    fillColor: zoneColor,
+                    fillOpacity: isSelected ? 0.35 : (za.tier === "premium" ? 0.20 : 0.12),
+                    strokeColor: isSelected ? "#ffffff" : zoneColor,
+                    strokeOpacity: isSelected ? 1 : 0.7,
+                    strokeWeight: isSelected ? 2.5 : 1.5,
+                    map,
+                });
+
+                poly.addListener("click", () => {
+                    setSelectedZone(za);
+                    infoWindow.setContent(`
+                        <div style="padding:10px; font-family:sans-serif; color:#0f172a; max-width:240px;">
+                            <div style="font-weight:bold; font-size:13px; margin-bottom:4px;">${za.zone.name}</div>
+                            <div style="font-size:11px; color:#475569; margin-bottom:8px;">${za.zone.description}</div>
+                            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;">
+                                <div>
+                                    <span style="font-size:10px; color:#64748b;">Expected Fare:</span><br/>
+                                    <strong style="font-size:18px; font-family:monospace; color:#0f172a;">$${za.avgFare.toFixed(2)}</strong>
+                                </div>
+                                <div style="text-align:right;">
+                                    <span style="font-size:10px; color:#64748b;">Net Yield:</span><br/>
+                                    <strong style="font-size:13px; font-family:monospace; color:#059669;">$${za.avgNetPerHour.toFixed(0)}/hr</strong>
+                                </div>
+                            </div>
+                            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:6px; font-size:10px; color:#334155; margin-bottom:8px;">
+                                <div>Historical Trips: <strong>${za.trips}</strong> (${za.privateTrips} Priv, ${za.uberTrips} Uber)</div>
+                                <div>Avg Distance: <strong>${za.avgDistance.toFixed(1)} mi</strong></div>
+                                <div>Fare Range: <strong>$${za.minFare.toFixed(0)} – $${za.maxFare.toFixed(0)}</strong></div>
+                            </div>
+                            <div style="padding:4px; text-align:center; border-radius:4px; font-size:10px; font-weight:bold; ${
+                                za.tier === "premium" ? "background:#d1fae5; color:#065f46;" : (za.tier === "mid" ? "background:#dbeafe; color:#1e40af;" : "background:#fee2e2; color:#991b1b;")
+                            }">
+                                ${za.tier === "premium" ? "🟢 Top Priority Staging" : (za.tier === "mid" ? "🟡 Steady Mid-Tier" : "🔴 Low Value Short Hops")}
+                            </div>
+                        </div>
+                    `);
+                    infoWindow.setPosition(za.zone.center);
+                    infoWindow.open(map);
+                });
+                overlays.push(poly);
+
+                // Dollar Badge Marker
+                const marker = new google.maps.Marker({
+                    position: za.zone.center,
+                    label: {
+                        text: `$${za.avgFare.toFixed(0)}`,
+                        color: "#ffffff",
+                        fontSize: "12px",
+                        fontWeight: "bold",
+                    },
+                    icon: {
+                        path: 0, // SymbolPath.CIRCLE
+                        scale: 14,
+                        fillColor: zoneColor,
+                        fillOpacity: 0.95,
+                        strokeColor: "#ffffff",
+                        strokeWeight: 2,
+                    },
+                    map,
+                });
+                marker.addListener("click", () => {
+                    setSelectedZone(za);
+                    poly.setOptions({ strokeColor: "#ffffff", fillOpacity: 0.35, strokeWeight: 2.5 });
+                });
+                overlays.push(marker);
+            });
+        } else if (viewMode === "pickups") {
+            trips.forEach((t) => {
+                const p = t.properties;
+                const coords = (
+                    t.geometry.type === "Point"
+                        ? (t.geometry.coordinates as [number, number])
+                        : (t.geometry.coordinates as [number, number][])[0]
+                );
+                if (!coords) return;
+
+                const marker = new google.maps.Marker({
+                    position: { lat: coords[1], lng: coords[0] },
+                    icon: {
+                        path: 0, // SymbolPath.CIRCLE
+                        scale: p.is_estimated ? 4.5 : 5.5,
+                        fillColor: getYieldColor(p.net_per_hour),
+                        fillOpacity: p.is_estimated ? 0.6 : 0.9,
+                        strokeColor: p.net_per_hour <= 0 ? "#fca5a5" : (p.is_estimated ? "#cbd5e1" : "#ffffff"),
+                        strokeWeight: 1.5,
+                    },
+                    map,
+                });
+                marker.addListener("click", () => {
+                    infoWindow.setContent(`
+                        <div style="padding:8px; font-family:sans-serif; color:#0f172a; max-width:200px;">
+                            <div style="font-weight:bold; font-size:11px; text-transform:uppercase; color:#475569;">${p.trip_type} Pickup</div>
+                            <div style="display:flex; justify-content:space-between; align-items:baseline; margin:6px 0;">
+                                <strong style="font-size:18px; font-family:monospace; color:#0f172a;">$${p.gross.toFixed(2)}</strong>
+                                <span style="font-size:11px; font-weight:bold; color:#059669; font-family:monospace;">$${p.net_per_hour.toFixed(0)}/hr</span>
+                            </div>
+                            <div style="font-size:10px; color:#64748b;">
+                                <div>Distance: <strong>${p.distance_mi.toFixed(1)} mi</strong></div>
+                                <div>Duration: <strong>${p.duration_min} min</strong></div>
+                            </div>
+                        </div>
+                    `);
+                    infoWindow.setPosition({ lat: coords[1], lng: coords[0] });
+                    infoWindow.open(map);
+                });
+                overlays.push(marker);
+            });
+        } else if (viewMode === "heatmap") {
+            trips.forEach((t) => {
+                const p = t.properties;
+                const coords = (
+                    t.geometry.type === "Point"
+                        ? (t.geometry.coordinates as [number, number])
+                        : (t.geometry.coordinates as [number, number][])[0]
+                );
+                if (!coords) return;
+
+                const circle = new google.maps.Circle({
+                    center: { lat: coords[1], lng: coords[0] },
+                    radius: 650,
+                    fillColor: getYieldColor(p.net_per_hour),
+                    fillOpacity: 0.18,
+                    strokeColor: getYieldColor(p.net_per_hour),
+                    strokeOpacity: 0.4,
+                    strokeWeight: 1,
+                    map,
+                });
+                overlays.push(circle);
+            });
+        }
+
+        return () => {
+            overlays.forEach((o) => o.setMap(null));
+        };
+    }, [map, viewMode, zoneAnalytics, trips, selectedZone]);
 
     if (loadError) {
         return (
@@ -584,228 +741,15 @@ export default function TripYieldMap({ className = "" }: Props) {
                         mapContainerStyle={mapContainerStyle}
                         center={defaultCenter}
                         zoom={11}
+                        onLoad={(m) => setMap(m)}
+                        onUnmount={() => setMap(null)}
                         options={{
                             styles: darkMapStyles,
                             disableDefaultUI: true,
                             zoomControl: true,
                             clickableIcons: false,
                         }}
-                    >
-                        {/* 1. ZONE STAGING MODE - POLYGONS */}
-                        {viewMode === "zones" && zoneAnalytics.map((za) => {
-                            const isSelected = selectedZone?.zone.id === za.zone.id;
-                            const zoneColor = za.tier === "premium" ? "#10b981" : (za.tier === "mid" ? "#3b82f6" : "#ef4444");
-
-                            return (
-                                <PolygonF
-                                    key={`poly-${za.zone.id}`}
-                                    paths={za.zone.paths}
-                                    options={{
-                                        fillColor: zoneColor,
-                                        fillOpacity: isSelected ? 0.35 : (za.tier === "premium" ? 0.20 : 0.12),
-                                        strokeColor: isSelected ? "#ffffff" : zoneColor,
-                                        strokeOpacity: isSelected ? 1 : 0.7,
-                                        strokeWeight: isSelected ? 2.5 : 1.5,
-                                    }}
-                                    onClick={() => setSelectedZone(za)}
-                                />
-                            );
-                        })}
-
-                        {/* 1. ZONE STAGING MODE - DOLLAR BADGE MARKERS */}
-                        {viewMode === "zones" && zoneAnalytics.map((za) => {
-                            const zoneColor = za.tier === "premium" ? "#10b981" : (za.tier === "mid" ? "#3b82f6" : "#ef4444");
-
-                            return (
-                                <MarkerF
-                                    key={`mark-${za.zone.id}`}
-                                    position={za.zone.center}
-                                    label={{
-                                        text: `$${za.avgFare.toFixed(0)}`,
-                                        color: "#ffffff",
-                                        fontSize: "12px",
-                                        fontWeight: "bold",
-                                    }}
-                                    icon={{
-                                        path: 0, // SymbolPath.CIRCLE
-                                        scale: 14,
-                                        fillColor: zoneColor,
-                                        fillOpacity: 0.95,
-                                        strokeColor: "#ffffff",
-                                        strokeWeight: 2,
-                                    }}
-                                    onClick={() => setSelectedZone(za)}
-                                />
-                            );
-                        })}
-
-                        {/* 2. PICKUPS MODE (Individual Trip Dots) */}
-                        {viewMode === "pickups" && trips.map((trip) => {
-                            const p = trip.properties;
-                            const coords = (
-                                trip.geometry.type === "Point"
-                                    ? (trip.geometry.coordinates as [number, number])
-                                    : (trip.geometry.coordinates as [number, number][])[0]
-                            );
-                            if (!coords) return null;
-
-                            const markerPos = { lat: coords[1], lng: coords[0] };
-                            const markerColor = getYieldColor(p.net_per_hour);
-
-                            const markerIcon: google.maps.Symbol = {
-                                path: 0, // SymbolPath.CIRCLE
-                                scale: p.is_estimated ? 5 : 6,
-                                fillColor: markerColor,
-                                fillOpacity: p.is_estimated ? 0.6 : 0.9,
-                                strokeColor: p.net_per_hour <= 0 ? "#fca5a5" : (p.is_estimated ? "#cbd5e1" : "#ffffff"),
-                                strokeOpacity: 1,
-                                strokeWeight: p.is_estimated ? 1.5 : 2,
-                            };
-
-                            return (
-                                <MarkerF
-                                    key={p.ride_id}
-                                    position={markerPos}
-                                    icon={markerIcon}
-                                    onClick={() => setSelectedTrip(trip)}
-                                />
-                            );
-                        })}
-
-                        {/* 3. DENSITY HEATMAP MODE (Compound Overlapping Concentric Circles) */}
-                        {viewMode === "heatmap" && trips.map((trip) => {
-                            const p = trip.properties;
-                            const coords = (
-                                trip.geometry.type === "Point"
-                                    ? (trip.geometry.coordinates as [number, number])
-                                    : (trip.geometry.coordinates as [number, number][])[0]
-                            );
-                            if (!coords) return null;
-
-                            const center = { lat: coords[1], lng: coords[0] };
-                            const color = getYieldColor(p.net_per_hour);
-
-                            return (
-                                <CircleF
-                                    key={`heat-${p.ride_id}`}
-                                    center={center}
-                                    radius={650}
-                                    options={{
-                                        fillColor: color,
-                                        fillOpacity: 0.18,
-                                        strokeColor: color,
-                                        strokeOpacity: 0.45,
-                                        strokeWeight: 1,
-                                        clickable: true,
-                                    }}
-                                    onClick={() => setSelectedTrip(trip)}
-                                />
-                            );
-                        })}
-
-                        {/* Selected Zone Intelligence Modal */}
-                        {selectedZone && (
-                            <InfoWindow
-                                position={selectedZone.zone.center}
-                                onCloseClick={() => setSelectedZone(null)}
-                            >
-                                <div className="p-2.5 text-slate-900 max-w-[260px] font-sans">
-                                    <div className="flex items-center justify-between border-b pb-1 mb-1.5">
-                                        <span className="text-[12px] font-bold text-slate-900">
-                                            {selectedZone.zone.name}
-                                        </span>
-                                    </div>
-                                    <p className="text-[10px] text-slate-600 mb-2">
-                                        {selectedZone.zone.description}
-                                    </p>
-
-                                    <div className="flex items-baseline justify-between mb-2">
-                                        <div>
-                                            <div className="text-xs text-slate-500 font-semibold">Expected Fare:</div>
-                                            <div className="text-xl font-extrabold font-mono text-slate-900">
-                                                ${selectedZone.avgFare.toFixed(2)}
-                                                <span className="text-xs font-normal text-slate-500">/trip</span>
-                                            </div>
-                                        </div>
-                                        <div className="text-right">
-                                            <div className="text-xs text-slate-500 font-semibold">Net Yield:</div>
-                                            <span className="text-sm font-bold text-emerald-700 font-mono">
-                                                ${selectedZone.avgNetPerHour.toFixed(2)}/hr
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-1 text-[11px] text-slate-600 bg-slate-50 p-2 rounded border border-slate-200 mb-2">
-                                        <div>Historical Trips: <strong>{selectedZone.trips}</strong></div>
-                                        <div>Avg Distance: <strong>{selectedZone.avgDistance.toFixed(1)} mi</strong></div>
-                                        <div>Fare Range: <strong>${selectedZone.minFare.toFixed(0)} - ${selectedZone.maxFare.toFixed(0)}</strong></div>
-                                        <div>Total Gross: <strong>${selectedZone.totalGross.toFixed(0)}</strong></div>
-                                    </div>
-
-                                    <div className={`p-1.5 rounded text-[10px] font-medium text-center ${
-                                        selectedZone.tier === "premium" 
-                                            ? "bg-emerald-100 text-emerald-900 border border-emerald-300"
-                                            : selectedZone.tier === "mid"
-                                            ? "bg-blue-100 text-blue-900 border border-blue-300"
-                                            : "bg-red-100 text-red-900 border border-red-300"
-                                    }`}>
-                                        {selectedZone.tier === "premium"
-                                            ? "🟢 Top Priority Staging — High-Ticket Yield"
-                                            : selectedZone.tier === "mid"
-                                            ? "🟡 Steady Staging — Consistent Volume"
-                                            : "🔴 Low-Value Warning — High Deadhead Exposure"}
-                                    </div>
-                                </div>
-                            </InfoWindow>
-                        )}
-
-                        {/* Selected Individual Trip Tooltip Card */}
-                        {selectedTrip && (
-                            <InfoWindow
-                                position={(() => {
-                                    const coords = (
-                                        selectedTrip.geometry.type === "Point"
-                                            ? (selectedTrip.geometry.coordinates as [number, number])
-                                            : (selectedTrip.geometry.coordinates as [number, number][])[0]
-                                    );
-                                    return { lat: coords[1], lng: coords[0] };
-                                })()}
-                                onCloseClick={() => setSelectedTrip(null)}
-                            >
-                                <div className="p-2 text-slate-900 max-w-[240px] font-sans">
-                                    <div className="flex items-center justify-between border-b pb-1 mb-1.5">
-                                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700">
-                                            {selectedTrip.properties.trip_type} Pickup
-                                        </span>
-                                        <span className="text-[10px] font-mono text-slate-500">
-                                            {selectedTrip.properties.timestamp_start?.split("T")[0]}
-                                        </span>
-                                    </div>
-
-                                    <div className="flex items-baseline justify-between mb-2">
-                                        <div className="text-xl font-extrabold font-mono text-slate-900">
-                                            ${selectedTrip.properties.gross.toFixed(2)}
-                                            <span className="text-xs font-normal text-slate-500"> gross</span>
-                                        </div>
-                                        <span
-                                            className={`text-[10px] font-bold px-1.5 py-0.5 rounded font-mono ${
-                                                selectedTrip.properties.net_per_hour > 0
-                                                    ? "bg-emerald-100 text-emerald-800"
-                                                    : "bg-red-100 text-red-800"
-                                            }`}
-                                        >
-                                            ${selectedTrip.properties.net_per_hour.toFixed(0)}/hr
-                                        </span>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-1 text-[11px] text-slate-600 bg-slate-50 p-1.5 rounded border border-slate-200">
-                                        <div>Duration: <strong>{selectedTrip.properties.duration_min}m</strong></div>
-                                        <div>Distance: <strong>{selectedTrip.properties.distance_mi.toFixed(1)}mi</strong></div>
-                                    </div>
-                                </div>
-                            </InfoWindow>
-                        )}
-                    </GoogleMap>
+                    />
                 ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center text-slate-500">
                         <div className="w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-3"></div>
