@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { GoogleMap, useJsApiLoader, InfoWindow, MarkerF, Polyline, HeatmapLayerF } from "@react-google-maps/api";
+import { GoogleMap, useJsApiLoader, InfoWindow, MarkerF, Polyline, CircleF } from "@react-google-maps/api";
 import { AlertCircle, RefreshCw, Car, User, Calendar, Navigation, Activity, Flame } from "lucide-react";
 import { apiGet } from "../lib/apiClient";
 
@@ -115,9 +115,8 @@ export default function TripYieldMap({ className = "" }: Props) {
         (import.meta.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string | undefined) ||
         "";
 
-    const [libraries] = useState<("places" | "geometry" | "drawing" | "visualization")[]>([
-        "places",
-        "visualization"
+    const [libraries] = useState<("places" | "geometry" | "drawing")[]>([
+        "places"
     ]);
 
     const { isLoaded, loadError } = useJsApiLoader({
@@ -193,23 +192,6 @@ export default function TripYieldMap({ className = "" }: Props) {
             estCount,
         };
     }, [trips]);
-
-    // Google Maps Heatmap Data points
-    const heatmapPoints = useMemo(() => {
-        if (!isLoaded || typeof google === "undefined" || !google.maps) return [];
-        return trips.map((t) => {
-            const coords = (
-                t.geometry.type === "Point"
-                    ? (t.geometry.coordinates as [number, number])
-                    : (t.geometry.coordinates as [number, number][])[0]
-            );
-            if (!coords) return null;
-            return {
-                location: new google.maps.LatLng(coords[1], coords[0]),
-                weight: Math.max(1, Math.min(10, (t.properties.net_per_hour || 20) / 10)),
-            };
-        }).filter(Boolean) as google.maps.visualization.WeightedLocation[];
-    }, [trips, isLoaded]);
 
     if (loadError) {
         return (
@@ -446,24 +428,36 @@ export default function TripYieldMap({ className = "" }: Props) {
                             );
                         })}
 
-                        {/* 3. HEATMAP MODE */}
-                        {viewMode === "heatmap" && heatmapPoints.length > 0 && (
-                            <HeatmapLayerF
-                                data={heatmapPoints}
-                                options={{
-                                    radius: 35,
-                                    opacity: 0.85,
-                                    gradient: [
-                                        "rgba(0, 255, 255, 0)",
-                                        "rgba(0, 255, 255, 1)",
-                                        "rgba(59, 130, 246, 1)",
-                                        "rgba(99, 102, 241, 1)",
-                                        "rgba(245, 158, 11, 1)",
-                                        "rgba(239, 68, 68, 1)",
-                                    ],
-                                }}
-                            />
-                        )}
+                        {/* 3. HEATMAP MODE (Density Glow via native Circle overlays) */}
+                        {viewMode === "heatmap" && trips.map((trip) => {
+                            const p = trip.properties;
+                            const coords = (
+                                trip.geometry.type === "Point"
+                                    ? (trip.geometry.coordinates as [number, number])
+                                    : (trip.geometry.coordinates as [number, number][])[0]
+                            );
+                            if (!coords) return null;
+
+                            const center = { lat: coords[1], lng: coords[0] };
+                            const color = getYieldColor(p.net_per_hour);
+
+                            return (
+                                <CircleF
+                                    key={`heat-${p.ride_id}`}
+                                    center={center}
+                                    radius={650}
+                                    options={{
+                                        fillColor: color,
+                                        fillOpacity: 0.18,
+                                        strokeColor: color,
+                                        strokeOpacity: 0.45,
+                                        strokeWeight: 1,
+                                        clickable: true,
+                                    }}
+                                    onClick={() => setSelectedTrip(trip)}
+                                />
+                            );
+                        })}
 
                         {/* Interactive Tooltip Card */}
                         {selectedTrip && (
