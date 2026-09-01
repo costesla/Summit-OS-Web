@@ -1,4 +1,6 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+"use client";
+
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { GoogleMap, useJsApiLoader, InfoWindow, MarkerF, CircleF, PolygonF } from "@react-google-maps/api";
 import { AlertCircle, RefreshCw, Car, User, Calendar, Activity, Flame, DollarSign, MapPin } from "lucide-react";
 import { getTripYieldData } from "@/lib/api";
@@ -595,7 +597,7 @@ export default function TripYieldMap({ className = "" }: Props) {
                             const zoneColor = za.tier === "premium" ? "#10b981" : (za.tier === "mid" ? "#3b82f6" : "#ef4444");
 
                             return (
-                                <div key={za.zone.id}>
+                                <React.Fragment key={za.zone.id}>
                                     <PolygonF
                                         paths={za.zone.paths}
                                         options={{
@@ -626,7 +628,7 @@ export default function TripYieldMap({ className = "" }: Props) {
                                         }}
                                         onClick={() => setSelectedZone(za)}
                                     />
-                                </div>
+                                </React.Fragment>
                             );
                         })}
 
