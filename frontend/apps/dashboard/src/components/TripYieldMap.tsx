@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { RefreshCw, Car, User, Calendar, Activity, Flame, DollarSign, MapPin } from "lucide-react";
+import { RefreshCw, Car, User, Calendar, Activity, Flame, DollarSign, MapPin, Layers } from "lucide-react";
 import { apiGet } from "../lib/apiClient";
 
 interface ZoneConfig {
@@ -173,6 +173,22 @@ interface FeatureCollectionResponse {
 
 type TripTypeFilter = "all" | "uber" | "private";
 type ViewMode = "zones" | "pickups" | "heatmap";
+type MapStyle = "streets" | "hybrid" | "dark";
+
+const MAP_TILES: Record<MapStyle, { url: string; attr: string }> = {
+    streets: {
+        url: "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+        attr: "&copy; Google Maps"
+    },
+    hybrid: {
+        url: "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
+        attr: "&copy; Google Maps"
+    },
+    dark: {
+        url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+        attr: "&copy; CartoDB"
+    }
+};
 
 interface ZoneAnalytics {
     zone: ZoneConfig;
@@ -207,6 +223,7 @@ export default function TripYieldMap({ className = "" }: Props) {
 
     // View & Filter states
     const [viewMode, setViewMode] = useState<ViewMode>("zones");
+    const [mapStyle, setMapStyle] = useState<MapStyle>("streets");
     const [tripFilter, setTripFilter] = useState<TripTypeFilter>("all");
     const [dateRange, setDateRange] = useState<string>("all");
     const [selectedZone, setSelectedZone] = useState<ZoneAnalytics | null>(null);
@@ -217,6 +234,7 @@ export default function TripYieldMap({ className = "" }: Props) {
 
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const mapInstanceRef = useRef<L.Map | null>(null);
+    const tileLayerRef = useRef<L.TileLayer | null>(null);
     const layersGroupRef = useRef<L.LayerGroup | null>(null);
 
     const fetchTripData = useCallback(async () => {
@@ -374,12 +392,13 @@ export default function TripYieldMap({ className = "" }: Props) {
                 attributionControl: false,
             });
 
-            // Clean CartoDB Dark Matter tiles (no API key required, 100% reliable)
-            L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+            const initialTile = MAP_TILES[mapStyle];
+            const tileLayer = L.tileLayer(initialTile.url, {
                 maxZoom: 19,
                 subdomains: "abcd",
             }).addTo(map);
 
+            tileLayerRef.current = tileLayer;
             layersGroupRef.current = L.layerGroup().addTo(map);
             mapInstanceRef.current = map;
         }
@@ -389,9 +408,17 @@ export default function TripYieldMap({ className = "" }: Props) {
                 mapInstanceRef.current.remove();
                 mapInstanceRef.current = null;
                 layersGroupRef.current = null;
+                tileLayerRef.current = null;
             }
         };
     }, []);
+
+    // ─── Update Tile Layer on Style Change ───────────────────────────────────────
+    useEffect(() => {
+        if (tileLayerRef.current) {
+            tileLayerRef.current.setUrl(MAP_TILES[mapStyle].url);
+        }
+    }, [mapStyle]);
 
     // ─── Render Map Overlays (Zones, Pickups, Heatmap) ───────────────────────────
     useEffect(() => {
@@ -444,10 +471,10 @@ export default function TripYieldMap({ className = "" }: Props) {
                 poly.on("click", () => setSelectedZone(za));
                 layerGroup.addLayer(poly);
 
-                // 2. Floating Dollar Badge Marker
+                // 2. Floating Dollar Badge Marker with road-contrast shadow
                 const badgeIcon = L.divIcon({
                     className: "zone-badge-marker",
-                    html: `<div style="background:${zoneColor}; color:#ffffff; font-weight:bold; font-family:monospace; font-size:11px; padding:2px 8px; border-radius:12px; border:2px solid #ffffff; box-shadow:0 2px 8px rgba(0,0,0,0.6); white-space:nowrap; text-align:center; transform:translate(-50%, -50%); cursor:pointer;">$${za.avgFare.toFixed(0)}/trip</div>`,
+                    html: `<div style="background:${zoneColor}; color:#ffffff; font-weight:bold; font-family:monospace; font-size:11px; padding:3px 8px; border-radius:12px; border:2px solid #ffffff; box-shadow:0 3px 10px rgba(0,0,0,0.7); white-space:nowrap; text-align:center; transform:translate(-50%, -50%); cursor:pointer;">$${za.avgFare.toFixed(0)}/trip</div>`,
                     iconSize: [0, 0],
                 });
 
@@ -570,6 +597,21 @@ export default function TripYieldMap({ className = "" }: Props) {
                             <Flame className="w-3.5 h-3.5" />
                             Density Heatmap
                         </button>
+                    </div>
+
+                    {/* Map Tile Style Switcher */}
+                    <div className="flex items-center bg-slate-950 rounded-lg p-1 border border-slate-800 text-slate-400">
+                        <Layers className="w-3.5 h-3.5 ml-1.5 mr-1 text-slate-400" />
+                        <select
+                            value={mapStyle}
+                            onChange={(e) => setMapStyle(e.target.value as MapStyle)}
+                            aria-label="Select Map Layer Style"
+                            className="bg-transparent text-slate-200 border-none outline-none pr-2 py-0.5 cursor-pointer font-medium"
+                        >
+                            <option value="streets" className="bg-slate-900 text-slate-100">Google Streets</option>
+                            <option value="hybrid" className="bg-slate-900 text-slate-100">Google Hybrid (Satellite)</option>
+                            <option value="dark" className="bg-slate-900 text-slate-100">Dark Void</option>
+                        </select>
                     </div>
 
                     {/* Trip Type Toggle */}
