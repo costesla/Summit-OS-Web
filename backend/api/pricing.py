@@ -134,6 +134,7 @@ def quote(req: func.HttpRequest) -> func.HttpResponse:
             or any(city in origin_lower for city in teller_cities)
             or any(city in dest_lower for city in teller_cities)
         )
+        is_out_of_county = not (is_origin_local and is_dest_local)
         import re
         den_pattern = r'\b(denver international airport|denver airport|\bden\b|dia|8500 peña blvd|8500 pena blvd)\b'
         is_denver_airport = bool(
