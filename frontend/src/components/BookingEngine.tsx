@@ -488,19 +488,19 @@ export default function BookingEngine() {
                             {quote ? (
                                 <div className="space-y-3">
                                     <div className="flex justify-between text-sm text-gray-300">
-                                        <span>Base Fare</span>
+                                        <span>Base Reservation</span>
                                         <span>${quote.baseFare.toFixed(2)}</span>
                                     </div>
-                                    {quote.overage > 0 && (
+                                    {((quote as any).mileageFare > 0 || quote.overage > 0) && (
                                         <div className="flex justify-between text-sm text-gray-300">
-                                            <span>Mileage Overage</span>
-                                            <span>${quote.overage.toFixed(2)}</span>
+                                            <span>Distance Fare ({quote.distance || 0} mi)</span>
+                                            <span>${((quote as any).mileageFare || quote.overage).toFixed(2)}</span>
                                         </div>
                                     )}
-                                    {quote.deadheadFee > 0 && (
-                                        <div className="flex justify-between text-sm text-cyan-300">
-                                            <span>Dispatch Fee (Deadhead)</span>
-                                            <span>${quote.deadheadFee.toFixed(2)}</span>
+                                    {((quote as any).tollFee > 0 || (quote as any).corridorAdjustment > 0) && (
+                                        <div className="flex justify-between text-sm text-emerald-300">
+                                            <span>E-470 Toll Pass-Through / DEN Floor</span>
+                                            <span>${(((quote as any).tollFee || 0) + ((quote as any).corridorAdjustment || 0)).toFixed(2)}</span>
                                         </div>
                                     )}
                                     {quote.stopFee > 0 && (
@@ -517,7 +517,7 @@ export default function BookingEngine() {
                                     )}
                                     {quote.waitFee > 0 && (
                                         <div className="flex justify-between text-sm text-blue-300">
-                                            <span>Wait Time ({quote.waitFee / 20} hr)</span>
+                                            <span>Wait Time ({Math.round(quote.waitFee / 25)} hr)</span>
                                             <span>${quote.waitFee.toFixed(2)}</span>
                                         </div>
                                     )}

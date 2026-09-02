@@ -134,7 +134,12 @@ def quote(req: func.HttpRequest) -> func.HttpResponse:
             or any(city in origin_lower for city in teller_cities)
             or any(city in dest_lower for city in teller_cities)
         )
-        is_out_of_county = not (is_origin_local and is_dest_local)
+        import re
+        den_pattern = r'\b(denver international airport|denver airport|\bden\b|dia|8500 peña blvd|8500 pena blvd)\b'
+        is_denver_airport = bool(
+            re.search(den_pattern, origin_lower, re.IGNORECASE) or
+            re.search(den_pattern, dest_lower, re.IGNORECASE)
+        )
 
         pricing = PricingEngine()
 
@@ -144,12 +149,13 @@ def quote(req: func.HttpRequest) -> func.HttpResponse:
             wait_time_hours=wait_hours,
             customer_email=customer_email,
             is_out_of_county=is_out_of_county,
-            is_teller_county=is_teller_county
+            is_teller_county=is_teller_county,
+            is_denver_airport=is_denver_airport
         )
 
         if trip_type == 'round-trip':
             # Price the return leg exactly like a separate a-la-carte trip:
-            # its own base fare, free-mile window, and stop fees. The
+            # its own base fare, mileage rate, and stop fees. The
             # layover wait fee is already counted on the outbound leg.
             return_quote = pricing.calculate_trip_price(
                 distance_miles=return_dist_miles,
@@ -157,10 +163,12 @@ def quote(req: func.HttpRequest) -> func.HttpResponse:
                 wait_time_hours=0.0,
                 customer_email=customer_email,
                 is_out_of_county=is_out_of_county,
-                is_teller_county=is_teller_county
+                is_teller_county=is_teller_county,
+                is_denver_airport=is_denver_airport
             )
-            for key in ("baseFare", "overage", "deadheadFee", "stopFee", "tellerFee", "waitFee", "total"):
-                quote_data[key] = round(quote_data[key] + return_quote[key], 2)
+            for key in ("baseFare", "mileageFare", "overage", "deadheadFee", "stopFee", "tellerFee", "tollFee", "waitFee", "corridorAdjustment", "total"):
+                if key in quote_data and key in return_quote:
+                    quote_data[key] = round(quote_data[key] + return_quote[key], 2)
 
         if trip_type == 'round-trip':
             dur_text = f"{(total_duration_sec + return_duration_sec) // 60} mins (round trip)"
