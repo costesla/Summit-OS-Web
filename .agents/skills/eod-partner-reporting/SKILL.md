@@ -15,44 +15,60 @@ Every daily shift produces:
 * **Net Operating Profit:** Gross Revenue - Daily OpEx.
 * **Trip Count:** Exact count of completed revenue rides (Uber TRIP- rows + completed private charter bookings).
 
-## 2. Dual-Reconciliation Financial Integrity Gates
+---
+
+## 2. Serverless Runtime & Filesystem Architecture (Azure Functions)
+
+> [!IMPORTANT]
+> In Azure Functions Linux App Services running under `WEBSITE_RUN_FROM_PACKAGE=1`, `/home/site/wwwroot` is a **read-only squashfs image**.
+
+### Serverless File Isolation Protocol:
+1. **Never Write to Repository Folders**: Attempting `os.makedirs("backend/archive")` or writes to local relative paths throws `OSError: [Errno 30] Read-only file system`.
+2. **Ephemeral Directory Pattern**: All dynamically rendered PDFs, raw markdowns, and temporary JSON ledgers must target `tempfile.gettempdir()`:
+   ```python
+   temp_session_id = f"{date_str}_{uuid4().hex[:8]}"
+   archive_dir = os.path.join(tempfile.gettempdir(), "summitos", "partner_reports", temp_session_id)
+   ```
+3. **Mandatory Cleanup in `finally:`**: Azure Function instances reuse warm worker environments. Always remove temporary directories inside a `finally:` block:
+   ```python
+   finally:
+       if os.path.exists(archive_dir):
+           shutil.rmtree(archive_dir, ignore_errors=True)
+   ```
+4. **Container Dependencies**: Ensure `reportlab>=4.0.0` is permanently declared in `backend/requirements.txt` so the Oryx build pack compiles C extensions and Python modules into the container package.
+
+---
+
+## 3. Dynamic Data Binding & Zero Prototype Enforcement
+
+Never use static mock arrays or hardcoded fallback expense data. All reports must derive exclusively from the live database:
+
+1. **Energy Management (Supercharging)**: Pulled from `db.get_expenses_by_date(date_str)` filtered to category `charging`. Clean timestamps (`HH:MM`) and locations with `clean_location()` helper.
+2. **Road Meals & Incidentals**: Pulled from `db.get_expenses_by_date(date_str)` filtered to `fastfood`.
+3. **Completed Rides**: Derived from trips matching `id.startswith(('TRIP-', 'INV-'))` or `driver_earnings > 0`.
+4. **Vector Pie Chart**: Rendered on the fly via `ReportLab` drawing canvas using dynamic percentage ratios of Net Profit vs Supercharging vs Road Incidentals.
+
+---
+
+## 4. Dual-Reconciliation Financial Integrity Gates
 Before any report can be archived or emailed, the engine validates the following mathematical constraints:
-1. Operating Profit Constraint: Gross Revenue - Total OpEx == Net Operating Profit (+/- .01)
-2. Revenue Mix Constraint: Uber Platform Revenue + Private Charter Revenue == Total Gross Revenue (+/- .01)
-3. Net Margin Calculation: Net Operating Margin % = (Net Operating Profit / Gross Revenue) * 100
+1. **Operating Profit Constraint**: `Gross Revenue - Total OpEx == Net Operating Profit (+/- .01)`
+2. **Revenue Mix Constraint**: `Uber Platform Revenue + Private Charter Revenue == Total Gross Revenue (+/- .01)`
+3. **Net Margin Calculation**: `Net Operating Margin % = (Net Operating Profit / Gross Revenue) * 100`
 
-## 3. Core Engine Components
+---
+
+## 5. Core Engine Components
 ### A. Backend Route & Service Layer
-* API Route: tools/partner-eod-report in backend/api/driver.py
-* Processing Engine: services.eod_engine_production.ProductionEODEngine
-* PDF Generator: services.pdf_generator.ExecutivePDFGenerator (ReportLab vector Pie chart)
-* Audit Ledger: services.audit_ledger.AuditLedgerManager
-* Mail Dispatch: services.graph.GraphClient.send_partner_eod_email()
+* **API Route**: `tools/partner-eod-report` in [backend/api/driver.py](file:///c:/Users/PeterTeehan/OneDrive - COS Tesla LLC/COS Tesla - Website/Summit-OS-Web-master/backend/api/driver.py)
+* **Processing Engine**: `services.eod_engine_production.ProductionEODEngine`
+* **PDF Generator**: `services.pdf_generator.ExecutivePDFGenerator` (ReportLab vector Pie chart)
+* **Audit Ledger**: `services.audit_ledger.AuditLedgerManager`
+* **Mail Dispatch**: `services.graph.GraphClient.send_partner_eod_email()`
 
-### B. Report Modules
-1. Executive Financial Scorecard: Gross, Net Profit, Margin %, Total OpEx, Completed Trips, and Average Revenue/Trip.
-2. Spending vs. Earnings vs. Charging Pie Chart: ReportLab vector Pie chart (Profit 61%, Charging 20%, Meals 19%).
-3. Itemized Road Spending & Supercharging Ledger: Charging timestamps, street addresses, costs, and road receipts.
-4. Run of the Day & Trip Efficiency Highlights: Top revenue segment, off-peak charging efficiency, top tipped ride.
-5. Fleet Telemetry & Fun Stats: Goal pacing (109%), fleet availability (100%), customer quality rating (5.00★).
-
-## 4. Microsoft Graph Cloud Email Dispatch
-### A. Authentication & Secret Governance
-* OAuth Tenant ID: 1cd94367-e5ad-4827-90a9-cc4c6124a340 (costesla.com)
-* OAuth Client ID: 3908fbac-03a0-4670-acf9-3bb24188747b (SummitOS)
-* Active Key ID: 5c01998e-20bb-448b-aa70-0047fe50a828 (Valid through August 2028)
-* Azure Function App: summitos-api in rg-summitos-prod
-
-### B. Dispatch Rules
-* Primary Recipients (TO): Luis Canales (luis9189@gmail.com) and selected advisory contacts.
-* Mandatory Owner CC (CC): Peter Teehan (peter.teehan@costesla.com) is permanently hardcoded on every external dispatch.
-* Attachments: Versioned publication PDF (YYYY-MM-DD-EOD-v1.pdf) attached as base64 fileAttachment.
-
-## 5. Quadruple Archival Vault & Cryptographic Audit Ledger
-For every operational day, the engine archives 4 versioned artifacts in archive/Partner Reports/YYYY/MM Month/:
-1. YYYY-MM-DD-raw-v1.txt (Verbatim ingested payload)
-2. YYYY-MM-DD-EOD-v1.html (Mobile responsive briefing markup)
-3. YYYY-MM-DD-EOD-v1.pdf (Publication document with vector Pie Chart)
-4. YYYY-MM-DD-metadata-v1.json (Machine-readable audit receipt with SHA-256 hash)
-
-All runs are recorded in archive/eod_audit_ledger.json with delivery timestamps, recipient rosters, and status lifecycle transitions (DELIVERED, SUBMITTED, LOCAL_SIMULATION_COMPLETED).
+### B. Microsoft Graph Cloud Email Dispatch
+* **Tenant ID**: `1cd94367-e5ad-4827-90a9-cc4c6124a340` (costesla.com)
+* **Client ID**: `3908fbac-03a0-4670-acf9-3bb24188747b` (SummitOS)
+* **Primary Recipients (TO)**: Luis Canales (`luis9189@gmail.com`) and selected partners.
+* **Mandatory CC**: Peter Teehan (`peter.teehan@costesla.com`) included on every dispatch.
+* **Payload Format**: `saveToSentItems: true` placed at the root level of the Graph payload.
