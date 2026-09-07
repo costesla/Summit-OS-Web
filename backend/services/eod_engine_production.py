@@ -228,6 +228,11 @@ class ProductionEODEngine:
 
         data["trip_count"] = trip_count
         data["avg_rev_per_trip"] = round(gross_rev / trip_count, 2) if (gross_rev is not None and trip_count and trip_count > 0) else 0.0
+        rating_match = re.search(r"Passenger Rating:\s*([^\n\r]+)", raw_text, re.IGNORECASE)
+        data["passenger_rating"] = rating_match.group(1).strip() if rating_match else None
+
+        incidents_match = re.search(r"Reported Incidents:\s*([^\n\r]+)", raw_text, re.IGNORECASE)
+        data["reported_incidents"] = incidents_match.group(1).strip() if incidents_match else None
 
         raw_exec = self.extract_section(raw_text, "Executive Summary")
         raw_high = self.extract_section(raw_text, "Operational Highlights")
@@ -454,8 +459,8 @@ class ProductionEODEngine:
     </tr>
         """
 
-        passenger_rating_val = data.get("passenger_rating", "5.00 ★")
-        incidents_val = data.get("reported_incidents", "0")
+        passenger_rating_val = str(data.get("passenger_rating") or "Not available")
+        incidents_val = str(data.get("reported_incidents") or "Not available")
 
         fleet_telemetry_html = f"""
     <!-- Fleet Telemetry & Performance Stats -->

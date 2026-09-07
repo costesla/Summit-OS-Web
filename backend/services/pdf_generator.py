@@ -367,8 +367,8 @@ class ExecutivePDFGenerator:
 
         # 3d. Fleet Telemetry & Performance Stats (Split Rating & Incidents, CapEx Separated)
         story.append(Paragraph("FLEET TELEMETRY & PERFORMANCE STATS", heading_style))
-        passenger_rating_val = data.get("passenger_rating", "5.00 ★")
-        incidents_val = data.get("reported_incidents", "0")
+        passenger_rating_val = str(data.get("passenger_rating") or "Not available")
+        incidents_val = str(data.get("reported_incidents") or "Not available")
 
         stats_data = [
             ["🎯 Completed Trips", f"{data['trip_count']} Verified Fleet Runs", "⭐ Passenger Rating", passenger_rating_val],
@@ -392,18 +392,21 @@ class ExecutivePDFGenerator:
         story.append(Spacer(1, 6))
 
         # 4. Executive Summary
+        exec_summary = data.get('executive_summary') or data.get('executive_summary_escaped') or "Operational summary recorded."
         story.append(Paragraph("EXECUTIVE SUMMARY", heading_style))
-        story.append(Paragraph(data['executive_summary'], body_style))
+        story.append(Paragraph(exec_summary, body_style))
         story.append(Spacer(1, 5))
 
         # 5. Operational Highlights
+        op_highlights = data.get('operational_highlights') or data.get('operational_highlights_escaped') or "Standard operations completed."
         story.append(Paragraph("OPERATIONAL HIGHLIGHTS", heading_style))
-        for line in [l.strip().lstrip('-*•').strip() for l in data['operational_highlights'].split('\n') if l.strip()]:
+        for line in [l.strip().lstrip('-*•').strip() for l in op_highlights.split('\n') if l.strip()]:
             story.append(Paragraph(f"• {line}", bullet_style))
         story.append(Spacer(1, 5))
 
         # 6. Items Requiring Attention
-        attention_lines = [l.strip().lstrip('-*•').strip() for l in data['items_attention'].split('\n') if l.strip()]
+        att_text = data.get('items_attention') or data.get('items_attention_escaped') or "N/A"
+        attention_lines = [l.strip().lstrip('-*•').strip() for l in att_text.split('\n') if l.strip()]
         if attention_lines and attention_lines[0] != "N/A":
             story.append(Paragraph("ITEMS REQUIRING ATTENTION", heading_style))
             for line in attention_lines:
@@ -411,8 +414,9 @@ class ExecutivePDFGenerator:
             story.append(Spacer(1, 5))
 
         # 7. Forward Outlook
+        out_text = data.get('outlook') or data.get('outlook_escaped') or "Standard operations scheduled."
         story.append(Paragraph("FORWARD OUTLOOK & COMMENTARY", heading_style))
-        for line in [l.strip().lstrip('-*•').strip() for l in data['outlook'].split('\n') if l.strip()]:
+        for line in [l.strip().lstrip('-*•').strip() for l in out_text.split('\n') if l.strip()]:
             story.append(Paragraph(line, body_style))
         story.append(Spacer(1, 8))
 

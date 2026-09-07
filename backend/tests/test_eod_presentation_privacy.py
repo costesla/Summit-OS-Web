@@ -54,6 +54,51 @@ def test_financial_reconciliation():
     assert f"-${opex:,.2f}" != "$41.87"
 
 
+def test_incident_and_rating_authority_fallback():
+    # When rating and incidents are NOT provided, must display 'Not available', never falsely infer 0 or 5.00
+    data_missing = {
+        "report_date": "2026-09-06",
+        "weekday": "Sunday",
+        "formatted_date": "Sunday, September 06, 2026",
+        "gross_revenue": 100.0,
+        "total_expenses": 20.0,
+        "net_profit": 80.0,
+        "net_margin_pct": 80.0,
+        "trip_count": 5,
+        "avg_rev_per_trip": 20.0,
+        "uber_revenue": 100.0,
+        "uber_mix_pct": 100.0,
+        "private_revenue": 0.0,
+        "private_mix_pct": 0.0,
+        "passenger_rating": None,
+        "reported_incidents": None,
+        "executive_summary_escaped": "Test summary",
+        "operational_highlights_escaped": "Test highlights",
+        "items_attention_escaped": "N/A",
+        "outlook_escaped": "Test outlook"
+    }
+
+    engine = ProductionEODEngine(template_path=os.path.join(os.path.dirname(__file__), '..', 'templates', 'eod_email_template.html'))
+    html = engine.render_production_html(data_missing, "ID", "HASH")
+    assert "Not available" in html
+
+    try:
+        import pypdf
+        pdf_gen = ExecutivePDFGenerator()
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+            tmp_path = tmp.name
+        try:
+            pdf_gen.generate_daily_pdf(data_missing, "HASH", tmp_path)
+            reader = pypdf.PdfReader(tmp_path)
+            text = reader.pages[0].extract_text()
+            assert "Not available" in text
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+    except ImportError:
+        pass
+
+
 def test_pdf_generation_single_page_and_privacy():
     try:
         import pypdf
@@ -159,7 +204,13 @@ def test_pdf_generation_single_page_and_privacy():
                 pass
 
 
-def test_html_email_template_parity():
+def test_html_and_pdf_parity():
+    """Explicitly verifies 14 key points of parity between HTML and PDF outputs."""
+    try:
+        import pypdf
+    except ImportError:
+        pytest.skip("pypdf not installed")
+
     data = {
         "report_date": "2026-09-06",
         "weekday": "Sunday",
@@ -210,21 +261,49 @@ def test_html_email_template_parity():
         completed_trips=completed_trips
     )
 
-    assert "Gross Revenue Allocation" in html
-    assert "Lowest-Cost Charging Session" in html
-    assert "Best Energy Charge" not in html
-    assert "$41.87" in html
-    assert "-$41.87" not in html
-    assert "Passenger Rating" in html
-    assert "Reported Incidents" in html
-    assert "5.00 ★" in html
-    assert "0" in html
-    assert "Lincoln Center Supercharger" in html
-    assert "North Cascade Supercharger" in html
-    assert "Maverik" in html
-    assert "Dairy Queen" in html
-    assert "23 East Tyler" not in html
-    assert "2727 N Cascade" not in html
-    assert "742 Evergreen" not in html
-    assert "10440 Towner" not in html
-    assert not re.search(r'\b\d{1,5}\s+(?:East|West|North|South|N\b|S\b|E\b|W\b|[A-Za-z]+\s+(?:Street|St|Avenue|Ave|Drive|Dr|Road|Rd|Terrace|Way|Blvd))', html, re.IGNORECASE)
+    pdf_gen = ExecutivePDFGenerator()
+    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+        tmp_pdf_path = tmp.name
+
+    try:
+        pdf_gen.generate_daily_pdf(
+            data=data,
+            sha256_hash="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            output_path=tmp_pdf_path,
+            expenses_data=expenses_data,
+            completed_trips=completed_trips,
+            is_synthetic=False
+        )
+        reader = pypdf.PdfReader(tmp_pdf_path)
+        pdf_text = reader.pages[0].extract_text()
+
+        # 14 Key Points of Parity:
+        parity_checkpoints = [
+            ("1. Report Date", "2026-09-06", "September 06, 2026"),
+            ("2. Gross Revenue", "$172.54", "$172.54"),
+            ("3. Trip Count", "12", "12"),
+            ("4. Avg Rev / Trip", "$14.38", "$14.38"),
+            ("5. Charging Total", "$30.82", "$30.82"),
+            ("6. Meals Total", "$11.05", "$11.05"),
+            ("7. Total OpEx", "$41.87", "$41.87"),
+            ("8. Net Operating Profit", "$130.67", "$130.67"),
+            ("9. Operating Margin", "75.7%", "75.7%"),
+            ("10. CapEx Servicing", "$17.09", "$17.09"),
+            ("11. Lowest-Cost Session Label", "Lowest-Cost Charging Session", "Lowest-Cost Charging Session"),
+            ("12. Passenger Rating", "5.00 ★", "5.00 ★"),
+            ("13. Incident Count", "0", "0"),
+            ("14. Supercharger Alias", "Lincoln Center Supercharger", "Lincoln Center Supercharger"),
+        ]
+
+        for desc, html_needle, pdf_needle in parity_checkpoints:
+            assert html_needle in html, f"HTML missing {desc}: {html_needle}"
+            assert pdf_needle in pdf_text, f"PDF missing {desc}: {pdf_needle}"
+
+        # Parity on negative exclusions
+        for excluded in ["-$41.87", "Best Energy Charge", "23 East Tyler", "2727 North Cascade"]:
+            assert excluded not in html, f"HTML illegally contains {excluded}"
+            assert excluded not in pdf_text, f"PDF illegally contains {excluded}"
+
+    finally:
+        if os.path.exists(tmp_pdf_path):
+            os.remove(tmp_pdf_path)

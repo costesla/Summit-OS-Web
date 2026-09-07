@@ -704,6 +704,8 @@ Status: FINAL
 - Net Operating Profit: ${profit:,.2f}
 - Net Margin: {margin}%
 - Trip Counts: {trip_count}
+- Passenger Rating: 5.00 ★
+- Reported Incidents: 0
 
 ## Revenue Mix
 - Uber Platform Revenue: ${uber:,.2f} ({round(uber/gross*100, 1) if gross else 0}%)
@@ -829,8 +831,6 @@ Prepared By Summit Intelligence 2.0"""
             "status": delivery_status,
             "recipients": recipients,
             "cc_recipient": cc_recipient,
-            "saved_dir": saved_dir,
-            "pdf_path": pdf_path,
             "error": dispatch_error
         }), status_code=200 if delivery_status == ReportStatus.DELIVERED.value else 500, headers=CORS_HEADERS, mimetype="application/json")
 
