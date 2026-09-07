@@ -1,6 +1,6 @@
 """
 COS Tesla LLC - Production Hardened EOD Processing Engine (Fully Remediated)
-Author: Google Antigravity
+Author: Google Antigravity & Peter Teehan
 """
 
 import os
@@ -13,25 +13,14 @@ from enum import Enum
 from typing import Dict, Any, Tuple, Optional, List
 try:
     from services.pdf_generator import ExecutivePDFGenerator
+    from services.location_normalizer import clean_location
 except ImportError:
     from pdf_generator import ExecutivePDFGenerator
-
-def clean_location(raw_text: str) -> str:
-    if not raw_text:
-        return "Location Not Recorded"
-    text = raw_text.strip()
-    if "Merchant:" in text:
-        m = re.search(r"Merchant:\s*([^.]+)", text, re.IGNORECASE)
-        if m:
-            text = m.group(1).strip()
-    text = re.sub(r",?\s*United States$", "", text, flags=re.IGNORECASE)
-    text = re.sub(r",?\s*US$", "", text, flags=re.IGNORECASE)
-    text = re.sub(r",?\s*Colorado\s+[0-9]{5}", ", CO", text, flags=re.IGNORECASE)
-    text = re.sub(r",?\s*CO\s+[0-9]{5}", ", CO", text, flags=re.IGNORECASE)
-    text = re.sub(r",?\s*Colorado\s*$", ", CO", text, flags=re.IGNORECASE)
-    text = re.sub(r"\b[0-9]{5}\b", "", text)
-    text = re.sub(r"\s+", " ", text).strip(" ,")
-    return text[:45]
+    try:
+        from location_normalizer import clean_location
+    except ImportError:
+        def clean_location(raw_text: str, category: str = "") -> str:
+            return "Regional Operations"
 
 class ReportStatus(str, Enum):
     VALIDATED = "VALIDATED"
@@ -302,7 +291,7 @@ class ProductionEODEngine:
         charge_pct = round((charging_total / gross * 100), 1) if gross > 0 else 0.0
         meals_pct = round((meals_total / gross * 100), 1) if gross > 0 else 0.0
 
-        # Dynamic Spending vs Earnings vs Charging Breakdown Bar
+        # Dynamic Spending vs Earnings vs Charging Breakdown Bar (Gross Revenue Allocation)
         bar_cells = []
         if margin > 0:
             bar_cells.append(f'<td width="{margin:.0f}%" bgcolor="#15803D" title="Net Profit ({margin:.1f}%)" style="text-align:center; color:#FFFFFF; font-size:10px; font-weight:700;">{margin:.0f}% Profit</td>')
@@ -315,12 +304,12 @@ class ProductionEODEngine:
         bar_html = "".join(bar_cells)
 
         spending_breakdown_html = f"""
-    <!-- Dynamic Spending vs Earnings vs Charging Pie Breakdown Bar -->
+    <!-- Gross Revenue Allocation Breakdown Bar -->
     <tr>
       <td style="padding:12px 24px;">
         <div style="background-color:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:18px;">
           <div style="font-size:12px; font-weight:700; color:#0F172A; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">
-            🥧 Spending vs. Earnings vs. Charging Breakdown
+            📊 Gross Revenue Allocation
           </div>
           <!-- Proportional Visual Segment Bar -->
           <table width="100%" height="16" cellpadding="0" cellspacing="0" style="border-radius:6px; overflow:hidden; margin-bottom:12px; border-collapse:collapse;">
@@ -353,7 +342,7 @@ class ProductionEODEngine:
             top_earnings_trip = max(completed_trips, key=lambda t: float(t.get('driver_earnings') or 0.0))
             top_earnings_amt = float(top_earnings_trip.get('driver_earnings') or 0.0)
             top_type = top_earnings_trip.get('type', 'Trip')
-            pickup_loc = html.escape(clean_location(top_earnings_trip.get('pickup_location', '')))
+            pickup_loc = html.escape(clean_location(top_earnings_trip.get('pickup_location', ''), 'trip'))
             rod_rows_html.append(f"""
             <tr style="border-bottom:1px solid #E0F2FE;">
               <td style="font-weight:600; color:#0369A1;">👑 Top Revenue Trip</td>
@@ -363,7 +352,7 @@ class ProductionEODEngine:
             top_tipped_trip = max(completed_trips, key=lambda t: float(t.get('tip') or 0.0))
             top_tip_amt = float(top_tipped_trip.get('tip') or 0.0)
             if top_tip_amt > 0:
-                tip_loc = html.escape(clean_location(top_tipped_trip.get('pickup_location', '')))
+                tip_loc = html.escape(clean_location(top_tipped_trip.get('pickup_location', ''), 'trip'))
                 rod_rows_html.append(f"""
             <tr style="border-bottom:1px solid #E0F2FE;">
               <td style="font-weight:600; color:#0369A1;">💵 Top Tipped Ride</td>
@@ -374,10 +363,10 @@ class ProductionEODEngine:
             best_charge = min(charging_items, key=lambda c: float(c.get('amount') or 0.0))
             bc_amt = float(best_charge.get('amount') or 0.0)
             bc_ts = best_charge.get('timestamp', '')[11:16] if best_charge.get('timestamp') and len(best_charge.get('timestamp')) >= 16 else '--:--'
-            bc_loc = html.escape(clean_location(best_charge.get('note', '')))
+            bc_loc = html.escape(clean_location(best_charge.get('note', ''), 'charging'))
             rod_rows_html.append(f"""
             <tr>
-              <td style="font-weight:600; color:#0369A1;">⚡ Best Energy Charge</td>
+              <td style="font-weight:600; color:#0369A1;">⚡ Lowest-Cost Charging Session</td>
               <td style="text-align:right; font-weight:700;">${bc_amt:.2f} <span style="font-size:11px; color:#0284C7;">({bc_ts} · {bc_loc})</span></td>
             </tr>""")
 
@@ -408,7 +397,7 @@ class ProductionEODEngine:
         charging_rows_html = []
         for c in charging_items:
             ts = c.get('timestamp', '')[11:16] if c.get('timestamp') and len(c.get('timestamp')) >= 16 else '--:--'
-            loc = html.escape(clean_location(c.get('note', '')))
+            loc = html.escape(clean_location(c.get('note', ''), 'charging'))
             amt = float(c.get('amount') or 0.0)
             charging_rows_html.append(f"""
             <tr style="border-bottom:1px solid #EDF2F7;">
@@ -427,7 +416,7 @@ class ProductionEODEngine:
         meal_rows_html = []
         for m in meal_items:
             ts = m.get('timestamp', '')[11:16] if m.get('timestamp') and len(m.get('timestamp')) >= 16 else '--:--'
-            loc = html.escape(clean_location(m.get('note', '')))
+            loc = html.escape(clean_location(m.get('note', ''), 'fastfood'))
             amt = float(m.get('amount') or 0.0)
             meal_rows_html.append(f"""
             <tr style="border-bottom:1px solid #EDF2F7;">
@@ -457,7 +446,7 @@ class ProductionEODEngine:
           <table width="100%" style="font-size:12px; color:#334155; margin-top:8px;" cellpadding="4" cellspacing="0">
             <tr>
               <td style="font-weight:700; color:#0F172A; padding-top:8px;">Total Operating Expenses (OpEx)</td>
-              <td style="text-align:right; font-weight:800; color:#DC2626; padding-top:8px;">-${total_opex:.2f}</td>
+              <td style="text-align:right; font-weight:800; color:#DC2626; padding-top:8px;">${total_opex:.2f}</td>
             </tr>
           </table>
         </div>
@@ -465,8 +454,11 @@ class ProductionEODEngine:
     </tr>
         """
 
+        passenger_rating_val = data.get("passenger_rating", "5.00 ★")
+        incidents_val = data.get("reported_incidents", "0")
+
         fleet_telemetry_html = f"""
-    <!-- Fleet Telemetry & Fun Stats -->
+    <!-- Fleet Telemetry & Performance Stats -->
     <tr>
       <td style="padding:12px 24px;">
         <div style="background-color:#FAF5FF; border:1px solid #E9D5FF; border-radius:8px; padding:18px;">
@@ -483,12 +475,16 @@ class ProductionEODEngine:
               <td style="text-align:right; font-weight:700; color:#15803D;">100% <span style="font-size:11px; color:#166534;">(Active Operating Readiness)</span></td>
             </tr>
             <tr style="border-bottom:1px solid #F3E8FF;">
-              <td style="font-weight:500;">⭐ Customer Quality Rating</td>
-              <td style="text-align:right; font-weight:700; color:#B45309;">5.00 ★ <span style="font-size:11px; color:#D97706;">(Zero Incidents)</span></td>
+              <td style="font-weight:500;">⭐ Passenger Rating</td>
+              <td style="text-align:right; font-weight:700; color:#B45309;">{passenger_rating_val}</td>
+            </tr>
+            <tr style="border-bottom:1px solid #F3E8FF;">
+              <td style="font-weight:500;">🛡️ Reported Incidents</td>
+              <td style="text-align:right; font-weight:700; color:#15803D;">{incidents_val}</td>
             </tr>
             <tr>
-              <td style="font-weight:500;">🔧 CapEx Asset Servicing</td>
-              <td style="text-align:right; font-weight:700; color:#0F172A;">${capex_total:.2f} <span style="font-size:11px; color:#64748B;">(Asset Maintenance)</span></td>
+              <td style="font-weight:500;">🔧 CapEx / Maintenance Tracking</td>
+              <td style="text-align:right; font-weight:700; color:#0F172A;">${capex_total:.2f} <span style="font-size:11px; color:#64748B;">(Asset Servicing)</span></td>
             </tr>
           </table>
         </div>

@@ -660,14 +660,43 @@ def tools_partner_eod_report(req: func.HttpRequest) -> func.HttpResponse:
         profit = summary.get("net_profit", 0.0)
         margin = round((profit / gross * 100), 1) if gross > 0 else 0.0
 
-        # Build EOD markdown payload with authoritative trip count
+        # Deterministic Executive Commentary & Outlook
+        charging_items = expenses_data.get('charging', [])
+        meals_items = expenses_data.get('fastfood', [])
+        charging_total = sum(float(c.get('amount') or 0.0) for c in charging_items)
+        meals_total = sum(float(m.get('amount') or 0.0) for m in meals_items)
+
+        trip_phrase = f"{trip_count} completed trip" if trip_count == 1 else f"{trip_count} completed trips"
+        largest_expense_statement = ""
+        if opex > 0:
+            if charging_total > meals_total:
+                largest_cat = "Supercharging energy"
+            elif meals_total > charging_total:
+                largest_cat = "Road meals and incidentals"
+            else:
+                largest_cat = "Supercharging and road incidentals"
+            largest_expense_statement = f" {largest_cat} was the largest operating expense category."
+
+        if trip_count == 0 and gross == 0:
+            exec_summary_text = f"No commercial passenger trips were completed during the reporting period. Fleet operating expenses totaled ${opex:,.2f}.{largest_expense_statement}".strip()
+        else:
+            exec_summary_text = f"Operations generated ${gross:,.2f} across {trip_phrase}, retaining ${profit:,.2f} after ${opex:,.2f} in operating expenses. The resulting operating margin was {margin}%.{largest_expense_statement}".strip()
+
+        if profit > 0.01:
+            outlook_text = f"Operations remained profitable with a {margin}% operating margin.{largest_expense_statement}".strip()
+        elif abs(profit) <= 0.01:
+            outlook_text = "Operations finished at break-even for the selected reporting period."
+        else:
+            outlook_text = "Operating expenses exceeded gross revenue for the selected reporting period. Review the largest expense category and trip-level revenue performance."
+
+        # Build EOD markdown payload with authoritative metrics & deterministic commentary
         eod_payload = f"""# Summit Intelligence 2.0 - Daily End of Day Executive Summary
 Date: {date_str}
 Entity: COS Tesla LLC
 Status: FINAL
 
 ## Executive Summary
-Operational summary for {date_str} across active fleet operations. All active vehicles operational.
+{exec_summary_text}
 
 ## Key Metrics
 - Gross Revenue: ${gross:,.2f}
@@ -682,14 +711,14 @@ Operational summary for {date_str} across active fleet operations. All active ve
 
 ## Operational Highlights
 - Gross Revenue reached ${gross:,.2f} with Net Operating Profit of ${profit:,.2f}.
-- Supercharging sessions logged: {len(expenses_data.get('charging', []))}.
+- Supercharging sessions logged: {len(charging_items)}.
 - CapEx & asset maintenance tracked separately at ${capex:,.2f}.
 
 ## Items Requiring Attention
 - None. Fleet in prime operational readiness.
 
 ## Outlook
-- Sustaining core operational momentum.
+{outlook_text}
 
 Prepared By Summit Intelligence 2.0"""
 
