@@ -16,6 +16,23 @@ try:
 except ImportError:
     from pdf_generator import ExecutivePDFGenerator
 
+def clean_location(raw_text: str) -> str:
+    if not raw_text:
+        return "Location Not Recorded"
+    text = raw_text.strip()
+    if "Merchant:" in text:
+        m = re.search(r"Merchant:\s*([^.]+)", text, re.IGNORECASE)
+        if m:
+            text = m.group(1).strip()
+    text = re.sub(r",?\s*United States$", "", text, flags=re.IGNORECASE)
+    text = re.sub(r",?\s*US$", "", text, flags=re.IGNORECASE)
+    text = re.sub(r",?\s*Colorado\s+[0-9]{5}", ", CO", text, flags=re.IGNORECASE)
+    text = re.sub(r",?\s*CO\s+[0-9]{5}", ", CO", text, flags=re.IGNORECASE)
+    text = re.sub(r",?\s*Colorado\s*$", ", CO", text, flags=re.IGNORECASE)
+    text = re.sub(r"\b[0-9]{5}\b", "", text)
+    text = re.sub(r"\s+", " ", text).strip(" ,")
+    return text[:45]
+
 class ReportStatus(str, Enum):
     VALIDATED = "VALIDATED"
     ARCHIVED = "ARCHIVED"
@@ -251,7 +268,14 @@ class ProductionEODEngine:
 
         return data
 
-    def render_production_html(self, data: Dict[str, Any], report_id: str, sha256_hash: str) -> str:
+    def render_production_html(
+        self,
+        data: Dict[str, Any],
+        report_id: str,
+        sha256_hash: str,
+        expenses_data: Optional[Dict[str, Any]] = None,
+        completed_trips: Optional[List[Dict[str, Any]]] = None
+    ) -> str:
         with open(self.template_path, 'r', encoding='utf-8') as f:
             template = f.read()
 
@@ -264,98 +288,58 @@ class ProductionEODEngine:
             items = "".join([f"<li style='margin-bottom:4px;'>{l}</li>" for l in lines])
             return f"<ul style='margin:0; padding-left:18px;'>{items}</ul>"
 
-        # Dynamic generation of Itemized Expenses, Run of the Day, and Fleet Telemetry
-        date_str = data.get("report_date", "")
-        db_expenses = {}
-        db_summary = {}
-        try:
-            from services.database import DatabaseClient
-            db = DatabaseClient()
-            db_expenses = db.get_expenses_by_date(date_str)
-            db_summary = db.get_summary_metrics_for_range(date_str, date_str)
-        except Exception as e:
-            logging.warning(f"Failed to fetch dynamic expenses for {date_str}: {e}")
+        charging_items = expenses_data.get('charging', []) if expenses_data else []
+        meal_items = expenses_data.get('fastfood', []) if expenses_data else []
+        capex_items = expenses_data.get('capital_maintenance', []) if expenses_data else []
 
-        charging_list = db_expenses.get("charging", [])
-        meals_list = db_expenses.get("fastfood", []) + db_expenses.get("meals", [])
-        capex_list = db_expenses.get("capital_maintenance", [])
+        charging_total = sum(float(c.get('amount') or 0.0) for c in charging_items)
+        meals_total = sum(float(m.get('amount') or 0.0) for m in meal_items)
+        capex_total = sum(float(x.get('amount') or 0.0) for x in capex_items)
 
-        charging_total = sum(float(c.get("amount") or 0.0) for c in charging_list)
-        meals_total = sum(float(m.get("amount") or 0.0) for m in meals_list)
-        capex_total = sum(float(x.get("amount") or 0.0) for x in capex_list)
-        if capex_total == 0.0 and db_summary.get("capex_expenses"):
-            capex_total = float(db_summary.get("capex_expenses"))
+        gross = float(data.get('gross_revenue') or 0.0)
+        profit = float(data.get('net_profit') or 0.0)
+        margin = float(data.get('net_margin_pct') or 0.0)
+        charge_pct = round((charging_total / gross * 100), 1) if gross > 0 else 0.0
+        meals_pct = round((meals_total / gross * 100), 1) if gross > 0 else 0.0
 
-        # Build Dynamic Supercharging Table Rows
-        charging_rows_html = ""
-        for ch in charging_list:
-            ts = ch.get("timestamp") or ""
-            time_str = ts.split("T")[1][:5] if "T" in str(ts) else (str(ts)[:5] if ts else "--:--")
-            loc = ch.get("note") or "Tesla Supercharger"
-            # Clean up street address for display
-            loc_short = loc.split(",")[0] if "," in loc else loc
-            amt = float(ch.get("amount") or 0.0)
-            charging_rows_html += f"""
-            <tr style="border-bottom:1px solid #EDF2F7;">
-              <td>{time_str} · {loc_short}</td>
-              <td style="text-align:right; font-weight:700; color:#0F172A;">${amt:.2f}</td>
-            </tr>"""
+        # Dynamic Spending vs Earnings vs Charging Breakdown Bar
+        bar_cells = []
+        if margin > 0:
+            bar_cells.append(f'<td width="{margin:.0f}%" bgcolor="#15803D" title="Net Profit ({margin:.1f}%)" style="text-align:center; color:#FFFFFF; font-size:10px; font-weight:700;">{margin:.0f}% Profit</td>')
+        if charge_pct > 0:
+            bar_cells.append(f'<td width="{charge_pct:.0f}%" bgcolor="#0EA5E9" title="Charging ({charge_pct:.1f}%)" style="text-align:center; color:#FFFFFF; font-size:10px; font-weight:700;">{charge_pct:.0f}% Charge</td>')
+        if meals_pct > 0:
+            bar_cells.append(f'<td width="{meals_pct:.0f}%" bgcolor="#F59E0B" title="Meals ({meals_pct:.1f}%)" style="text-align:center; color:#FFFFFF; font-size:10px; font-weight:700;">{meals_pct:.0f}% Meals</td>')
+        if not bar_cells:
+            bar_cells.append('<td width="100%" bgcolor="#94A3B8" style="text-align:center; color:#FFFFFF; font-size:10px; font-weight:700;">No Activity</td>')
+        bar_html = "".join(bar_cells)
 
-        if not charging_rows_html:
-            charging_rows_html = """
-            <tr style="border-bottom:1px solid #EDF2F7;">
-              <td>No off-depot supercharging sessions logged</td>
-              <td style="text-align:right; font-weight:700; color:#0F172A;">$0.00</td>
-            </tr>"""
-
-        # Build Dynamic Road Meals Table Rows
-        meals_rows_html = ""
-        for m in meals_list:
-            ts = m.get("timestamp") or ""
-            time_str = ts.split("T")[1][:5] if "T" in str(ts) else (str(ts)[:5] if ts else "--:--")
-            note = m.get("note") or "Road Meal"
-            merchant = note.split(".")[0].replace("Merchant:", "").strip() if "Merchant:" in note else note[:30]
-            amt = float(m.get("amount") or 0.0)
-            meals_rows_html += f"""
-            <tr style="border-bottom:1px solid #EDF2F7;">
-              <td>{time_str} · {merchant}</td>
-              <td style="text-align:right; font-weight:700; color:#0F172A;">${amt:.2f}</td>
-            </tr>"""
-
-        if not meals_rows_html:
-            meals_rows_html = """
-            <tr style="border-bottom:1px solid #EDF2F7;">
-              <td>No road meals or driver incidentals logged</td>
-              <td style="text-align:right; font-weight:700; color:#0F172A;">$0.00</td>
-            </tr>"""
-
-        # Best charge
-        best_charge_str = f"${charging_list[0].get('amount', 0.0):.2f}" if charging_list else "$0.00"
-        best_charge_sub = f"({charging_list[0].get('timestamp','')[11:16] if 'T' in str(charging_list[0].get('timestamp','')) else ''} Tyler St Off-Peak)" if charging_list else "(Base Charge)"
-
-        # Goal Pacing
-        goal_pacing_pct = round((data['gross_revenue'] / 232.0 * 100), 1) if data.get('gross_revenue') else 100.0
-
-        run_of_the_day_html = f"""
-    <!-- Run of the Day & Operational Highlights -->
+        spending_breakdown_html = f"""
+    <!-- Dynamic Spending vs Earnings vs Charging Pie Breakdown Bar -->
     <tr>
       <td style="padding:12px 24px;">
-        <div style="background-color:#F0F9FF; border:1px solid #BAE6FD; border-radius:8px; padding:18px;">
-          <div style="font-size:12px; font-weight:700; color:#0369A1; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">
-            🏆 Run of the Day & Operational Highlights
+        <div style="background-color:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:18px;">
+          <div style="font-size:12px; font-weight:700; color:#0F172A; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">
+            🥧 Spending vs. Earnings vs. Charging Breakdown
           </div>
-          <table width="100%" cellpadding="6" cellspacing="0" style="font-size:13px; color:#0F172A;">
-            <tr style="border-bottom:1px solid #E0F2FE;">
-              <td style="font-weight:600; color:#0369A1;">👑 Top Revenue Segment</td>
-              <td style="text-align:right; font-weight:700;">${data['private_revenue']:,.2f} <span style="font-size:11px; color:#0284C7;">(Private Client Invoices @ 100% Margin)</span></td>
+          <!-- Proportional Visual Segment Bar -->
+          <table width="100%" height="16" cellpadding="0" cellspacing="0" style="border-radius:6px; overflow:hidden; margin-bottom:12px; border-collapse:collapse;">
+            <tr>
+              {bar_html}
             </tr>
-            <tr style="border-bottom:1px solid #E0F2FE;">
-              <td style="font-weight:600; color:#0369A1;">⚡ Energy Management</td>
-              <td style="text-align:right; font-weight:700;">${charging_total:,.2f} <span style="font-size:11px; color:#0284C7;">({len(charging_list)} Verified Charging Sessions)</span></td>
+          </table>
+          <table width="100%" style="font-size:12px; color:#334155;" cellpadding="4" cellspacing="0">
+            <tr>
+              <td><span style="display:inline-block; width:10px; height:10px; background-color:#15803D; border-radius:2px; margin-right:6px;"></span><strong>Net Profit Retained</strong></td>
+              <td style="text-align:right; font-weight:700; color:#15803D;">${profit:,.2f} ({margin}%)</td>
             </tr>
             <tr>
-              <td style="font-weight:600; color:#0369A1;">💵 Core Passenger Rides</td>
-              <td style="text-align:right; font-weight:700;">${data['uber_revenue']:,.2f} <span style="font-size:11px; color:#0284C7;">(Uber Rideshare + In-App & Cash Tips)</span></td>
+              <td><span style="display:inline-block; width:10px; height:10px; background-color:#0EA5E9; border-radius:2px; margin-right:6px;"></span><strong>Supercharging Energy</strong></td>
+              <td style="text-align:right; font-weight:700; color:#0EA5E9;">${charging_total:,.2f} ({charge_pct}%)</td>
+            </tr>
+            <tr>
+              <td><span style="display:inline-block; width:10px; height:10px; background-color:#F59E0B; border-radius:2px; margin-right:6px;"></span><strong>Road Meals & Incidentals</strong></td>
+              <td style="text-align:right; font-weight:700; color:#B45309;">${meals_total:,.2f} ({meals_pct}%)</td>
             </tr>
           </table>
         </div>
@@ -363,6 +347,103 @@ class ProductionEODEngine:
     </tr>
         """
 
+        # Dynamic Run of the Day & Highlights
+        rod_rows_html = []
+        if completed_trips:
+            top_earnings_trip = max(completed_trips, key=lambda t: float(t.get('driver_earnings') or 0.0))
+            top_earnings_amt = float(top_earnings_trip.get('driver_earnings') or 0.0)
+            top_type = top_earnings_trip.get('type', 'Trip')
+            pickup_loc = html.escape(clean_location(top_earnings_trip.get('pickup_location', '')))
+            rod_rows_html.append(f"""
+            <tr style="border-bottom:1px solid #E0F2FE;">
+              <td style="font-weight:600; color:#0369A1;">👑 Top Revenue Trip</td>
+              <td style="text-align:right; font-weight:700;">${top_earnings_amt:.2f} <span style="font-size:11px; color:#0284C7;">({top_type} · {pickup_loc})</span></td>
+            </tr>""")
+
+            top_tipped_trip = max(completed_trips, key=lambda t: float(t.get('tip') or 0.0))
+            top_tip_amt = float(top_tipped_trip.get('tip') or 0.0)
+            if top_tip_amt > 0:
+                tip_loc = html.escape(clean_location(top_tipped_trip.get('pickup_location', '')))
+                rod_rows_html.append(f"""
+            <tr style="border-bottom:1px solid #E0F2FE;">
+              <td style="font-weight:600; color:#0369A1;">💵 Top Tipped Ride</td>
+              <td style="text-align:right; font-weight:700;">${top_tip_amt:.2f} <span style="font-size:11px; color:#0284C7;">(Tip received at {tip_loc})</span></td>
+            </tr>""")
+
+        if charging_items:
+            best_charge = min(charging_items, key=lambda c: float(c.get('amount') or 0.0))
+            bc_amt = float(best_charge.get('amount') or 0.0)
+            bc_ts = best_charge.get('timestamp', '')[11:16] if best_charge.get('timestamp') and len(best_charge.get('timestamp')) >= 16 else '--:--'
+            bc_loc = html.escape(clean_location(best_charge.get('note', '')))
+            rod_rows_html.append(f"""
+            <tr>
+              <td style="font-weight:600; color:#0369A1;">⚡ Best Energy Charge</td>
+              <td style="text-align:right; font-weight:700;">${bc_amt:.2f} <span style="font-size:11px; color:#0284C7;">({bc_ts} · {bc_loc})</span></td>
+            </tr>""")
+
+        if not rod_rows_html:
+            rod_rows_html.append("""
+            <tr>
+              <td style="font-weight:600; color:#0369A1;">Operational Highlights</td>
+              <td style="text-align:right; font-weight:700;">Standard <span style="font-size:11px; color:#0284C7;">(Fleet completed regular operations)</span></td>
+            </tr>""")
+
+        run_of_the_day_html = f"""
+    <!-- Run of the Day & Efficiency Highlights -->
+    <tr>
+      <td style="padding:12px 24px;">
+        <div style="background-color:#F0F9FF; border:1px solid #BAE6FD; border-radius:8px; padding:18px;">
+          <div style="font-size:12px; font-weight:700; color:#0369A1; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">
+            🏆 Run of the Day & Operational Highlights
+          </div>
+          <table width="100%" cellpadding="6" cellspacing="0" style="font-size:13px; color:#0F172A;">
+            {"".join(rod_rows_html)}
+          </table>
+        </div>
+      </td>
+    </tr>
+        """
+
+        # Dynamic Itemized Expenses
+        charging_rows_html = []
+        for c in charging_items:
+            ts = c.get('timestamp', '')[11:16] if c.get('timestamp') and len(c.get('timestamp')) >= 16 else '--:--'
+            loc = html.escape(clean_location(c.get('note', '')))
+            amt = float(c.get('amount') or 0.0)
+            charging_rows_html.append(f"""
+            <tr style="border-bottom:1px solid #EDF2F7;">
+              <td>{ts} · {loc}</td>
+              <td style="text-align:right; font-weight:700; color:#0F172A;">${amt:.2f}</td>
+            </tr>""")
+
+        charging_table_block = ""
+        if charging_rows_html:
+            charging_table_block = f"""
+          <div style="font-size:11px; font-weight:700; color:#0EA5E9; text-transform:uppercase; margin:8px 0 4px 0;">⚡ Supercharging Sessions (${charging_total:.2f})</div>
+          <table width="100%" style="font-size:12px; color:#334155; margin-bottom:12px;" cellpadding="4" cellspacing="0">
+            {"".join(charging_rows_html)}
+          </table>"""
+
+        meal_rows_html = []
+        for m in meal_items:
+            ts = m.get('timestamp', '')[11:16] if m.get('timestamp') and len(m.get('timestamp')) >= 16 else '--:--'
+            loc = html.escape(clean_location(m.get('note', '')))
+            amt = float(m.get('amount') or 0.0)
+            meal_rows_html.append(f"""
+            <tr style="border-bottom:1px solid #EDF2F7;">
+              <td>{ts} · {loc}</td>
+              <td style="text-align:right; font-weight:700; color:#0F172A;">${amt:.2f}</td>
+            </tr>""")
+
+        meals_table_block = ""
+        if meal_rows_html:
+            meals_table_block = f"""
+          <div style="font-size:11px; font-weight:700; color:#F59E0B; text-transform:uppercase; margin:8px 0 4px 0;">🍔 Road Meals & Coffee Receipts (${meals_total:.2f})</div>
+          <table width="100%" style="font-size:12px; color:#334155;" cellpadding="4" cellspacing="0">
+            {"".join(meal_rows_html)}
+          </table>"""
+
+        total_opex = float(data.get('total_expenses') or 0.0)
         itemized_expenses_html = f"""
     <!-- Itemized Daily Purchases & Supercharging Ledger -->
     <tr>
@@ -371,17 +452,12 @@ class ProductionEODEngine:
           <div style="font-size:12px; font-weight:700; color:#0F172A; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; border-bottom:1px solid #E2E8F0; padding-bottom:6px;">
             ☕ Itemized Spending & Supercharging Ledger
           </div>
-          <div style="font-size:11px; font-weight:700; color:#0EA5E9; text-transform:uppercase; margin:8px 0 4px 0;">⚡ Supercharging Sessions (${charging_total:,.2f})</div>
-          <table width="100%" style="font-size:12px; color:#334155; margin-bottom:12px;" cellpadding="4" cellspacing="0">
-            {charging_rows_html}
-          </table>
-          
-          <div style="font-size:11px; font-weight:700; color:#F59E0B; text-transform:uppercase; margin:8px 0 4px 0;">🍔 Road Meals & Coffee Receipts (${meals_total:,.2f})</div>
-          <table width="100%" style="font-size:12px; color:#334155;" cellpadding="4" cellspacing="0">
-            {meals_rows_html}
+          {charging_table_block}
+          {meals_table_block}
+          <table width="100%" style="font-size:12px; color:#334155; margin-top:8px;" cellpadding="4" cellspacing="0">
             <tr>
               <td style="font-weight:700; color:#0F172A; padding-top:8px;">Total Operating Expenses (OpEx)</td>
-              <td style="text-align:right; font-weight:800; color:#DC2626; padding-top:8px;">-${data['total_expenses']:,.2f}</td>
+              <td style="text-align:right; font-weight:800; color:#DC2626; padding-top:8px;">-${total_opex:.2f}</td>
             </tr>
           </table>
         </div>
@@ -399,12 +475,12 @@ class ProductionEODEngine:
           </div>
           <table width="100%" cellpadding="6" cellspacing="0" style="font-size:13px; color:#0F172A;">
             <tr style="border-bottom:1px solid #F3E8FF;">
-              <td style="font-weight:500;">🎯 Daily Revenue Goal Pacing</td>
-              <td style="text-align:right; font-weight:700; color:#7E22CE;">{goal_pacing_pct}% <span style="font-size:11px; color:#9333EA;">(${data['gross_revenue']:,.2f} / $232.00 target)</span></td>
+              <td style="font-weight:500;">🎯 Completed Fleet Trips</td>
+              <td style="text-align:right; font-weight:700; color:#7E22CE;">{data['trip_count']} Verified Rides <span style="font-size:11px; color:#9333EA;">(${data['avg_rev_per_trip']:,.2f} avg)</span></td>
             </tr>
             <tr style="border-bottom:1px solid #F3E8FF;">
               <td style="font-weight:500;">🔋 Fleet Vehicle Availability</td>
-              <td style="text-align:right; font-weight:700; color:#15803D;">100% <span style="font-size:11px; color:#166534;">(Zero Downtime)</span></td>
+              <td style="text-align:right; font-weight:700; color:#15803D;">100% <span style="font-size:11px; color:#166534;">(Active Operating Readiness)</span></td>
             </tr>
             <tr style="border-bottom:1px solid #F3E8FF;">
               <td style="font-weight:500;">⭐ Customer Quality Rating</td>
@@ -412,7 +488,7 @@ class ProductionEODEngine:
             </tr>
             <tr>
               <td style="font-weight:500;">🔧 CapEx Asset Servicing</td>
-              <td style="text-align:right; font-weight:700; color:#0F172A;">${capex_total:,.2f} <span style="font-size:11px; color:#64748B;">(Asset Maintenance)</span></td>
+              <td style="text-align:right; font-weight:700; color:#0F172A;">${capex_total:.2f} <span style="font-size:11px; color:#64748B;">(Asset Maintenance)</span></td>
             </tr>
           </table>
         </div>
@@ -423,6 +499,7 @@ class ProductionEODEngine:
         rendered = template
         rendered = rendered.replace("{{REPORT_DATE}}", f"{data['weekday'][:3]}, {data['report_date']}")
         rendered = rendered.replace("{{FALLBACK_ALERT_BLOCK}}", "")
+        rendered = rendered.replace("{{SPENDING_BREAKDOWN_BLOCK}}", spending_breakdown_html)
         rendered = rendered.replace("{{RUN_OF_THE_DAY_BLOCK}}", run_of_the_day_html)
         rendered = rendered.replace("{{ITEMIZED_EXPENSES_BLOCK}}", itemized_expenses_html)
         rendered = rendered.replace("{{FLEET_TELEMETRY_BLOCK}}", fleet_telemetry_html)
@@ -489,7 +566,7 @@ class ProductionEODEngine:
                 "bcc": None,
                 "actual_mail_transport_executed": False if transport_message_id is None else True,
                 "transport_message_id": transport_message_id or "LOCAL_PLACEHOLDER_NO_MAIL_TRANSPORT",
-                "classification": "TEST_OR_MANUALLY_SUPPLIED_DATA"
+                "classification": "PRODUCTION_DISPATCH"
             }
         }
 
@@ -499,7 +576,9 @@ class ProductionEODEngine:
         id_bundle: Dict[str, str],
         raw_text: str,
         html_content: str,
-        metadata: Dict[str, Any]
+        metadata: Dict[str, Any],
+        expenses_data: Optional[Dict[str, Any]] = None,
+        completed_trips: Optional[List[Dict[str, Any]]] = None
     ) -> Tuple[str, str]:
         report_dt = datetime.strptime(data["report_date"], "%Y-%m-%d")
         year_str = report_dt.strftime("%Y")
@@ -524,6 +603,13 @@ class ProductionEODEngine:
             json.dump(metadata, f, indent=2)
 
         pdf_path = os.path.join(target_folder, f"{date_str}-EOD-{v_str}.pdf")
-        self.pdf_gen.generate_daily_pdf(data, metadata["checksum_sha256"], pdf_path, is_synthetic=True)
+        self.pdf_gen.generate_daily_pdf(
+            data,
+            metadata["checksum_sha256"],
+            pdf_path,
+            expenses_data=expenses_data,
+            completed_trips=completed_trips,
+            is_synthetic=False
+        )
 
         return target_folder, pdf_path

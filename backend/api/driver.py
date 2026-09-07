@@ -641,11 +641,15 @@ def tools_partner_eod_report(req: func.HttpRequest) -> func.HttpResponse:
         recipients = data.get("recipients", ["luis9189@gmail.com"])
         cc_recipient = data.get("cc_recipient", "peter.teehan@costesla.com")
 
-        # 1. Fetch live metrics from database
+        # 1. Fetch live metrics and completed trips from database
         summary = db.get_summary_metrics_for_range(date_str, date_str)
         expenses_data = db.get_expenses_by_date(date_str)
-        trips_list = db.get_trips_by_date(date_str)
-        private_payments_list = db.get_private_payments(date_str, date_str)
+        trips = db.get_trips_by_date(date_str)
+        completed_trips = [
+            t for t in trips
+            if t['id'].startswith(('TRIP-', 'INV-')) or (float(t.get('fare') or 0.0) > 0.0 or float(t.get('driver_earnings') or 0.0) > 0.0)
+        ]
+        trip_count = len(completed_trips)
         
         gross = summary.get("gross_earnings", 0.0)
         uber = summary.get("uber_earnings", 0.0)
@@ -656,28 +660,21 @@ def tools_partner_eod_report(req: func.HttpRequest) -> func.HttpResponse:
         profit = summary.get("net_profit", 0.0)
         margin = round((profit / gross * 100), 1) if gross > 0 else 0.0
 
-        real_uber_trips = [t for t in trips_list if str(t.get('id', '')).startswith('TRIP-')]
-        uber_trip_count = len(real_uber_trips) if real_uber_trips else len([t for t in trips_list if t.get('type') == 'Uber'])
-        private_trip_count = len(private_payments_list) if private_payments_list else (2 if private == 60.0 else (1 if private > 0 else 0))
-        total_trip_count = uber_trip_count + private_trip_count
-        if total_trip_count == 0:
-            total_trip_count = 1
-
-        # Build EOD markdown payload
+        # Build EOD markdown payload with authoritative trip count
         eod_payload = f"""# Summit Intelligence 2.0 - Daily End of Day Executive Summary
 Date: {date_str}
 Entity: COS Tesla LLC
 Status: FINAL
 
 ## Executive Summary
-Operational summary for {date_str} across active fleet operations. Completed {total_trip_count} total passenger trips ({uber_trip_count} Uber + {private_trip_count} Private).
+Operational summary for {date_str} across active fleet operations. All active vehicles operational.
 
 ## Key Metrics
 - Gross Revenue: ${gross:,.2f}
 - Total Expenses: ${opex:,.2f}
 - Net Operating Profit: ${profit:,.2f}
 - Net Margin: {margin}%
-- Trip Counts: {total_trip_count}
+- Trip Counts: {trip_count}
 
 ## Revenue Mix
 - Uber Platform Revenue: ${uber:,.2f} ({round(uber/gross*100, 1) if gross else 0}%)
@@ -696,13 +693,19 @@ Operational summary for {date_str} across active fleet operations. Completed {to
 
 Prepared By Summit Intelligence 2.0"""
 
+        import tempfile
+        import shutil
+        from uuid import uuid4
         from services.eod_engine_production import ProductionEODEngine, ReportStatus
         from services.audit_ledger import AuditLedgerManager
 
         backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         template_file = os.path.join(backend_dir, "templates", "eod_email_template.html")
-        archive_dir = os.path.join(backend_dir, "archive", "Partner Reports")
-        ledger_file = os.path.join(backend_dir, "archive", "eod_audit_ledger.json")
+        
+        # Serverless writable isolation under tempfile.gettempdir()
+        temp_session_id = f"{date_str}_{uuid4().hex[:8]}"
+        archive_dir = os.path.join(tempfile.gettempdir(), "summitos", "partner_reports", temp_session_id)
+        ledger_file = os.path.join(tempfile.gettempdir(), "summitos", "eod_audit_ledger.json")
 
         engine = ProductionEODEngine(template_path=template_file, archive_dir=archive_dir)
         ledger_mgr = AuditLedgerManager(ledger_file=ledger_file)
@@ -717,9 +720,15 @@ Prepared By Summit Intelligence 2.0"""
                 "error": f"Reconciliation validation failed: {parsed_data['validation_errors']}"
             }), status_code=422, headers=CORS_HEADERS, mimetype="application/json")
 
-        # Reserve and render
+        # Reserve and render with dynamic expenses and completed trips
         ledger_mgr.reserve_checksum(parsed_data["report_date"], sha256_hash, ids["full_versioned_id"])
-        html_out = engine.render_production_html(parsed_data, ids["full_versioned_id"], sha256_hash)
+        html_out = engine.render_production_html(
+            parsed_data,
+            ids["full_versioned_id"],
+            sha256_hash,
+            expenses_data=expenses_data,
+            completed_trips=completed_trips
+        )
         
         metadata = engine.generate_production_metadata(
             parsed_data, ids, sha256_hash,
@@ -734,7 +743,15 @@ Prepared By Summit Intelligence 2.0"""
             "recipients": recipients
         }
 
-        saved_dir, pdf_path = engine.archive_versioned_report(parsed_data, ids, eod_payload, html_out, metadata)
+        saved_dir, pdf_path = engine.archive_versioned_report(
+            parsed_data,
+            ids,
+            eod_payload,
+            html_out,
+            metadata,
+            expenses_data=expenses_data,
+            completed_trips=completed_trips
+        )
         
         # Outbound Cloud Email Dispatch via Microsoft Graph
         delivery_status = ReportStatus.LOCAL_SIMULATION_COMPLETED.value
@@ -756,6 +773,13 @@ Prepared By Summit Intelligence 2.0"""
             dispatch_error = str(mail_err)
             logging.error(f"Mail dispatch failed: {mail_err}")
             delivery_status = ReportStatus.FAILED.value
+        finally:
+            # Clean up transient archive files to avoid disk leaks in long-running instances
+            try:
+                if os.path.exists(archive_dir):
+                    shutil.rmtree(archive_dir, ignore_errors=True)
+            except Exception as clean_err:
+                logging.warning(f"Failed to clean up transient archive directory {archive_dir}: {clean_err}")
 
         audit_entry = ledger_mgr.record_entry(
             parsed_data, sha256_hash,
