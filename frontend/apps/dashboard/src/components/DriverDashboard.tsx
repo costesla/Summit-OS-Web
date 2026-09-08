@@ -604,6 +604,24 @@ const DriverDashboard: React.FC = () => {
         }
     };
 
+    const handleDeleteCashTip = async (tripId: string, tipAmount: number) => {
+        if (!window.confirm(`Delete cash tip for $${tipAmount.toFixed(2)}? This action cannot be undone.`)) return;
+        try {
+            const res = await fetch(`${AZURE_BASE}/operations/delete-trip/${encodeURIComponent(tripId)}`, {
+                method: 'DELETE',
+            });
+            const data = await res.json();
+            if (data.success) {
+                setTrips(prev => prev.filter(t => t.id !== tripId));
+                fetchAllData();
+            } else {
+                alert(`Error deleting tip: ${data.error || 'Unknown error'}`);
+            }
+        } catch (e) {
+            alert(`Error connecting to server: ${e instanceof Error ? e.message : String(e)}`);
+        }
+    };
+
     // ─── Actions: Save Day to Cloud ────────────────────────────────────────────────
     const runSaveDay = async () => {
         setStatus('running');
@@ -1249,18 +1267,30 @@ const DriverDashboard: React.FC = () => {
                                                     </span>
                                                 </div>
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                                                    {cashTips.map((tip) => (
-                                                        <div key={tip.id} className="p-3 rounded-xl bg-white/[0.02] border border-orange-500/20 space-y-1">
-                                                            <div className="flex items-center justify-between">
-                                                                <span className="text-xs font-bold text-white font-sans">{tip.pickup_location || 'Cash Tip'}</span>
-                                                                <span className="px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-400 border border-orange-500/25 text-[8px] font-bold uppercase font-mono">{tip.payment_method || 'Cash'}</span>
+                                                    {cashTips.map((tip) => {
+                                                        const tipAmt = tip.driver_earnings || (tip.fare > 0 ? tip.fare : tip.tip) || 0;
+                                                        return (
+                                                            <div key={tip.id} className="p-3 rounded-xl bg-white/[0.02] border border-orange-500/20 space-y-1 group">
+                                                                <div className="flex items-center justify-between">
+                                                                    <span className="text-xs font-bold text-white font-sans truncate">{tip.pickup_location || 'Cash Tip'}</span>
+                                                                    <div className="flex items-center gap-1.5 shrink-0">
+                                                                        <span className="px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-400 border border-orange-500/25 text-[8px] font-bold uppercase font-mono">{tip.payment_method || 'Cash'}</span>
+                                                                        <button
+                                                                            onClick={() => handleDeleteCashTip(tip.id, tipAmt)}
+                                                                            title="Delete Cash Tip"
+                                                                            className="p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all border-none bg-transparent cursor-pointer"
+                                                                        >
+                                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex items-center justify-between pt-1 font-mono">
+                                                                    <span className="text-[10px] text-[#606060]">{formatToLocalTime(tip.timestamp)}</span>
+                                                                    <span className="text-sm font-black text-orange-400">${tipAmt.toFixed(2)}</span>
+                                                                </div>
                                                             </div>
-                                                            <div className="flex items-center justify-between pt-1 font-mono">
-                                                                <span className="text-[10px] text-[#606060]">{formatToLocalTime(tip.timestamp)}</span>
-                                                                <span className="text-sm font-black text-orange-400">${(tip.driver_earnings || (tip.fare > 0 ? tip.fare : tip.tip) || 0).toFixed(2)}</span>
-                                                            </div>
-                                                        </div>
-                                                    ))}
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
                                         )}
