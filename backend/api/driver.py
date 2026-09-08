@@ -791,15 +791,17 @@ Prepared By Summit Intelligence 2.0"""
             from services.graph import GraphClient
             graph = GraphClient()
             subject = f"COS Tesla LLC | Daily EOD Executive Briefing - {parsed_data['formatted_date']}"
+            clean_to = [r.strip() for r in recipients if r and r.strip()]
+            clean_cc = [cc_recipient.strip()] if cc_recipient and cc_recipient.strip() and cc_recipient.strip().lower() not in [t.lower() for t in clean_to] else []
             graph.send_partner_eod_email(
-                to_recipients=recipients,
-                cc_recipients=[cc_recipient],
+                to_recipients=clean_to,
+                cc_recipients=clean_cc,
                 subject=subject,
                 body_html=html_out,
                 pdf_path=pdf_path
             )
             delivery_status = ReportStatus.DELIVERED.value
-            logging.info(f"Partner EOD Report successfully delivered via Microsoft Graph to {recipients} with CC to {cc_recipient}")
+            logging.info(f"Partner EOD Report successfully delivered via Microsoft Graph to {clean_to} with CC to {clean_cc}")
         except Exception as mail_err:
             dispatch_error = str(mail_err)
             logging.error(f"Mail dispatch failed: {mail_err}")

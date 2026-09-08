@@ -262,9 +262,15 @@ class GraphClient:
             to_recipients = [to_recipients]
         if isinstance(cc_recipients, str):
             cc_recipients = [cc_recipients]
+        elif cc_recipients is None:
+            cc_recipients = []
             
-        to_list = [{"emailAddress": {"address": addr.strip()}} for addr in to_recipients if addr.strip()]
-        cc_list = [{"emailAddress": {"address": addr.strip()}} for addr in cc_recipients if addr.strip()]
+        to_clean = [addr.strip() for addr in to_recipients if addr and addr.strip()]
+        to_lower = {addr.lower() for addr in to_clean}
+        cc_clean = [addr.strip() for addr in cc_recipients if addr and addr.strip() and addr.strip().lower() not in to_lower]
+
+        to_list = [{"emailAddress": {"address": addr}} for addr in to_clean]
+        cc_list = [{"emailAddress": {"address": addr}} for addr in cc_clean]
         
         message_obj = {
             "subject": subject,
