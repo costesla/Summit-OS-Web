@@ -703,8 +703,14 @@ class DatabaseClient:
           AND (IsTest IS NULL OR IsTest = 0)
           AND (
             Fare > 0
+            OR Tip > 0
+            OR Driver_Earnings > 0
             OR Classification = 'Manual_Entry'
             OR Classification = 'Uber_Matched'
+            OR Classification LIKE '%Tip%'
+            OR Classification = 'Uber_OffApp'
+            OR RideID LIKE 'M-TIP-%'
+            OR RideID LIKE 'M-OFFAPP-%'
             OR (
               RideID LIKE 'TESSIE-%'
               AND Classification NOT IN ('Uber_Dropoff', 'Uber_Matched', 'Manual_Entry')
@@ -1407,10 +1413,13 @@ class DatabaseClient:
 
             # 1b. Cash Tips & Direct Gratuities
             cursor.execute("""
-                SELECT SUM(Driver_Earnings)
+                SELECT SUM(CASE 
+                    WHEN Driver_Earnings IS NOT NULL AND Driver_Earnings > 0 THEN Driver_Earnings 
+                    ELSE COALESCE(Fare, 0) + COALESCE(Tip, 0) 
+                END)
                 FROM Rides.Rides
                 WHERE Timestamp_Start >= ? AND Timestamp_Start < ?
-                  AND (TripType = 'Uber_OffApp' OR Classification LIKE '%Tip%')
+                  AND (TripType = 'Uber_OffApp' OR Classification LIKE '%Tip%' OR RideID LIKE 'M-TIP-%' OR RideID LIKE 'M-OFFAPP-%')
                   AND DeletedAt IS NULL
                   AND (IsTest IS NULL OR IsTest = 0)
             """, (start_window_start, end_window_end))
@@ -1419,12 +1428,15 @@ class DatabaseClient:
 
             uber_sum = uber_on_app_sum + cash_tips_sum
 
-            # 2. Paid Private Bookings
+            # 2. Paid Private Bookings (excludes cash tips and off-app gratuities)
             cursor.execute("""
                 SELECT SUM(Fare + Tip)
                 FROM Rides.Rides
                 WHERE Timestamp_Start >= ? AND Timestamp_Start < ?
                   AND TripType = 'Private'
+                  AND RideID NOT LIKE 'M-TIP-%'
+                  AND RideID NOT LIKE 'M-OFFAPP-%'
+                  AND (Classification IS NULL OR (Classification NOT LIKE '%Tip%' AND Classification != 'Uber_OffApp'))
                   AND PaymentStatus = 'Paid'
                   AND DeletedAt IS NULL
                   AND (IsTest IS NULL OR IsTest = 0)
@@ -1494,8 +1506,13 @@ class DatabaseClient:
             logging.error(f"get_summary_metrics_for_range failed: {e}")
             return {
                 "uber_earnings": 0.0,
+                "uber_on_app": 0.0,
+                "cash_tips": 0.0,
+                "uber_tips": 0.0,
                 "private_income": 0.0,
                 "gross_earnings": 0.0,
+                "opex_expenses": 0.0,
+                "capex_expenses": 0.0,
                 "expenses": 0.0,
                 "net_profit": 0.0
             }

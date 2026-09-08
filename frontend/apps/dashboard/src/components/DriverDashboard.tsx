@@ -709,14 +709,15 @@ const DriverDashboard: React.FC = () => {
             await apiPost('/driver/sync', {
                 trips: [{
                     id: `M-TIP-${Date.now()}`,
-                    type: "Private",
+                    type: "Uber_OffApp",
                     fare: 0.0,
                     tip: amt,
+                    driver_earnings: amt,
                     distance_miles: 0,
                     timestamp,
                     classification: "Cash Tip",
-                    pickup_location: "Cash Gratuity",
-                    dropoff_location: "Cash Gratuity",
+                    pickup_location: cashTipNote ? `Cash Tip: ${cashTipNote}` : "Cash Gratuity",
+                    dropoff_location: cashTipNote ? `Cash Tip: ${cashTipNote}` : "Cash Gratuity",
                     payment_status: "Paid"
                 }]
             });
@@ -777,6 +778,7 @@ const DriverDashboard: React.FC = () => {
                     type: "Uber_OffApp",
                     fare: amt,
                     tip: 0.0,
+                    driver_earnings: amt,
                     distance_miles: 0,
                     timestamp,
                     classification: "Uber_OffApp",
@@ -910,6 +912,11 @@ const DriverDashboard: React.FC = () => {
         return trips.filter(t =>
             t.type === 'Private' &&
             !t.id.startsWith('TESSIE-') &&
+            !t.id.startsWith('M-TIP-') &&
+            !t.id.startsWith('M-OFFAPP-') &&
+            t.classification !== 'Cash Tip' &&
+            !t.classification?.includes('Tip') &&
+            t.classification !== 'Uber_OffApp' &&
             t.classification !== 'Deadhead/Positioning' &&
             t.classification !== 'Positioning' &&
             t.classification !== 'Deadhead' &&
@@ -927,7 +934,13 @@ const DriverDashboard: React.FC = () => {
 
     // Dedicated Cash Tips & Gratuities (Not counted as Uber rideshare trips)
     const cashTips = useMemo(() => {
-        return trips.filter(t => (t.type === 'Uber_OffApp' || t.classification === 'Cash Tip' || t.id.startsWith('M-OFFAPP-')) && !t.id.startsWith('TESSIE-'))
+        return trips.filter(t => (
+            t.type === 'Uber_OffApp' ||
+            t.classification === 'Cash Tip' ||
+            t.classification?.includes('Tip') ||
+            t.id.startsWith('M-OFFAPP-') ||
+            t.id.startsWith('M-TIP-')
+        ) && !t.id.startsWith('TESSIE-'))
                     .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
     }, [trips]);
 
@@ -1232,7 +1245,7 @@ const DriverDashboard: React.FC = () => {
                                                         💵 Cash Tips & Gratuities ({cashTips.length})
                                                     </h3>
                                                     <span className="text-xs font-bold font-mono text-orange-400">
-                                                        ${cashTips.reduce((acc, c) => acc + c.fare, 0).toFixed(2)}
+                                                        ${cashTips.reduce((acc, c) => acc + (c.driver_earnings || (c.fare > 0 ? c.fare : c.tip) || 0), 0).toFixed(2)}
                                                     </span>
                                                 </div>
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
@@ -1244,7 +1257,7 @@ const DriverDashboard: React.FC = () => {
                                                             </div>
                                                             <div className="flex items-center justify-between pt-1 font-mono">
                                                                 <span className="text-[10px] text-[#606060]">{formatToLocalTime(tip.timestamp)}</span>
-                                                                <span className="text-sm font-black text-orange-400">${tip.fare.toFixed(2)}</span>
+                                                                <span className="text-sm font-black text-orange-400">${(tip.driver_earnings || (tip.fare > 0 ? tip.fare : tip.tip) || 0).toFixed(2)}</span>
                                                             </div>
                                                         </div>
                                                     ))}
