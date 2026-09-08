@@ -108,6 +108,8 @@ def test_incident_and_rating_authority_fallback():
         (0, "0"),
         ("0", "0"),
         (1, "1"),
+        ("", "Not available"),
+        ("   ", "Not available"),
     ],
 )
 def test_reported_incidents_preserves_authoritative_zero(value, expected):
@@ -409,3 +411,117 @@ def test_graph_recipient_deduplication():
             assert cc_addresses == ["thornbrerry.brian@gmail.com"]
             assert "peter.teehan@costesla.com" not in cc_addresses
             assert "luis9189@gmail.com" not in cc_addresses
+
+
+def test_production_content_does_not_hardcode_metrics_or_named_recipients():
+    """Verify production templates and generators do not hardcode metrics or restricted recipient names."""
+    backend_dir = os.path.join(os.path.dirname(__file__), "..")
+    template_path = os.path.join(backend_dir, "templates", "eod_email_template.html")
+    pdf_gen_path = os.path.join(backend_dir, "services", "pdf_generator.py")
+
+    with open(template_path, "r", encoding="utf-8") as f:
+        html_src = f.read()
+    with open(pdf_gen_path, "r", encoding="utf-8") as f:
+        pdf_src = f.read()
+
+    # Must NOT contain hardcoded operational metrics
+    assert "Passenger Rating: 5.00" not in html_src
+    assert "Reported Incidents: 0" not in html_src
+    assert "Passenger Rating: 5.00" not in pdf_src
+    assert "Reported Incidents: 0" not in pdf_src
+
+    # Must NOT contain old named recipients
+    assert "Luis Canales & Peter Teehan" not in html_src
+    assert "Luis Canales & Peter Teehan" not in pdf_src
+    assert "Authorized Leadership" not in html_src
+    assert "Authorized Leadership" not in pdf_src
+
+    # Must contain recipient-neutral confidentiality notice
+    expected_notice = "Confidential — Transmitted only to recipients explicitly authorized through the COS Tesla LLC owner dispatch gate."
+    assert expected_notice in html_src
+    assert expected_notice in pdf_src
+
+
+def test_public_api_response_suppresses_internal_paths_and_cleans_temp():
+    """Verify tools_partner_eod_report suppresses internal paths and cleans temporary directories."""
+    import json
+    import shutil
+    from unittest.mock import MagicMock, patch
+    import azure.functions as func
+    from api.driver import tools_partner_eod_report
+
+    body = json.dumps({
+        "date": "2026-09-06",
+        "recipients": ["peter.teehan@costesla.com"],
+        "cc_recipient": "peter.teehan@costesla.com"
+    }).encode("utf-8")
+    req = func.HttpRequest(
+        method="POST",
+        url="/api/tools/partner-eod-report",
+        body=body
+    )
+
+    with patch("api.driver.DatabaseClient") as mock_db, \
+         patch("services.graph.GraphClient") as mock_graph, \
+         patch("shutil.rmtree", wraps=shutil.rmtree) as spy_rmtree:
+
+        mock_db.return_value.get_summary_metrics_for_range.return_value = {
+            "gross_earnings": 100.0, "uber_earnings": 100.0, "uber_tips": 0.0, "private_income": 0.0,
+            "opex_expenses": 20.0, "capex_expenses": 0.0, "net_profit": 80.0, "profit_margin": 80.0,
+            "passenger_rating": 5.0, "reported_incidents": 0
+        }
+        mock_db.return_value.get_expenses_by_date.return_value = {"charging": [], "fastfood": [], "capital_maintenance": []}
+        mock_db.return_value.get_trips_by_date.return_value = []
+        mock_graph.return_value.send_partner_eod_email.return_value = True
+
+        resp = tools_partner_eod_report(req)
+        assert resp.status_code == 200
+        data = json.loads(resp.get_body().decode("utf-8"))
+
+        # Internal path suppression
+        assert "saved_dir" not in data
+        assert "pdf_path" not in data
+        assert data["success"] is True
+        assert data["status"] == "DELIVERED"
+
+        # Temporary cleanup verified
+        assert spy_rmtree.called
+
+
+def test_api_route_recipient_deduplication_and_order():
+    """Verify route-level To/CC deduplication and deterministic order."""
+    import json
+    from unittest.mock import MagicMock, patch
+    import azure.functions as func
+    from api.driver import tools_partner_eod_report
+
+    body = json.dumps({
+        "date": "2026-09-06",
+        "recipients": [" peter.teehan@costesla.com ", "PETER.TEEHAN@COSTESLA.COM", "luis9189@gmail.com"],
+        "cc_recipient": "peter.teehan@costesla.com"
+    }).encode("utf-8")
+    req = func.HttpRequest(
+        method="POST",
+        url="/api/tools/partner-eod-report",
+        body=body
+    )
+
+    with patch("api.driver.DatabaseClient") as mock_db, \
+         patch("services.graph.GraphClient") as mock_graph:
+
+        mock_db.return_value.get_summary_metrics_for_range.return_value = {
+            "gross_earnings": 100.0, "uber_earnings": 100.0, "uber_tips": 0.0, "private_income": 0.0,
+            "opex_expenses": 20.0, "capex_expenses": 0.0, "net_profit": 80.0, "profit_margin": 80.0,
+            "passenger_rating": "5.00 ★", "reported_incidents": "0"
+        }
+        mock_db.return_value.get_expenses_by_date.return_value = {"charging": [], "fastfood": [], "capital_maintenance": []}
+        mock_db.return_value.get_trips_by_date.return_value = []
+
+        resp = tools_partner_eod_report(req)
+        assert resp.status_code == 200
+
+        # Verify call to send_partner_eod_email received deduplicated, order-preserved lists
+        mock_graph.return_value.send_partner_eod_email.assert_called_once()
+        call_kwargs = mock_graph.return_value.send_partner_eod_email.call_args[1]
+        assert call_kwargs["to_recipients"] == ["peter.teehan@costesla.com", "luis9189@gmail.com"]
+        assert call_kwargs["cc_recipients"] == []  # Peter already in To, excluded from CC
