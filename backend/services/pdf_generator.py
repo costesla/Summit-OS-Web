@@ -57,7 +57,7 @@ class ExecutivePDFGenerator:
         )
 
         styles = getSampleStyleSheet()
-        
+
         title_style = ParagraphStyle(
             'DocTitle',
             fontName='Helvetica-Bold',
@@ -193,7 +193,7 @@ class ExecutivePDFGenerator:
 
         # 3. Gross Revenue Allocation (Table + Pie Chart)
         story.append(Paragraph("GROSS REVENUE ALLOCATION", heading_style))
-        
+
         from reportlab.graphics.shapes import Drawing
         from reportlab.graphics.charts.piecharts import Pie
 
@@ -204,7 +204,7 @@ class ExecutivePDFGenerator:
         charging_total = sum(float(c.get('amount') or 0.0) for c in charging_items)
         meals_total = sum(float(m.get('amount') or 0.0) for m in meal_items)
         capex_total = sum(float(x.get('amount') or 0.0) for x in capex_items)
-        
+
         gross = float(data.get('gross_revenue') or 0.0)
         profit = float(data.get('net_profit') or 0.0)
         margin = float(data.get('net_margin_pct') or 0.0)
@@ -367,8 +367,20 @@ class ExecutivePDFGenerator:
 
         # 3d. Fleet Telemetry & Performance Stats (Split Rating & Incidents, CapEx Separated)
         story.append(Paragraph("FLEET TELEMETRY & PERFORMANCE STATS", heading_style))
-        passenger_rating_val = str(data.get("passenger_rating") or "Not available")
-        incidents_val = str(data.get("reported_incidents") or "Not available")
+        passenger_rating = data.get("passenger_rating")
+        reported_incidents = data.get("reported_incidents")
+
+        passenger_rating_val = (
+            str(passenger_rating)
+            if passenger_rating is not None and str(passenger_rating).strip() != ""
+            else "Not available"
+        )
+
+        incidents_val = (
+            str(reported_incidents)
+            if reported_incidents is not None and str(reported_incidents).strip() != ""
+            else "Not available"
+        )
 
         stats_data = [
             ["🎯 Completed Trips", f"{data['trip_count']} Verified Fleet Runs", "⭐ Passenger Rating", passenger_rating_val],
@@ -425,7 +437,7 @@ class ExecutivePDFGenerator:
         story.append(Paragraph(
             f"Prepared automatically by <b>Summit Intelligence 2.0</b> for COS Tesla LLC.<br/>"
             f"Cryptographic Audit Checksum: <font face='Courier'>{sha256_hash}</font><br/>"
-            f"Confidential — Transmitted strictly to Authorized Leadership (Luis Canales & Peter Teehan).",
+            f"Confidential — Transmitted only to recipients explicitly authorized through the COS Tesla LLC owner dispatch gate.",
             footer_style
         ))
 

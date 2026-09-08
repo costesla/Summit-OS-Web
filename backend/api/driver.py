@@ -38,14 +38,14 @@ def stripe_balance(req: func.HttpRequest) -> func.HttpResponse:
             return func.HttpResponse(json.dumps({"error": "Stripe key not found"}), status_code=500, headers=CORS_HEADERS)
 
         balance = stripe.Balance.retrieve()
-        
+
         # Stripe balance is in cents, convert to dollars
         available = sum(b.amount for b in balance.available if b.currency == 'usd') / 100.0
         pending = sum(b.amount for b in balance.pending if b.currency == 'usd') / 100.0
 
         return func.HttpResponse(
             json.dumps({
-                "success": True, 
+                "success": True,
                 "available": available,
                 "pending": pending,
                 "currency": "usd"
@@ -75,7 +75,7 @@ def driver_sync(req: func.HttpRequest) -> func.HttpResponse:
             date_str = req.params.get("date")
             if not date_str:
                 return func.HttpResponse(json.dumps({"error": "Missing date parameter"}), status_code=400, headers=CORS_HEADERS)
-            
+
             trips = db.get_trips_by_date(date_str)
             expenses = db.get_expenses_by_date(date_str)
             private_payments = db.get_private_payments(date_str, date_str)
@@ -105,12 +105,12 @@ def driver_sync(req: func.HttpRequest) -> func.HttpResponse:
         data = req.get_json()
         trips = data.get("trips", [])
         expenses = data.get("expenses", {}) # { fastfood: [], charging: [], capital_maintenance: [] }
-        
+
         from services.semantic_ingestion import SemanticIngestionService
         from services.artifact_registry import ArtifactRegistry
         semantic = SemanticIngestionService()
         registry = ArtifactRegistry()
-        
+
         results = {
             "trips_saved": 0,
             "expenses_saved": 0,
@@ -127,7 +127,7 @@ def driver_sync(req: func.HttpRequest) -> func.HttpResponse:
             fees = float(trip.get("fees") or trip.get("Fees") or 0)
             insurance = float(trip.get("insurance") or trip.get("Insurance") or 0)
             otherFees = float(trip.get("otherFees") or trip.get("OtherFees") or 0)
-            
+
             # Distance and ID handling
             ride_id = str(trip.get("id") or trip.get("RideID"))
             ts = trip.get("timestamp") or trip.get("Timestamp_Start")
@@ -283,7 +283,7 @@ def jackie_deferred(req: func.HttpRequest) -> func.HttpResponse:
                 op_date = (ts - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
             else:
                 op_date = ts.strftime("%Y-%m-%d")
-            
+
             if op_date not in grouped_by_day:
                 grouped_by_day[op_date] = []
             grouped_by_day[op_date].append(r)
@@ -310,7 +310,7 @@ def jackie_deferred(req: func.HttpRequest) -> func.HttpResponse:
             legs = len(non_aa_rides)
             deferred_rides = [r for r in non_aa_rides if r["PaymentStatus"] == "Deferred"]
             credit_rides = [r for r in non_aa_rides if r["PaymentStatus"] == "Credit"]
-            
+
             # If there are no outstanding deferred invoices on this day, it is not outstanding
             if not deferred_rides:
                 continue
@@ -418,7 +418,7 @@ def financials_summary(req: func.HttpRequest) -> func.HttpResponse:
             date_str = now_local.strftime("%Y-%m-%d")
 
         selected_dt = datetime.datetime.strptime(date_str, "%Y-%m-%d")
-        
+
         # Calculate Week Start (Monday) of the week containing selected_dt
         week_start = selected_dt - datetime.timedelta(days=selected_dt.weekday())
         week_start_str = week_start.strftime("%Y-%m-%d")
@@ -502,7 +502,7 @@ def tools_scrub_day(req: func.HttpRequest) -> func.HttpResponse:
         date_str = data.get("date") or data.get("processDate")
         if not date_str:
             return func.HttpResponse(json.dumps({"success": False, "error": "date is required"}), status_code=400, headers=CORS_HEADERS, mimetype="application/json")
-        
+
         result = _execute_scrub_day(date_str)
         status_code = 200 if result.get("success") else 500
         return func.HttpResponse(json.dumps(result), status_code=status_code, headers=CORS_HEADERS, mimetype="application/json")
@@ -517,7 +517,7 @@ def _execute_scrub_day(date_str: str) -> dict:
         return {"success": False, "error": "No database connection"}
     conn.autocommit = False
     cursor = conn.cursor()
-    
+
     logs = []
     try:
         date_compact = date_str.replace("-", "")
@@ -580,7 +580,7 @@ def _execute_scrub_day(date_str: str) -> dict:
             if t_id:
                 cursor.execute("SELECT COUNT(*) FROM Rides.Rides WHERE RideID = ?", (t_id,))
                 can_rematch = cursor.fetchone()[0] > 0
-            
+
             if can_rematch:
                 cursor.execute("""
                     UPDATE Rides.Rides
@@ -650,7 +650,7 @@ def tools_partner_eod_report(req: func.HttpRequest) -> func.HttpResponse:
             if t['id'].startswith(('TRIP-', 'INV-')) or (float(t.get('fare') or 0.0) > 0.0 or float(t.get('driver_earnings') or 0.0) > 0.0)
         ]
         trip_count = len(completed_trips)
-        
+
         gross = summary.get("gross_earnings", 0.0)
         uber = summary.get("uber_earnings", 0.0)
         uber_tips = summary.get("uber_tips", 0.0)
@@ -689,6 +689,28 @@ def tools_partner_eod_report(req: func.HttpRequest) -> func.HttpResponse:
         else:
             outlook_text = "Operating expenses exceeded gross revenue for the selected reporting period. Review the largest expense category and trip-level revenue performance."
 
+        # Passenger Rating and Incident Authority from operational summary or request payload
+        passenger_rating_raw = summary.get("passenger_rating") if summary else None
+        if passenger_rating_raw is None and data:
+            passenger_rating_raw = data.get("passenger_rating")
+
+        reported_incidents_raw = summary.get("reported_incidents") if summary else None
+        if reported_incidents_raw is None and data:
+            reported_incidents_raw = data.get("reported_incidents")
+
+        if passenger_rating_raw is not None and str(passenger_rating_raw).strip() != "":
+            try:
+                passenger_rating_display = f"{float(passenger_rating_raw):.2f} ★"
+            except (ValueError, TypeError):
+                passenger_rating_display = str(passenger_rating_raw)
+        else:
+            passenger_rating_display = "Not available"
+
+        if reported_incidents_raw is not None and str(reported_incidents_raw).strip() != "":
+            reported_incidents_display = str(reported_incidents_raw)
+        else:
+            reported_incidents_display = "Not available"
+
         # Build EOD markdown payload with authoritative metrics & deterministic commentary
         eod_payload = f"""# Summit Intelligence 2.0 - Daily End of Day Executive Summary
 Date: {date_str}
@@ -704,8 +726,8 @@ Status: FINAL
 - Net Operating Profit: ${profit:,.2f}
 - Net Margin: {margin}%
 - Trip Counts: {trip_count}
-- Passenger Rating: 5.00 ★
-- Reported Incidents: 0
+- Passenger Rating: {passenger_rating_display}
+- Reported Incidents: {reported_incidents_display}
 
 ## Revenue Mix
 - Uber Platform Revenue: ${uber:,.2f} ({round(uber/gross*100, 1) if gross else 0}%)
@@ -732,7 +754,7 @@ Prepared By Summit Intelligence 2.0"""
 
         backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         template_file = os.path.join(backend_dir, "templates", "eod_email_template.html")
-        
+
         # Serverless writable isolation under tempfile.gettempdir()
         temp_session_id = f"{date_str}_{uuid4().hex[:8]}"
         archive_dir = os.path.join(tempfile.gettempdir(), "summitos", "partner_reports", temp_session_id)
@@ -760,7 +782,7 @@ Prepared By Summit Intelligence 2.0"""
             expenses_data=expenses_data,
             completed_trips=completed_trips
         )
-        
+
         metadata = engine.generate_production_metadata(
             parsed_data, ids, sha256_hash,
             lifecycle_status=ReportStatus.LOCAL_SIMULATION_COMPLETED,
@@ -783,7 +805,7 @@ Prepared By Summit Intelligence 2.0"""
             expenses_data=expenses_data,
             completed_trips=completed_trips
         )
-        
+
         # Outbound Cloud Email Dispatch via Microsoft Graph
         delivery_status = ReportStatus.LOCAL_SIMULATION_COMPLETED.value
         dispatch_error = None

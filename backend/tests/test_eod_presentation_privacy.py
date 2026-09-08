@@ -31,10 +31,10 @@ def test_location_normalizer_removes_street_numbers_and_personal_names():
     assert clean_location("742 Evergreen Terrace, Colorado Springs, CO 80903", "trip") == "Colorado Springs, CO"
     assert clean_location("10440 Towner Ave, Peyton, CO 80831", "trip") == "Peyton, CO"
     assert clean_location("Apt 4B, 123 Elm St, Monument, CO", "trip") == "Monument, CO"
-    
+
     # Raw street names without numbers should NOT leak raw street names; they generalize
     assert clean_location("Towner Ave", "trip") in ["Regional Operations", "Colorado Springs, CO"]
-    
+
     # Arbitrary strings with names/coordinates
     assert clean_location("John Doe, 38.8339, -104.8214", "trip") == "Regional Operations"
     assert clean_location("", "trip") == "Regional Operations"
@@ -48,7 +48,7 @@ def test_financial_reconciliation():
     assert net == 130.67
     margin = round((net / gross) * 100, 1)
     assert margin == 75.7
-    
+
     # Positive representation
     assert f"${opex:,.2f}" == "$41.87"
     assert f"-${opex:,.2f}" != "$41.87"
@@ -81,6 +81,7 @@ def test_incident_and_rating_authority_fallback():
     engine = ProductionEODEngine(template_path=os.path.join(os.path.dirname(__file__), '..', 'templates', 'eod_email_template.html'))
     html = engine.render_production_html(data_missing, "ID", "HASH")
     assert "Not available" in html
+    assert "Confidential — Transmitted only to recipients explicitly authorized through the COS Tesla LLC owner dispatch gate." in html
 
     try:
         import pypdf
@@ -92,6 +93,61 @@ def test_incident_and_rating_authority_fallback():
             reader = pypdf.PdfReader(tmp_path)
             text = reader.pages[0].extract_text()
             assert "Not available" in text
+            assert "Confidential — Transmitted only to recipients explicitly authorized through the COS Tesla LLC owner dispatch gate." in text
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+    except ImportError:
+        pass
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        (None, "Not available"),
+        (0, "0"),
+        ("0", "0"),
+        (1, "1"),
+    ],
+)
+def test_reported_incidents_preserves_authoritative_zero(value, expected):
+    """Verify that numeric 0 is never coerced to falsy 'Not available'."""
+    data = {
+        "report_date": "2026-09-06",
+        "weekday": "Sunday",
+        "formatted_date": "Sunday, September 06, 2026",
+        "gross_revenue": 100.0,
+        "total_expenses": 20.0,
+        "net_profit": 80.0,
+        "net_margin_pct": 80.0,
+        "trip_count": 5,
+        "avg_rev_per_trip": 20.0,
+        "uber_revenue": 100.0,
+        "uber_mix_pct": 100.0,
+        "private_revenue": 0.0,
+        "private_mix_pct": 0.0,
+        "passenger_rating": value,
+        "reported_incidents": value,
+        "executive_summary_escaped": "Test summary",
+        "operational_highlights_escaped": "Test highlights",
+        "items_attention_escaped": "N/A",
+        "outlook_escaped": "Test outlook"
+    }
+
+    engine = ProductionEODEngine(template_path=os.path.join(os.path.dirname(__file__), '..', 'templates', 'eod_email_template.html'))
+    html = engine.render_production_html(data, "ID", "HASH")
+    assert expected in html
+
+    try:
+        import pypdf
+        pdf_gen = ExecutivePDFGenerator()
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+            tmp_path = tmp.name
+        try:
+            pdf_gen.generate_daily_pdf(data, "HASH", tmp_path)
+            reader = pypdf.PdfReader(tmp_path)
+            text = reader.pages[0].extract_text()
+            assert expected in text
         finally:
             if os.path.exists(tmp_path):
                 os.remove(tmp_path)
@@ -162,7 +218,7 @@ def test_pdf_generation_single_page_and_privacy():
 
         assert os.path.exists(tmp_pdf_path)
         reader = pypdf.PdfReader(tmp_pdf_path)
-        
+
         # Strictly 1 page
         assert len(reader.pages) == 1, f"Expected 1 page, got {len(reader.pages)}"
 
@@ -192,7 +248,7 @@ def test_pdf_generation_single_page_and_privacy():
         assert "2727 N Cascade" not in text
         assert "742 Evergreen" not in text
         assert "10440 Towner" not in text
-        
+
         # Ensure no street address patterns (number followed by cardinal direction or street suffix)
         assert not re.search(r'\b\d{1,5}\s+(?:East|West|North|South|N\b|S\b|E\b|W\b|[A-Za-z]+\s+(?:Street|St|Avenue|Ave|Drive|Dr|Road|Rd|Terrace|Way|Blvd))', text, re.IGNORECASE)
 

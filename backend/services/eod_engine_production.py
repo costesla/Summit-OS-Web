@@ -139,12 +139,12 @@ class ProductionEODEngine:
             r"Gross Revenue:\s*\$?([0-9,]+(?:\.[0-9]{2})?)",
             r"Total Revenue:\s*\$?([0-9,]+(?:\.[0-9]{2})?)"
         ])
-        
+
         total_exp = self.extract_currency(raw_text, [
             r"Total Expenses:\s*\$?([0-9,]+(?:\.[0-9]{2})?)",
             r"Operating Expenses:\s*\$?([0-9,]+(?:\.[0-9]{2})?)"
         ])
-        
+
         net_profit = self.extract_currency(raw_text, [
             r"Net Operating Profit:\s*\$?([0-9,]+(?:\.[0-9]{2})?)",
             r"Net Profit:\s*\$?([0-9,]+(?:\.[0-9]{2})?)"
@@ -459,8 +459,20 @@ class ProductionEODEngine:
     </tr>
         """
 
-        passenger_rating_val = str(data.get("passenger_rating") or "Not available")
-        incidents_val = str(data.get("reported_incidents") or "Not available")
+        passenger_rating = data.get("passenger_rating")
+        reported_incidents = data.get("reported_incidents")
+
+        passenger_rating_val = (
+            str(passenger_rating)
+            if passenger_rating is not None and str(passenger_rating).strip() != ""
+            else "Not available"
+        )
+
+        incidents_val = (
+            str(reported_incidents)
+            if reported_incidents is not None and str(reported_incidents).strip() != ""
+            else "Not available"
+        )
 
         fleet_telemetry_html = f"""
     <!-- Fleet Telemetry & Performance Stats -->
