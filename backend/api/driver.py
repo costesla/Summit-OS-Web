@@ -813,8 +813,16 @@ Prepared By Summit Intelligence 2.0"""
             from services.graph import GraphClient
             graph = GraphClient()
             subject = f"COS Tesla LLC | Daily EOD Executive Briefing - {parsed_data['formatted_date']}"
-            clean_to = [r.strip() for r in recipients if r and r.strip()]
-            clean_cc = [cc_recipient.strip()] if cc_recipient and cc_recipient.strip() and cc_recipient.strip().lower() not in [t.lower() for t in clean_to] else []
+            seen_to = set()
+            clean_to = []
+            for r in recipients:
+                if r and r.strip():
+                    cr = r.strip()
+                    if cr.lower() not in seen_to:
+                        seen_to.add(cr.lower())
+                        clean_to.append(cr)
+
+            clean_cc = [cc_recipient.strip()] if cc_recipient and cc_recipient.strip() and cc_recipient.strip().lower() not in seen_to else []
             graph.send_partner_eod_email(
                 to_recipients=clean_to,
                 cc_recipients=clean_cc,

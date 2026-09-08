@@ -363,3 +363,49 @@ def test_html_and_pdf_parity():
     finally:
         if os.path.exists(tmp_pdf_path):
             os.remove(tmp_pdf_path)
+
+
+def test_graph_recipient_deduplication():
+    """Verify case-insensitive deduplication across To and CC recipients."""
+    from unittest.mock import MagicMock, patch
+    from services.graph import GraphClient
+
+    # Mock GraphClient init
+    with patch.dict(os.environ, {
+        "OAUTH_TENANT_ID": "fake-tenant",
+        "OAUTH_CLIENT_ID": "fake-client",
+        "OAUTH_CLIENT_SECRET": "fake-secret"
+    }):
+        graph = GraphClient()
+        graph._get_token = MagicMock(return_value="fake-token")
+
+        with patch("requests.post") as mock_post:
+            mock_post.return_value.ok = True
+            mock_post.return_value.status_code = 202
+
+            # Test 1: Peter in both To and CC with mixed cases and whitespace
+            to_input = [" peter.teehan@costesla.com ", "PETER.TEEHAN@COSTESLA.COM", "luis9189@gmail.com", ""]
+            cc_input = ["peter.teehan@costesla.com", "LUIS9189@GMAIL.COM", " thornbrerry.brian@gmail.com "]
+
+            graph.send_partner_eod_email(
+                to_recipients=to_input,
+                cc_recipients=cc_input,
+                subject="Test Subject",
+                body_html="<p>Test</p>"
+            )
+
+            assert mock_post.called
+            call_args = mock_post.call_args
+            payload = call_args[1]["json"]
+            message = payload["message"]
+
+            to_addresses = [t["emailAddress"]["address"] for t in message["toRecipients"]]
+            cc_addresses = [c["emailAddress"]["address"] for c in message["ccRecipients"]]
+
+            # Assert To deduplication
+            assert to_addresses == ["peter.teehan@costesla.com", "luis9189@gmail.com"]
+
+            # Assert CC excludes any address present in To, and deduplicates
+            assert cc_addresses == ["thornbrerry.brian@gmail.com"]
+            assert "peter.teehan@costesla.com" not in cc_addresses
+            assert "luis9189@gmail.com" not in cc_addresses

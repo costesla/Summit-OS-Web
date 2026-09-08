@@ -17,7 +17,7 @@ class GraphClient:
     def _get_token(self):
         # OPTION 1: Client Credentials (Service Principal) - Preferred to bypass MFA
         url = f"https://login.microsoftonline.com/{self.tenant_id}/oauth2/v2.0/token"
-        
+
         # Default to App Credentials (Client Credentials Flow)
         data = {
             "client_id": self.client_id,
@@ -25,15 +25,15 @@ class GraphClient:
             "client_secret": self.client_secret,
             "grant_type": "client_credentials"
         }
-            
+
         resp = requests.post(url, data=data)
-        
+
         if not resp.ok:
             logging.error(f"Graph Token Error: {resp.status_code} {resp.text}")
             raise Exception(f"Graph Token Error: {resp.status_code} {resp.text}")
-            
+
         return resp.json().get("access_token")
-            
+
         return resp.json().get("access_token")
 
     def _format_iso_z(self, dt: datetime) -> str:
@@ -47,7 +47,7 @@ class GraphClient:
         token = self._get_token()
         from services.datetime_utils import get_timezone, normalize_to_utc
         mt_tz = get_timezone("CO")  # Mountain Time
-        
+
         # Decouple date extraction from timezone shift
         if date_obj.hour == 0 and date_obj.minute == 0 and date_obj.second == 0:
             year = date_obj.year
@@ -63,13 +63,13 @@ class GraphClient:
             year = date_obj_mt.year
             month = date_obj_mt.month
             day = date_obj_mt.day
-            
+
         # Construct exact Mountain Time start/end for this day
         # Start of Mountain Time day: 00:00:00
         start_mt = mt_tz.localize(datetime(year, month, day, 0, 0, 0, 0))
         # End of Mountain Time day: 23:59:59
         end_mt = mt_tz.localize(datetime(year, month, day, 23, 59, 59, 999999))
-        
+
         # Format both to UTC ISO Z strings
         start_iso = self._format_iso_z(start_mt)
         end_iso = self._format_iso_z(end_mt)
@@ -80,34 +80,34 @@ class GraphClient:
             "startDateTime": start_iso,
             "endDateTime": end_iso
         }
-        
+
         headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json"
         }
-        
+
         resp = requests.get(url, headers=headers, params=params)
         if not resp.ok:
             logging.error(f"Graph API Error: {resp.text}")
             raise Exception(f"Graph Search Error: {resp.status_code} {resp.text}")
-            
+
         data = resp.json()
         return data.get("value", [])
 
     def create_calendar_event(self, subject, body, start_dt, end_dt, location, attendee_email, transaction_id=None, locations=None):
         token = self._get_token()
         url = f"https://graph.microsoft.com/v1.0/users/{self.user_email}/calendar/events"
-        
+
         # Ensure UTC/ISO format
         # Graph expects: "2026-01-26T12:00:00" and specifying TimeZone, or full ISO with Z
         # We will use the specific structure required by Graph
-        
+
         # Prepare DateTimes for Graph
         # Logic: If we send timeZone="America/Denver", the dateTime string MUST be naive (no offset).
         # We ensure start_dt and end_dt are converted to the target timezone's wall clock time, then stripped of tzinfo.
         from services.datetime_utils import get_timezone
         denver_tz = get_timezone("CO")
-        
+
         # Convert to Denver time if it's aware of timezones
         if start_dt.tzinfo:
             start_dt = start_dt.astimezone(denver_tz)
@@ -116,7 +116,7 @@ class GraphClient:
 
         start_str = start_dt.strftime('%Y-%m-%dT%H:%M:%S')
         end_str = end_dt.strftime('%Y-%m-%dT%H:%M:%S')
-        
+
         payload = {
             "subject": subject,
             "body": {
@@ -155,7 +155,7 @@ class GraphClient:
             payload["locations"] = [
                 {"displayName": str(leg)} for leg in locations if leg
             ]
-        
+
         # Only add attendee if email is provided (prevents duplicate calendar invites to customer)
         if attendee_email:
             payload["attendees"] = [
@@ -166,12 +166,12 @@ class GraphClient:
                     "type": "required"
                 }
             ]
-        
+
         headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json"
         }
-        
+
         logging.info(f"Graph POST to {url} with payload subject={subject}")
         try:
             resp = requests.post(url, headers=headers, json=payload, timeout=30)
@@ -181,13 +181,13 @@ class GraphClient:
         except Exception as e:
             logging.error(f"Graph POST Request Error: {e}")
             raise e
-            
+
         logging.info(f"Graph Output: {resp.status_code} {resp.text}")
-        
+
         if not resp.ok:
             logging.error(f"Graph Create Error: {resp.text}")
             raise Exception(f"Graph Create Event Error: {resp.status_code} {resp.text}")
-            
+
         return resp.json()
 
     def delete_calendar_event(self, event_id: str) -> bool:
@@ -211,7 +211,7 @@ class GraphClient:
     def send_mail(self, to_email, subject, body_html, from_email="peter.teehan@costesla.com"):
         token = self._get_token()
         url = f"https://graph.microsoft.com/v1.0/users/{from_email}/sendMail"
-        
+
         payload = {
             "message": {
                 "subject": subject,
@@ -239,17 +239,17 @@ class GraphClient:
             },
             "saveToSentItems": "true"
         }
-        
+
         headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json"
         }
-        
+
         resp = requests.post(url, headers=headers, json=payload)
         if not resp.ok:
             logging.error(f"Graph SendMail Error: {resp.text}")
             raise Exception(f"Graph SendMail Error: {resp.status_code} {resp.text}")
-            
+
         return True
 
     def send_partner_eod_email(self, to_recipients, cc_recipients, subject, body_html, pdf_path=None, from_email="peter.teehan@costesla.com"):
@@ -257,21 +257,39 @@ class GraphClient:
         import base64
         token = self._get_token()
         url = f"https://graph.microsoft.com/v1.0/users/{from_email}/sendMail"
-        
+
         if isinstance(to_recipients, str):
             to_recipients = [to_recipients]
         if isinstance(cc_recipients, str):
             cc_recipients = [cc_recipients]
         elif cc_recipients is None:
             cc_recipients = []
-            
-        to_clean = [addr.strip() for addr in to_recipients if addr and addr.strip()]
-        to_lower = {addr.lower() for addr in to_clean}
-        cc_clean = [addr.strip() for addr in cc_recipients if addr and addr.strip() and addr.strip().lower() not in to_lower]
+
+        # Case-insensitive deduplication of To recipients preserving first occurrence
+        seen_to = set()
+        to_clean = []
+        for addr in to_recipients:
+            if addr and addr.strip():
+                clean_addr = addr.strip()
+                lower_addr = clean_addr.lower()
+                if lower_addr not in seen_to:
+                    seen_to.add(lower_addr)
+                    to_clean.append(clean_addr)
+
+        # CC recipients excluded if already in To list
+        seen_cc = set()
+        cc_clean = []
+        for addr in cc_recipients:
+            if addr and addr.strip():
+                clean_addr = addr.strip()
+                lower_addr = clean_addr.lower()
+                if lower_addr not in seen_to and lower_addr not in seen_cc:
+                    seen_cc.add(lower_addr)
+                    cc_clean.append(clean_addr)
 
         to_list = [{"emailAddress": {"address": addr}} for addr in to_clean]
         cc_list = [{"emailAddress": {"address": addr}} for addr in cc_clean]
-        
+
         message_obj = {
             "subject": subject,
             "body": {
@@ -291,7 +309,7 @@ class GraphClient:
                 { "name": "X-Mailer", "value": "Summit Intelligence 2.0 Partner Engine" }
             ]
         }
-        
+
         if pdf_path and os.path.exists(pdf_path):
             with open(pdf_path, "rb") as f:
                 pdf_bytes = f.read()
@@ -305,22 +323,22 @@ class GraphClient:
                     "contentBytes": pdf_base64
                 }
             ]
-            
+
         payload = {
             "message": message_obj,
             "saveToSentItems": "true"
         }
-        
+
         headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json"
         }
-        
+
         resp = requests.post(url, headers=headers, json=payload)
         if not resp.ok:
             logging.error(f"Graph SendPartnerEOD Error: {resp.text}")
             raise Exception(f"Graph SendPartnerEOD Error: {resp.status_code} {resp.text}")
-            
+
         return True
 
     def get_booking_business_hours(self):
@@ -328,22 +346,22 @@ class GraphClient:
         token = self._get_token()
         # Use configurable ID or default
         business_id = os.environ.get("MS_BOOKINGS_BUSINESS_ID", "SummitOS@costesla.com")
-        
+
         url = f"https://graph.microsoft.com/v1.0/solutions/bookingBusinesses/{business_id}"
         params = {
             "$select": "businessHours"
         }
-        
+
         headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json"
         }
-        
+
         resp = requests.get(url, headers=headers, params=params)
         if not resp.ok:
             logging.error(f"Graph Business Hours Error: {resp.text}")
             raise Exception(f"Graph Business Hours Error: {resp.status_code} {resp.text}")
-            
+
         return resp.json().get("businessHours", [])
 
     def get_calendar_view(self, start_dt, end_dt, top: int = 50):
@@ -376,31 +394,31 @@ class GraphClient:
         """Fetches Time Off for a specific staff member within a range."""
         token = self._get_token()
         business_id = os.environ.get("MS_BOOKINGS_BUSINESS_ID", "SummitOS@costesla.com")
-        
+
         # Ensure ISO format with Z or similar
         start_iso = self._format_iso_z(start_dt)
         end_iso = self._format_iso_z(end_dt)
-        
+
         url = f"https://graph.microsoft.com/v1.0/users/{self.user_email}/calendar/calendarView"
         params = {
             "startDateTime": start_iso,
             "endDateTime": end_iso
         }
-        
+
         headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json"
         }
-        
-        # NOTE: This endpoint might return bookings AND time off. 
+
+        # NOTE: This endpoint might return bookings AND time off.
         # Time Off is typically characterized by serviceId being null or specific type.
         # We will return the raw list and let the caller filter.
-        
+
         resp = requests.get(url, headers=headers, params=params)
         if not resp.ok:
             logging.error(f"Graph Staff Calendar Error: {resp.text}")
             raise Exception(f"Graph Staff Calendar Error: {resp.status_code} {resp.text}")
-            
+
         return resp.json().get("value", [])
 
     # --- ADMINISTRATION METHDOS FOR BOOKINGS ---
@@ -409,9 +427,9 @@ class GraphClient:
         """Publishes the Booking Business page so it can be accessed externally."""
         token = self._get_token()
         biz_id = business_id or os.environ.get("MS_BOOKINGS_BUSINESS_ID", "SummitOS@costesla.com")
-        
+
         url = f"https://graph.microsoft.com/v1.0/solutions/bookingBusinesses/{biz_id}"
-        
+
         # We use PATCH to update the business properties.
         payload = {
             "schedulingPolicy": {
@@ -419,19 +437,19 @@ class GraphClient:
             },
             "isPublished": True
         }
-        
+
         headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json"
         }
-        
+
         logging.info(f"Publishing Booking Page for {biz_id}...")
         resp = requests.patch(url, headers=headers, json=payload)
-        
+
         if not resp.ok:
             logging.error(f"Graph Publish Error: {resp.text}")
             raise Exception(f"Graph Publish Error: {resp.status_code} {resp.text}")
-            
+
         # Optional: Getting the public url if available from the response
         try:
              # Typically it returns the full object on PATCH, or empty. If empty, we can just GET it.
@@ -456,21 +474,21 @@ class GraphClient:
         """Creates a new service for the Booking Business."""
         token = self._get_token()
         biz_id = business_id or os.environ.get("MS_BOOKINGS_BUSINESS_ID", "SummitOS@costesla.com")
-        
+
         url = f"https://graph.microsoft.com/v1.0/solutions/bookingBusinesses/{biz_id}/services"
-        
+
         headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json"
         }
-        
+
         logging.info(f"Creating new Booking Service in {biz_id}: {service_payload.get('displayName')}...")
         resp = requests.post(url, headers=headers, json=service_payload)
-        
+
         if not resp.ok:
             logging.error(f"Graph Create Service Error: {resp.text}")
             raise Exception(f"Graph Create Service Error: {resp.status_code} {resp.text}")
-            
+
         return resp.json()
 
 
@@ -571,14 +589,14 @@ class GraphClient:
         encoded_path = quote(path)
         url = f"https://graph.microsoft.com/v1.0/users/{self.user_email}/drive/root:/{encoded_path}:/children"
         headers = {"Authorization": f"Bearer {token}"}
-        
+
         resp = requests.get(url, headers=headers)
         if not resp.ok:
             if resp.status_code == 404:
                 return []
             logging.error(f"Graph List Files Error: {resp.text}")
             return []
-        
+
         return resp.json().get("value", [])
 
     def move_file(self, item_id: str, destination_parent_id: str, new_name: str = None):
@@ -608,7 +626,7 @@ class GraphClient:
         token = self._get_token()
         url = f"https://graph.microsoft.com/v1.0/users/{self.user_email}/drive/items/{item_id}/content"
         headers = {"Authorization": f"Bearer {token}"}
-        
+
         resp = requests.get(url, headers=headers)
         if not resp.ok:
             logging.error(f"Graph Download Error: {resp.text}")
