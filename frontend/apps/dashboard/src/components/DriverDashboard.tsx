@@ -250,13 +250,27 @@ interface ExpenseItem {
     expense_type?: 'OpEx' | 'CapEx';
 }
 
+const PRESET_RECIPIENT_EMAILS = [
+    'luis9189@gmail.com',
+    'thornbrerry.brian@gmail.com',
+    'peter.teehan@costesla.com',
+    'cpa@costesla.com',
+    'advisory@costesla.com'
+] as const;
+
+const normalizeEmail = (value: string): string =>
+    value.trim().toLowerCase();
+
+const isValidEmail = (value: string): boolean =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeEmail(value));
+
 // Main Component
 const DriverDashboard: React.FC = () => {
     const todayMST = getTodayMST();
     const [selectedDate, setSelectedDate] = useState<string>(todayMST);
     const [section, setSection] = useState<Section>('home');
     const [tripsTab, setTripsTab] = useState<'ledger' | 'telemetry'>('ledger');
-    
+
     // Core State
     const [azureUser, setAzureUser] = useState<{ name?: string; email?: string } | null>(null);
     const [teslaLive, setTeslaLive] = useState<TeslaStatus | null>(null);
@@ -271,14 +285,14 @@ const DriverDashboard: React.FC = () => {
         capital_maintenance: ExpenseItem[];
     }>({ fastfood: [], charging: [], capital_maintenance: [] });
     const [expenseLedgerTab, setExpenseLedgerTab] = useState<'opex' | 'capex'>('opex');
-    
+
     // Loading States
     const [loadingSummary, setLoadingSummary] = useState(false);
     const [loadingPreShift, setLoadingPreShift] = useState(false);
     const [loadingTrips, setLoadingTrips] = useState(false);
 
 
-    
+
     // Action States & Modals
     const [logs, setLogs] = useState<string[]>([]);
     const [status, setStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle');
@@ -291,7 +305,7 @@ const DriverDashboard: React.FC = () => {
     const [isMobileQuickLogOpen, setIsMobileQuickLogOpen] = useState(false);
     const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date());
     const [syncIntervalText, setSyncIntervalText] = useState("Just now");
-    
+
     // Forms
     const [cashTipAmount, setCashTipAmount] = useState('');
     const [cashTipNote, setCashTipNote] = useState('');
@@ -616,30 +630,33 @@ const DriverDashboard: React.FC = () => {
 
     // ─── Actions: Silent Partner EOD Report Dispatch ─────────────────────────────
     const toggleRecipient = (email: string) => {
-        setSelectedRecipients(prev => 
-            prev.includes(email) ? prev.filter(e => e !== email) : [...prev, email]
+        const normalized = normalizeEmail(email);
+        setSelectedRecipients(prev =>
+            prev.includes(normalized) ? prev.filter(e => e !== normalized) : [...prev, normalized]
         );
     };
 
     const handleAddCustomEmail = (e?: React.FormEvent) => {
         if (e) e.preventDefault();
-        const trimmed = customEmailInput.trim().toLowerCase();
-        if (trimmed && trimmed.includes('@') && !selectedRecipients.includes(trimmed)) {
+        const trimmed = normalizeEmail(customEmailInput);
+        if (isValidEmail(trimmed) && !selectedRecipients.includes(trimmed)) {
             setSelectedRecipients(prev => [...prev, trimmed]);
             setCustomEmailInput('');
-            setShowCustomInput(false);
+            // Keep the field open for immediate confirmation or another address.
         }
     };
 
-    const runPartnerEODReport = async (recipientsList: string[] = selectedRecipients) => {
-        const finalRecipients = [...recipientsList];
-        if (customEmailInput.trim() && customEmailInput.includes('@')) {
-            const trimmed = customEmailInput.trim().toLowerCase();
-            if (!finalRecipients.includes(trimmed)) {
-                finalRecipients.push(trimmed);
-            }
-        }
+    const runPartnerEODReport = async () => {
+        const normalizedPending = normalizeEmail(customEmailInput);
+        const finalRecipients = Array.from(
+            new Set([
+                ...selectedRecipients.map(normalizeEmail),
+                ...(isValidEmail(normalizedPending) ? [normalizedPending] : [])
+            ])
+        );
+
         if (finalRecipients.length === 0) return;
+
         setPartnerModalOpen(false);
         setCustomEmailInput('');
         setShowCustomInput(false);
@@ -652,11 +669,15 @@ const DriverDashboard: React.FC = () => {
             `> Executing financial reconciliation & PII sanitation gates...`
         ]);
         try {
-            const data = await apiPost<{ success: boolean; report_id?: string; checksum?: string; logs?: string[]; error?: string }>('/tools/partner-eod-report', {
-                date: selectedDate,
-                recipients: finalRecipients,
-                cc_recipient: 'peter.teehan@costesla.com'
-            });
+            const data = await apiPost<{ success: boolean; report_id?: string; checksum?: string; logs?: string[]; error?: string }>(
+                '/tools/partner-eod-report',
+                {
+                    date: selectedDate,
+                    recipients: finalRecipients,
+                    cc_recipient: 'peter.teehan@costesla.com'
+                },
+                { timeoutMs: 45_000 }
+            );
             if (data.success) {
                 setStatus('success');
                 setLogs(p => [
@@ -817,10 +838,10 @@ const DriverDashboard: React.FC = () => {
     const healthBadgeColor = preShiftScore >= 70 ? 'border-[var(--accent-cyan)] text-[var(--accent-cyan)] bg-[var(--accent-cyan)]/5' : 'border-[var(--accent-red)] text-[var(--accent-red)] bg-[var(--accent-red)]/5 animate-pulse';
 
     const unpaidOtherInvoices = useMemo(() => {
-        return trips.filter(t => 
-            t.type === 'Private' && 
-            t.fare > 0 && 
-            t.id.startsWith('INV-') && 
+        return trips.filter(t =>
+            t.type === 'Private' &&
+            t.fare > 0 &&
+            t.id.startsWith('INV-') &&
             t.payment_status?.toLowerCase() !== 'paid'
         );
     }, [trips]);
@@ -828,11 +849,11 @@ const DriverDashboard: React.FC = () => {
     // Telemetry Timeline events combination
     const timelineEvents = useMemo(() => {
         const items: Array<{ time: string; type: 'Trip' | 'Charge' | 'Idle'; details: string; socChange?: string; stats: string }> = [];
-        
+
         // Add Drives
         drives.forEach(d => {
             const timeStr = d.time_mst || "00:00";
-            
+
             // Calculate energy used
             let kwhVal = d.energy_used_kwh;
             if (!kwhVal && d.starting_battery !== null && d.ending_battery !== null) {
@@ -848,7 +869,7 @@ const DriverDashboard: React.FC = () => {
             const efficiency = effVal ? `${effVal} Wh/mi` : "N/A Wh/mi";
 
             const socStr = d.starting_battery !== null && d.ending_battery !== null ? `${d.starting_battery}% → ${d.ending_battery}%` : "";
-            
+
             // Clean location addresses
             const startLoc = d.tag || scrubAddress(formatLocation(d.start)) || "Unknown Start";
             const endLoc = scrubAddress(formatLocation(d.end)) || "Unknown End";
@@ -886,12 +907,12 @@ const DriverDashboard: React.FC = () => {
 
     // Filter and format private bookings for Ledger
     const privateBookings = useMemo(() => {
-        return trips.filter(t => 
-            t.type === 'Private' && 
+        return trips.filter(t =>
+            t.type === 'Private' &&
             !t.id.startsWith('TESSIE-') &&
-            t.classification !== 'Deadhead/Positioning' && 
-            t.classification !== 'Positioning' && 
-            t.classification !== 'Deadhead' && 
+            t.classification !== 'Deadhead/Positioning' &&
+            t.classification !== 'Positioning' &&
+            t.classification !== 'Deadhead' &&
             t.classification !== 'Untagged' &&
             t.classification !== 'POI' &&
             t.classification !== 'Charging'
@@ -938,7 +959,7 @@ const DriverDashboard: React.FC = () => {
 
     return (
         <div className="flex flex-col min-h-screen text-white bg-[var(--bg-void)]">
-            
+
             {/* ─── TeslaLiveBar (Pinned top, sticky, full width) ────────────────────── */}
             <header className="sticky top-0 z-50 h-12 flex items-center justify-between px-4 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] backdrop-blur-md">
                 <div className="flex items-center gap-3">
@@ -955,7 +976,7 @@ const DriverDashboard: React.FC = () => {
                         <span className="hidden md:inline">({teslaLive?.battery_range_mi ?? 245} mi range)</span>
                     </div>
                 </div>
-                
+
                 {/* Status elements */}
                 <div className="flex items-center gap-3 text-xs font-mono">
                     {/* Live SQL Badge */}
@@ -995,10 +1016,10 @@ const DriverDashboard: React.FC = () => {
                     </div>
                     <div className="flex-1 space-y-1">
                         {navItems.map(n => (
-                            <button key={n.id} onClick={() => setSection(n.id as Section)} 
+                            <button key={n.id} onClick={() => setSection(n.id as Section)}
                                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 font-semibold text-sm border
-                                ${section === n.id 
-                                    ? 'bg-[var(--accent-cyan)]/5 text-[var(--accent-cyan)] border-[var(--accent-cyan)]/20' 
+                                ${section === n.id
+                                    ? 'bg-[var(--accent-cyan)]/5 text-[var(--accent-cyan)] border-[var(--accent-cyan)]/20'
                                     : 'text-[var(--text-muted)] hover:text-white hover:bg-white/5 border-transparent'}`}>
                                 <span className={`shrink-0 ${section === n.id ? 'text-[var(--accent-cyan)]' : 'text-[var(--text-muted)]'}`}>{n.icon}</span>
                                 <span className="flex-1">{n.label}</span>
@@ -1076,18 +1097,18 @@ const DriverDashboard: React.FC = () => {
                                 {/* QuickLogRow */}
                                 <div className="flex flex-wrap items-center gap-2 justify-between">
                                     <div className="flex flex-wrap gap-2">
-                                        <button onClick={() => { setSection('financials'); setTimeout(() => document.getElementById("log-cash-tip-form")?.scrollIntoView({ behavior: 'smooth' }), 200); }} 
+                                        <button onClick={() => { setSection('financials'); setTimeout(() => document.getElementById("log-cash-tip-form")?.scrollIntoView({ behavior: 'smooth' }), 200); }}
                                             className="px-4 py-2.5 rounded-xl border border-amber-500/20 bg-amber-500/10 text-amber-400 text-xs font-bold hover:bg-amber-500/20 transition-all">+ Log Cash Tip</button>
                                         <button onClick={() => { setSection('financials'); setTimeout(() => document.getElementById("log-private-payment-form")?.scrollIntoView({ behavior: 'smooth' }), 200); }}
                                             className="px-4 py-2.5 rounded-xl border border-[var(--accent-purple)]/20 bg-[var(--accent-purple)]/10 text-[var(--accent-purple)] text-xs font-bold hover:bg-[var(--accent-purple)]/20 transition-all">+ Log Private Payment</button>
                                         <button onClick={() => { setSection('financials'); setTimeout(() => document.getElementById("log-offapp-form")?.scrollIntoView({ behavior: 'smooth' }), 200); }}
                                             className="px-4 py-2.5 rounded-xl border border-orange-500/20 bg-orange-500/10 text-orange-400 text-xs font-bold hover:bg-orange-500/20 transition-all">+ Off-App Trip</button>
-                                        <button onClick={() => { setSection('financials'); setTimeout(() => document.getElementById("log-expense-form")?.scrollIntoView({ behavior: 'smooth' }), 200); }} 
+                                        <button onClick={() => { setSection('financials'); setTimeout(() => document.getElementById("log-expense-form")?.scrollIntoView({ behavior: 'smooth' }), 200); }}
                                             className="px-4 py-2.5 rounded-xl border border-[var(--accent-cyan)]/20 bg-[var(--accent-cyan)]/10 text-[var(--accent-cyan)] text-xs font-bold hover:bg-[var(--accent-cyan)]/20 transition-all">+ Log Expense</button>
-                                        <button onClick={() => { setSection('financials'); setTimeout(() => { document.getElementById("log-expense-form")?.scrollIntoView({ behavior: 'smooth' }); setExpenseCategory('Charging'); }, 200); }} 
+                                        <button onClick={() => { setSection('financials'); setTimeout(() => { document.getElementById("log-expense-form")?.scrollIntoView({ behavior: 'smooth' }); setExpenseCategory('Charging'); }, 200); }}
                                             className="px-4 py-2.5 rounded-xl border border-rose-500/20 bg-rose-500/10 text-rose-400 text-xs font-bold hover:bg-rose-500/20 transition-all">Scan Receipt</button>
                                     </div>
-                                    <button onClick={runSaveDay} 
+                                    <button onClick={runSaveDay}
                                         className="px-4 py-2.5 rounded-xl border border-white/5 bg-white/5 text-[var(--text-muted)] text-xs font-bold hover:bg-white/10 hover:text-white transition-all ml-auto">Save Day to Cloud</button>
                                 </div>
 
@@ -1296,7 +1317,7 @@ const DriverDashboard: React.FC = () => {
                                                         Log Cash Tip
                                                     </button>
                                                 </form>
-                                                
+
                                                 <form id="log-private-payment-form" onSubmit={handleLogPrivatePayment} className="space-y-3 p-3 bg-white/[0.01] border border-white/5 rounded-xl">
                                                     <h4 className="text-[10px] font-bold font-mono text-[var(--text-muted)] uppercase tracking-wider">Log Private Payment (Collected)</h4>
                                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -1495,7 +1516,7 @@ const DriverDashboard: React.FC = () => {
                                                             <div className="flex items-center gap-3 shrink-0">
                                                                 <span className="text-[9px] text-[#606060]">{inv.timestamp.slice(0, 10)}</span>
                                                                 <span className="font-black text-amber-400 font-mono">${inv.fare.toFixed(2)}</span>
-                                                                <button 
+                                                                <button
                                                                     onClick={async (e) => {
                                                                         e.stopPropagation();
                                                                         try {
@@ -1553,7 +1574,7 @@ const DriverDashboard: React.FC = () => {
 
                                 <div className="p-5 rounded-2xl glass space-y-4">
                                     <h3 className="text-sm font-bold uppercase tracking-wider text-white font-mono border-b border-white/5 pb-2">Charging Sessions</h3>
-                                    
+
                                     <div className="space-y-3">
                                         {charges.length === 0 ? (
                                             <p className="text-center text-xs text-[var(--text-muted)] italic py-6">// No charging sessions logged for this day</p>
@@ -1652,19 +1673,19 @@ const DriverDashboard: React.FC = () => {
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {/* Card: Silent Partner EOD Report */}
-                                    <ToolCard 
-                                        title="EOD Partner Report" 
-                                        desc="Compile, reconcile & dispatch daily executive summary with owner permission & mode authorization gate." 
-                                        action={() => { setPartnerConfirmed(false); setPartnerModalOpen(true); }} 
-                                        loading={status === 'running'} 
+                                    <ToolCard
+                                        title="EOD Partner Report"
+                                        desc="Compile, reconcile & dispatch daily executive summary with owner permission & mode authorization gate."
+                                        action={() => { setPartnerConfirmed(false); setPartnerModalOpen(true); }}
+                                        loading={status === 'running'}
                                     />
 
                                     {/* Card: Rebuild Day */}
                                     <ToolCard title="Rebuild Day" desc="Reprocess and re-match drives and private bookings for this operational window." action={runRebuild} loading={status === 'running'} />
-                                    
+
                                     {/* Card: Scrub Day */}
                                     <ToolCard title="Scrub Day" desc="Wipe receipts extractions (TRIP- records) and un-pair drives for this date. Confirmation gate required." action={() => setScrubConfirmOpen(true)} destructive />
-                                    
+
                                     {/* Card: Create Folders */}
                                     <ToolCard title="Create Folders" desc="Ensures OneDrive/Sharepoint folders exist for daily receipt uploads." action={runCreateFolders} />
 
@@ -1697,9 +1718,9 @@ const DriverDashboard: React.FC = () => {
                                             <MapPin className="w-4 h-4 text-[var(--accent-cyan)]" />
                                             <h3 className="text-xs font-bold uppercase tracking-wider text-white font-mono">Commercial Route & Heatmap Console</h3>
                                         </div>
-                                        <a 
-                                            href={`/uber-heatmap.html${API_FUNCTION_KEY ? `?code=${encodeURIComponent(API_FUNCTION_KEY)}` : ''}`} 
-                                            target="_blank" 
+                                        <a
+                                            href={`/uber-heatmap.html${API_FUNCTION_KEY ? `?code=${encodeURIComponent(API_FUNCTION_KEY)}` : ''}`}
+                                            target="_blank"
                                             rel="noopener noreferrer"
                                             onClick={() => {
                                                 if (API_FUNCTION_KEY) {
@@ -1751,7 +1772,7 @@ const DriverDashboard: React.FC = () => {
             {/* ─── Mobile Bottom Tab Bar (< 768px view) ────────────────────────────── */}
             <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 h-16 flex items-center justify-around border-t border-[var(--border-subtle)] bg-[var(--bg-surface)] backdrop-blur-md">
                 {navItems.map(n => (
-                    <button key={n.id} onClick={() => setSection(n.id as Section)} 
+                    <button key={n.id} onClick={() => setSection(n.id as Section)}
                         className={`flex flex-col items-center gap-1 px-3 py-1 min-w-[48px] transition-all relative ${section === n.id ? 'text-[var(--accent-cyan)]' : 'text-[var(--text-muted)]'}`}>
                         <span className="w-4 h-4">{n.icon}</span>
                         <span className="text-[9px] font-bold">{n.label}</span>
@@ -1776,13 +1797,13 @@ const DriverDashboard: React.FC = () => {
                             <button onClick={() => setIsMobileQuickLogOpen(false)} className="text-[var(--text-muted)] font-mono text-xs">Close</button>
                         </div>
                         <div className="grid grid-cols-1 gap-2.5">
-                            <button onClick={() => { setSection('financials'); setIsMobileQuickLogOpen(false); setTimeout(() => document.getElementById("log-cash-tip-form")?.scrollIntoView({ behavior: 'smooth' }), 100); }} 
+                            <button onClick={() => { setSection('financials'); setIsMobileQuickLogOpen(false); setTimeout(() => document.getElementById("log-cash-tip-form")?.scrollIntoView({ behavior: 'smooth' }), 100); }}
                                 className="w-full py-3 rounded-xl border border-amber-500/20 bg-amber-500/10 text-amber-400 text-xs font-bold">+ Log Cash Tip</button>
-                            <button onClick={() => { setSection('financials'); setIsMobileQuickLogOpen(false); setTimeout(() => document.getElementById("log-private-payment-form")?.scrollIntoView({ behavior: 'smooth' }), 100); }} 
+                            <button onClick={() => { setSection('financials'); setIsMobileQuickLogOpen(false); setTimeout(() => document.getElementById("log-private-payment-form")?.scrollIntoView({ behavior: 'smooth' }), 100); }}
                                 className="w-full py-3 rounded-xl border border-[var(--accent-purple)]/20 bg-[var(--accent-purple)]/10 text-[var(--accent-purple)] text-xs font-bold">+ Log Private Payment</button>
-                            <button onClick={() => { setSection('financials'); setIsMobileQuickLogOpen(false); setTimeout(() => document.getElementById("log-expense-form")?.scrollIntoView({ behavior: 'smooth' }), 100); }} 
+                            <button onClick={() => { setSection('financials'); setIsMobileQuickLogOpen(false); setTimeout(() => document.getElementById("log-expense-form")?.scrollIntoView({ behavior: 'smooth' }), 100); }}
                                 className="w-full py-3 rounded-xl border border-[var(--accent-cyan)]/20 bg-[var(--accent-cyan)]/10 text-[var(--accent-cyan)] text-xs font-bold">+ Log Expense</button>
-                            <button onClick={() => { setSection('financials'); setIsMobileQuickLogOpen(false); setTimeout(() => { document.getElementById("log-expense-form")?.scrollIntoView({ behavior: 'smooth' }); setExpenseCategory('Charging'); }, 100); }} 
+                            <button onClick={() => { setSection('financials'); setIsMobileQuickLogOpen(false); setTimeout(() => { document.getElementById("log-expense-form")?.scrollIntoView({ behavior: 'smooth' }); setExpenseCategory('Charging'); }, 100); }}
                                 className="w-full py-3 rounded-xl border border-rose-500/20 bg-rose-500/10 text-rose-400 text-xs font-bold">Scan Receipt</button>
                         </div>
                     </div>
@@ -1801,13 +1822,13 @@ const DriverDashboard: React.FC = () => {
                             </div>
                         </div>
                         <p className="text-xs text-[var(--text-muted)] font-mono leading-relaxed">
-                            Are you absolutely sure you want to scrub <span className="font-bold text-white">{selectedDate}</span>? 
+                            Are you absolutely sure you want to scrub <span className="font-bold text-white">{selectedDate}</span>?
                             This deletes all receipt extractions (TRIP- records) and unlinks drives so the day can be reprocessed.
                         </p>
                         <div className="flex gap-2.5 pt-2">
-                            <button onClick={() => setScrubConfirmOpen(false)} 
+                            <button onClick={() => setScrubConfirmOpen(false)}
                                 className="flex-1 py-2.5 rounded-xl text-xs font-bold border border-white/10 bg-white/5 text-[var(--text-muted)] hover:bg-white/10 transition-all">Cancel</button>
-                            <button onClick={runScrub} 
+                            <button onClick={runScrub}
                                 className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-[var(--accent-red)] text-white hover:bg-red-600 transition-all">Proceed Scrub</button>
                         </div>
                     </div>
@@ -1834,175 +1855,230 @@ const DriverDashboard: React.FC = () => {
                         </div>
 
                         {/* Recipient Roster Multi-Select */}
-                        <div className="space-y-2.5">
-                            <div className="flex items-center justify-between">
-                                <label className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Select Recipients ({selectedRecipients.length} Selected)</label>
-                                <button 
-                                    type="button" 
-                                    onClick={() => setShowCustomInput(!showCustomInput)} 
-                                    className="text-[10px] font-bold text-[var(--accent-cyan)] hover:underline flex items-center gap-1"
-                                >
-                                    <Plus className="w-3 h-3" /> {showCustomInput ? 'Close Custom' : 'Add Custom Email'}
-                                </button>
-                            </div>
+                        {(() => {
+                            const normalizedPendingEmail = normalizeEmail(customEmailInput);
+                            const pendingEmailIsDispatchable =
+                                isValidEmail(normalizedPendingEmail) &&
+                                !selectedRecipients.includes(normalizedPendingEmail);
+                            const effectiveRecipientsCount =
+                                selectedRecipients.length + (pendingEmailIsDispatchable ? 1 : 0);
+                            const isDispatchable = partnerConfirmed && effectiveRecipientsCount > 0 && status !== 'running';
 
-                            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                                {/* Preset: Luis Canales */}
-                                <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${selectedRecipients.includes('luis9189@gmail.com') ? 'border-[var(--accent-cyan)]/40 bg-[var(--accent-cyan)]/5 text-white' : 'border-white/5 bg-white/[0.02] text-[var(--text-muted)] hover:border-white/10'}`}>
-                                    <input 
-                                        type="checkbox" 
-                                        checked={selectedRecipients.includes('luis9189@gmail.com')} 
-                                        onChange={() => toggleRecipient('luis9189@gmail.com')} 
-                                        className="mt-1 rounded border-white/20 text-[var(--accent-cyan)] focus:ring-0 cursor-pointer" 
-                                    />
-                                    <div className="flex-1">
-                                        <div className="text-xs font-bold text-white flex items-center justify-between">
-                                            <span>Luis Canales</span>
-                                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono">Silent Partner</span>
+                            return (
+                                <>
+                                    <div className="space-y-2.5">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                                                Select Recipients ({effectiveRecipientsCount} Selected)
+                                            </label>
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowCustomInput(!showCustomInput)}
+                                                className="text-[10px] font-bold text-[var(--accent-cyan)] hover:underline flex items-center gap-1"
+                                            >
+                                                <Plus className="w-3 h-3" /> {showCustomInput ? 'Close Custom' : 'Add Custom Email'}
+                                            </button>
                                         </div>
-                                        <div className="text-[10px] text-[var(--text-muted)] font-mono mt-0.5 flex items-center gap-1">
-                                            <Mail className="w-3 h-3 text-[var(--accent-cyan)]" /> luis9189@gmail.com
+
+                                        {/* Add Custom Email Field */}
+                                        {showCustomInput && (
+                                            <div className="space-y-2 p-2.5 rounded-xl bg-black/40 border border-white/10">
+                                                <div className="flex gap-2">
+                                                    <input
+                                                        type="email"
+                                                        placeholder="e.g. partner@domain.com"
+                                                        value={customEmailInput}
+                                                        onChange={(e) => setCustomEmailInput(e.target.value)}
+                                                        onKeyDown={(e) => { if (e.key === 'Enter') handleAddCustomEmail(e); }}
+                                                        className="flex-1 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs text-white placeholder-[var(--text-muted)] font-mono focus:outline-none focus:border-[var(--accent-cyan)]"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleAddCustomEmail}
+                                                        disabled={!isValidEmail(normalizeEmail(customEmailInput)) || selectedRecipients.includes(normalizeEmail(customEmailInput))}
+                                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${isValidEmail(normalizeEmail(customEmailInput)) && !selectedRecipients.includes(normalizeEmail(customEmailInput)) ? 'bg-[var(--accent-cyan)] text-black hover:opacity-90' : 'bg-white/10 text-white/30 cursor-not-allowed'}`}
+                                                    >
+                                                        Add
+                                                    </button>
+                                                </div>
+                                                {pendingEmailIsDispatchable && (
+                                                    <div className="text-[10px] text-emerald-400 font-mono flex items-center gap-1 px-1">
+                                                        <span>✓ Valid address entered — will be auto-included upon dispatch.</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                                            {/* 1. Pending Custom Recipient Preview */}
+                                            {pendingEmailIsDispatchable && (
+                                                <div className="flex items-center justify-between p-3 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-white animate-pulse">
+                                                    <div className="flex items-center gap-2">
+                                                        <Mail className="w-3.5 h-3.5 text-emerald-400" />
+                                                        <span className="text-xs font-mono font-bold">{normalizedPendingEmail}</span>
+                                                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono">Pending Auto-Commit</span>
+                                                    </div>
+                                                    <span className="text-[10px] text-emerald-300 font-mono">Ready</span>
+                                                </div>
+                                            )}
+
+                                            {/* 2. Committed Custom Recipients */}
+                                            {selectedRecipients.filter(r => !(PRESET_RECIPIENT_EMAILS as readonly string[]).includes(r)).map(customEmail => (
+                                                <div key={customEmail} className="flex items-center justify-between p-3 rounded-xl border border-[var(--accent-cyan)]/40 bg-[var(--accent-cyan)]/5 text-white">
+                                                    <div className="flex items-center gap-2">
+                                                        <Mail className="w-3.5 h-3.5 text-[var(--accent-cyan)]" />
+                                                        <span className="text-xs font-mono font-bold">{customEmail}</span>
+                                                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-mono">Custom Recipient</span>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => toggleRecipient(customEmail)}
+                                                        className="text-[10px] text-rose-400 hover:text-rose-300 font-bold"
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                </div>
+                                            ))}
+
+                                            {/* 3. Preset: Brian Thornberry */}
+                                            <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${selectedRecipients.includes('thornbrerry.brian@gmail.com') ? 'border-emerald-500/40 bg-emerald-500/5 text-white' : 'border-white/5 bg-white/[0.02] text-[var(--text-muted)] hover:border-white/10'}`}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedRecipients.includes('thornbrerry.brian@gmail.com')}
+                                                    onChange={() => toggleRecipient('thornbrerry.brian@gmail.com')}
+                                                    className="mt-1 rounded border-white/20 text-emerald-400 focus:ring-0 cursor-pointer"
+                                                />
+                                                <div className="flex-1">
+                                                    <div className="text-xs font-bold text-white flex items-center justify-between">
+                                                        <span>Brian Thornberry</span>
+                                                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono">Operations / Partner Roster</span>
+                                                    </div>
+                                                    <div className="text-[10px] text-[var(--text-muted)] font-mono mt-0.5 flex items-center gap-1">
+                                                        <Mail className="w-3 h-3 text-emerald-400" /> thornbrerry.brian@gmail.com
+                                                    </div>
+                                                </div>
+                                            </label>
+
+                                            {/* 4. Preset: Luis Canales */}
+                                            <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${selectedRecipients.includes('luis9189@gmail.com') ? 'border-[var(--accent-cyan)]/40 bg-[var(--accent-cyan)]/5 text-white' : 'border-white/5 bg-white/[0.02] text-[var(--text-muted)] hover:border-white/10'}`}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedRecipients.includes('luis9189@gmail.com')}
+                                                    onChange={() => toggleRecipient('luis9189@gmail.com')}
+                                                    className="mt-1 rounded border-white/20 text-[var(--accent-cyan)] focus:ring-0 cursor-pointer"
+                                                />
+                                                <div className="flex-1">
+                                                    <div className="text-xs font-bold text-white flex items-center justify-between">
+                                                        <span>Luis Canales</span>
+                                                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono">Silent Partner</span>
+                                                    </div>
+                                                    <div className="text-[10px] text-[var(--text-muted)] font-mono mt-0.5 flex items-center gap-1">
+                                                        <Mail className="w-3 h-3 text-[var(--accent-cyan)]" /> luis9189@gmail.com
+                                                    </div>
+                                                </div>
+                                            </label>
+
+                                            {/* 5. Preset: Peter Teehan (Internal Test) */}
+                                            <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${selectedRecipients.includes('peter.teehan@costesla.com') ? 'border-blue-500/40 bg-blue-500/5 text-white' : 'border-white/5 bg-white/[0.02] text-[var(--text-muted)] hover:border-white/10'}`}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedRecipients.includes('peter.teehan@costesla.com')}
+                                                    onChange={() => toggleRecipient('peter.teehan@costesla.com')}
+                                                    className="mt-1 rounded border-white/20 text-blue-400 focus:ring-0 cursor-pointer"
+                                                />
+                                                <div className="flex-1">
+                                                    <div className="text-xs font-bold text-white flex items-center justify-between">
+                                                        <span>Peter Teehan</span>
+                                                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-mono">Owner Inbox Direct</span>
+                                                    </div>
+                                                    <div className="text-[10px] text-[var(--text-muted)] font-mono mt-0.5 flex items-center gap-1">
+                                                        <Mail className="w-3 h-3 text-blue-400" /> peter.teehan@costesla.com
+                                                    </div>
+                                                </div>
+                                            </label>
+
+                                            {/* 6. Preset: CPA & Accounting */}
+                                            <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${selectedRecipients.includes('cpa@costesla.com') ? 'border-amber-500/40 bg-amber-500/5 text-white' : 'border-white/5 bg-white/[0.02] text-[var(--text-muted)] hover:border-white/10'}`}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedRecipients.includes('cpa@costesla.com')}
+                                                    onChange={() => toggleRecipient('cpa@costesla.com')}
+                                                    className="mt-1 rounded border-white/20 text-amber-400 focus:ring-0 cursor-pointer"
+                                                />
+                                                <div className="flex-1">
+                                                    <div className="text-xs font-bold text-white flex items-center justify-between">
+                                                        <span>Tax & Accounting Team</span>
+                                                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono">CPA Roster</span>
+                                                    </div>
+                                                    <div className="text-[10px] text-[var(--text-muted)] font-mono mt-0.5 flex items-center gap-1">
+                                                        <Mail className="w-3 h-3 text-amber-400" /> cpa@costesla.com
+                                                    </div>
+                                                </div>
+                                            </label>
+
+                                            {/* 7. Preset: Legal / Advisory */}
+                                            <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${selectedRecipients.includes('advisory@costesla.com') ? 'border-purple-500/40 bg-purple-500/5 text-white' : 'border-white/5 bg-white/[0.02] text-[var(--text-muted)] hover:border-white/10'}`}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedRecipients.includes('advisory@costesla.com')}
+                                                    onChange={() => toggleRecipient('advisory@costesla.com')}
+                                                    className="mt-1 rounded border-white/20 text-purple-400 focus:ring-0 cursor-pointer"
+                                                />
+                                                <div className="flex-1">
+                                                    <div className="text-xs font-bold text-white flex items-center justify-between">
+                                                        <span>Legal & Advisory Roster</span>
+                                                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono">Advisory</span>
+                                                    </div>
+                                                    <div className="text-[10px] text-[var(--text-muted)] font-mono mt-0.5 flex items-center gap-1">
+                                                        <Mail className="w-3 h-3 text-purple-400" /> advisory@costesla.com
+                                                    </div>
+                                                </div>
+                                            </label>
+                                        </div>
+
+                                        {/* CC Audit Notice */}
+                                        <div className="px-3 py-2 rounded-lg bg-white/[0.02] border border-white/5 text-[10px] text-[var(--text-muted)] font-mono flex items-center justify-between">
+                                            <span>Owner Audit Copy (CC):</span>
+                                            <span className="text-white font-bold">peter.teehan@costesla.com (Always Included)</span>
                                         </div>
                                     </div>
-                                </label>
 
-                                {/* Preset: Peter Teehan (Internal Test) */}
-                                <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${selectedRecipients.includes('peter.teehan@costesla.com') ? 'border-blue-500/40 bg-blue-500/5 text-white' : 'border-white/5 bg-white/[0.02] text-[var(--text-muted)] hover:border-white/10'}`}>
-                                    <input 
-                                        type="checkbox" 
-                                        checked={selectedRecipients.includes('peter.teehan@costesla.com')} 
-                                        onChange={() => toggleRecipient('peter.teehan@costesla.com')} 
-                                        className="mt-1 rounded border-white/20 text-blue-400 focus:ring-0 cursor-pointer" 
-                                    />
-                                    <div className="flex-1">
-                                        <div className="text-xs font-bold text-white flex items-center justify-between">
-                                            <span>Peter Teehan</span>
-                                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-mono">Owner Inbox Direct</span>
-                                        </div>
-                                        <div className="text-[10px] text-[var(--text-muted)] font-mono mt-0.5 flex items-center gap-1">
-                                            <Mail className="w-3 h-3 text-blue-400" /> peter.teehan@costesla.com
-                                        </div>
+                                    {/* Permission Confirmation Checkbox */}
+                                    <div className="p-3.5 rounded-xl bg-black/40 border border-white/10 space-y-2">
+                                        <label className="flex items-start gap-2.5 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={partnerConfirmed}
+                                                onChange={(e) => setPartnerConfirmed(e.target.checked)}
+                                                className="mt-0.5 rounded border-white/20 text-[var(--accent-cyan)] focus:ring-0 cursor-pointer"
+                                            />
+                                            <span className="text-xs text-white leading-relaxed select-none">
+                                                I, <strong>Peter Teehan</strong>, have reviewed the daily metrics and explicitly authorize the execution of this EOD dispatch to the selected <strong>{effectiveRecipientsCount}</strong> recipient(s).
+                                            </span>
+                                        </label>
                                     </div>
-                                </label>
 
-                                {/* Preset: CPA & Accounting */}
-                                <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${selectedRecipients.includes('cpa@costesla.com') ? 'border-amber-500/40 bg-amber-500/5 text-white' : 'border-white/5 bg-white/[0.02] text-[var(--text-muted)] hover:border-white/10'}`}>
-                                    <input 
-                                        type="checkbox" 
-                                        checked={selectedRecipients.includes('cpa@costesla.com')} 
-                                        onChange={() => toggleRecipient('cpa@costesla.com')} 
-                                        className="mt-1 rounded border-white/20 text-amber-400 focus:ring-0 cursor-pointer" 
-                                    />
-                                    <div className="flex-1">
-                                        <div className="text-xs font-bold text-white flex items-center justify-between">
-                                            <span>Tax & Accounting Team</span>
-                                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono">CPA Roster</span>
-                                        </div>
-                                        <div className="text-[10px] text-[var(--text-muted)] font-mono mt-0.5 flex items-center gap-1">
-                                            <Mail className="w-3 h-3 text-amber-400" /> cpa@costesla.com
-                                        </div>
-                                    </div>
-                                </label>
-
-                                {/* Preset: Legal / Advisory */}
-                                <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${selectedRecipients.includes('advisory@costesla.com') ? 'border-purple-500/40 bg-purple-500/5 text-white' : 'border-white/5 bg-white/[0.02] text-[var(--text-muted)] hover:border-white/10'}`}>
-                                    <input 
-                                        type="checkbox" 
-                                        checked={selectedRecipients.includes('advisory@costesla.com')} 
-                                        onChange={() => toggleRecipient('advisory@costesla.com')} 
-                                        className="mt-1 rounded border-white/20 text-purple-400 focus:ring-0 cursor-pointer" 
-                                    />
-                                    <div className="flex-1">
-                                        <div className="text-xs font-bold text-white flex items-center justify-between">
-                                            <span>Legal & Advisory Roster</span>
-                                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono">Advisory</span>
-                                        </div>
-                                        <div className="text-[10px] text-[var(--text-muted)] font-mono mt-0.5 flex items-center gap-1">
-                                            <Mail className="w-3 h-3 text-purple-400" /> advisory@costesla.com
-                                        </div>
-                                    </div>
-                                </label>
-
-                                {/* Custom Added Recipients */}
-                                {selectedRecipients.filter(r => !['luis9189@gmail.com', 'peter.teehan@costesla.com', 'cpa@costesla.com', 'advisory@costesla.com'].includes(r)).map(customEmail => (
-                                    <div key={customEmail} className="flex items-center justify-between p-3 rounded-xl border border-[var(--accent-cyan)]/40 bg-[var(--accent-cyan)]/5 text-white">
-                                        <div className="flex items-center gap-2">
-                                            <Mail className="w-3.5 h-3.5 text-[var(--accent-cyan)]" />
-                                            <span className="text-xs font-mono font-bold">{customEmail}</span>
-                                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-mono">Custom Recipient</span>
-                                        </div>
-                                        <button 
-                                            type="button" 
-                                            onClick={() => toggleRecipient(customEmail)} 
-                                            className="text-[10px] text-rose-400 hover:text-rose-300 font-bold"
+                                    {/* Action Buttons */}
+                                    <div className="flex gap-3 pt-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setPartnerModalOpen(false)}
+                                            className="flex-1 py-2.5 rounded-xl text-xs font-bold border border-white/10 bg-white/5 text-[var(--text-muted)] hover:bg-white/10 transition-all"
                                         >
-                                            Remove
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={runPartnerEODReport}
+                                            disabled={!isDispatchable}
+                                            className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${isDispatchable ? 'bg-[var(--accent-cyan)] text-black hover:opacity-90 shadow-lg shadow-[var(--accent-cyan)]/20' : 'bg-white/10 text-white/40 cursor-not-allowed'}`}
+                                        >
+                                            <Send className="w-3.5 h-3.5" /> Authorize & Dispatch ({effectiveRecipientsCount})
                                         </button>
                                     </div>
-                                ))}
-                            </div>
-
-                            {/* Add Custom Email Field */}
-                            {showCustomInput && (
-                                <div className="flex gap-2 p-2.5 rounded-xl bg-black/40 border border-white/10">
-                                    <input 
-                                        type="email" 
-                                        placeholder="e.g. partner@domain.com" 
-                                        value={customEmailInput} 
-                                        onChange={(e) => setCustomEmailInput(e.target.value)} 
-                                        onKeyDown={(e) => { if (e.key === 'Enter') handleAddCustomEmail(e); }}
-                                        className="flex-1 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs text-white placeholder-[var(--text-muted)] font-mono focus:outline-none focus:border-[var(--accent-cyan)]"
-                                    />
-                                    <button 
-                                        type="button" 
-                                        onClick={handleAddCustomEmail} 
-                                        className="px-3 py-1.5 rounded-lg bg-[var(--accent-cyan)] text-black text-xs font-bold hover:opacity-90 transition-all"
-                                    >
-                                        Add
-                                    </button>
-                                </div>
-                            )}
-
-                            {/* CC Audit Notice */}
-                            <div className="px-3 py-2 rounded-lg bg-white/[0.02] border border-white/5 text-[10px] text-[var(--text-muted)] font-mono flex items-center justify-between">
-                                <span>Owner Audit Copy (CC):</span>
-                                <span className="text-white font-bold">peter.teehan@costesla.com (Always Included)</span>
-                            </div>
-                        </div>
-
-                        {/* Permission Confirmation Checkbox */}
-                        <div className="p-3.5 rounded-xl bg-black/40 border border-white/10 space-y-2">
-                            <label className="flex items-start gap-2.5 cursor-pointer">
-                                <input 
-                                    type="checkbox" 
-                                    checked={partnerConfirmed} 
-                                    onChange={(e) => setPartnerConfirmed(e.target.checked)} 
-                                    className="mt-0.5 rounded border-white/20 text-[var(--accent-cyan)] focus:ring-0 cursor-pointer" 
-                                />
-                                <span className="text-xs text-white leading-relaxed select-none">
-                                    I, <strong>Peter Teehan</strong>, have reviewed the daily metrics and explicitly authorize the execution of this EOD dispatch to the selected <strong>{selectedRecipients.length}</strong> recipient(s).
-                                </span>
-                            </label>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex gap-3 pt-2">
-                            <button 
-                                type="button"
-                                onClick={() => setPartnerModalOpen(false)} 
-                                className="flex-1 py-2.5 rounded-xl text-xs font-bold border border-white/10 bg-white/5 text-[var(--text-muted)] hover:bg-white/10 transition-all"
-                            >
-                                Cancel
-                            </button>
-                            <button 
-                                type="button"
-                                onClick={() => runPartnerEODReport(selectedRecipients)} 
-                                disabled={!partnerConfirmed || selectedRecipients.length === 0}
-                                className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${partnerConfirmed && selectedRecipients.length > 0 ? 'bg-[var(--accent-cyan)] text-black hover:opacity-90 shadow-lg shadow-[var(--accent-cyan)]/20' : 'bg-white/10 text-white/40 cursor-not-allowed'}`}
-                            >
-                                <Send className="w-3.5 h-3.5" /> Authorize & Dispatch ({selectedRecipients.length})
-                            </button>
-                        </div>
+                                </>
+                            );
+                        })()}
                     </div>
                 </div>
             )}
@@ -2017,11 +2093,11 @@ const DriverDashboard: React.FC = () => {
 const StatCard = ({ label, value, sub, icon, color, highlight = false }: {
     label: string; value: string | number; sub: string; icon: React.ReactNode; color: 'cyan' | 'amber' | 'red'; highlight?: boolean;
 }) => {
-    const cardBorder = highlight 
-        ? 'border-[var(--accent-cyan)]/20 shadow-[0_0_20px_rgba(34,211,238,0.15)] bg-[var(--accent-cyan)]/5' 
+    const cardBorder = highlight
+        ? 'border-[var(--accent-cyan)]/20 shadow-[0_0_20px_rgba(34,211,238,0.15)] bg-[var(--accent-cyan)]/5'
         : 'border-white/8 glass bg-white/[0.02]';
-    const iconColor = color === 'cyan' ? 'text-[var(--accent-cyan)] bg-[var(--accent-cyan)]/10' 
-                    : color === 'amber' ? 'text-amber-400 bg-amber-500/10' 
+    const iconColor = color === 'cyan' ? 'text-[var(--accent-cyan)] bg-[var(--accent-cyan)]/10'
+                    : color === 'amber' ? 'text-amber-400 bg-amber-500/10'
                     : 'text-[var(--accent-red)] bg-[var(--accent-red)]/10';
 
     return (
@@ -2040,7 +2116,7 @@ const StatCard = ({ label, value, sub, icon, color, highlight = false }: {
 // GoalProgressRow Subcomponent
 const GoalProgressRow = ({ label, actual, target }: { label: string; actual: number; target: number }) => {
     const percent = target > 0 ? Math.min(100, Math.floor((actual / target) * 100)) : 0;
-    
+
     return (
         <div className="space-y-1 font-mono text-xs">
             <div className="flex items-center justify-between text-[var(--text-muted)]">
@@ -2058,8 +2134,8 @@ const GoalProgressRow = ({ label, actual, target }: { label: string; actual: num
 const ToolCard = ({ title, desc, action, loading = false, destructive = false }: {
     title: string; desc: string; action: () => void; loading?: boolean; destructive?: boolean;
 }) => {
-    const btnCls = destructive 
-        ? 'border-[var(--accent-red)]/20 bg-[var(--accent-red)]/10 text-[var(--accent-red)] hover:bg-[var(--accent-red)]/20' 
+    const btnCls = destructive
+        ? 'border-[var(--accent-red)]/20 bg-[var(--accent-red)]/10 text-[var(--accent-red)] hover:bg-[var(--accent-red)]/20'
         : 'border-[var(--accent-cyan)]/20 bg-[var(--accent-cyan)]/10 text-[var(--accent-cyan)] hover:bg-[var(--accent-cyan)]/20';
 
     return (
@@ -2068,7 +2144,7 @@ const ToolCard = ({ title, desc, action, loading = false, destructive = false }:
                 <h4 className="text-sm font-bold text-white">{title}</h4>
                 <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">{desc}</p>
             </div>
-            <button onClick={action} disabled={loading} 
+            <button onClick={action} disabled={loading}
                 className={`w-full py-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 ${btnCls}`}>
                 {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 {title}
