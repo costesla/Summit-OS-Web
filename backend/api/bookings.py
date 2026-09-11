@@ -609,6 +609,12 @@ def book(req: func.HttpRequest) -> func.HttpResponse:
                                                     <span style="font-size: 12px; color: #888;">Recipient: COS TESLA LLC</span>
                                                 </p>
                                                 
+                                                <p style="margin: 0 0 10px; font-weight: 600; color: #333333;">🅿️ PayPal</p>
+                                                <p style="margin: 0 0 15px; padding-left: 20px;">
+                                                    Send payment to: <a href="https://paypal.me/costesla" style="color: #003087; text-decoration: none; font-weight: 600;">paypal.me/costesla</a><br>
+                                                    <span style="font-size: 12px; color: #888;">Or send to: <strong>peter.teehan@costesla.com</strong> (COS TESLA LLC)</span>
+                                                </p>
+                                                
                                                 <p style="margin: 0 0 10px; font-weight: 600; color: #333333;">🟢 Cash App</p>
                                                 <p style="margin: 0 0 15px; padding-left: 20px;">
                                                     Send payment to: <a href="https://cash.app/$peteteehan" style="color: #00D632; text-decoration: none; font-weight: 600;">$peteteehan</a>

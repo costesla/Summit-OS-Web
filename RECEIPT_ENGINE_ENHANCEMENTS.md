@@ -9,6 +9,7 @@
 - ✅ **Payment Options Section**: Added a comprehensive payment options section with:
   - **Venmo**: Link to @costesla with clickable payment link
   - **Zelle**: Email address (peter.teehan@costesla.com) with recipient name (COS TESLA LLC)
+  - **PayPal**: Link to paypal.me/costesla and email (peter.teehan@costesla.com)
   - **Cash**: Instructions to pay driver directly
 
 #### Design Improvements:

@@ -85,6 +85,7 @@ export default function ReceiptPage() {
                             <select name="paymentMethod" value={formData.paymentMethod} onChange={handleChange}>
                                 <option value="Venmo">Venmo</option>
                                 <option value="Zelle">Zelle</option>
+                                <option value="PayPal">PayPal</option>
                                 <option value="Cash">Cash</option>
                                 <option value="Card">Card</option>
                                 <option value="Invoice">Pay Later (Post-Trip Invoice)</option>

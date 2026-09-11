@@ -15,6 +15,9 @@ from datetime import datetime
 
 VENMO_HANDLE = "@COS-Tesla"
 ZELLE_EMAIL  = "peter.teehan@costesla.com"
+PAYPAL_HANDLE = "costesla"
+PAYPAL_LINK   = "https://paypal.me/costesla"
+PAYPAL_EMAIL  = "peter.teehan@costesla.com"
 
 # Benchmark: Chevrolet Suburban / GMC Yukon XL (20 MPG highway – luxury SUV)
 BENCHMARK_MPG  = 20.0
@@ -287,7 +290,7 @@ def build_invoice_html(
             <table width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr>
                 <td style="background:#0a0a0a; border-radius:8px; padding:18px 24px;">
-                  <p style="margin:0 0 6px 0; color:#a0a0a0; font-size:12px; font-family:Arial,sans-serif; text-transform:uppercase; letter-spacing:1px;">Option 3 — Secure Card / Apple Pay</p>
+                  <p style="margin:0 0 6px 0; color:#a0a0a0; font-size:12px; font-family:Arial,sans-serif; text-transform:uppercase; letter-spacing:1px;">Option 4 — Secure Card / Apple Pay</p>
                   <p style="margin:0 0 14px 0; color:#d0d0d0; font-size:13px; font-family:Arial,sans-serif; line-height:1.5;">
                     Prefer to pay by credit card or Apple Pay? Use our encrypted Stripe checkout — your card details are never stored on our servers. A standard processing fee may apply.
                   </p>
@@ -461,7 +464,31 @@ def build_invoice_html(
                   </td>
                 </tr>
 
-                <!-- Option 3: Stripe -->
+                <!-- Option 3: PayPal -->
+                <tr>
+                  <td style="padding:0 0 12px 0;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="background:#0f1d2e; border:1px solid #1e3a5f; border-radius:8px; padding:16px 20px;">
+                          <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td>
+                                <p style="margin:0; color:#38bdf8; font-size:12px; font-family:Arial,sans-serif; text-transform:uppercase; letter-spacing:1px; font-weight:bold;">Option 3 — PayPal</p>
+                                <p style="margin:6px 0 0 0; color:#ffffff; font-size:16px; font-family:Arial,sans-serif; font-weight:bold;"><a href="{PAYPAL_LINK}" style="color:#ffffff; text-decoration:underline;">paypal.me/{PAYPAL_HANDLE}</a></p>
+                                <p style="margin:4px 0 0 0; color:#94a3b8; font-size:12px; font-family:Arial,sans-serif;">Or send to: {PAYPAL_EMAIL} (COS TESLA LLC)</p>
+                              </td>
+                              <td align="right">
+                                <a href="{PAYPAL_LINK}" style="margin:0; background:#0070ba; color:#fff; font-size:13px; font-family:Arial,sans-serif; font-weight:bold; padding:6px 14px; border-radius:20px; display:inline-block; text-decoration:none;">PayPal</a>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- Option 4: Stripe -->
                 {stripe_section}
 
               </table>
