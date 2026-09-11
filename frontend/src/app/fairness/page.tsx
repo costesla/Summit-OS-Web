@@ -17,7 +17,7 @@ interface PriceLine {
 
 const LINES: PriceLine[] = [
     { label: "Base Fare", detail: "Executive vehicle staging & meet-and-greet", value: "$25.00" },
-    { label: "Road Mileage", detail: "Turn-by-turn road miles via Google Distance Matrix", value: "$2.00", suffix: "/ mile", accent: true },
+    { label: "Road Mileage", detail: "Turn-by-turn road miles via Google Distance Matrix", value: "$1.00", suffix: "/ mile", accent: true },
     { label: "Denver Airport (DEN)", detail: "Dedicated corridor floor (E-470 tolls included)", value: "$225.00", suffix: "min floor" },
     { label: "Extra Stops", detail: "Each intermediate stop on your route", value: "$5.00", suffix: "/ stop" },
     { label: "Driver Wait Time", detail: "On-site standby, per hour", value: "$25.00", suffix: "/ hr" },

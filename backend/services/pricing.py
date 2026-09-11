@@ -4,7 +4,7 @@ class PricingEngine:
     """
     SummitOS Pricing Engine v3.0 (Effective September 1, 2026)
     - Base Fare: $25.00
-    - Road Mileage: $2.00 per mile (calculated via Google Distance Matrix API from mile 0)
+    - Road Mileage: $1.00 per mile (calculated via Google Distance Matrix API from mile 0)
     - Denver Airport (DEN) Corridor Minimum Floor: $225.00
     - Toll Pass-Through (DEN / E-470): $20.00
     - Mountain Surcharge (Teller County): $15.00
@@ -66,7 +66,7 @@ class PricingEngine:
         
         # Standard v3.0 Pricing Model (Effective September 1, 2026)
         fixed_base = 25.00
-        rate_per_mile = 2.00
+        rate_per_mile = 1.00
         den_floor = 225.00
 
         mileage_charge = round(distance_miles * rate_per_mile, 2)
