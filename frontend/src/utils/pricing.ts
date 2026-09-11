@@ -45,10 +45,9 @@ export interface PriceBreakdown {
 export function calculateTripPrice(params: TripParams): PriceBreakdown {
     const { distanceMiles, stops, isTellerCounty, isDenverAirport, waitTimeHours } = params;
 
-    // 1. Base & Distance Fare ($1.00/mile from mile 0)
+    // 1. Base & Distance Fare ($1.00/mile standard; $1.50/mile for Denver Airport corridor)
     const fixedBase = 25.00;
-    const RATE_PER_MILE = 1.00;
-    const DEN_FLOOR = 225.00;
+    const RATE_PER_MILE = isDenverAirport ? 1.50 : 1.00;
 
     const mileageCharge = Number((distanceMiles * RATE_PER_MILE).toFixed(2));
 
@@ -60,12 +59,8 @@ export function calculateTripPrice(params: TripParams): PriceBreakdown {
 
     const subtotal = fixedBase + mileageCharge + stopFee + tellerFee + tollFee + waitFee;
 
-    // 3. Corridor Floor Adjustment (Guarantees $225 min floor for DEN Airport)
-    let corridorAdjustment = 0;
-    if (isDenverAirport && subtotal < DEN_FLOOR) {
-        corridorAdjustment = Number((DEN_FLOOR - subtotal).toFixed(2));
-    }
-
+    // 3. Corridor Floor Adjustment (Dynamic $1.50/mile + $20 toll for DEN)
+    const corridorAdjustment = 0;
     const total = subtotal + corridorAdjustment;
 
     return {

@@ -66,8 +66,8 @@ class PricingEngine:
         
         # Standard v3.0 Pricing Model (Effective September 1, 2026)
         fixed_base = 25.00
-        rate_per_mile = 1.00
-        den_floor = 225.00
+        # Standard local is $1.00/mile; Denver Airport (DEN) corridor is $1.50/mile
+        rate_per_mile = 1.50 if is_denver_airport else 1.00
 
         mileage_charge = round(distance_miles * rate_per_mile, 2)
         stop_fee = stops_count * 5.00
@@ -76,11 +76,7 @@ class PricingEngine:
         wait_fee = wait_time_hours * 25.00
 
         subtotal = fixed_base + mileage_charge + stop_fee + teller_fee + toll_fee + wait_fee
-
         corridor_adjustment = 0.0
-        if is_denver_airport and subtotal < den_floor:
-            corridor_adjustment = round(den_floor - subtotal, 2)
-
         total = subtotal + corridor_adjustment
 
         return {

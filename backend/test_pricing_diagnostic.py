@@ -21,6 +21,10 @@ try:
     # 30 mile trip
     quote = pe.calculate_trip_price(distance_miles=30.0)
     print(f"30 miles (Standard): ${quote['total']} (Base: {quote['baseFare']}, Overage: {quote['overage']})")
+
+    # 82 mile Denver Airport trip ($25 Base + 82 * $1.50 + $20 Toll = $168.00)
+    quote = pe.calculate_trip_price(distance_miles=82.0, is_denver_airport=True)
+    print(f"82 miles (DEN Airport): ${quote['total']} (Base: {quote['baseFare']}, Mileage: {quote['mileageFare']}, Toll: {quote['tollFee']})")
     
     print("\n--- Grandfathered Pricing Test ---")
     email = "esmii.lopez@hotmail.com"
